@@ -1,7 +1,37 @@
 """実描画の間引き（RenderGate）のテスト。Pyxelは使わない。"""
+import ast
+
 import pytest
 
+from conftest import ROOT
 from cp_core.fixed_loop import RENDER_DIVISOR, RENDER_HZ, RENDER_MIN_INTERVAL_MS, TICK_HZ, RenderGate
+
+APP_PY = ROOT / "clipping_point" / "cp_app" / "app.py"
+
+
+def test_fixed_loop_app_passes_real_time_to_the_gate():
+    # 守りのテスト。アプリの draw() が、should_render に実時間を渡していること。ソースを読むだけで、pyxel は読み込まない。
+    # 引数を落としても例外にならず（既定は None）、デスクトップ版の道具も、軽い表示のブラウザ版の煙テストも通ってしまう。
+    # 見るのは「引数が1つある」ことだけ。走行の場面が載る段0 区切り10で、煙テストの実描画の回数で見える形に置き換える。
+    tree = ast.parse(APP_PY.read_text(encoding="utf-8"))
+    draws = [
+        node
+        for cls in ast.walk(tree)
+        if isinstance(cls, ast.ClassDef) and cls.name == "App"
+        for node in cls.body
+        if isinstance(node, ast.FunctionDef) and node.name == "draw"
+    ]
+    assert len(draws) == 1
+
+    def gate_calls(scope):
+        return [
+            node
+            for node in ast.walk(scope)
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "should_render"
+        ]
+
+    assert len(gate_calls(draws[0])) == 1
+    assert all(len(call.args) + len(call.keywords) == 1 for call in gate_calls(tree))
 
 
 def drive_gate(pattern: str, divisor: int = 2) -> list:

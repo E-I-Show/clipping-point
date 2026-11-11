@@ -46,7 +46,7 @@ STALE_JUNIT = (
 )
 STALE_RESULT = '{"ticks": 120, "renders": 60, "sim": {"tick": 120}, "back_ink": 3981, "screen_diff": 0, "driver": "flip"}\n'
 EXIT_0_TEST = "import os\n\n\ndef test_zz_exit():\n    os._exit(0)\n"
-# 前回の実行が残した、合格の形の、ブラウザ版の実行役の結果。
+# 前回の実行が残した、合格の形の、ブラウザの実行役の結果。
 STALE_WEB_PAGE = (
     '{"htmlSha256": "", "failures": [], "clickedAt": 3500, "untilAt": 7000, "state": {"initialized": true},'
     ' "canvas": {"ink": 35000}, "console": [{"t": 7000, "type": "log", "text": "CP_PROBE_RESULT {\\"ticks\\": 240,'
@@ -110,17 +110,23 @@ WEB_PROBE = tool("web_smoke", "--only", "probe", "--ticks", "240")
 VERIFY_ALL = tool("verify", "--all")
 FETCH_CHECK = tool("web/fetch_runtime", "--check")
 ONLY_ON_WEB = "        if sys.platform == 'emscripten' and self.ticks == 5:\n"
-BUSY_6_MS = (
-    "        if sys.platform == 'emscripten':\n            busy_until = time.perf_counter() + 0.006\n"
-    "            while time.perf_counter() < busy_until:\n                pass\n"
-)
+HANG_ON_WEB = ONLY_ON_WEB + "            while True:\n                pass\n"  # ブラウザ版でだけ、抜けないループに入る
+
+
+def busy_on_web(ms: int, indent: str = "        ") -> str:
+    """ブラウザ版でだけ、ms ミリ秒の空回しをする文。"""
+    return (
+        f"{indent}if sys.platform == 'emscripten':\n{indent}    busy_until = time.perf_counter() + {ms / 1000}\n"
+        f"{indent}    while time.perf_counter() < busy_until:\n{indent}        pass\n"
+    )
+
+
 FETCH_OUTSIDE = "\nif sys.platform == 'emscripten':\n    import js\n\n    js.fetch('https://example.com/ping')\n"
 RENDER_COUNT = "            self.renders += 1\n"
+RENDER_HEAD = "        canvas = Canvas()\n"  # render() の頭
+METER_RENDER = "                self.meter.on_render(started_s, time.perf_counter())\n"
 # 実描画のある周期を20 ms重くする（測る区間の外に置く。更新と実描画の時間の線には掛からない）。
-HEAVY_FRAME = (
-    "            if sys.platform == 'emscripten':\n                busy_until = time.perf_counter() + 0.020\n"
-    "                while time.perf_counter() < busy_until:\n                    pass\n"
-)
+HEAVY_FRAME = busy_on_web(20, indent="            ")
 
 # (名前, 壊し方の並び, 回す道具, 期待する終了コード, 最後の1行にあるはずの語)
 CASES = [
@@ -235,7 +241,9 @@ CASES = [
     ("export_over_size_limit", [rep("tools/budgets.json", '"html_max_bytes": 1000000', '"html_max_bytes": 1000')], EXPORT, {1}, "failed=size"),
     ("export_main_py_missing", [rm("clipping_point/main.py")], EXPORT, {2}, "reason=pyxel_package_failed"),
     # --- check：分野ごとの組の表（tools/verify.py の AREAS）に当たらないファイル ---
-    ("check_shipped_file_in_no_area", [add("clipping_point/cp_core/vehicle.py", '"""placeholder"""\n')], CHECK, {1}, "failed=areas"),
+    # 見本の名前は、設計のモジュールの表に出てこないものにする（本物のファイルと重ならないように）。
+    ("check_shipped_file_in_no_area", [add("clipping_point/cp_core/zz_no_area.py", '"""placeholder"""\n')], CHECK, {1}, "failed=areas"),
+    ("check_ui_file_in_no_area", [add("clipping_point/cp_ui/zz_no_area.py", '"""placeholder"""\n')], CHECK, {1}, "failed=areas"),
     ("check_test_file_in_no_area", [add("tests/test_zz_new.py", "def test_zz_new():\n    assert True\n")], CHECK, {1}, "failed=areas"),
     # --- fetch_runtime：ランタイムの写しの照合 ---
     ("fetch_runtime_checksum_mismatch", [rep(SUMS, "0ecaf7fa", "1ecaf7fa")], FETCH_CHECK, {1}, "reason=checksum_mismatch"),
@@ -246,7 +254,7 @@ CASES = [
     ("web_build_fails", [rm("clipping_point/main.py")], WEB, {2}, "reason=export_failed"),
     ("web_too_few_ticks", [], tool("web_smoke", "--only", "probe", "--ticks", "30"), {2}, "reason=too_few_ticks"),
     ("web_no_done_signal", [rep(BRIDGE_PY, "    js.console.log(DONE_MARK)\n", "    pass\n")], [*WEB_PROBE, "--timeout", "15"], {2}, "incomplete=probe.no_done_signal"),
-    # 実行役が、結果を書かずに終了コード0で終わる。前回の合格の形の結果が残っていても、読まない。
+    # ブラウザの実行役が、結果を書かずに終了コード0で終わる。前回の合格の形の結果が残っていても、読まない。
     (
         "web_stale_result_is_not_reused",
         [add("out/web_smoke/probe.json", STALE_WEB_PAGE), rep(WEBRUN_JS, 'const crypto = require("crypto");\n', "process.exit(0);\n")],
@@ -258,7 +266,14 @@ CASES = [
     ("web_blank_screen", [rep(APP_PY, PRESENT, "        pass\n")], WEB_SHIPPED, {1}, "failed=shipped.canvas_ink"),
     ("web_probe_ticks_short", [rep(APP_PY, "self.ticks >= probe.ticks:", "self.ticks >= probe.ticks - 1:")], WEB_PROBE, {1}, "failed=probe.ticks"),
     ("web_summary_differs_from_desktop", [rep(APP_PY, IN_UPDATE, IN_UPDATE + ONLY_ON_WEB + "            self.sim.step()\n")], WEB_PROBE, {1}, "failed=probe.sim"),
-    ("web_update_over_the_time_line", [rep(APP_PY, IN_UPDATE, IN_UPDATE + BUSY_6_MS)], WEB_PROBE, {1}, "probe.update_ms_p95"),
+    # 通過条件の線。更新1回の時間、実描画1回の時間、更新の毎秒の回数（実描画の毎秒の回数は web_gate_gets_no_real_time）。
+    ("web_update_over_the_time_line", [rep(APP_PY, IN_UPDATE, IN_UPDATE + busy_on_web(6))], WEB_PROBE, {1}, "probe.update_ms_p95"),
+    ("web_render_over_the_time_line", [rep(APP_PY, RENDER_HEAD, RENDER_HEAD + busy_on_web(15))], WEB_PROBE, {1}, "probe.render_ms_p95"),
+    ("web_update_far_too_slow", [rep(APP_PY, IN_UPDATE, IN_UPDATE + busy_on_web(20))], WEB_PROBE, {1}, "probe.updates_per_s"),
+    # 時間を測る所が、実描画1回につき2度呼ばれる（数える所の付け間違い）。
+    ("web_render_time_counted_twice", [rep(APP_PY, METER_RENDER, METER_RENDER + METER_RENDER)], WEB_PROBE, {1}, "failed=probe.perf_renders"),
+    # ブラウザ版でだけ、更新の中で抜けないループに入る。ページが返らなくなる。集めた分の結果は残り、合格にはならない。
+    ("web_browser_hangs_in_update", [rep(APP_PY, IN_UPDATE, IN_UPDATE + HANG_ON_WEB)], [*WEB_SHIPPED, "--timeout", "20"], {1}, "failed=shipped.unresponsive"),
     # アプリが実時間を RenderGate へ渡さない。デスクトップ版の道具では見えず、ブラウザ版の実描画の回数で見える。
     # 差が出るのは、実描画のある周期が1周期（16.7 ms）に収まらないときだけ。重い周期を足して確かめる
     # （重くしただけなら毎秒30回のまま通ることは、control_web_heavy_frame_keeps_30_renders で見る）。
@@ -275,6 +290,10 @@ CASES = [
     ),
     ("verify_step_cannot_run", [rm("tools/run.py")], VERIFY_ALL, {1}, "steps=6 ok=4 failed=2 failed_steps=run,run-realtime"),
     ("verify_nothing_asked", [], tool("verify"), {2}, "reason=nothing_asked"),
+    # 複製は、gitの作業ツリーの根でない（親のリポジトリの下にある）。親の変更を読んで回さない。
+    ("verify_touched_outside_a_git_work_tree", [], tool("verify", "--touched"), {2}, "reason=git_failed"),
+    # --- test：アプリが実時間を RenderGate へ渡していることの守りのテスト ---
+    ("test_app_drops_real_time_for_the_gate", [rep(APP_PY, IN_DRAW, "        if self.gate.should_render():\n")], TEST, {1}, "reason=failed"),
 ]
 
 

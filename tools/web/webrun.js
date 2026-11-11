@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// ヘッドレスのChromiumでHTMLを開き、起きたことを集めて、結果をJSONに書く。
+// ブラウザの実行役。ヘッドレスのChromiumでHTMLを開き、起きたことを集めて、結果をJSONに書く。
 // 合否は決めない。決めるのは tools/web_smoke.py。元は spikes/web/tools/webrun.js。
 //
 //   node tools/web/webrun.js --html FILE --mirror DIR --json FILE
@@ -19,6 +19,7 @@
 // そこに無いファイルへの要求と、その外へ出る要求（ほかのホスト、ほかのファイル）は、通さずに失敗として記す。
 // 集める失敗の種類（failures[].kind）：
 //   no_start_prompt  開始の表示（img#pyxel-prompt）が出ない。ランタイムが読み込めていない
+//   unresponsive     ページへの問い合わせが返らない（Pythonが主スレッドを握ったまま、など）
 //   error_overlay    Pyxelのエラー表示（#pyxel-error-overlay）がある。Pythonの例外
 //   fatal_error      window.pyxelContext.hasFatalError
 //   console_error    種類が error のコンソールの行
@@ -28,6 +29,7 @@
 //   request_failed   読み込みの失敗
 //   http_status      400以上の応答
 // 完了の合図が出たか（untilAt）と、画面の画素（canvas）は、失敗に数えずに値だけ書く。
+// ページが返らないときも、そこまでに集めた分のJSONを書いてから、ブラウザを閉じる（閉じられなければ、そのまま終わる）。
 // 終了コード：0＝結果のJSONを書いた、2＝使い方の誤りか、途中で止まった（JSONは書いていない）。
 const crypto = require("crypto");
 const fs = require("fs");
@@ -40,6 +42,8 @@ const VIEWPORT = { width: 960, height: 720 };
 const POLL_MS = 50;
 const GIVE_UP_AFTER_FAILURE_MS = 1500; // 開始の表示より前に失敗が出たら、これだけ待って切り上げる
 const CHANGE_GAP_MS = 400; // 画面が動いているかを見る、2枚の間
+const ASK_TIMEOUT_MS = 10000; // ページへの問い合わせが、これだけ返らなければ「返らない」とみなす。ふつうは数msで返る
+const CLOSE_TIMEOUT_MS = 5000; // ブラウザを閉じるのを待つ上限
 const MIME = {
   ".js": "text/javascript",
   ".mjs": "text/javascript",
@@ -52,6 +56,19 @@ const MIME = {
   ".png": "image/png",
   ".ico": "image/x-icon",
 };
+
+// ページへの問い合わせが、時間の内に返らなかった。
+class Unresponsive extends Error {}
+
+// promise が ms の内に終わらなければ、Unresponsive を投げる。
+function within(promise, ms, what) {
+  promise.catch(() => {}); // 時間切れの後で失敗しても、捕まえられない例外にしない
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Unresponsive(`${what} did not return within ${ms} ms`)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
 
 function usage(message) {
   console.error(`webrun: ${message}`);
@@ -117,6 +134,78 @@ async function countPixels(browser, png) {
   }
 }
 
+// ページを開いて、開始のクリックから最後の画面までを進める。ページが返らなければ Unresponsive を投げる。
+async function drive(browser, page, opt, result, env) {
+  const { now, deadline, untilRe, fail, pageUrl } = env;
+  // ページの中で fn を実行する。返らなければ Unresponsive。ほかの失敗（ページの切り替わりなど）は fallback を返す。
+  const ask = (fn, fallback) =>
+    within(page.evaluate(fn), ASK_TIMEOUT_MS, "page.evaluate").catch((e) => {
+      if (e instanceof Unresponsive) throw e;
+      return fallback;
+    });
+
+  await page.goto(pageUrl, { waitUntil: "load", timeout: opt.timeoutMs });
+  // 開始の表示を待って、クリックする。音のために、クリックの前はアプリが動かない。
+  let firstFailureAt = null;
+  while (Date.now() < deadline) {
+    if (await ask(() => !!document.querySelector("img#pyxel-prompt"), false)) {
+      result.promptAt = now();
+      break;
+    }
+    if (result.failures.length && firstFailureAt === null) firstFailureAt = Date.now();
+    if (firstFailureAt !== null && Date.now() - firstFailureAt >= GIVE_UP_AFTER_FAILURE_MS) break;
+    await page.waitForTimeout(POLL_MS);
+  }
+  if (result.promptAt === null) {
+    fail("no_start_prompt", "img#pyxel-prompt did not appear");
+  } else {
+    await within(page.mouse.click(VIEWPORT.width / 2, VIEWPORT.height / 2), ASK_TIMEOUT_MS, "page.mouse.click");
+    result.clickedAt = now();
+    while (Date.now() < deadline) {
+      const watched = now() - result.clickedAt >= opt.watchMs;
+      if (watched && (untilRe === null || result.untilAt !== null)) break;
+      // Pythonの例外が出たら、この先は何も起きない。
+      if (await ask(() => !!document.getElementById("pyxel-error-overlay"), false)) break;
+      await page.waitForTimeout(POLL_MS);
+    }
+    await page.waitForTimeout(300); // エラー表示は、標準エラーの行を100 msまとめてから出る
+  }
+
+  result.state = await ask(
+    () => {
+      const overlay = document.getElementById("pyxel-error-overlay");
+      const context = window.pyxelContext;
+      return {
+        overlayText: overlay ? overlay.textContent : null,
+        hasFatalError: !!(context && context.hasFatalError),
+        initialized: !!(context && context.initialized),
+      };
+    },
+    { evalError: true },
+  );
+  if (result.state.overlayText) fail("error_overlay", result.state.overlayText);
+  if (result.state.hasFatalError) fail("fatal_error", "window.pyxelContext.hasFatalError is true");
+
+  // 画面（canvas）の画素。ページの中からは読めない（WebGLの絵は残らない）ので、スクリーンショットを数える。
+  const box = await ask(() => {
+    const canvas = document.querySelector("canvas#canvas");
+    if (!canvas) return null;
+    const r = canvas.getBoundingClientRect();
+    return { x: r.x, y: r.y, width: r.width, height: r.height, pixelWidth: canvas.width, pixelHeight: canvas.height };
+  }, null);
+  if (box && box.width >= 1 && box.height >= 1) {
+    const clip = { x: box.x, y: box.y, width: box.width, height: box.height };
+    const first = await within(page.screenshot({ clip }), ASK_TIMEOUT_MS, "page.screenshot");
+    await page.waitForTimeout(CHANGE_GAP_MS);
+    const png = await within(page.screenshot({ clip }), ASK_TIMEOUT_MS, "page.screenshot");
+    if (opt.shot) {
+      fs.mkdirSync(path.dirname(path.resolve(opt.shot)), { recursive: true });
+      fs.writeFileSync(opt.shot, png);
+    }
+    result.canvas = { ...box, ...(await countPixels(browser, png)), changed: !first.equals(png), changeGapMs: CHANGE_GAP_MS };
+  }
+}
+
 async function main() {
   const opt = parseArgs(process.argv.slice(2));
   const t0 = Date.now();
@@ -149,6 +238,7 @@ async function main() {
   const untilRe = opt.until ? new RegExp(opt.until) : null;
 
   const browser = await chromium.launch();
+  const closeBrowser = () => within(browser.close(), CLOSE_TIMEOUT_MS, "browser.close").catch(() => {});
   try {
     const context = await browser.newContext({ viewport: VIEWPORT });
     if (opt.initScript) await context.addInitScript(opt.initScript);
@@ -197,72 +287,18 @@ async function main() {
     page.on("response", (res) => {
       if (res.status() >= 400) fail("http_status", `${res.status()} ${res.url().slice(0, 300)}`);
     });
-    const overlayShown = () => page.evaluate(() => !!document.getElementById("pyxel-error-overlay")).catch(() => false);
 
-    await page.goto(pageUrl, { waitUntil: "load", timeout: opt.timeoutMs });
-    // 開始の表示を待って、クリックする。音のために、クリックの前はアプリが動かない。
-    let firstFailureAt = null;
-    while (Date.now() < deadline) {
-      if (await page.evaluate(() => !!document.querySelector("img#pyxel-prompt")).catch(() => false)) {
-        result.promptAt = now();
-        break;
-      }
-      if (result.failures.length && firstFailureAt === null) firstFailureAt = Date.now();
-      if (firstFailureAt !== null && Date.now() - firstFailureAt >= GIVE_UP_AFTER_FAILURE_MS) break;
-      await page.waitForTimeout(POLL_MS);
+    try {
+      await drive(browser, page, opt, result, { now, deadline, untilRe, fail, pageUrl });
+    } catch (e) {
+      if (!(e instanceof Unresponsive)) throw e;
+      fail("unresponsive", e.message); // 集めた分は、下でJSONに書く
     }
-    if (result.promptAt === null) {
-      fail("no_start_prompt", "img#pyxel-prompt did not appear");
-    } else {
-      await page.mouse.click(VIEWPORT.width / 2, VIEWPORT.height / 2);
-      result.clickedAt = now();
-      while (Date.now() < deadline) {
-        const watched = now() - result.clickedAt >= opt.watchMs;
-        if (watched && (untilRe === null || result.untilAt !== null)) break;
-        if (await overlayShown()) break; // Pythonの例外が出たら、この先は何も起きない
-        await page.waitForTimeout(POLL_MS);
-      }
-      await page.waitForTimeout(300); // エラー表示は、標準エラーの行を100 msまとめてから出る
-    }
-
-    result.state = await page
-      .evaluate(() => {
-        const overlay = document.getElementById("pyxel-error-overlay");
-        const context = window.pyxelContext;
-        return {
-          overlayText: overlay ? overlay.textContent : null,
-          hasFatalError: !!(context && context.hasFatalError),
-          initialized: !!(context && context.initialized),
-        };
-      })
-      .catch((e) => ({ evalError: String(e) }));
-    if (result.state.overlayText) fail("error_overlay", result.state.overlayText);
-    if (result.state.hasFatalError) fail("fatal_error", "window.pyxelContext.hasFatalError is true");
-
-    // 画面（canvas）の画素。ページの中からは読めない（WebGLの絵は残らない）ので、スクリーンショットを数える。
-    const box = await page
-      .evaluate(() => {
-        const canvas = document.querySelector("canvas#canvas");
-        if (!canvas) return null;
-        const r = canvas.getBoundingClientRect();
-        return { x: r.x, y: r.y, width: r.width, height: r.height, pixelWidth: canvas.width, pixelHeight: canvas.height };
-      })
-      .catch(() => null);
-    if (box && box.width >= 1 && box.height >= 1) {
-      const clip = { x: box.x, y: box.y, width: box.width, height: box.height };
-      const first = await page.screenshot({ clip });
-      await page.waitForTimeout(CHANGE_GAP_MS);
-      const png = await page.screenshot({ clip });
-      if (opt.shot) {
-        fs.mkdirSync(path.dirname(path.resolve(opt.shot)), { recursive: true });
-        fs.writeFileSync(opt.shot, png);
-      }
-      result.canvas = { ...box, ...(await countPixels(browser, png)), changed: !first.equals(png), changeGapMs: CHANGE_GAP_MS };
-    }
-    await context.close();
-  } finally {
-    await browser.close();
+  } catch (e) {
+    await closeBrowser();
+    throw e;
   }
+  // 先にJSONを書く。ページが返らないときは、ブラウザを閉じるのも返らないことがある。
   result.elapsedMs = now();
   fs.mkdirSync(path.dirname(path.resolve(opt.json)), { recursive: true });
   fs.writeFileSync(opt.json, JSON.stringify(result, null, 1));
@@ -270,6 +306,8 @@ async function main() {
     `webrun: wrote ${opt.json} elapsed_ms=${result.elapsedMs} failures=${result.failures.length} ` +
       `until_at=${result.untilAt} canvas_ink=${result.canvas ? result.canvas.ink : null}`,
   );
+  await closeBrowser();
+  process.exit(0); // 閉じられなかったブラウザを待たない
 }
 
 main().catch((e) => {

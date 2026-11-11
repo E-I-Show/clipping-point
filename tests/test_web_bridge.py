@@ -1,4 +1,4 @@
-"""ブラウザとの橋（cp_app.web_bridge）のテスト。ブラウザの機能（js）の代わりに、偽の実装を渡す。
+"""ブラウザ連携（cp_app.web_bridge）のテスト。ブラウザの機能（js）の代わりに、偽の実装を渡す。
 
 実物のブラウザで値が渡ることは、道具 web-smoke（`python3 tools/web_smoke.py`）の筋書き probe が見る。
 """

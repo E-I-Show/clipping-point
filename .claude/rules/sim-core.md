@@ -33,7 +33,7 @@ paths:
 - テスト `tests/test_sim.py`：1回の `step()` で1 tick。要約がJSONに書ける。
 - 守りのテスト `tests/test_arch_guard.py`：層の分離の検査が、持ち込む書き方を拾う。
 - 道具 `python3 tools/run.py`：世界のtickと実描画の回数を、画面なしで回して照らす。
-- アプリが実時間を `RenderGate` へ渡していること（実時間の決まりが実際に働くこと）は、デスクトップ版の道具では見えない。ブラウザ版の煙テストの実描画の回数で見る（段0 区切り3から）。
+- アプリが実時間を `RenderGate` へ渡していること（実時間の決まりが実際に働くこと）は、デスクトップ版の道具でも、web-smoke 単体でも見えない（差が出るのは、実描画のある周期が16.7 msを超えるときだけ）。守りのテスト（`tests/test_fixed_loop.py` が `app.py` のソースを読み、`should_render` の引数を見る）と、selftest-break の `web_gate_gets_no_real_time` で見る。走行の場面が載る段0 区切り10で、web-smoke の実描画の回数で見える形に置き換える。
 
 ## 落とし穴
 

@@ -104,7 +104,7 @@ AREAS = (
         (
             "tools/**", "tests/conftest.py", "tests/count_floor.txt", "tests/snapshots/**", "tests/test_arch_guard.py",
             "tests/test_rules_guard.py", "tests/test_canon_guard.py", "tests/test_export_inspect.py", "tests/test_verify.py",
-            "tests/test_web_smoke.py", "pytest.ini", "requirements-dev.txt",
+            "tests/test_web_smoke.py", "tests/test_claude_tools.py", "pytest.ini", "requirements-dev.txt",
         ),
         ALL,
         ALL,

@@ -39,6 +39,26 @@ def test_perf_warmup_ticks_are_not_measured():
     assert report["updates_per_s"] == 60.0
 
 
+def test_perf_values_with_the_warmup_are_reported_beside_the_measured_ones():
+    # 慣らしを入れた値も出す。頭の引っ掛かりが、線の判定から外れたまま見えなくならないように。
+    meter = PerfMeter(warmup_ticks=60)
+    feed(meter, 660, slow_first=60)
+    whole = meter.report()["with_warmup"]
+    assert whole["updates"] == 660 and whole["renders"] == 330
+    assert whole["update_ms_p95"] == pytest.approx(50.0, abs=0.001)  # 660回のうち、頭の60回が50 ms
+    assert whole["updates_per_s"] == 60.0
+    assert 29.9 <= whole["renders_per_s"] <= 30.1
+    assert "with_warmup" not in whole
+
+
+def test_perf_without_warmup_both_views_agree():
+    meter = PerfMeter()
+    feed(meter, 120)
+    report = meter.report()
+    whole = report.pop("with_warmup")
+    assert report == whole
+
+
 def test_perf_p95_sees_the_slow_tail():
     meter = PerfMeter()
     for i in range(100):
