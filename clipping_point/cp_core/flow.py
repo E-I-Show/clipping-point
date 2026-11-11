@@ -30,19 +30,24 @@ class PlaceholderView:
     """仮の表示の、表示用の値。作るときに、型と範囲を検査する。
 
     renders（実描画の回数）は、実時間で決まる値。表示にだけ使い、世界へ戻さない。
-    いまは cp_app/app.py が、世界のtick、実描画の回数、直近の入力フレームから組み立てる
+    いまは cp_app/app.py が、世界のtick、実描画の回数、直近の入力フレーム、知らせの1行から組み立てる
     （実描画の回数を、ロジックは持たないため）。
+    notice は、保存についての知らせの1行（文は cp_core/storage.py の NOTICES）。無ければ空。省けない
+    （アプリが渡し忘れたら、作る時に落ちる）。本物の通知は、画面の状態を作る段1で作る。
     """
 
     tick: int  # 世界のtick
     renders: int  # 実描画の回数。表示にだけ使う
     frame: InputFrame  # 直近の入力フレーム
+    notice: str  # 知らせの1行。無ければ空
 
     def __post_init__(self) -> None:
         _count("tick", self.tick)
         _count("renders", self.renders)
         if not isinstance(self.frame, InputFrame):
             raise TypeError(f"frame must be an InputFrame, got {type(self.frame).__name__}")
+        if type(self.notice) is not str:
+            raise TypeError(f"notice={self.notice!r} must be str")
 
 
 class Flow:

@@ -1,0 +1,39 @@
+{
+  "_notes": "指紋の写し。決まった筋書き（台本、回すtick数、種）で世界を回した要約。tools/fingerprint.py、tools/run.py、守りのテストが照らす。environment（Pythonの版と、数学関数の試し値）は、合否に使わない（環境が変わったことと、退行を見分けるための値）。取り直しは python3 tools/fingerprint.py --update。単独のコミットで、理由を添える。",
+  "environment": {
+    "math": {
+      "atan2": "36d6d895416a9ee2",
+      "cos": "b83516bd2937631f",
+      "exp": "f33fa94362733e7f",
+      "hypot": "0fc78b82d12fa385",
+      "sin": "508143859c7956bc",
+      "sqrt": "febfbc48001a96f8",
+      "tan": "4f0a3b6e4ae0909c"
+    },
+    "python": "3.13.18"
+  },
+  "scenarios": {
+    "no_script_120": {
+      "script": null,
+      "seed": 0,
+      "summary": {
+        "input_digest": 856989893,
+        "rng_ai": "0ad0a11cea5bd376",
+        "seed": 0,
+        "tick": 120
+      },
+      "ticks": 120
+    },
+    "script_120": {
+      "script": "tools/input_script_smoke.json",
+      "seed": 0,
+      "summary": {
+        "input_digest": 683383069,
+        "rng_ai": "0ad0a11cea5bd376",
+        "seed": 0,
+        "tick": 120
+      },
+      "ticks": 120
+    }
+  }
+}

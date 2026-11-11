@@ -17,11 +17,12 @@ NO_BUTTON = "-"  # 押しているボタンが無いときに出す字
 
 
 def build_placeholder(canvas: Canvas, view: PlaceholderView) -> None:
-    """仮の表示。タイトル、tick数、実描画の回数、入力フレームの値。画面に出す文字は英数字と記号のみ。
+    """仮の表示。タイトル、tick数、実描画の回数、入力フレームの値、知らせの1行。画面に出す文字は英数字と記号のみ。
 
     入力フレームの2行は、実機で、実物のコントローラーの値を見るための表示。
     1行目は、舵、アクセル、ブレーキのアナログ値（A。千分率の整数）とデジタル値（D）。舵は左が正。
     2行目は、押しているボタンの名（BUTTONS の並び）。10個とも押した状態でも、囲みの内に収まる。
+    知らせの1行（保存先を切り替えた、保存が読めない、など。文は cp_core/storage.py の NOTICES）は、あるときだけ出す。
     """
     with canvas.box("title", 0, 0, SCREEN_W, 12):
         canvas.rect(0, 0, SCREEN_W, 12, COL_BAR)
@@ -40,6 +41,10 @@ def build_placeholder(canvas: Canvas, view: PlaceholderView) -> None:
             )
             held = " ".join(name.upper() for name in BUTTONS if name in view.frame.held)
             canvas.text(6, 49, f"HELD {held or NO_BUTTON}", COL_TEXT)
+    if view.notice:
+        # 知らせの1行。無いときは、囲みも作らない。
+        with canvas.box("notice", 2, 60, SCREEN_W - 4, 9):
+            canvas.text(6, 62, view.notice, COL_TEXT)
 
 
 # 画面の登録。鍵は cp_core.flow の SCREEN_NAMES と同じ集まり（tests/test_fixtures.py の突き合わせのテストが見る）。

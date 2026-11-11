@@ -4,6 +4,7 @@
 ネットワークも使わない。取得の道は、一時の置き場（tmp_path）と偽の取得の関数で通す。
 実物のブラウザを通した確かめは、道具 web-smoke と selftest-break が見る。
 """
+import base64
 import hashlib
 import http.client
 import io
@@ -17,8 +18,9 @@ import pytest
 import input_reference
 import web_smoke
 from conftest import ROOT
-from cp_app import input_web, web_bridge
+from cp_app import input_web, storage_select, storage_web, web_bridge
 from cp_app.input_trace import InputTrace
+from cp_core import profile, storage
 from cp_core.input_frame import BUTTONS, QUANTIZED_FIELDS, button_bits
 
 fetch_runtime = web_smoke.fetch_runtime  # tools/web/ の中。web_smoke が読み込んだものを使う
@@ -34,10 +36,17 @@ STAGE, SETTLE = BUDGETS["web_pad_stage_ticks"], BUDGETS["web_pad_settle_ticks"]
 PAD_TICKS = web_smoke.pad_ticks(STAGE)
 FIELD = {name: index for index, name in enumerate(QUANTIZED_FIELDS)}
 WARN_LINE = {"t": 5, "type": "warning", "text": input_web.WARN_MARK + " direct trigger read failed: AttributeError: mapping"}
+# 保存の往復が、ブラウザの localStorage に残す値（base64 の文字列）と、その鍵。
+SELFCHECK_KEY = "clippingpoint/selfcheck.settings"
+SELFCHECK_BLOB = storage.wrap(profile.encode(profile.SELFCHECK_SETTINGS), profile.SETTINGS_VERSION)
+
+
+def stored(blob: bytes = SELFCHECK_BLOB) -> str:
+    return base64.b64encode(blob).decode("ascii")
 
 
 def page(**changes) -> dict:
-    """問題の無い、ブラウザの実行役の結果。"""
+    """問題の無い、ブラウザの実行役の結果。localStorage は、頼まなければ読まない（null）。"""
     base = {
         "htmlSha256": SHA,
         "failures": [],
@@ -46,8 +55,20 @@ def page(**changes) -> dict:
         "untilAt": None,
         "state": {"overlayText": None, "hasFatalError": False, "initialized": True},
         "canvas": {"ink": 35000, "pixels": 691200},
+        "localStorage": None,
     }
     return {**base, **changes}
+
+
+def local_storage(entries=None, error=None) -> dict:
+    """ブラウザの実行役が読んだ、localStorage の中身。既定は、保存の往復が残した値だけ。"""
+    entries = {SELFCHECK_KEY: stored()} if entries is None and error is None else entries
+    return {"prefix": storage_web.PREFIX, "entries": entries, "error": error}
+
+
+def probe_page(**changes) -> dict:
+    """問題の無い、probe の筋書きの、ブラウザの実行役の結果。完了の合図が出ていて、localStorage を読んである。"""
+    return page(**{"untilAt": 14000, "localStorage": local_storage(), **changes})
 
 
 def result(**changes) -> dict:
@@ -67,6 +88,8 @@ def result(**changes) -> dict:
         "input_source": "adapter",
         "adapter_reads": TICKS,
         "direct_reads": TICKS,
+        # 保存先は localStorage。保存の往復が通っていて、知らせは無い。
+        "storage": {"backend": "localstorage", "ok": True, "notice": "", "detail": ""},
     }
     return {**base, **changes}
 
@@ -75,13 +98,17 @@ def with_perf(**changes) -> dict:
     return result(perf={**result()["perf"], **changes})
 
 
+def with_storage(**changes) -> dict:
+    return result(storage={**result()["storage"], **changes})
+
+
 def failed(checks) -> list:
     return [name for name, ok, _ in checks if not ok]
 
 
 def probe_failed(res, sim=None, a_page=None) -> list:
     desktop_sim = {"tick": TICKS} if sim is None else sim
-    return failed(web_smoke.judge_probe(a_page or page(untilAt=14000), SHA, res, desktop_sim, TICKS, WARMUP, BUDGETS))
+    return failed(web_smoke.judge_probe(a_page or probe_page(), SHA, res, desktop_sim, TICKS, WARMUP, BUDGETS))
 
 
 def console_page(*lines, done=True) -> dict:
@@ -241,7 +268,7 @@ def test_web_smoke_probe_measures_updates_that_read_the_input():
 
 def test_web_smoke_probe_input_checks_come_right_after_the_ticks_check():
     # 回したtickが足りないときの、最後の1行の語（failed=probe.ticks,…）が変わらないように、ticks の後ろに置く。
-    names = [name for name, _, _ in web_smoke.judge_probe(page(untilAt=14000), SHA, result(), {"tick": TICKS}, TICKS, WARMUP, BUDGETS)]
+    names = [name for name, _, _ in web_smoke.judge_probe(probe_page(), SHA, result(), {"tick": TICKS}, TICKS, WARMUP, BUDGETS)]
     at = names.index("ticks")
     assert names[at:at + 5] == ["ticks", "input_source", "adapter_reads", "direct_reads", "measured_ticks"]
     assert names.count("platform") == 1 and names.count("ticks") == 1  # 二重に見ない
@@ -250,20 +277,194 @@ def test_web_smoke_probe_input_checks_come_right_after_the_ticks_check():
 
 
 def test_web_smoke_probe_python_error_is_reported_with_the_values():
-    bad = page(untilAt=14000, failures=[{"t": 9, "kind": "error_overlay", "detail": "Traceback"}])
+    bad = probe_page(failures=[{"t": 9, "kind": "error_overlay", "detail": "Traceback"}])
     assert probe_failed(result(), a_page=bad) == ["error_overlay"]
+
+
+# --- 保存（probe の筋書き）：アプリの申告と、道具が自分で読んだ localStorage の値 ---
+STORAGE_CHECKS = ["storage_backend", "storage_ok", "storage_notice", "storage_value", "storage_main"]
+
+
+def test_web_smoke_probe_storage_checks_come_right_after_the_summary_check():
+    names = [name for name, _, _ in web_smoke.judge_probe(probe_page(), SHA, result(), {"tick": TICKS}, TICKS, WARMUP, BUDGETS)]
+    at = names.index("sim")
+    assert names[at + 1:at + 6] == STORAGE_CHECKS
+    assert all(names.count(name) == 1 for name in STORAGE_CHECKS)
+
+
+@pytest.mark.parametrize(
+    "res, names",
+    [
+        (with_storage(backend="memory"), ["storage_backend"]),  # 試し書きが通らずに、切り替えた
+        (with_storage(backend="file"), ["storage_backend"]),
+        (with_storage(backend=None), ["storage_backend"]),
+        (with_storage(ok=False, detail="CorruptError: checksum mismatch"), ["storage_ok"]),
+        (with_storage(ok=None), ["storage_ok"]),
+        (with_storage(ok=1), ["storage_ok"]),  # 真偽の値でなければ、通っていない
+        (with_storage(notice=storage.NOTICE_UNREADABLE), ["storage_notice"]),
+        (with_storage(notice=None), ["storage_notice"]),
+        (result(storage=None), ["storage_backend", "storage_ok", "storage_notice"]),
+        ({key: value for key, value in result().items() if key != "storage"}, ["storage_backend", "storage_ok", "storage_notice"]),  # 古い形の結果
+    ],
+)
+def test_web_smoke_probe_each_storage_deviation_fails_under_its_own_name(res, names):
+    assert probe_failed(res) == names
+
+
+def blob_of(settings=profile.SELFCHECK_SETTINGS, version: int = profile.SETTINGS_VERSION) -> bytes:
+    return storage.wrap(profile.encode(settings), version)
+
+
+@pytest.mark.parametrize(
+    "entries, names",
+    [
+        ({}, ["storage_value"]),  # 保存の往復の鍵が無い
+        ({"clippingpoint/other.settings": stored()}, ["storage_value"]),
+        ({SELFCHECK_KEY: None}, ["storage_value"]),
+        ({SELFCHECK_KEY: "not base64 at all!"}, ["storage_value"]),
+        ({SELFCHECK_KEY: stored(SELFCHECK_BLOB[:-1])}, ["storage_value"]),  # 最後の1バイトが欠けた封筒
+        ({SELFCHECK_KEY: stored(b"not an envelope")}, ["storage_value"]),
+        ({SELFCHECK_KEY: stored(blob_of(profile.Settings()))}, ["storage_value"]),  # 往復の見本でない設定（既定値）
+        ({SELFCHECK_KEY: stored(blob_of(version=profile.SETTINGS_VERSION + 1))}, ["storage_value"]),  # 形式バージョンが違う
+        ({SELFCHECK_KEY: stored(), "clippingpoint/main.settings": stored()}, ["storage_main"]),  # ふつうの鍵に触れている
+        ({"clippingpoint/main.settings": stored()}, ["storage_value", "storage_main"]),  # 往復を、名前空間 main で回した
+    ],
+)
+def test_web_smoke_probe_checks_the_stored_value_it_read_itself(entries, names):
+    # アプリの申告（往復が通った）は合っている。道具が、ブラウザの localStorage を自分で読んだ値で落とす。
+    assert probe_failed(result(), a_page=probe_page(localStorage=local_storage(entries))) == names
+
+
+def test_web_smoke_probe_other_keys_under_the_prefix_do_not_fail():
+    # 退避の鍵や、後の段で足す鍵があっても、落とさない。見るのは、保存の往復の鍵と、ふつうの保存（名前空間 main）の鍵だけ。
+    entries = {SELFCHECK_KEY: stored(), "clippingpoint/selfcheck.settings.bad": "x", "clippingpoint/pack.settings": "y"}
+    assert probe_failed(result(), a_page=probe_page(localStorage=local_storage(entries))) == []
+
+
+@pytest.mark.parametrize("seen", [None, {}, "entries", local_storage(error="SecurityError: Access is denied"), {"entries": [SELFCHECK_KEY]}])
+def test_web_smoke_probe_local_storage_that_was_not_read_fails_both_value_checks(seen):
+    # ブラウザの実行役が、localStorage を読めていない（頼んでいない、触れると例外）。何も見ずに通さない。
+    assert probe_failed(result(), a_page=probe_page(localStorage=seen)) == ["storage_value", "storage_main"]
+
+
+def test_web_smoke_reads_the_stored_settings_from_base64_and_the_envelope():
+    assert web_smoke.read_stored_settings({SELFCHECK_KEY: stored()})[0] is True
+    assert web_smoke.SELFCHECK_STORAGE_KEY == SELFCHECK_KEY
+    assert web_smoke.MAIN_STORAGE_PREFIX == "clippingpoint/main."
+    ok, message = web_smoke.read_stored_settings({SELFCHECK_KEY: stored(blob_of(profile.Settings()))})
+    assert ok is False and "往復の見本と違う" in message
+    for entries in (None, [], {}, {SELFCHECK_KEY: 5}):
+        assert web_smoke.read_stored_settings(entries)[0] is False
+
+
+# --- 保存先に触れると例外になるようにして開く筋書き ---
+BLOCKED_TICKS = BUDGETS["web_blocked_ticks"]
+
+
+def blocked_result(**changes) -> dict:
+    """問題の無い、保存先に触れると例外になる筋書きの結果。保存先はメモリへ切り替わり、知らせが出ている。"""
+    base = {
+        "ticks": BLOCKED_TICKS,
+        "renders": BLOCKED_TICKS // 2,
+        "sim": input_reference.sim_summary(None, BLOCKED_TICKS),
+        "warmup_ticks": 0,
+        "platform": "emscripten",
+        "python": "3.14.2",
+        "pyxel": "3.0.1",
+        "input_source": "adapter",
+        "adapter_reads": BLOCKED_TICKS,
+        "direct_reads": BLOCKED_TICKS,
+        "storage": {"backend": "memory", "ok": True, "notice": storage.NOTICE_MEMORY_FALLBACK, "detail": ""},
+    }
+    return {**base, **changes}
+
+
+def blocked_failed(res, a_page=None) -> list:
+    return failed(web_smoke.judge_storage_blocked(a_page or page(untilAt=6000), SHA, res, BLOCKED_TICKS))
+
+
+def blocked_storage(**changes) -> dict:
+    return blocked_result(storage={**blocked_result()["storage"], **changes})
+
+
+def test_web_smoke_clean_storage_blocked_scenario_passes():
+    assert blocked_failed(blocked_result()) == []
+    assert storage_select.BACKEND_MEMORY == "memory"
+
+
+@pytest.mark.parametrize(
+    "res, names",
+    [
+        (blocked_storage(backend="localstorage"), ["storage_backend"]),  # 試し書きをせずに、localStorage を使っている
+        (blocked_storage(notice=""), ["storage_notice"]),  # 切り替えたのに、知らせが出ていない（表示用の値へ渡っていない）
+        (blocked_storage(notice=storage.NOTICE_UNREADABLE), ["storage_notice"]),  # 別の文
+        (blocked_storage(notice=None), ["storage_notice"]),
+        (blocked_storage(ok=False, detail="StorageError: localStorage is missing"), ["storage_ok"]),
+        (blocked_storage(backend="localstorage", ok=False, notice=storage.NOTICE_BACKEND_UNREADABLE), ["storage_backend", "storage_ok", "storage_notice"]),
+        (blocked_result(storage=None), ["storage_backend", "storage_ok", "storage_notice"]),
+        (blocked_result(platform="linux"), ["platform"]),
+        (blocked_result(ticks=BLOCKED_TICKS - 1), ["ticks"]),
+        (blocked_result(input_source="script"), ["input_source"]),
+        (blocked_result(adapter_reads=0), ["adapter_reads"]),
+        (blocked_result(direct_reads=2 * BLOCKED_TICKS), ["direct_reads"]),
+    ],
+)
+def test_web_smoke_storage_blocked_each_deviation_fails_under_its_own_name(res, names):
+    assert blocked_failed(res) == names
+
+
+def test_web_smoke_storage_blocked_python_error_and_input_warning_are_reported():
+    # 切り替えの判定を誤って、例外が外へ出た形。
+    bad = page(untilAt=6000, failures=[{"t": 9, "kind": "error_overlay", "detail": "Traceback\nJsException: SecurityError"}])
+    assert blocked_failed(blocked_result(), a_page=bad) == ["error_overlay"]
+    assert blocked_failed(blocked_result(), a_page=page(untilAt=6000, console=[WARN_LINE])) == ["input_warn"]
+
+
+def test_web_smoke_storage_blocked_does_not_look_at_the_timing_lines_or_the_stored_value():
+    names = [name for name, _, _ in web_smoke.judge_storage_blocked(page(untilAt=6000), SHA, blocked_result(), BLOCKED_TICKS)]
+    assert not set(names) & set(web_smoke.TIMING_CHECKS)
+    assert "storage_value" not in names and "storage_main" not in names  # localStorage は読めない。メモリの中は、道具から見えない
+    assert names[-3:] == ["storage_backend", "storage_ok", "storage_notice"]
+
+
+def test_web_smoke_blocked_init_script_is_the_block_script_then_the_probe_line():
+    script = web_smoke.blocked_init_script(BLOCKED_TICKS)
+    lines = script.splitlines()
+    assert lines[-1] == f"window.{web_bridge.PROBE_NAME} = " + json.dumps({"ticks": BLOCKED_TICKS}) + ";"
+    assert web_smoke.BLOCK_STORAGE_JS.read_text(encoding="utf-8").strip() in script
+    assert script.index("localStorage") < script.index(web_bridge.PROBE_NAME)  # 保存先を止めてから、値を置く
+    assert BLOCKED_TICKS >= 2  # 知らせを入れた表示用の値が、1度は組み立てられる長さ
+
+
+def test_web_smoke_block_storage_script_makes_touching_local_storage_throw():
+    source = web_smoke.BLOCK_STORAGE_JS.read_text(encoding="utf-8")
+    assert web_smoke.BLOCK_STORAGE_JS.name == "block_storage.js"
+    assert 'Object.defineProperty(window, "localStorage"' in source and "get()" in source and "throw error;" in source
+    assert 'new DOMException(MESSAGE, "SecurityError")' in source
+    # ブラウザが自分で投げる例外と同じく、stack を持たせる（無いと、Pythonから見える例外の名が変わる。実測）。
+    assert 'Object.defineProperty(error, "stack"' in source
+
+
+def test_web_smoke_browser_runner_reads_local_storage_only_when_asked_and_through_the_guarded_call():
+    source = web_smoke.WEBRUN.read_text(encoding="utf-8")
+    assert '"--local-storage": "localStorage"' in source
+    assert "if (opt.localStorage) {" in source
+    # ページへの問い合わせは、時間切れつきの口（ask）を通す。
+    block = source[source.index("if (opt.localStorage) {"):source.index("async function main()")]
+    assert "result.localStorage = await ask(" in block and "page.evaluate(" not in block
+    assert "window.localStorage.getItem(key)" in block and "key.startsWith(prefix)" in block
 
 
 # --- 筋書きの並びと、直読みの警告（どの筋書きでも見る） ---
 def test_web_smoke_scenarios_come_in_the_fixed_order():
-    assert web_smoke.SCENARIOS == ("shipped", "probe", "script", "gamepad")
+    assert web_smoke.SCENARIOS == ("shipped", "probe", "script", "gamepad", "storage_blocked")
     assert tuple(web_smoke.RUNNERS) == web_smoke.SCENARIOS
 
 
 def test_web_smoke_input_warning_fails_the_shipped_and_the_probe_scenario():
     # 直読みは、読めないときに「未接続」と同じ値を返す。読み方の誤りは、警告の行でしか拾えない。
     assert failed(web_smoke.judge_shipped(page(console=[WARN_LINE]), SHA)) == ["input_warn"]
-    assert probe_failed(result(), a_page=page(untilAt=14000, console=[WARN_LINE])) == ["input_warn"]
+    assert probe_failed(result(), a_page=probe_page(console=[WARN_LINE])) == ["input_warn"]
 
 
 def test_web_smoke_other_console_lines_are_not_input_warnings():
@@ -707,6 +908,27 @@ def test_web_smoke_missing_fake_gamepad_script_does_not_stop_the_other_scenarios
     monkeypatch.setattr(web_smoke, "FAKE_PAD_JS", tmp_path / "no_such_fake_gamepad.js")
     monkeypatch.setattr(web_smoke.shutil, "which", lambda name: None)
     monkeypatch.setattr(sys, "argv", ["web_smoke.py", "--only", "script"])
+    assert web_smoke.main() == 2
+    assert "reason=no_node" in last_line(capsys)
+
+
+def test_web_smoke_missing_block_storage_script_is_2_before_anything_is_opened(monkeypatch, capsys, tmp_path):
+    # 保存先に触れると例外にするスクリプトが無い、読めない。保存先を止めずに開いて、別の理由で落とさない。回り切れない（2）にする。
+    monkeypatch.setattr(web_smoke, "BLOCK_STORAGE_JS", tmp_path / "no_such_block_storage.js")
+    for argv in (["--only", "storage_blocked"], []):
+        code, line = guarded_main(monkeypatch, capsys, argv)
+        assert code == 2 and "reason=no_block_storage" in line and "scenarios=0" in line
+    not_text = tmp_path / "block_storage.js"
+    not_text.write_bytes(b"\xff\xfe\x00window")  # UTF-8として読めない
+    monkeypatch.setattr(web_smoke, "BLOCK_STORAGE_JS", not_text)
+    code, line = guarded_main(monkeypatch, capsys, ["--only", "storage_blocked"])
+    assert code == 2 and "reason=no_block_storage" in line
+
+
+def test_web_smoke_missing_block_storage_script_does_not_stop_the_other_scenarios(monkeypatch, capsys, tmp_path):
+    monkeypatch.setattr(web_smoke, "BLOCK_STORAGE_JS", tmp_path / "no_such_block_storage.js")
+    monkeypatch.setattr(web_smoke.shutil, "which", lambda name: None)
+    monkeypatch.setattr(sys, "argv", ["web_smoke.py", "--only", "probe"])
     assert web_smoke.main() == 2
     assert "reason=no_node" in last_line(capsys)
 

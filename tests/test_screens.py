@@ -4,6 +4,7 @@ import ast
 import pytest
 
 from conftest import ROOT
+from cp_core import storage
 from cp_core.flow import SCREEN_NAMES, PlaceholderView
 from cp_core.input_frame import BUTTONS, NEUTRAL, InputFrame
 from cp_ui import fixtures
@@ -19,9 +20,9 @@ EVERYTHING = InputFrame(
 )
 
 
-def placeholder_canvas(tick: int = 120, renders: int = 60, frame: InputFrame = NEUTRAL) -> Canvas:
+def placeholder_canvas(tick: int = 120, renders: int = 60, frame: InputFrame = NEUTRAL, notice: str = "") -> Canvas:
     canvas = Canvas()
-    build_placeholder(canvas, PlaceholderView(tick, renders, frame))
+    build_placeholder(canvas, PlaceholderView(tick, renders, frame, notice))
     return canvas
 
 
@@ -114,6 +115,42 @@ def test_screens_placeholder_is_built_from_boxes():
     assert all(command.box != SCREEN_BOX for command in canvas.commands if command.kind == "text")
     by_box = {box.name: [c.text for c in canvas.commands if c.kind == "text" and canvas.boxes[c.box] is box] for box in canvas.boxes}
     assert [len(by_box[name]) for name in ("title", "status", "input", "input_values")] == [1, 2, 0, 2]
+
+
+# --- 知らせの1行 ---
+def test_screens_placeholder_shows_the_notice_as_one_more_line_in_its_own_box():
+    notice = "SAVE DATA UNREADABLE. USING DEFAULTS"
+    canvas = placeholder_canvas(notice=notice)
+    assert texts(notice=notice) == [*texts(), notice]  # ほかの行は、そのまま。知らせを、最後に足す
+    assert [box.name for box in canvas.boxes] == ["title", "status", "input", "input_values", "notice"]
+    box = canvas.boxes[-1]
+    assert box.parent == SCREEN_BOX
+    last = canvas.commands[-1]
+    assert last.kind == "text" and last.text == notice and canvas.boxes[last.box] is box
+    # 入力フレームの囲みの下に置く（重ならない）。
+    assert box.y >= 38 + 19 and last.y >= box.y
+
+
+def test_screens_placeholder_without_a_notice_draws_no_notice_line_and_no_box():
+    canvas = placeholder_canvas(notice="")
+    assert len([command for command in canvas.commands if command.kind == "text"]) == 5
+    assert "notice" not in [box.name for box in canvas.boxes]
+
+
+@pytest.mark.parametrize("notice", storage.NOTICES)
+@pytest.mark.parametrize("frame", [NEUTRAL, EVERYTHING])
+def test_screens_placeholder_with_every_notice_stays_inside_the_screen_and_its_box(notice, frame):
+    canvas = placeholder_canvas(9999999, 9999999, frame, notice)
+    assert find_violations(canvas) == []
+    rows = sorted(command.y for command in canvas.commands if command.kind == "text")
+    assert all(later - earlier >= FONT_H for earlier, later in zip(rows, rows[1:]))  # 行が重ならない
+
+
+def test_screens_placeholder_notice_box_has_room_for_78_characters_and_no_more():
+    # 知らせの文の長さの上限。囲みの内に収まるのは、78字まで（文は cp_core/storage.py の NOTICES。いまは、いちばん長くて51字）。
+    assert find_violations(placeholder_canvas(notice="X" * 78)) == []
+    assert [violation.kind for violation in find_violations(placeholder_canvas(notice="X" * 79))] == ["off_screen", "out_of_box"]
+    assert max(len(notice) for notice in storage.NOTICES) <= 78
 
 
 # --- 画面の登録 ---
@@ -210,3 +247,58 @@ def test_screens_app_shows_the_input_frame_it_gave_to_the_world():
     assert isinstance(view_arg, ast.Name)
     bound = assigned_once(render, view_arg.id)
     assert len(bound) == 1 and bound[0].value is views[0]
+
+
+def self_attribute_values(function: ast.FunctionDef, name: str) -> list:
+    """function の中で、self.<name> へ代入している値の一覧。"""
+    return [
+        node.value
+        for node in ast.walk(function)
+        if isinstance(node, ast.Assign) and any(is_self_attribute(target, name) for target in node.targets)
+    ]
+
+
+def is_attribute_of(node, owner: str, name: str) -> bool:
+    return isinstance(node, ast.Attribute) and node.attr == name and isinstance(node.value, ast.Name) and node.value.id == owner
+
+
+def test_screens_app_passes_the_notice_to_the_view_and_reports_it_from_the_view():
+    # 守りのテスト。知らせの1行（保存先を切り替えた、保存が読めない）が、表示用の値へ渡っていること。
+    # ふつうの起動では知らせが無いので、渡し忘れても、run も、web-smoke の4本の筋書きも通る。落ちるのは、
+    # 保存先に触れると例外になる筋書き（storage_blocked）だけ。ここでは、ソースの上のつながりを見る。
+    # 画面の状態を作る段1で、本物の通知に置き換える。
+    # (1) __init__() が、知らせを1度だけ決める。保存先の切り替えの知らせが先で、無ければ、読み込みの知らせ（一度に出すのは、多くて1つ）。
+    init = app_method("__init__")
+    notices = self_attribute_values(init, "notice")
+    assert len(notices) == 1 and isinstance(notices[0], ast.BoolOp) and isinstance(notices[0].op, ast.Or)
+    first, second = notices[0].values
+    assert is_attribute_of(first, "selected", "notice") and is_attribute_of(second, "loaded", "notice")
+    # (2) render() が、表示用の値の知らせに self.notice を入れ、組み立てた表示用の値を self.view に残す。
+    render = app_method("render")
+    views = [
+        call
+        for call in ast.walk(render)
+        if isinstance(call, ast.Call) and isinstance(call.func, ast.Name) and call.func.id == "PlaceholderView"
+    ]
+    assert len(views) == 1
+    notice_args = [*views[0].args[3:4], *(keyword.value for keyword in views[0].keywords if keyword.arg == "notice")]
+    assert len(notice_args) == 1 and is_self_attribute(notice_args[0], "notice")
+    kept = self_attribute_values(render, "view")
+    assert len(kept) == 1 and isinstance(kept[0], ast.Name)
+    bound = assigned_once(render, kept[0].id)
+    assert len(bound) == 1 and bound[0].value is views[0]
+    # (3) 結果に入れる知らせは、最後に組み立てた表示用の値（self.view）から取る。アプリが持つ知らせ（self.notice）を、直に入れない。
+    report = app_method("storage_report")
+    assert not [node for node in ast.walk(report) if is_self_attribute(node, "notice")]
+    from_view = [
+        node for node in ast.walk(report)
+        if isinstance(node, ast.Attribute) and node.attr == "notice" and is_self_attribute(node.value, "view")
+    ]
+    assert len(from_view) == 1
+    # (4) 結果の2つの口（画面なしで回す口と、外から渡す値）が、どちらも storage_report() を呼ぶ。
+    for name in ("finish_run", "finish_probe"):
+        calls = [
+            call for call in ast.walk(app_method(name))
+            if isinstance(call, ast.Call) and is_self_attribute(call.func, "storage_report")
+        ]
+        assert len(calls) == 1, name

@@ -1,10 +1,10 @@
 """ブラウザ版の煙テスト。出荷するHTMLそのものを、ヘッドレスのChromiumで開く。
 
-  python3 tools/web_smoke.py [--only shipped|probe|script|gamepad] [--ticks N] [--timeout 秒]
+  python3 tools/web_smoke.py [--only shipped|probe|script|gamepad|storage_blocked] [--ticks N] [--timeout 秒]
 
 開くのは、この道具が tools/export.py を回して作らせた dist/clipping_point.html そのもの（同じバイト列）。
 煙テスト用に作り直したHTMLは開かない。ランタイムへの要求は、ランタイムの写し（.cache/pyxel_web/mirror/）へ差し替える。
-筋書きは4本。順に、1本ずつ回す。どの筋書きでも、直読みの警告（cp_app/input_web.py の WARN_MARK の付いたコンソールの行）が0件であることを見る。
+筋書きは5本。順に、1本ずつ回す。どの筋書きでも、直読みの警告（cp_app/input_web.py の WARN_MARK の付いたコンソールの行）が0件であることを見る。
   shipped  何も渡さずに開く。見るもの：Pythonの例外が無い、エラー表示が無い、読み込みの失敗が無い、
            ランタイムの写しの外への要求が無い、開始のクリックの後の決めた秒数で画面が描かれている（背景と違う画素がある）。
   probe    ページを開く前に差し込むスクリプトで、回すtick数（window.CP_PROBE）を置いて開く。
@@ -12,6 +12,9 @@
            入力の出どころが入力アダプタで、入力アダプタと直読みを呼んだ回数が回したtickと同じ（時間の線が、入力を読んだ更新の値であること）、
            世界の要約がデスクトップ版と同じ、実描画の回数、更新と実描画の毎秒の回数、更新1回と実描画1回の時間（95%点）、
            ブラウザ版であること（sys.platform が emscripten）、Pythonの版。線は tools/budgets.json。
+           保存：保存先の名が localstorage、保存の往復が通っている、知らせの1行が空。道具が、ブラウザの localStorage の
+           往復の鍵（clippingpoint/selfcheck.settings）の値を自分で読み（ブラウザの実行役が、結果に入れる）、base64 と封筒を開けて、
+           往復の見本と比べる。ふつうの保存（名前空間 main）の鍵が、できていないことも見る。
   script   window.CP_PROBE に、回すtick数、道具の台本（tools/input_script_smoke.json）、入力の跡の件数の上限を置いて開く。
            見るもの：ブラウザ版であること、回したtick、入力の出どころが台本で、入力アダプタも直読みも呼んでいない、
            世界の要約がデスクトップ版（同じ台本を渡して回した）と同じで、参照（tools/input_reference.py）とも同じ、
@@ -21,10 +24,14 @@
            偽のコントローラーが予定の区間を境目のtickで通った、入力の跡が打ち切られていない、
            入力の跡から計算し直した入力の要約値が世界の要約と同じ（アプリが読んだ入力フレームが、そのまま世界へ渡っている）、
            予定の区間ごとに、頭の判定しないtickを除いた全tickで、入力の跡から戻した値が PAD_STAGES のとおり、押した瞬間の立ち方。
-script と gamepad は、処理時間と回数の線を見ない（見るのは probe）。慣らしは0。
+  storage_blocked  差し込むスクリプト（tools/web/block_storage.js）で、localStorage に触れると例外になるようにして開く。
+           見るもの：ブラウザ版であること、回したtick、入力の出どころ、保存先の名が memory（試し書きが通らず、切り替えた）、
+           知らせの1行が、メモリへ切り替えた文と同じ（空でない）、メモリの上での保存の往復が通っている。
+script、gamepad、storage_blocked は、処理時間と回数の線を見ない（見るのは probe）。慣らしは0。
 終了コード：0＝合格、1＝問題あり、2＝回り切れない（ランタイムの写しが無い・照合が合わない、node が無い、
 ビルドできない、デスクトップ版の参照が取れない、ブラウザの実行役の結果が無い、完了の合図が出ない、台本が読めない、
-回すtick数が台本の合計より短い、偽のコントローラーの予定の区間に判定するtickが無い、偽のコントローラーのスクリプトが読めない）。
+回すtick数が台本の合計より短い、偽のコントローラーの予定の区間に判定するtickが無い、偽のコントローラーのスクリプトが読めない、
+保存先に触れると例外にするスクリプトが読めない）。
 2を合格にしない。
 ページが返らない（Pythonが主スレッドを握ったまま。失敗の種類 unresponsive）は、1にする。
 線の判定に使うのは、慣らし（頭の測らないtick）を除いた値。慣らしを入れた値は、最後の1行の with_warmup= に
@@ -36,6 +43,7 @@ script と gamepad は、処理時間と回数の線を見ない（見るのは 
 英語の名前（PAD_STAGES、PadStage、stage_ticks、判定の名 pad_stage_N、コンソールの行の stage=）は、この予定の区間のこと。
 """
 import argparse
+import base64
 import hashlib
 import json
 import re
@@ -47,20 +55,26 @@ import input_reference
 from _common import APP, DIST, FAIL, INCOMPLETE, OK, OUT, TOOLS, child_env, finish, load_budgets, run, show_tail
 
 # fetch_runtime（ランタイムの写しの置き場と照合）と、cp_app の、pyxel を読み込まないモジュール（外から渡す値の名前、
-# 結果の行の頭、直読みの警告の印、入力の跡の戻し方）を読む。後ろに足す（標準ライブラリの名前を隠さないように）。
+# 結果の行の頭、直読みの警告の印、入力の跡の戻し方、保存先の名、localStorage での鍵の頭）を読む。
+# 後ろに足す（標準ライブラリの名前を隠さないように）。
 for extra_path in (str(TOOLS / "web"), str(APP)):
     if extra_path not in sys.path:
         sys.path.append(extra_path)
 
 import fetch_runtime  # noqa: E402
-from cp_app import input_trace, input_web, web_bridge  # noqa: E402
+from cp_app import input_trace, input_web, storage_select, storage_web, web_bridge  # noqa: E402
+from cp_core import profile, storage  # noqa: E402
 from cp_core.input_frame import BUTTONS, QUANTIZED_FIELDS, button_bits  # noqa: E402
 
 WORK = OUT / "web_smoke"
 HTML = DIST / f"{APP.name}.html"
 WEBRUN = TOOLS / "web" / "webrun.js"
 FAKE_PAD_JS = TOOLS / "web" / "fake_gamepad.js"
-SCENARIOS = ("shipped", "probe", "script", "gamepad")
+BLOCK_STORAGE_JS = TOOLS / "web" / "block_storage.js"  # localStorage に触れると例外になるようにする、差し込むスクリプト
+SCENARIOS = ("shipped", "probe", "script", "gamepad", "storage_blocked")
+# 保存の往復が残す値の、localStorage での鍵（clippingpoint/selfcheck.settings）と、ふつうの保存の鍵の頭（clippingpoint/main.）。
+SELFCHECK_STORAGE_KEY = f"{storage_web.PREFIX}{profile.SELFCHECK_NAMESPACE}{storage.NAMESPACE_SEPARATOR}{profile.SETTINGS_KEY}"
+MAIN_STORAGE_PREFIX = f"{storage_web.PREFIX}{storage.DEFAULT_NAMESPACE}{storage.NAMESPACE_SEPARATOR}"
 MIN_MEASURED_TICKS = 60  # 慣らしの後に測るtick数の下限。これより短いと、毎秒の回数が1回の揺れで線を外れる
 PAD_PLAN_NAME = "CP_FAKE_PAD_PLAN"  # 偽のコントローラーの予定を置く、window の値の名前（fake_gamepad.js と同じ）
 PAD_LOG = re.compile(r"CP_FAKE_PAD stage=(\d+) tick=(\d+)")  # 偽のコントローラーが、予定の区間へ入るたびにコンソールへ出す行
@@ -194,6 +208,9 @@ def judge_probe(page: dict, html_sha256: str, result: dict, desktop_sim, ticks: 
             f"測ったtickが {perf.get('updates')}（慣らしの {warmup_ticks} を除いて {ticks - warmup_ticks} のはず）",
         ),
         ("sim", desktop_sim is not None and result.get("sim") == desktop_sim, f"世界の要約がデスクトップ版と違う（ブラウザ版 {result.get('sim')}、デスクトップ版 {desktop_sim}）"),
+        # 保存。アプリの申告（保存先の名、往復が通ったか、知らせ）と、道具が自分で読んだ localStorage の値。
+        *storage_checks(result, storage_select.BACKEND_WEB, ""),
+        *stored_value_checks(page),
         (
             "renders",
             type(renders) is int and abs(renders - ticks // 2) <= tolerance,
@@ -210,6 +227,58 @@ def judge_probe(page: dict, html_sha256: str, result: dict, desktop_sim, ticks: 
         ("update_ms_p95", is_number(update_ms) and update_ms <= update_max, f"更新1回が {update_ms} ms（95%点。{update_max} ms以内のはず）"),
         ("render_ms_p95", is_number(render_ms) and render_ms <= render_max, f"実描画1回が {render_ms} ms（95%点。{render_max} ms以内のはず）"),
     ]
+
+
+def storage_checks(result: dict, backend: str, notice: str) -> list:
+    """保存についての、アプリの申告の確かめ。backend は保存先の名、notice は知らせの1行（どちらも、こうなっているはずの値）。"""
+    saved = result.get("storage") if isinstance(result.get("storage"), dict) else {}
+    return [
+        ("storage_backend", saved.get("backend") == backend, f"保存先の名が {saved.get('backend')!r}（{backend!r} のはず）"),
+        ("storage_ok", saved.get("ok") is True, f"保存の往復が通っていない（通ったか {saved.get('ok')!r}、理由 {saved.get('detail')!r}）"),
+        ("storage_notice", saved.get("notice") == notice, f"知らせの1行が {saved.get('notice')!r}（{notice!r} のはず。表示用の値から取った値）"),
+    ]
+
+
+def read_stored_settings(entries) -> tuple:
+    """ブラウザの localStorage の中身（{鍵: 値}）から、保存の往復が残した値を、道具が自分で読む。返すのは (合っているか, 合わないときの文)。
+
+    値は base64 の文字列。開けて、封筒を開けて、形式バージョンと本体を、往復の見本と比べる。
+    """
+    value = entries.get(SELFCHECK_STORAGE_KEY) if isinstance(entries, dict) else None
+    if not isinstance(value, str):
+        return False, f"localStorage に、保存の往復の鍵（{SELFCHECK_STORAGE_KEY}）が無い"
+    try:
+        version, payload = storage.unwrap(base64.b64decode(value, validate=True))
+    except (ValueError, storage.CorruptError) as exc:
+        return False, f"localStorage の、保存の往復の値が読めない（{type(exc).__name__}: {exc}）：{value[:80]!r}"
+    want = (profile.SETTINGS_VERSION, profile.encode(profile.SELFCHECK_SETTINGS))
+    return (version, payload) == want, f"localStorage の、保存の往復の値が、往復の見本と違う（形式バージョン {version}、本体 {payload[:120]!r}）"
+
+
+def stored_value_checks(page: dict) -> list:
+    """道具が、ブラウザの localStorage を自分で読んで照らす確かめ（アプリの申告だけに頼らない）。読むのは、ブラウザの実行役。"""
+    seen = page.get("localStorage") if isinstance(page.get("localStorage"), dict) else {}
+    entries = seen.get("entries")
+    if not isinstance(entries, dict):
+        unread = f"ブラウザの実行役が、localStorage を読めていない（{seen.get('error')!r}）"
+        return [("storage_value", False, unread), ("storage_main", False, unread)]
+    ok, message = read_stored_settings(entries)
+    main_keys = sorted(str(key) for key in entries if str(key).startswith(MAIN_STORAGE_PREFIX))
+    return [
+        ("storage_value", ok, message),
+        (
+            "storage_main",
+            not main_keys,
+            f"ふつうの保存（名前空間 {storage.DEFAULT_NAMESPACE}）の鍵ができている：{main_keys}（保存の往復は、名前空間 {profile.SELFCHECK_NAMESPACE} で回す）",
+        ),
+    ]
+
+
+def judge_storage_blocked(page: dict, html_sha256: str, result: dict, ticks: int) -> list:
+    """localStorage に触れると例外になるようにして開く筋書きの確かめ。保存先は、メモリへ切り替わっているはず。"""
+    return page_checks(page, html_sha256) + input_checks(result, ticks, "adapter") + storage_checks(
+        result, storage_select.BACKEND_MEMORY, storage.NOTICE_MEMORY_FALLBACK
+    )
 
 
 def source_checks(result: dict, ticks: int, source: str) -> list:
@@ -366,6 +435,11 @@ def pad_init_script(stage_ticks: int, trace_max: int) -> str:
     return "\n".join([plan_line, FAKE_PAD_JS.read_text(encoding="utf-8"), probe_script({"ticks": pad_ticks(stage_ticks), "trace_max": trace_max})])
 
 
+def blocked_init_script(ticks: int) -> str:
+    """保存先に触れると例外になる筋書きで差し込むスクリプト。block_storage.js の中身と、外から渡す値を置く1行。"""
+    return "\n".join([BLOCK_STORAGE_JS.read_text(encoding="utf-8"), probe_script({"ticks": ticks})])
+
+
 def open_page(name: str, timeout_s: float, extra: list):
     """ブラウザの実行役（webrun.js）を1本回し、結果のJSONを読む。読めなければ None。"""
     json_path = WORK / f"{name}.json"
@@ -385,13 +459,14 @@ def open_page(name: str, timeout_s: float, extra: list):
     return page
 
 
-def open_with_probe(name: str, timeout_s: float, init_script: str, html_sha256: str) -> tuple:
+def open_with_probe(name: str, timeout_s: float, init_script: str, html_sha256: str, extra: tuple = ()) -> tuple:
     """外から値を渡して開き、アプリがコンソールへ出した結果を読む。返すのは (ページ, 結果, 確かめ, 回り切れない理由)。
 
     結果が読めたら、確かめは None（呼ぶ側が、筋書きの判定の関数で作る）。
     結果が読めないとき、失敗の合図があれば問題あり（確かめを返す）、何も無ければ回り切れていない（理由を返す）。
+    extra は、ブラウザの実行役へ足す引数（localStorage の中身を読ませる、など）。
     """
-    page = open_page(name, timeout_s, ["--init-script", init_script, "--until", f"^{web_bridge.DONE_MARK}$"])
+    page = open_page(name, timeout_s, ["--init-script", init_script, "--until", f"^{web_bridge.DONE_MARK}$", *extra])
     if page is None:
         return None, None, None, "no_runner_result"
     result, reason = read_probe_result(page)
@@ -436,16 +511,18 @@ def scenario_probe(args, budgets: dict, html_sha256: str, context: dict) -> tupl
     if desktop_sim is None:
         return None, [], "no_desktop_reference"
     init_script = probe_script({"ticks": args.ticks, "warmup_ticks": warmup_ticks})
-    page, result, checks, reason = open_with_probe("probe", args.timeout, init_script, html_sha256)
+    # 終わった後の localStorage の中身（鍵の頭が合うもの）を、ブラウザの実行役に読ませる。道具が、保存の往復の値を自分で照らす。
+    page, result, checks, reason = open_with_probe("probe", args.timeout, init_script, html_sha256, ("--local-storage", storage_web.PREFIX))
     if result is None:
         return checks, [], reason
     perf = result.get("perf") if isinstance(result.get("perf"), dict) else {}
     whole = perf.get("with_warmup") if isinstance(perf.get("with_warmup"), dict) else {}
+    saved = result.get("storage") if isinstance(result.get("storage"), dict) else {}
     fact = (
         f"ticks={result.get('ticks')} renders={result.get('renders')} "
         + " ".join(f"{key}={perf.get(key)}" for key in TIMING_CHECKS)
         + " with_warmup=" + "/".join(str(whole.get(key)) for key in TIMING_CHECKS)
-        + f" python={result.get('python')}"
+        + f" python={result.get('python')} save={saved.get('backend')}"
     )
     return judge_probe(page, html_sha256, result, desktop_sim, args.ticks, warmup_ticks, budgets), [fact], ""
 
@@ -477,7 +554,20 @@ def scenario_gamepad(args, budgets: dict, html_sha256: str, context: dict) -> tu
     return judge_gamepad(page, html_sha256, result, stage_ticks, settle_ticks), [fact], ""
 
 
-RUNNERS = {"shipped": scenario_shipped, "probe": scenario_probe, "script": scenario_script, "gamepad": scenario_gamepad}
+def scenario_storage_blocked(args, budgets: dict, html_sha256: str, context: dict) -> tuple:
+    """localStorage に触れると例外になるようにして開く。差し込むスクリプトは、main() が先に組んだもの。"""
+    page, result, checks, reason = open_with_probe("storage_blocked", args.timeout, context["blocked_init_script"], html_sha256)
+    if result is None:
+        return checks, [], reason
+    saved = result.get("storage") if isinstance(result.get("storage"), dict) else {}
+    fact = f"blocked_save={saved.get('backend')}"
+    return judge_storage_blocked(page, html_sha256, result, budgets["web_blocked_ticks"]), [fact], ""
+
+
+RUNNERS = {
+    "shipped": scenario_shipped, "probe": scenario_probe, "script": scenario_script, "gamepad": scenario_gamepad,
+    "storage_blocked": scenario_storage_blocked,
+}
 
 
 def main() -> int:
@@ -514,6 +604,13 @@ def main() -> int:
         except (OSError, ValueError) as exc:  # 無い、読めない、UTF-8でない
             print(f"  web_smoke: 偽のコントローラーのスクリプト（{FAKE_PAD_JS.name}）が読めない：{type(exc).__name__}: {exc}")
             return finish("web_smoke", INCOMPLETE, "scenarios=0 reason=no_fake_gamepad")
+    if "storage_blocked" in names:
+        # 差し込むスクリプトを、先に組む。読めなければ、回り切れない（保存先を止めずに開いて、別の理由で落とさない）。
+        try:
+            context["blocked_init_script"] = blocked_init_script(budgets["web_blocked_ticks"])
+        except (OSError, ValueError) as exc:  # 無い、読めない、UTF-8でない
+            print(f"  web_smoke: 保存先に触れると例外にするスクリプト（{BLOCK_STORAGE_JS.name}）が読めない：{type(exc).__name__}: {exc}")
+            return finish("web_smoke", INCOMPLETE, "scenarios=0 reason=no_block_storage")
     if not shutil.which("node"):
         return finish("web_smoke", INCOMPLETE, "scenarios=0 reason=no_node")
     try:

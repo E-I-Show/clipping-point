@@ -26,6 +26,14 @@ Pyxelの描画関数を直に呼ぶのは、裏画面を消す、描画命令の
 値が無ければ普通に起動する。結果を出した後も終了しない（ブラウザ版では sys.exit と pyxel.quit を呼ばない）。
 更新1回と実描画1回の時間は、この値があるときだけ測る（cp_app/perf.py）。測った値は世界へ渡さない。
 trace_max が1以上のときだけ、入力の跡を取り（cp_app/input_trace.py）、更新のたびに tick の印（window.CP_PROBE_TICK）を置く。
+
+保存。保存先は、起動時に main() が選ぶ（cp_app/storage_select.py）。ブラウザ版は localStorage（試し書きが通らなければメモリ）。
+デスクトップ版は、どの起動でも次の環境変数を読む。相対パスは、起動時に ValueError。
+  CP_SAVE_DIR=<保存のファイルの置き場の絶対パス>   あればファイル、無ければメモリ（保存は残らない）
+起動時に、設定を読み込む（壊れた値の退避と、既定値での書き直しを含む）。段0では、設定を変える画面が無いので、保存はしない。
+知らせの1行（保存先を切り替えた、保存が読めない）は、仮の表示に出す。一度に出すのは、多くて1つ（保存先の切り替えが先）。
+保存の往復（cp_core/profile.py の selfcheck。名前空間 selfcheck）は、検証の口（CP_SMOKE、window.CP_PROBE）のときだけ回し、
+結果の storage に {backend, ok, notice, detail} を入れる。notice は、最後に組み立てた表示用の値から取る。
 """
 import json
 import os
@@ -35,15 +43,16 @@ from dataclasses import dataclass
 
 import pyxel
 
-from cp_core import input_script
+from cp_core import input_script, profile
 from cp_core.fixed_loop import TICK_HZ, RenderGate
 from cp_core.flow import Flow, PlaceholderView
 from cp_core.input_frame import NEUTRAL, InputFrame, quantize
 from cp_core.sim import Sim
+from cp_core.storage import SaveStore
 from cp_ui.canvas import SCREEN_H, SCREEN_W, Canvas
 from cp_ui.screens import COL_BACK, SCREENS, TITLE
 
-from . import tour, web_bridge
+from . import storage_select, tour, web_bridge
 from .canvas_pyxel import execute
 from .input_pyxel import PyxelInput
 from .input_trace import InputTrace
@@ -53,6 +62,9 @@ from .perf import PerfMeter
 DRIVERS = ("flip", "run")
 # 速い経路だけ、Pyxelの周期を上げて実時間の待ちを縮める。世界は fps を読まないので、結果は変わらない。
 FAST_FPS = 1000
+# 割り切り：世界の種は、いつも0。乱数を引く所が、まだ無い（AIのばらつきは段3）。
+# レースを作る段3で、レースの通し番号と設定から決める形に見直す。
+WORLD_SEED = 0
 
 
 @dataclass(frozen=True)
@@ -89,11 +101,20 @@ def read_run_config(env) -> RunConfig | None:
 
 
 class App:
-    def __init__(self, run_config: RunConfig | None = None, probe: web_bridge.Probe | None = None, js=None) -> None:
+    def __init__(self, selected: storage_select.Selected, run_config: RunConfig | None = None, probe: web_bridge.Probe | None = None, js=None) -> None:
         self.run_config = run_config
         self.probe = probe  # ブラウザ版で外から渡された、回すtick数などの指定。無ければ None
         self.js = js  # ブラウザの機能（js のモジュール）。デスクトップ版では None
         self.probe_reported = False
+        # 保存。選んだ保存先（selected）から、設定を読み込む。壊れた値の退避と、既定値での書き直しは、読み込みの中で済む。
+        self.storage_name = selected.name  # 保存先の名。結果に入れる
+        loaded = profile.load_settings(SaveStore(selected.backend))
+        self.settings = loaded.settings  # 設定。使う所（音、変速、アシスト、視点）は、段1から作る
+        # 知らせの1行。一度に出すのは、多くて1つ。保存先の切り替えを先にする。仮の表示に出す。
+        self.notice = selected.notice or loaded.notice
+        # 保存の往復は、検証の口のときだけ回す（名前空間 selfcheck。ふつうの鍵には触れない）。返るのは (通ったか, 失敗の理由)。
+        self.storage_check = profile.selfcheck(selected.backend) if run_config is not None or probe is not None else None
+        self.view = None  # 最後に組み立てた表示用の値。結果の知らせは、ここから取る
         # 処理時間は、外から回すtick数を渡されたときだけ測る。世界（Sim）へは渡さない。
         self.meter = PerfMeter(probe.warmup_ticks) if probe is not None else None
         # 入力の跡も、外から頼まれたときだけ取る。世界（Sim）へは渡さない。
@@ -115,7 +136,7 @@ class App:
         pyxel.integer_scale(True)  # 拡大は整数倍にする
         self.adapter = PyxelInput(pyxel)  # 入力アダプタ。割り当ての表の名前を、ここ（起動時）で全部引く
         self.triggers = TriggerReader(js)  # 直読み。デスクトップ版では、いつも None を返す
-        self.sim = Sim()
+        self.sim = Sim(WORLD_SEED)
         self.flow = Flow()  # 画面の状態。いまの画面の名を持つ
         self.gate = RenderGate()
         self.back = pyxel.Image(SCREEN_W, SCREEN_H)  # 裏画面。3DとHUDに当たる絵はここへ描く
@@ -148,6 +169,17 @@ class App:
         else:
             source = "adapter" if adapter_reads else "none"
         return {"input_source": source, "adapter_reads": adapter_reads, "direct_reads": self.triggers.reads}
+
+    # --- 保存 ---
+    def storage_report(self) -> dict:
+        """結果に足す、保存先の名、保存の往復の結果、知らせの1行。
+
+        notice は、最後に組み立てた表示用の値から取る（アプリが持つ知らせを、直に入れない）。
+        表示用の値へ渡し忘れると、ここが空になり、道具（保存先に触れると例外になる筋書き）で落ちる。
+        """
+        ok, detail = self.storage_check if self.storage_check is not None else (False, "the round trip was not run")
+        notice = self.view.notice if self.view is not None else ""
+        return {"backend": self.storage_name, "ok": ok, "notice": notice, "detail": detail}
 
     # --- 毎秒60回 ---
     def update(self) -> None:
@@ -186,7 +218,8 @@ class App:
     def render(self) -> None:
         canvas = Canvas()
         # 表示用の値。実描画の回数は、表示にだけ使う（世界へは渡さない）。
-        view = PlaceholderView(self.sim.tick, self.renders, self.frame)
+        view = PlaceholderView(self.sim.tick, self.renders, self.frame, self.notice)
+        self.view = view
         SCREENS[self.flow.screen](canvas, view)
         self.back.cls(COL_BACK)
         execute(canvas.commands, self.back)
@@ -209,6 +242,7 @@ class App:
             "screen_diff": screen_diff,
             "driver": self.loop,  # 指定された経路ではなく、実際に入ったループ
             **self.input_report(),
+            "storage": self.storage_report(),
             "wall_s": round(time.perf_counter() - self.started_s, 3),
             "python": sys.version.split()[0],
             "pyxel": pyxel.VERSION,
@@ -233,6 +267,7 @@ class App:
             "warmup_ticks": self.probe.warmup_ticks,
             "perf": self.meter.report(),
             **self.input_report(),
+            "storage": self.storage_report(),
             "platform": sys.platform,
             "python": sys.version.split()[0],
             "pyxel": pyxel.VERSION,
@@ -257,10 +292,13 @@ class App:
 
 def main() -> None:
     js = web_bridge.browser_js(sys.platform)  # デスクトップ版では None
+    # 保存先を選ぶ。ブラウザ版は、ここで試し書きをする。デスクトップ版は、どの起動でも CP_SAVE_DIR を読む
+    # （巡回の口でも読む。相対パスは、ここで ValueError）。
+    selected = storage_select.select(js, os.environ)
     # 巡回の口。デスクトップ版で、CP_TOUR があるときだけ。ブラウザ版では読まない。
     tour_config = tour.read_config(os.environ) if js is None else None
     if tour_config is not None:
         tour.run(pyxel, tour_config)
         # pyxel.quit() は常に終了コード0で終わり、失敗を消すので使わない。
         sys.exit(0)
-    App(read_run_config(os.environ), web_bridge.read_probe(js), js).run()
+    App(selected, read_run_config(os.environ), web_bridge.read_probe(js), js).run()

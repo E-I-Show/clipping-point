@@ -10,6 +10,7 @@
 道具か検査の決まりに触れた区切りと、段の仕上げで回す。新しい検査を足したら、ここに壊す件を足す。
 """
 import argparse
+import base64
 import json
 import shutil
 import struct
@@ -19,15 +20,18 @@ import time
 import zlib
 from pathlib import Path
 
+import fingerprint
 import input_reference
 import screen_check
 from _common import FAIL, INCOMPLETE, OK, OUT, ROOT, child_env, finish, run
+
+from cp_core import profile, storage  # noqa: E402 - cp_core への道は、input_reference が足す
 
 PY = sys.executable
 SCRATCH = OUT / "selftest"
 # 複製するもの。道具、テスト、見張りが読むファイルの全部。足りなければ control の件が落ちる。
 COPY_ITEMS = ("clipping_point", "tools", "tests", ".claude/rules", ".claude/agents", ".claude/settings.json","docs/canon", "docs/handoff.md", "CLAUDE.md", "pytest.ini")
-CASE_TIMEOUT_S = 180  # 1件の時間切れ（秒）。いちばん長い件（verify --all。ブラウザ版の煙テストの4本を含む）で約55秒
+CASE_TIMEOUT_S = 180  # 1件の時間切れ（秒）。いちばん長い件（verify --all。ブラウザ版の煙テストの5本を含む）で約70秒
 
 RUNTIME_CACHE = ".cache"  # ランタイムの写しの置き場。複製には、ここへのリンクだけを置く（中身は書き換えない）
 
@@ -52,6 +56,15 @@ FLOW_PY = "clipping_point/cp_core/flow.py"
 EXECUTE_PY = "clipping_point/cp_app/canvas_pyxel.py"
 TOUR_APP_PY = "clipping_point/cp_app/tour.py"
 TOUR_TOOL_PY = "tools/tour.py"
+STORAGE_PY = "clipping_point/cp_core/storage.py"
+PROFILE_PY = "clipping_point/cp_core/profile.py"
+RNG_PY = "clipping_point/cp_core/rng.py"
+FILE_STORAGE_PY = "clipping_point/cp_app/storage_file.py"
+WEB_STORAGE_PY = "clipping_point/cp_app/storage_web.py"
+SELECT_PY = "clipping_point/cp_app/storage_select.py"
+RUN_TOOL_PY = "tools/run.py"
+FINGERPRINT_JSON = fingerprint.FINGERPRINT_SNAPSHOT  # 指紋の写し
+SCHEMA_JSON = fingerprint.SCHEMA_SNAPSHOT  # 保存する項目の一覧の写し
 SKIP_ALL_HOOK = (
     "\n\ndef pytest_collection_modifyitems(items):\n    import pytest\n\n"
     "    for item in items:\n        item.add_marker(pytest.mark.skip(reason='planted'))\n"
@@ -61,17 +74,23 @@ STALE_JUNIT = (
     '<?xml version="1.0" encoding="utf-8"?><testsuites>'
     '<testsuite name="pytest" errors="0" failures="0" skipped="0" tests="999"></testsuite></testsuites>\n'
 )
-# いまの結果の形に合わせる（入力の出どころ、入力アダプタと直読みを呼んだ回数、入力の要約値つきの世界の要約）。読まれたら合格になる形。
+# いまの結果の形に合わせる（入力の出どころ、入力アダプタと直読みを呼んだ回数、種と乱数の流れの状態つきの世界の要約、保存の往復）。
+# 読まれたら合格になる形。保存の往復が残したファイル（STALE_SAVE）も、一緒に置く。
 STALE_RESULT = json.dumps({
     "ticks": 120, "renders": 60, "sim": input_reference.sim_summary(input_reference.load_script(input_reference.SMOKE_SCRIPT)[1], 120),
     "back_ink": 4321, "screen_diff": 0, "driver": "flip", "input_source": "script", "adapter_reads": 0, "direct_reads": 0,
+    "storage": {"backend": "file", "ok": True, "notice": "", "detail": ""},
 }) + "\n"
+# 前回の実行が残した、保存の往復の値（封筒つき）。置き場は、run が out/run/saves、ブラウザ版が localStorage。
+STALE_SAVE = storage.wrap(profile.encode(profile.SELFCHECK_SETTINGS), profile.SETTINGS_VERSION)
+STALE_SAVE_FILE = "out/run/saves/selfcheck.settings.sav"
 EXIT_0_TEST = "import os\n\n\ndef test_zz_exit():\n    os._exit(0)\n"
 # 前回の実行が残した、合格の形の、ブラウザの実行役の結果（240 tickの probe。入力アダプタから、何も押していない入力を読んだ形）。
 STALE_WEB_RESULT = {
     "ticks": 240, "renders": 120, "sim": input_reference.sim_summary(None, 240), "platform": "emscripten", "python": "3.14.2",
     "input_source": "adapter", "adapter_reads": 240, "direct_reads": 240, "warmup_ticks": 60,
     "perf": {"updates": 180, "renders": 90, "updates_per_s": 60.0, "renders_per_s": 30.0, "update_ms_p95": 0.1, "render_ms_p95": 0.2},
+    "storage": {"backend": "localstorage", "ok": True, "notice": "", "detail": ""},
 }
 STALE_WEB_PAGE = json.dumps({
     "htmlSha256": "", "failures": [], "clickedAt": 3500, "untilAt": 7000, "state": {"initialized": True}, "canvas": {"ink": 35000},
@@ -79,7 +98,25 @@ STALE_WEB_PAGE = json.dumps({
         {"t": 7000, "type": "log", "text": "CP_PROBE_RESULT " + json.dumps(STALE_WEB_RESULT)},
         {"t": 7000, "type": "log", "text": "CP_PROBE_DONE"},
     ],
+    "localStorage": {
+        "prefix": "clippingpoint/", "error": None,
+        "entries": {"clippingpoint/selfcheck.settings": base64.b64encode(STALE_SAVE).decode("ascii")},
+    },
 }) + "\n"
+
+
+def snapshot_with_another_environment() -> str:
+    """指紋の写しの、環境の値（Pythonの版と、数学関数の試し値の1つ）だけを変えたもの。写しが読めなければ、空の文字列。"""
+    try:
+        data = json.loads((ROOT / FINGERPRINT_JSON).read_text(encoding="utf-8"))
+        data["environment"]["python"] = "0.0.0"
+        data["environment"]["math"]["sin"] = "0" * 16
+    except (OSError, ValueError, KeyError, TypeError):
+        return ""
+    return json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+
+
+OTHER_ENVIRONMENT_SNAPSHOT = snapshot_with_another_environment()
 
 
 def stale_tour_result() -> str:
@@ -195,7 +232,7 @@ DIRECT_READ = "self.triggers.read()\n"  # 直読みを、余分に1度呼ぶ文
 # 実在しないパスだと、アプリの絶対パスの検査が無くても、ファイルが見つからずに同じ落ち方になり、検査の有無を見分けられない。
 RELATIVE_SCRIPT = rep("tools/run.py", '        env["CP_SMOKE_SCRIPT"] = str(script_path)\n', f'        env["CP_SMOKE_SCRIPT"] = "../../{SMOKE_SCRIPT_JSON}"\n')
 ABS_SCRIPT_CHECK = "        if not os.path.isabs(script_path):\n"  # アプリの、台本の絶対パスの検査
-DRAW_FRAME = "        view = PlaceholderView(self.sim.tick, self.renders, self.frame)\n"  # 仮の表示の、表示用の値へ、入力フレームを入れる所
+DRAW_FRAME = "        view = PlaceholderView(self.sim.tick, self.renders, self.frame, self.notice)\n"  # 仮の表示の、表示用の値へ、入力フレームと知らせを入れる所
 STEER_AXIS_READ = "steer_analog=_clamp(-btnv(self._steer_axis) / AXIS_MAX, -1.0, 1.0)"
 DIRECT_ANALOG = "            throttle_analog, brake_analog = _clamp(float(right), 0.0, 1.0), _clamp(float(left), 0.0, 1.0)\n"
 # 直読みができたtickにも、Pyxel経由の2値のトリガーをデジタル値へ入れる。
@@ -244,6 +281,42 @@ STATUS_BOX = '    with canvas.box("status", 2, 18, 64, 18):\n'  # 仮の表示�
 SCREEN_DEF = "def build_placeholder(canvas: Canvas, view: PlaceholderView) -> None:\n"
 # 画面の組み立てのモジュールに、構文の誤りを入れる（行末の「:」を落とす）。道具は、画面の登録を読み込めない。
 SCREENS_SYNTAX_ERROR = rep(SCREENS_PY, SCREEN_DEF, SCREEN_DEF.replace(" -> None:\n", " -> None\n"))
+# 保存と決定性の土台。
+FINGERPRINT = tool("fingerprint")
+# 指紋のテストだけに絞る。絞らないと、定数を数字で固定している入力フレームのテストが先に落ちて、指紋のテストが効いているかを見られない。
+TEST_FINGERPRINT = tool("test", "-k", "fingerprint")
+# ハッシュの種を変えた別プロセスどうしを比べるテストだけに絞る（指紋の写しと比べるテストを入れない。集合の順に頼ったことだけで落ちる形にする）。
+TEST_HASH_SEED = tool("test", "-k", "fingerprint and hash_seed")
+WEB_BLOCKED = tool("web_smoke", "--only", "storage_blocked")
+CHECKSUM_CHECK = "    if zlib.crc32(blob[:ENVELOPE.size + length]) != checksum:\n"  # 封筒のチェックサムを見る所
+NEWER_GUARD = "            if existing_version is not None and existing_version > version:\n"  # put の、新しい形式バージョンを上書きしない守り
+FILE_WRITE = "                f.write(data)  # 全部を、1度に書く\n"  # ファイルの保存先が、一時ファイルへ書く所
+TO_PLAIN = "    return {name: getattr(settings, name) for name in saved_names(Settings)}\n"  # 設定を、保存の本体の辞書にする所
+LAST_SETTING = "    race_serial: int = 0  # レースの通し番号。0以上\n"  # 設定の、最後の項目
+LOAD_NEWER = "        return Loaded(Settings(), NOTICE_NEWER_VERSION, False)\n"  # 読み込みが、新しい形式バージョンを、触れずに返す所
+LOAD_UNREADABLE = "    except StorageError:\n        return Loaded(Settings(), NOTICE_BACKEND_UNREADABLE, False)\n"  # 読み込みが、保存先の例外を捕まえる所
+SELFCHECK_STORE = "        store = SaveStore(backend, SELFCHECK_NAMESPACE)\n"  # 保存の往復の、名前空間
+WEB_READ = "            return base64.b64decode(value, validate=True)\n"  # localStorage の保存先が、読んだ値を開ける所
+WEB_NOT_BASE64 = '            return value.encode("utf-8", "surrogatepass")\n'  # base64 として読めない値を、バイト列で返す所
+PROBE_TOUCH = (  # 試し書きが、localStorage に触れたときの例外を捕まえる所
+    "        except Exception as exc:  # noqa: BLE001 - 触れると例外になる文書、localStorage が無いブラウザ\n"
+    "            return PROBE_UNAVAILABLE, describe(exc)\n"
+)
+PROBE_CALL = "        state, _ = backend.probe()\n"  # 保存先を選ぶ所の、試し書き
+FALLBACK = "            return Selected(MemoryBackend(), BACKEND_MEMORY, NOTICE_MEMORY_FALLBACK)\n"  # メモリへ切り替える所
+SAVE_DIR_READ = '    directory = env.get(SAVE_DIR_ENV, "")\n'  # デスクトップ版が、保存のファイルの置き場を読む所
+SELFCHECK_CALL = "profile.selfcheck(selected.backend) if run_config is not None or probe is not None else None"  # アプリが、保存の往復を回す所
+SAVE_DIR_ENV_ARG = "**{storage_select.SAVE_DIR_ENV: save_dir})"  # 道具 run が、置き場を絶対パスで渡す所
+HELD_BITS = "        button_bits(frame.held),\n"  # 入力の量子化の、押しているボタンのビット
+# 押しているボタンを、ビットの和でなく、名の集合を回した順の番号の列（16進の桁）で返す。2個以上を押していると、回した順で値が変わる。
+HELD_IN_SET_ORDER = "        sum(BUTTONS.index(name) * 16 ** place for place, name in enumerate(frame.held)),\n"
+NO_NOTICE_IN_VIEW = rep(APP_PY, DRAW_FRAME, DRAW_FRAME.replace("self.notice)", '"")'))  # 知らせを、表示用の値へ渡さない
+WORLD_FORMULA = rep(FRAME_PY, "DIGEST_PRIME = 16777619", "DIGEST_PRIME = 16777621")  # 世界の式を変える（入力の要約値の畳み込みの定数）
+RNG_FORMULA = rep(RNG_PY, "GAMMA = 0x9E3779B97F4A7C15", "GAMMA = 0x9E3779B97F4A7C17")  # 乱数の式を変える（状態の増分）
+FILE_DROPS_LAST_BYTE = rep(FILE_STORAGE_PY, FILE_WRITE, "                f.write(data[:-1])\n")
+ROUND_TRIP_IN_MAIN = rep(PROFILE_PY, SELFCHECK_STORE, "        store = SaveStore(backend)\n")
+NO_PROBE = rep(SELECT_PY, PROBE_CALL, '        state = "ok"\n')
+OTHER_ENVIRONMENT = [rm(FINGERPRINT_JSON), add(FINGERPRINT_JSON, OTHER_ENVIRONMENT_SNAPSHOT)]  # 指紋の写しの、環境の値だけを変える
 
 # (名前, 壊し方の並び, 回す道具, 期待する終了コード, 最後の1行にあるはずの語)
 CASES = [
@@ -261,15 +334,23 @@ CASES = [
     ("control_export", [], EXPORT, {0}, "export: OK"),
     ("control_export_leaves_out_caches", [add("clipping_point/cp_core/__pycache__/sim.cpython-313.pyc", "x")], EXPORT, {0}, "export: OK"),
     ("control_fetch_runtime_check", [], FETCH_CHECK, {0}, "fetch_runtime: OK"),
-    ("control_web_smoke", [], WEB, {0}, "web_smoke: OK scenarios=4 shipped=ok probe=ok script=ok gamepad=ok"),
+    ("control_web_smoke", [], WEB, {0}, "web_smoke: OK scenarios=5 shipped=ok probe=ok script=ok gamepad=ok storage_blocked=ok"),
     ("control_web_smoke_short_probe", [], WEB_PROBE, {0}, "web_smoke: OK scenarios=1 probe=ok"),
     ("control_web_heavy_frame_keeps_30_renders", [rep(APP_PY, RENDER_COUNT, RENDER_COUNT + HEAVY_FRAME)], WEB_PROBE, {0}, "web_smoke: OK scenarios=1 probe=ok"),
     ("control_verify_list", [], tool("verify", "--list"), {0}, "verify: OK mode=list"),
-    ("control_verify_all", [], VERIFY_ALL, {0}, "verify: OK mode=all steps=8 ok=8 failed=0"),
+    ("control_verify_all", [], VERIFY_ALL, {0}, "verify: OK mode=all steps=9 ok=9 failed=0"),
     ("control_screen_check", [], SCREEN, {0}, "screen_check: OK screens=2/2 violations=0 not_checked=0"),
     ("control_screen_check_only_one_screen", [], tool("screen_check", "--only", "placeholder"), {0}, "screen_check: OK screens=2/2 violations=0 not_checked=0"),
-    ("control_tour", [], TOUR, {0}, "tour: OK shots=2/2 commands=16 problems=0"),
-    ("control_tour_only_one_screen", [], tool("tour", "--only", "placeholder"), {0}, "tour: OK shots=2/2 commands=16 problems=0"),
+    # 命令の数は、ふつうの値で8つ、極端な値で9つ（知らせの1行）。
+    ("control_tour", [], TOUR, {0}, "tour: OK shots=2/2 commands=17 problems=0"),
+    ("control_tour_only_one_screen", [], tool("tour", "--only", "placeholder"), {0}, "tour: OK shots=2/2 commands=17 problems=0"),
+    ("control_fingerprint", [], FINGERPRINT, {0}, "fingerprint: OK scenarios=2 fields=6 problems=0 env=same"),
+    # 環境の値（Pythonの版、数学関数の試し値）だけが、指紋の写しと違っても、合否は変えない。最後の1行に出すだけ。
+    ("control_fingerprint_passes_when_only_the_environment_changed", OTHER_ENVIRONMENT, FINGERPRINT, {0}, "fingerprint: OK scenarios=2 fields=6 problems=0 env=changed"),
+    ("control_test_fingerprint_passes_when_only_the_environment_changed", OTHER_ENVIRONMENT, TEST_FINGERPRINT, {0}, "test: OK"),
+    ("control_web_smoke_storage_blocked", [], WEB_BLOCKED, {0}, "web_smoke: OK scenarios=1 storage_blocked=ok blocked_save=memory"),
+    # 指紋の筋書きに無い回し方（回すtick数が違う）。指紋の確かめを外して、通る。
+    ("control_run_other_ticks_skips_the_fingerprint", [], tool("run", "--ticks", "200"), {0}, "problems=0 fingerprint=skipped not_yet="),
     # 文字の幅の計算を小さく間違えても、ためた命令だけを調べる検査は通る（検査の穴。巡回が拾うことは tour_text_metrics_too_small）。
     ("control_screen_check_passes_with_text_metrics_too_small", [FONT_TOO_NARROW], SCREEN, {0}, "screen_check: OK screens=2/2 violations=0 not_checked=0"),
     # --- check：構文 ---
@@ -349,7 +430,11 @@ CASES = [
     ("run_renders_every_tick", [rep(APP_PY, IN_DRAW, "        if True:\n")], RUN, {1}, "failed=renders"),
     ("run_back_buffer_blank", [rep(APP_PY, EXECUTE, "        len(canvas.commands)\n")], RUN, {1}, "failed=back_ink"),
     ("run_not_presented", [rep(APP_PY, PRESENT, "        pass\n")], RUN, {1}, "failed=screen_diff"),
-    ("run_stale_result_is_not_reused", [add("out/run/result.json", STALE_RESULT), rep(APP_PY, IN_UPDATE, QUIT_EARLY)], RUN, {2}, "reason=no_result_file"),
+    (
+        "run_stale_result_is_not_reused",
+        [add("out/run/result.json", STALE_RESULT), add_bytes(STALE_SAVE_FILE, STALE_SAVE), rep(APP_PY, IN_UPDATE, QUIT_EARLY)],
+        RUN, {2}, "reason=no_result_file",
+    ),
     ("run_too_few_ticks", [], tool("run", "--ticks", "3"), {2}, "reason=too_few_ticks"),
     # --- run：本番と同じ経路（pyxel.run） ---
     ("run_realtime_exception_in_update", [rep(APP_PY, IN_UPDATE, IN_UPDATE + "        if self.ticks == 5:\n            raise RuntimeError('planted')\n")], RUN_RT, {1}, "reason=app_exit_code"),
@@ -412,11 +497,14 @@ CASES = [
     (
         "verify_one_step_fails",
         [rep("tests/test_sim.py", "    assert Sim().tick == 0\n", "    assert Sim().tick == 1\n")],
-        VERIFY_ALL, {1}, "steps=8 ok=7 failed=1 failed_steps=test",
+        VERIFY_ALL, {1}, "steps=9 ok=8 failed=1 failed_steps=test",
     ),
-    ("verify_step_cannot_run", [rm("tools/run.py")], VERIFY_ALL, {1}, "steps=8 ok=6 failed=2 failed_steps=run,run-realtime"),
+    ("verify_step_cannot_run", [rm("tools/run.py")], VERIFY_ALL, {1}, "steps=9 ok=7 failed=2 failed_steps=run,run-realtime"),
     # 全体の検証の中で、screen-check と tour が落ちる（文字を、画面の外に置く。突き合わせのテストも落ちる）。
-    ("verify_screen_check_and_tour_fail", [TEXT_OFF_SCREEN], VERIFY_ALL, {1}, "steps=8 ok=5 failed=3 failed_steps=test,screen-check,tour"),
+    ("verify_screen_check_and_tour_fail", [TEXT_OFF_SCREEN], VERIFY_ALL, {1}, "steps=9 ok=6 failed=3 failed_steps=test,screen-check,tour"),
+    # 全体の検証の中で、指紋の照合（fingerprint）が落ちる（世界の式を変える。指紋のテストと、run の指紋の確かめも落ちる）。
+    # web-smoke は、ブラウザ版とデスクトップ版を比べるので、通る（どちらも、同じ変えた式で回る）。指紋の写しと比べる手順だけが落ちる。
+    ("verify_fingerprint_step_fails", [WORLD_FORMULA], VERIFY_ALL, {1}, "steps=9 ok=5 failed=4 failed_steps=test,fingerprint,run,run-realtime"),
     ("verify_nothing_asked", [], tool("verify"), {2}, "reason=nothing_asked"),
     # 複製は、gitの作業ツリーの根でない（親のリポジトリの下にある）。親の変更を読んで回さない。
     ("verify_touched_outside_a_git_work_tree", [], tool("verify", "--touched"), {2}, "reason=git_failed"),
@@ -440,14 +528,15 @@ CASES = [
     ),
     ("test_trace_keeps_every_tick", [rep(TRACE_PY, "        if self.truncated or values == self._last:\n", "        if self.truncated:\n")], TEST, {1}, "reason=failed"),
     # 仮の表示へ、何も押していない入力フレームを渡す。世界へは正しい入力フレームが届くので、道具は全部通る。守りのテストで拾う。
-    ("test_app_draws_a_neutral_frame_on_the_placeholder", [rep(APP_PY, DRAW_FRAME, DRAW_FRAME.replace("self.frame)", "NEUTRAL)"))], TEST, {1}, "reason=failed"),
+    ("test_app_draws_a_neutral_frame_on_the_placeholder", [rep(APP_PY, DRAW_FRAME, DRAW_FRAME.replace("self.frame,", "NEUTRAL,"))], TEST, {1}, "reason=failed"),
     # --- 入力の土台：run（速い経路。台本を渡して回す） ---
+    # 世界の要約が違うと、参照との確かめ（sim）と、指紋の写しとの確かめ（fingerprint）の両方が落ちる。
     # アプリが、入力フレームの代わりに、何も押していない入力フレームを世界へ渡す。
-    ("run_world_gets_neutral_instead_of_the_frame", [rep(APP_PY, IN_UPDATE, "        self.sim.step(NEUTRAL)\n")], RUN, {1}, "failed=sim not_yet="),
+    ("run_world_gets_neutral_instead_of_the_frame", [rep(APP_PY, IN_UPDATE, "        self.sim.step(NEUTRAL)\n")], RUN, {1}, "failed=sim,fingerprint not_yet="),
     # 台本を1 tickずらして読む。
-    ("run_script_read_one_tick_off", [rep(APP_PY, FROM_SCRIPT, FROM_SCRIPT.replace("self.sim.tick", "self.sim.tick + 1"))], RUN, {1}, "failed=sim not_yet="),
+    ("run_script_read_one_tick_off", [rep(APP_PY, FROM_SCRIPT, FROM_SCRIPT.replace("self.sim.tick", "self.sim.tick + 1"))], RUN, {1}, "failed=sim,fingerprint not_yet="),
     # 台本があるのに、入力アダプタから読む。
-    ("run_script_is_ignored", [rep(APP_PY, "        if self.script is not None:\n", "        if False:\n")], RUN, {1}, "failed=input_source,adapter_reads,direct_reads,sim"),
+    ("run_script_is_ignored", [rep(APP_PY, "        if self.script is not None:\n", "        if False:\n")], RUN, {1}, "failed=input_source,adapter_reads,direct_reads,sim,fingerprint not_yet="),
     # 台本のときも、直読みを呼ぶ。値は変わらないので、呼んだ回数でしか見えない。
     ("run_direct_read_called_with_a_script", [rep(APP_PY, FROM_SCRIPT, "            " + DIRECT_READ + FROM_SCRIPT)], RUN, {1}, "failed=direct_reads not_yet="),
     ("run_ticks_shorter_than_the_script", [], tool("run", "--ticks", "60"), {2}, "reason=ticks_shorter_than_script"),
@@ -532,7 +621,7 @@ CASES = [
     # はみ出しの検査が、開かれなかった囲みを数えない。
     ("test_overflow_check_ignores_boxes_that_were_not_entered", [rep("clipping_point/cp_ui/check.py", "        if index not in canvas.entered:\n", "        if False:\n")], TEST, {1}, "reason=failed"),
     # 分野「カメラと画面の状態」のテストの絞りが、突き合わせのテストに当たらない（絞りを flow だけに戻す）。
-    ("test_flow_area_does_not_select_the_registry_tests", [rep("tools/verify.py", '"flow or fixtures or screens"', '"flow"')], TEST, {1}, "reason=failed"),
+    ("test_flow_area_does_not_select_the_registry_tests", [rep("tools/verify.py", '"flow or fixtures or screens or fingerprint"', '"flow"')], TEST, {1}, "reason=failed"),
     # --- 巡回の口：test（保存する絵の中身。道具 tour は、画像の大きさまでしか見ない） ---
     # 全体の絵を、描く前に消さない。前の件の絵が残る。命令の数も、画面が空でないことも変わらないので、道具は通る。
     ("test_tour_whole_picture_is_not_cleared", [rep(TOUR_APP_PY, TOUR_CLEAR_WHOLE, "    pass\n")], TEST, {1}, "reason=failed"),
@@ -540,22 +629,24 @@ CASES = [
     ("test_tour_draws_the_typical_values_for_every_variant", [rep(TOUR_APP_PY, TOUR_BUILD, 'fixtures.build(screen, "typical")')], TEST, {1}, "reason=failed"),
     # --- 巡回：tour（実物の画素と照らす。問題があれば1） ---
     # 文字の幅の計算を小さく間違える。screen_check は通る（control_screen_check_passes_with_text_metrics_too_small）。
-    ("tour_text_metrics_too_small", [FONT_TOO_NARROW], TOUR, {1}, "shots=2/2 commands=16 problems=10 failed=ink_outside"),
+    # 文字の命令は、ふつうの値で5つ、極端な値で6つ（知らせの1行）。合わせて11。
+    ("tour_text_metrics_too_small", [FONT_TOO_NARROW], TOUR, {1}, "shots=2/2 commands=17 problems=11 failed=ink_outside"),
     # 実行の側で、縁だけの矩形を、命令より2ピクセル広く描く。
-    ("tour_outline_drawn_wider_than_its_command", [rep(EXECUTE_PY, EXEC_RECTB, EXEC_RECTB.replace("command.w,", "command.w + 2,"))], TOUR, {1}, "shots=2/2 commands=16 problems=2 failed=ink_outside"),
+    ("tour_outline_drawn_wider_than_its_command", [rep(EXECUTE_PY, EXEC_RECTB, EXEC_RECTB.replace("command.w,", "command.w + 2,"))], TOUR, {1}, "shots=2/2 commands=17 problems=2 failed=ink_outside"),
     # 実行の側で、文字の命令を描かない。全体の絵は空にならないので、命令ごとに照らさないと見えない。
-    ("tour_text_commands_not_drawn", [rep(EXECUTE_PY, EXEC_TEXT, "            pass\n")], TOUR, {1}, "shots=2/2 commands=16 problems=10 failed=no_ink"),
+    ("tour_text_commands_not_drawn", [rep(EXECUTE_PY, EXEC_TEXT, "            pass\n")], TOUR, {1}, "shots=2/2 commands=17 problems=11 failed=no_ink"),
     # 実行の側で、線を、命令より1ピクセル下に描く。
     (
         "tour_line_drawn_at_another_place",
         [rep(EXECUTE_PY, EXEC_LINE, EXEC_LINE.replace("command.y1 + oy,", "command.y1 + oy + 1,").replace("command.y2 + oy,", "command.y2 + oy + 1,"))],
-        TOUR, {1}, "shots=2/2 commands=16 problems=4 failed=ink_outside,no_ink",
+        TOUR, {1}, "shots=2/2 commands=17 problems=4 failed=ink_outside,no_ink",
     ),
     # 画面が、余白へ描く（線が、画面の右へ4ピクセル出る）。はみ出しの検査も数える。
     ("tour_screen_draws_into_the_margin", [rep(SCREENS_PY, UNDER_BAR, UNDER_BAR.replace("SCREEN_W - 1", "SCREEN_W + 3"))], TOUR, {1}, "problems=4 failed=margin_ink,violation"),
-    ("tour_overflow_only_in_extreme_variant", [TEXT_TOO_LONG_WHEN_EXTREME], TOUR, {1}, "shots=2/2 commands=16 problems=1 failed=violation"),
+    ("tour_overflow_only_in_extreme_variant", [TEXT_TOO_LONG_WHEN_EXTREME], TOUR, {1}, "shots=2/2 commands=17 problems=1 failed=violation"),
     # --- 巡回：tour（回り切れなければ2。合格にしない） ---
-    ("tour_one_variant_skipped", [rep(TOUR_APP_PY, TOUR_VARIANTS, TOUR_VARIANTS.replace("VARIANTS:", "VARIANTS[1:]:"))], TOUR, {2}, "shots=1/2 commands=8 problems=0 incomplete=missing_shot"),
+    # ふつうの値を飛ばして、極端な値（命令は9つ）だけを回す。
+    ("tour_one_variant_skipped", [rep(TOUR_APP_PY, TOUR_VARIANTS, TOUR_VARIANTS.replace("VARIANTS:", "VARIANTS[1:]:"))], TOUR, {2}, "shots=1/2 commands=9 problems=0 incomplete=missing_shot"),
     (
         "tour_exception_midway",
         [rep(TOUR_APP_PY, TOUR_VARIANTS, TOUR_VARIANTS + "            if variant == 'extreme':\n                raise RuntimeError('planted')\n")],
@@ -603,8 +694,91 @@ CASES = [
     (
         "control_tour_both_app_switches_pass_without_the_check",
         [TOUR_BOTH_SWITCHES, rep(TOUR_APP_PY, '    if env.get("CP_SMOKE", ""):\n', "    if False:\n")],
-        TOUR, {0}, "tour: OK shots=2/2 commands=16 problems=0",
+        TOUR, {0}, "tour: OK shots=2/2 commands=17 problems=0",
     ),
+    # --- 保存の口と保存する項目：test ---
+    # 封筒のチェックサムを見ない。1ビットの違いを、壊れた値にしなくなる。
+    ("test_envelope_checksum_is_not_checked", [rep(STORAGE_PY, CHECKSUM_CHECK, "    if False:\n")], TEST, {1}, "reason=failed"),
+    # ファイルの保存先が、最後の1バイトを落として書く（run の側は run_file_backend_drops_the_last_byte）。
+    ("test_file_backend_drops_the_last_byte", [FILE_DROPS_LAST_BYTE], TEST, {1}, "reason=failed"),
+    # 設定の項目を1つ、保存の本体から落とす。
+    ("test_settings_item_dropped_from_the_payload", [rep(PROFILE_PY, TO_PLAIN, TO_PLAIN.replace("(Settings)}", '(Settings) if name != "view"}'))], TEST, {1}, "reason=failed"),
+    # 設定に項目を足して、保存する項目の一覧の写しを直さない。
+    ("test_settings_item_added_without_the_snapshot", [rep(PROFILE_PY, LAST_SETTING, LAST_SETTING + "    hud_visible: bool = True\n")], TEST, {1}, "reason=failed"),
+    # 保存しない項目の一覧に、無い項目の名を足す。
+    ("test_not_saved_list_names_an_item_that_does_not_exist", [rep(PROFILE_PY, "NOT_SAVED = {}\n", 'NOT_SAVED = {"Settings.no_such_item": "planted: an item that does not exist"}\n')], TEST, {1}, "reason=failed"),
+    # 新しい形式バージョンの値を、読み込みが退避して、既定値で上書きする。
+    ("test_load_sets_aside_a_newer_format_version", [rep(PROFILE_PY, LOAD_NEWER, "        return _set_aside(store)\n")], TEST, {1}, "reason=failed"),
+    # 新しい形式バージョンの値がある鍵へ、put が上書きする（守りを外す）。
+    ("test_put_overwrites_a_newer_format_version", [rep(STORAGE_PY, NEWER_GUARD, "            if False:\n")], TEST, {1}, "reason=failed"),
+    # 読み込みが、保存先の例外を外へ出す。
+    ("test_load_lets_a_backend_error_out", [rep(PROFILE_PY, LOAD_UNREADABLE, "    except StorageError:\n        raise\n")], TEST, {1}, "reason=failed"),
+    # localStorage の保存先が、base64 として読めない値を例外にする。
+    ("test_web_backend_raises_on_a_value_that_is_not_base64", [rep(WEB_STORAGE_PY, WEB_NOT_BASE64, "            raise\n")], TEST, {1}, "reason=failed"),
+    # 知らせを、表示用の値へ渡さない。ふつうの起動では知らせが無いので、run も、web-smoke の probe も通る。守りのテストで拾う
+    # （ブラウザ版で実際に落ちることは web_blocked_notice_is_not_passed_to_the_view）。
+    ("test_notice_is_not_passed_to_the_view", [NO_NOTICE_IN_VIEW], TEST, {1}, "reason=failed"),
+    # 保存する項目の一覧の写しを消す。黙って作り直さない。
+    ("test_schema_snapshot_deleted", [rm(SCHEMA_JSON)], TEST, {1}, "reason=failed"),
+    # 乱数の式を変える。
+    ("test_rng_formula_changed", [RNG_FORMULA], tool("test", "-k", "rng"), {1}, "reason=failed"),
+    # --- 指紋：test（指紋のテストだけに絞る）、fingerprint、run ---
+    # 世界の式を変える（入力の要約値の畳み込みの定数）。参照（いまのコードで計算し直す値）との確かめは通り、指紋の写しとの確かめだけが落ちる。
+    ("test_world_formula_changed", [WORLD_FORMULA], TEST_FINGERPRINT, {1}, "reason=failed"),
+    ("fingerprint_world_formula_changed", [WORLD_FORMULA], FINGERPRINT, {1}, "scenarios=2 fields=6 problems=2 failed=world env=same"),
+    ("run_world_formula_changed", [WORLD_FORMULA], RUN, {1}, "failed=fingerprint not_yet="),
+    ("run_realtime_world_formula_changed", [WORLD_FORMULA], RUN_RT, {1}, "failed=fingerprint not_yet="),
+    # 乱数の式を変える。流れの状態（要約の rng_ai）が変わる。
+    ("fingerprint_rng_formula_changed", [RNG_FORMULA], FINGERPRINT, {1}, "problems=2 failed=world env=same"),
+    # 世界の式を変え、指紋の写しの環境の値も違う。環境が変わったことを、最後の1行に出す（退行とは限らない）。
+    ("fingerprint_world_and_environment_changed", [WORLD_FORMULA, *OTHER_ENVIRONMENT], FINGERPRINT, {1}, "problems=2 failed=world env=changed"),
+    # 設定に項目を足して、保存する項目の一覧の写しを直さない。
+    ("fingerprint_settings_item_added_without_the_snapshot", [rep(PROFILE_PY, LAST_SETTING, LAST_SETTING + "    hud_visible: bool = True\n")], FINGERPRINT, {1}, "problems=1 failed=schema env=same"),
+    # 指紋の写しを消す。黙って作り直さない。
+    ("test_fingerprint_snapshot_deleted", [rm(FINGERPRINT_JSON)], TEST, {1}, "reason=failed"),
+    ("fingerprint_snapshot_deleted", [rm(FINGERPRINT_JSON)], FINGERPRINT, {2}, "reason=no_snapshot missing=fingerprint.json"),
+    ("run_fingerprint_snapshot_deleted", [rm(FINGERPRINT_JSON)], RUN, {2}, "reason=no_fingerprint_snapshot"),
+    ("fingerprint_schema_snapshot_deleted", [rm(SCHEMA_JSON)], FINGERPRINT, {2}, "reason=no_snapshot missing=profile_schema.json"),
+    # 指紋の写しが、JSONとして読めない。
+    ("fingerprint_snapshot_is_not_json", [first_char(FINGERPRINT_JSON)], FINGERPRINT, {2}, "reason=no_snapshot missing=fingerprint.json"),
+    # 筋書きの台本が読めない。何も照らしていないので、合格にしない。
+    ("fingerprint_script_file_is_not_a_script", [rep(SMOKE_SCRIPT_JSON, '"segments"', '"parts"')], FINGERPRINT, {2}, "reason=script_unreadable"),
+    # 世界の要約が、文字列の集合を回した順に頼る（入力の量子化が、押しているボタンを、名の集合を回した順の番号の列で返す）。
+    # 回すのは、ハッシュの種を変えた別プロセスどうしを比べるテストだけ。層の分離の検査（check）は、これを拾えない。
+    ("test_summary_depends_on_the_order_of_a_set", [rep(FRAME_PY, HELD_BITS, HELD_IN_SET_ORDER)], TEST_HASH_SEED, {1}, "reason=failed"),
+    ("control_check_passes_when_the_summary_depends_on_the_order_of_a_set", [rep(FRAME_PY, HELD_BITS, HELD_IN_SET_ORDER)], CHECK, {0}, "check: OK"),
+    # アプリの世界の種が、筋書きの種（0）と違う。種と、流れの状態が、要約に入っている。
+    ("run_world_seed_differs", [rep(APP_PY, "WORLD_SEED = 0\n", "WORLD_SEED = 1\n")], RUN, {1}, "failed=sim,fingerprint not_yet="),
+    # --- 保存：run（保存のファイルの置き場を渡して回す。道具が、書かれたファイルを自分で読む） ---
+    ("run_file_backend_drops_the_last_byte", [FILE_DROPS_LAST_BYTE], RUN, {1}, "failed=save,save_file not_yet="),
+    # 保存の往復を、名前空間 main で回す。アプリの申告（往復が通った）は合っているので、道具が自分で見たファイルで落とす。
+    ("run_round_trip_in_the_main_namespace", [ROUND_TRIP_IN_MAIN], RUN, {1}, "failed=save_file,save_main not_yet="),
+    # アプリが、保存の往復を回さない。
+    ("run_round_trip_is_not_run", [rep(APP_PY, SELFCHECK_CALL, "None")], RUN, {1}, "failed=save,save_file not_yet="),
+    # デスクトップ版が、保存のファイルの置き場を読まない（メモリの保存先になる）。
+    ("run_save_directory_is_ignored", [rep(SELECT_PY, SAVE_DIR_READ, '    directory = ""\n')], RUN, {1}, "save=memory checks=16 problems=2 failed=save,save_file not_yet="),
+    # 道具が、置き場を相対パスで渡す。アプリは、起動時に例外にする（pyxel.init が作業ディレクトリを変えるため）。
+    ("run_save_directory_is_relative", [rep(RUN_TOOL_PY, SAVE_DIR_ENV_ARG, '**{storage_select.SAVE_DIR_ENV: "saves"})')], RUN, {1}, "reason=app_exit_code"),
+    # 巡回の口でも、置き場の環境変数を読む（相対パスなら、起動時に例外）。
+    ("tour_save_directory_is_relative", [rep(TOUR_TOOL_PY, TOUR_ENV, TOUR_ENV.replace("CP_TOUR_DIR=WORK", 'CP_TOUR_DIR=WORK, CP_SAVE_DIR="saves"'))], TOUR, {2}, "reason=app_exit_code"),
+    # --- 保存：web-smoke の筋書き probe（保存先は localStorage） ---
+    # localStorage の保存先が、読んだ値の最後の1バイトを落とす。書いた値は正しいので、道具が自分で読んだ値は合う。アプリの往復で落ちる。
+    ("web_storage_read_drops_the_last_byte", [rep(WEB_STORAGE_PY, WEB_READ, WEB_READ.replace("validate=True)", "validate=True)[:-1]"))], WEB_PROBE, {1}, "failed=probe.storage_ok"),
+    # 保存の往復を、名前空間 main で回す。アプリの申告は合っているので、道具が自分で読んだ localStorage の値で落とす。
+    ("web_round_trip_in_the_main_namespace", [ROUND_TRIP_IN_MAIN], WEB_PROBE, {1}, "failed=probe.storage_value,probe.storage_main"),
+    # --- 保存：web-smoke の筋書き storage_blocked（localStorage に触れると例外） ---
+    # 試し書きをせずに、localStorage を使う。保存先が切り替わらない。
+    ("web_blocked_storage_is_used_without_a_probe", [NO_PROBE], WEB_BLOCKED, {1}, "failed=storage_blocked.storage_backend,storage_blocked.storage_ok,storage_blocked.storage_notice"),
+    # 保存先を切り替えても、知らせを作らない。
+    ("web_blocked_fallback_makes_no_notice", [rep(SELECT_PY, FALLBACK, FALLBACK.replace("NOTICE_MEMORY_FALLBACK", '""'))], WEB_BLOCKED, {1}, "failed=storage_blocked.storage_notice"),
+    # 知らせを、表示用の値へ渡さない。結果の知らせは、表示用の値から取るので、空になる。
+    ("web_blocked_notice_is_not_passed_to_the_view", [NO_NOTICE_IN_VIEW], WEB_BLOCKED, {1}, "failed=storage_blocked.storage_notice"),
+    # 試し書きが、localStorage に触れたときの例外を、外へ出す。起動時に、Pythonの例外になる。
+    ("web_blocked_probe_lets_the_error_out", [rep(WEB_STORAGE_PY, PROBE_TOUCH, PROBE_TOUCH.replace("return PROBE_UNAVAILABLE, describe(exc)", "raise"))], WEB_BLOCKED, {1}, "failed=storage_blocked.error_overlay"),
+    # 差し込むスクリプトが無い。保存先を止めずに開いて、別の理由で落とさない。回り切れない（2）にする。
+    ("web_block_storage_script_is_missing", [rm("tools/web/block_storage.js")], WEB_BLOCKED, {2}, "reason=no_block_storage"),
+    # 差し込むスクリプトが、保存先を止めない（何もしない）。保存先が localStorage のままなので、落ちる（筋書きが、空振りで通らない）。
+    ("web_block_storage_script_blocks_nothing", [rm("tools/web/block_storage.js"), add("tools/web/block_storage.js", "// does nothing\n")], WEB_BLOCKED, {1}, "failed=storage_blocked.storage_backend,storage_blocked.storage_notice"),
 ]
 
 

@@ -1,7 +1,7 @@
 """検証の道具を決まった順に、1本ずつ回して、表を1つ出す。分野ごとの組の表は、ここの AREAS だけに持つ。
 
-  python3 tools/verify.py --all [--selftest]                 全体の検証（check → test → screen-check → run → run --realtime
-                                                             → tour → export → web-smoke）
+  python3 tools/verify.py --all [--selftest]                 全体の検証（check → test → fingerprint → screen-check → run
+                                                             → run --realtime → tour → export → web-smoke）
   python3 tools/verify.py --touched [--base REV] [--selftest] 変更したファイルから触れた分野を引いて回す
   python3 tools/verify.py --list                             分野ごとの組の表を出す
 
@@ -40,6 +40,7 @@ SUMMARY_MAX = 400  # 表に出す、道具の最後の1行の長さの上限
 STEPS = {
     "check": [PY, TOOLS / "check.py"],
     "test": [PY, TOOLS / "test.py"],
+    "fingerprint": [PY, TOOLS / "fingerprint.py"],  # 指紋と、保存する項目の一覧を、ふるまいの写しと照らす
     "screen-check": [PY, TOOLS / "screen_check.py"],
     "run": [PY, TOOLS / "run.py"],
     "run-realtime": [PY, TOOLS / "run.py", "--realtime"],
@@ -80,9 +81,9 @@ AREAS = (
             "clipping_point/cp_app/input_pyxel.py", "clipping_point/cp_app/input_trace.py",
             "tests/test_input_frame.py", "tests/test_input_script.py", "tests/test_input_pyxel.py", "tests/test_input_trace.py",
         ),
-        # 計画の表のテストの絞りは「操作補正、保存する項目、セッティングの順」。どれも、まだテストが無い
-        # （操作補正は段1 区切り4、保存する項目は段0 区切り7、セッティングの順は段1）。いまは、入力のテストの語だけ。作る区切りで足す。
-        "input_frame or input_script or input_pyxel or input_trace",
+        # 計画の表のテストの絞りは「操作補正、保存する項目、セッティングの順」。保存する項目（profile）は、段0 区切り7で足した。
+        # 操作補正（段1 区切り4）とセッティングの順（段1）は、まだテストが無い。作る区切りで足す。
+        "input_frame or input_script or input_pyxel or input_trace or profile",
         # 計画の表のとおり。drive は段1で作る（いまは NOT_YET）。
         ("run", "drive", "web-smoke"),
     ),
@@ -90,12 +91,12 @@ AREAS = (
         # 計画の表の「カメラと画面の状態」。いまあるのは、画面の状態（cp_core/flow.py）の最小の形だけ。
         "カメラと画面の状態",
         ("clipping_point/cp_core/flow.py", "tests/test_flow.py"),
-        # 計画の表のテストの絞りは「カメラ、画面の状態、指紋」。カメラは段0 区切り10、指紋は段0 区切り7で作る。
+        # 計画の表のテストの絞りは「カメラ、画面の状態、指紋」。指紋（fingerprint）は、段0 区切り7で足した。カメラは段0 区切り10で作る。
         # 計画の表に無い fixtures と screens を足した。突き合わせのテスト（ロジックが持つ画面の名、画面の登録、見本データが
         # 同じ集まりであること。tests/test_fixtures.py と tests/test_screens.py）は、名に flow を含まない。flow だけでは、
         # flow.py にだけ画面の名を足して、登録と見本データへ足し忘れても、絞った検証が通ってしまう（screen-check は、
         # 画面の登録から予定を作る）。この式が、画面の名を見るテストに当たることは、tests/test_verify.py が見る。
-        "flow or fixtures or screens",
+        "flow or fixtures or screens or fingerprint",
         # 計画の表のとおり。
         ("run", "screen-check"),
     ),
@@ -116,22 +117,29 @@ AREAS = (
     ),
     Area(
         "ブラウザ連携",
-        # 直読み（input_web）は、計画の表の「ブラウザ連携（入力の直読み、保存先、ファイルの受け渡し）」に入る。
+        # 直読み（input_web）と、localStorage の保存先（storage_web）、保存先を選ぶ所（storage_select。ブラウザ版の試し書きと
+        # 切り替えを持つ）は、計画の表の「ブラウザ連携（入力の直読み、保存先、ファイルの受け渡し）」に入る。
         (
             "clipping_point/cp_app/web_bridge.py", "clipping_point/cp_app/input_web.py",
-            "tests/test_web_bridge.py", "tests/test_input_web.py",
+            "clipping_point/cp_app/storage_web.py", "clipping_point/cp_app/storage_select.py",
+            "tests/test_web_bridge.py", "tests/test_input_web.py", "tests/test_storage_web.py", "tests/test_storage_select.py",
         ),
-        # 計画の表のテストの絞りは「保存」。保存のテストは段0 区切り7で作るので、いまは橋と直読みのテストだけ。その区切りで足す。
-        "web_bridge or input_web",
+        # 計画の表のテストの絞りは「保存」。保存のテスト（storage と profile。段0 区切り7）を、橋と直読みのテストに足した。
+        "web_bridge or input_web or storage or profile",
         ("web-smoke",),
     ),
     Area(
         # 計画の表の「保存、データの検査、乱数、メインループ、世界の状態」の行のうち、いまファイルがある分。
+        # 保存は、保存の口と保存する項目（cp_core）と、ファイルの保存先（cp_app/storage_file.py。デスクトップ版）。
+        # localStorage の保存先と、保存先を選ぶ所は、上の「ブラウザ連携」に並べた。
         "メインループと世界の状態",
         (
             "clipping_point/main.py", "clipping_point/cp_app/__init__.py", "clipping_point/cp_app/app.py",
             "clipping_point/cp_app/perf.py", "clipping_point/cp_core/__init__.py", "clipping_point/cp_core/fixed_loop.py",
-            "clipping_point/cp_core/sim.py", "tests/test_fixed_loop.py", "tests/test_sim.py", "tests/test_perf.py",
+            "clipping_point/cp_core/sim.py", "clipping_point/cp_core/rng.py", "clipping_point/cp_core/storage.py",
+            "clipping_point/cp_core/profile.py", "clipping_point/cp_app/storage_file.py",
+            "tests/test_fixed_loop.py", "tests/test_sim.py", "tests/test_perf.py", "tests/test_rng.py", "tests/test_storage.py",
+            "tests/test_profile.py", "tests/test_storage_file.py", "tests/test_fingerprint.py",
         ),
         ALL,
         ALL,
@@ -139,11 +147,12 @@ AREAS = (
     Area(
         # 計画の表の「検証の道具、検査の決まり（はみ出しの検査、データの検査、見本データ）」の行。
         # 道具そのもの（tools/**）は、まとめて当てる。はみ出しの検査と見本データは、「画面（2D）」にも並べてある。
+        # 指紋のテスト（tests/test_fingerprint.py）は、道具 fingerprint の関数も見るので、「メインループと世界の状態」にも、ここにも並べる。
         "検証の道具と検査の決まり",
         (
             "tools/**", "tests/conftest.py", "tests/count_floor.txt", "tests/snapshots/**", "tests/test_arch_guard.py",
             "tests/test_rules_guard.py", "tests/test_canon_guard.py", "tests/test_export_inspect.py", "tests/test_verify.py",
-            "tests/test_web_smoke.py", "tests/test_claude_tools.py", "tests/test_screen_tools.py",
+            "tests/test_web_smoke.py", "tests/test_claude_tools.py", "tests/test_screen_tools.py", "tests/test_fingerprint.py",
             "clipping_point/cp_ui/check.py", "clipping_point/cp_ui/fixtures.py", "tests/test_ui_check.py", "tests/test_fixtures.py",
             "pytest.ini", "requirements-dev.txt",
         ),

@@ -8,6 +8,7 @@ build(画面の名, 変種) が、その画面の表示用の値（cp_core.flow 
 """
 from cp_core.flow import PlaceholderView
 from cp_core.input_frame import BUTTONS, InputFrame
+from cp_core.storage import NOTICES
 
 VARIANTS = ("typical", "extreme")
 # 仮の値：極端な値に使う、tick と実描画の回数（7桁。毎秒60 tickで約46時間ぶん）。表示の桁の上限は、まだ決めていない。
@@ -15,16 +16,22 @@ VARIANTS = ("typical", "extreme")
 BIGGEST_COUNT = 9_999_999
 
 
+def longest_notice() -> str:
+    """知らせの文の組（cp_core.storage の NOTICES）の、いちばん長い文。同じ長さなら、組の中で先のもの。"""
+    return max(NOTICES, key=len)
+
+
 def _placeholder(variant: str) -> PlaceholderView:
     if variant == "extreme":
-        # 舵は負（符号の分、1字長い）。アクセルとブレーキは最大。ボタンを10個とも押している。
+        # 舵は負（符号の分、1字長い）。アクセルとブレーキは最大。ボタンを10個とも押している。知らせは、いちばん長い文。
         frame = InputFrame(
             steer_analog=-1.0, steer_digital=-1, throttle_analog=1.0, throttle_digital=1, brake_analog=1.0, brake_digital=1,
             held=frozenset(BUTTONS), pressed=frozenset(BUTTONS),
         )
-        return PlaceholderView(tick=BIGGEST_COUNT, renders=BIGGEST_COUNT, frame=frame)
+        return PlaceholderView(tick=BIGGEST_COUNT, renders=BIGGEST_COUNT, frame=frame, notice=longest_notice())
+    # ふつうの値は、知らせが無い（保存先が使えて、保存が読めた起動）。
     frame = InputFrame(steer_analog=0.5, steer_digital=1, throttle_analog=0.3, throttle_digital=1, held=frozenset({"up", "confirm"}))
-    return PlaceholderView(tick=120, renders=60, frame=frame)
+    return PlaceholderView(tick=120, renders=60, frame=frame, notice="")
 
 
 # 画面の名ごとの、見本データの作り方。(変種) を受けて、表示用の値を返す。

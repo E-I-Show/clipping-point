@@ -7,6 +7,7 @@ import dataclasses
 
 import pytest
 
+from cp_core import storage
 from cp_core.flow import SCREEN_NAMES, Flow, PlaceholderView
 from cp_core.input_frame import BUTTONS, quantize
 from cp_ui import fixtures
@@ -35,11 +36,27 @@ def test_fixtures_placeholder_extreme_holds_the_longest_values():
     assert view.frame.held == frozenset(BUTTONS) and len(view.frame.held) == 10
 
 
+def test_fixtures_placeholder_extreme_carries_the_longest_notice_of_the_storage_notices():
+    # 知らせの文は、保存の口（cp_core/storage.py）の組から引く。文を足したり伸ばしたりすると、極端な値も一緒に変わる。
+    notice = fixtures.build("placeholder", "extreme").notice
+    assert notice == fixtures.longest_notice() and notice in storage.NOTICES
+    assert all(len(notice) >= len(other) for other in storage.NOTICES)
+    assert notice == "SAVE STORAGE UNAVAILABLE. PROGRESS WILL NOT BE KEPT" and len(notice) == 51
+
+
+def test_fixtures_longest_notice_follows_the_notices_of_the_storage(monkeypatch):
+    longer = "SAVE STORAGE UNAVAILABLE. A NOTICE THAT IS LONGER THAN ALL THE OTHERS"
+    monkeypatch.setattr(fixtures, "NOTICES", (*storage.NOTICES, longer))
+    assert fixtures.longest_notice() == longer
+    assert fixtures.build("placeholder", "extreme").notice == longer
+
+
 def test_fixtures_placeholder_typical_is_not_the_extreme():
     typical, extreme = fixtures.build("placeholder", "typical"), fixtures.build("placeholder", "extreme")
     assert typical != extreme
     assert typical.tick < extreme.tick and typical.renders < extreme.renders
     assert 0 < len(typical.frame.held) < len(extreme.frame.held)
+    assert typical.notice == "" and extreme.notice  # ふつうの値は、知らせが無い
 
 
 def test_fixtures_build_gives_the_same_value_every_time():

@@ -1,0 +1,12 @@
+{
+  "_notes": "保存する項目の一覧の写し（cp_core/profile.py の schema()）。項目を足す、消す、型を変えると、tools/fingerprint.py と守りのテストが落ちる。形式バージョンを上げて移行を書くか、NOT_SAVED に理由つきで入れるかを決めてから、python3 tools/fingerprint.py --update で取り直す（単独のコミットで、理由を添える）。",
+  "fields": {
+    "Settings.assist": "bool",
+    "Settings.bgm_volume": "int",
+    "Settings.race_serial": "int",
+    "Settings.sfx_volume": "int",
+    "Settings.transmission": "str",
+    "Settings.view": "str"
+  },
+  "version": 1
+}

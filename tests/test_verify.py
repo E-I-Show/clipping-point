@@ -20,9 +20,11 @@ UI = "画面（2D）"
 WEB = "ブラウザ連携"
 LOOP = "メインループと世界の状態"
 TOOLS_AREA = "検証の道具と検査の決まり"
-FULL_STEPS = ["check", "test", "screen-check", "run", "run-realtime", "tour", "export", "web-smoke"]
+FULL_STEPS = ["check", "test", "fingerprint", "screen-check", "run", "run-realtime", "tour", "export", "web-smoke"]
 UI_WORDS = "canvas or screens or ui_check or fixtures or tour"
-FLOW_WORDS = "flow or fixtures or screens"
+FLOW_WORDS = "flow or fixtures or screens or fingerprint"
+INPUT_WORDS = "input_frame or input_script or input_pyxel or input_trace or profile"
+WEB_WORDS = "web_bridge or input_web or storage or profile"
 # どの分野にも当たらない見本。設計のモジュールの表に出てこない名前にする（本物のファイルと重ならないように）。
 NO_AREA_CODE = "clipping_point/cp_core/zz_no_area.py"
 NO_AREA_TEST = "tests/test_zz_no_area.py"
@@ -161,8 +163,48 @@ def test_verify_focused_plan_for_the_input_area_follows_the_plan_table():
     plan, kind, not_yet = verify.plan_for([area(INPUT)], [], focused=True)
     assert kind == "focused"
     assert step_names(plan) == ["check", "test", "run", "web-smoke"]
-    assert plan[1][1][-2:] == ["-k", "input_frame or input_script or input_pyxel or input_trace"]
+    # 計画の表の「操作補正、保存する項目、セッティングの順」のうち、保存する項目（profile）まで入っている。
+    assert plan[1][1][-2:] == ["-k", INPUT_WORDS]
     assert not_yet == ["drive"]
+
+
+def test_verify_save_and_rng_files_map_to_the_main_loop_area_and_the_browser_backends_to_the_web_area():
+    # 計画の表の「保存、データの検査、乱数、メインループ、世界の状態」：全部を回す。
+    for path in (
+        "clipping_point/cp_core/storage.py", "clipping_point/cp_core/profile.py", "clipping_point/cp_core/rng.py",
+        "clipping_point/cp_app/storage_file.py", "tests/test_storage.py", "tests/test_profile.py", "tests/test_rng.py",
+        "tests/test_storage_file.py",
+    ):
+        assert names_of(path) == [LOOP], path
+    assert area(LOOP).tests == verify.ALL and area(LOOP).steps == verify.ALL
+    # 計画の表の「ブラウザ連携（入力の直読み、保存先、ファイルの受け渡し）」：localStorage の保存先と、保存先を選ぶ所。
+    for path in (
+        "clipping_point/cp_app/storage_web.py", "clipping_point/cp_app/storage_select.py",
+        "tests/test_storage_web.py", "tests/test_storage_select.py",
+    ):
+        assert names_of(path) == [WEB], path
+    plan, kind, not_yet = verify.plan_for([area(WEB)], [], focused=True)
+    assert kind == "focused" and step_names(plan) == ["check", "test", "web-smoke"]
+    assert plan[1][1][-2:] == ["-k", WEB_WORDS]  # 計画の表のテストの絞り「保存」（storage と profile）を足してある
+    assert not_yet == []
+
+
+def test_verify_fingerprint_files_map_to_the_tools_area_and_the_test_to_the_world_area_too():
+    # 道具、ふるまいの写し、差し込むスクリプトは、道具の分野（selftest-break も回す）。
+    for path in (
+        "tools/fingerprint.py", "tests/snapshots/fingerprint.json", "tests/snapshots/profile_schema.json", "tools/web/block_storage.js",
+    ):
+        assert names_of(path) == [TOOLS_AREA], path
+    # 指紋のテストは、世界の決定性と、道具の関数の両方を見る。
+    assert names_of("tests/test_fingerprint.py") == [LOOP, TOOLS_AREA]
+    areas, unknown = verify.areas_for(["tests/snapshots/fingerprint.json"])
+    assert unknown == [] and step_names(verify.plan_for(areas, unknown)[0])[-1] == verify.SELFTEST
+
+
+def test_verify_fingerprint_is_a_step_of_the_full_verification_right_after_the_tests():
+    assert list(verify.STEPS)[:3] == ["check", "test", "fingerprint"]
+    assert [str(part) for part in verify.STEPS["fingerprint"][1:]] == [str(ROOT / "tools" / "fingerprint.py")]  # --update は付けない
+    assert "fingerprint" not in verify.NOT_YET
 
 
 def test_verify_file_outside_every_area_is_unknown():
@@ -258,13 +300,21 @@ def test_verify_focused_plan_joins_areas_in_the_fixed_order():
     plan, kind, _ = verify.plan_for([area(UI), area(WEB)], [], focused=True)
     assert kind == "focused"
     assert step_names(plan) == ["check", "test", "screen-check", "run", "tour", "web-smoke"]
-    assert plan[1][1][-2:] == ["-k", f"{UI_WORDS} or web_bridge or input_web"]
+    # 語は、分野の順に並べる。
+    assert plan[1][1][-2:] == ["-k", f"{UI_WORDS} or {WEB_WORDS}"]
+
+
+def test_verify_focused_plan_does_not_repeat_a_word_two_areas_share():
+    plan, _, _ = verify.plan_for([area(INPUT), area(WEB)], [], focused=True)
+    words = plan[1][1][-1].split(" or ")
+    assert words == [*INPUT_WORDS.split(" or "), "web_bridge", "input_web", "storage"]  # profile は、1度だけ
+    assert len(words) == len(set(words))
 
 
 def test_verify_screen_check_and_tour_are_no_longer_waiting_to_be_built():
     assert "screen-check" in verify.STEPS and "tour" in verify.STEPS
     assert "screen-check" not in verify.NOT_YET and "tour" not in verify.NOT_YET
-    # 全体の検証での順：check → test → screen-check → run → run-realtime → tour → export → web-smoke。
+    # 全体の検証での順：check → test → fingerprint → screen-check → run → run-realtime → tour → export → web-smoke。
     assert list(verify.STEPS) == FULL_STEPS
 
 

@@ -42,7 +42,7 @@ paths:
 
 - テスト `tests/test_web_bridge.py`：値がある、値が無い、形が違う、js が無い（デスクトップ版）。偽の js を渡す。
 - テスト `tests/test_web_smoke.py`：判定の関数（失敗の種類ごと、線を外れた値ごと）、node が無い場合、取得と照合（一時の置き場と偽の取得の関数で通す）。ブラウザもネットワークも使わない。
-- 道具 web-smoke（`python3 tools/web_smoke.py [--only shipped|probe|script|gamepad] [--ticks N] [--timeout 秒]`）：筋書きは4本で、約45秒。入力の2本の決まりは `.claude/rules/controls.md`。
+- 道具 web-smoke（`python3 tools/web_smoke.py [--only shipped|probe|script|gamepad|storage_blocked] [--ticks N] [--timeout 秒]`）：筋書きは5本で、約55秒。入力の2本の決まりは `.claude/rules/controls.md`、保存（結果の `storage`）は `save.md`。
 - 道具 `python3 tools/web/fetch_runtime.py [--check]`：ランタイムの写しの取得と照合。`bash tools/setup_env.sh` が呼ぶ。
 - 道具 selftest-break の `web_` と `fetch_` で始まる件：ブラウザ版でだけ起きる崩れを、web-smoke が拾うこと。
 

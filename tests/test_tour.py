@@ -246,8 +246,9 @@ def test_tour_run_writes_one_entry_per_screen_and_variant(tmp_path):
     assert json.loads((tmp_path / "result.json").read_text(encoding="utf-8")) == result
     assert not (tmp_path / "result.json.tmp").exists()
     assert [(shot["screen"], shot["variant"]) for shot in result["shots"]] == [("placeholder", "typical"), ("placeholder", "extreme")]
-    for shot in result["shots"]:
-        assert shot["commands"] == shot["checked"] == 8  # どの命令も、1つずつ照らしている
+    # 命令の数は、ふつうの値で8つ。極端な値は、知らせの1行の分、文字の命令が1つ多い。
+    for shot, commands in zip(result["shots"], (8, 9), strict=True):
+        assert shot["commands"] == shot["checked"] == commands  # どの命令も、1つずつ照らしている
         assert shot["margin_ink"] == 0 and shot["screen_ink"] > 0
         assert shot["command_problems"] == [] and shot["violations"] == []
         assert shot["file"] == f"{shot['screen']}_{shot['variant']}.png"
@@ -365,7 +366,7 @@ def test_tour_run_reports_commands_that_were_recorded_but_not_drawn(tmp_path):
     pyxel = FakePyxel()
     pyxel.image_type = NoText
     _, result = run_tour(tmp_path, pyxel)
-    assert problems_of(result) == [("text", "no_ink")] * 10  # 文字の命令は、1画面に5つ
+    assert problems_of(result) == [("text", "no_ink")] * 11  # 文字の命令は、ふつうの値で5つ、極端な値で6つ（知らせの1行）
     # 全体の数（余白の画素、画面が空でないこと）だけでは、見えない。
     assert all(shot["margin_ink"] == 0 and shot["screen_ink"] > 0 for shot in result["shots"])
 
@@ -390,7 +391,7 @@ def test_tour_run_reports_text_wider_than_the_computed_ink_box_even_on_a_filled_
     pyxel = FakePyxel()
     pyxel.image_type = WideGlyphs
     _, result = run_tour(tmp_path, pyxel)
-    assert problems_of(result) == [("text", "ink_outside")] * 10
+    assert problems_of(result) == [("text", "ink_outside")] * 11  # 文字の命令の全部（ふつうの値で5つ、極端な値で6つ）
     assert all(shot["margin_ink"] == 0 for shot in result["shots"])
 
 

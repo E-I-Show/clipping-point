@@ -36,9 +36,9 @@ def frame_at(script, tick: int):
     return NEUTRAL if script is None else script.frame_at(tick)
 
 
-def sim_summary(script, ticks: int) -> dict:
-    """世界に、台本の入力フレームを tick 0 から順に ticks 回流したときの、世界の要約。"""
-    sim = Sim()
+def sim_summary(script, ticks: int, seed: int = 0) -> dict:
+    """世界（種は seed。アプリの世界の種は、いまは0）に、台本の入力フレームを tick 0 から順に ticks 回流したときの、世界の要約。"""
+    sim = Sim(seed)
     for tick in range(ticks):
         sim.step(frame_at(script, tick))
     return sim.summary()

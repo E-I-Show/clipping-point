@@ -4,6 +4,7 @@
 //
 //   node tools/web/webrun.js --html FILE --mirror DIR --json FILE
 //                            [--init-script JS] [--until REGEX] [--watch-ms N] [--timeout-ms N] [--shot FILE]
+//                            [--local-storage PREFIX]
 //
 //   --html FILE      開くHTML。書き換えずに、そのまま file:// で開く
 //   --mirror DIR     ランタイムの写し（tools/web/fetch_runtime.py が組み立てた mirror/）
@@ -14,6 +15,8 @@
 //   --watch-ms N     開始のクリックの後、少なくともこの間は見続ける（既定 0）
 //   --timeout-ms N   全体の時間切れ（既定 90000）
 //   --shot FILE      最後の画面（canvas）のPNGを保存する
+//   --local-storage PREFIX  終わりに、ページの localStorage の、鍵が PREFIX で始まるものを全部読んで、結果に入れる
+//                    （localStorage: {prefix, entries: {鍵: 値}, error}。読めなければ entries が null で、error に理由）
 //
 // ランタイムへの要求（https://kitao.dev/…）は、ランタイムの写し（--mirror）のファイルで応える。
 // そこに無いファイルへの要求と、その外へ出る要求（ほかのホスト、ほかのファイル）は、通さずに失敗として記す。
@@ -80,6 +83,7 @@ function parseArgs(argv) {
   const names = {
     "--html": "html", "--mirror": "mirror", "--json": "json", "--init-script": "initScript",
     "--until": "until", "--watch-ms": "watchMs", "--timeout-ms": "timeoutMs", "--shot": "shot",
+    "--local-storage": "localStorage",
   };
   for (let i = 0; i < argv.length; i += 2) {
     const name = names[argv[i]];
@@ -137,9 +141,9 @@ async function countPixels(browser, png) {
 // ページを開いて、開始のクリックから最後の画面までを進める。ページが返らなければ Unresponsive を投げる。
 async function drive(browser, page, opt, result, env) {
   const { now, deadline, untilRe, fail, pageUrl } = env;
-  // ページの中で fn を実行する。返らなければ Unresponsive。ほかの失敗（ページの切り替わりなど）は fallback を返す。
-  const ask = (fn, fallback) =>
-    within(page.evaluate(fn), ASK_TIMEOUT_MS, "page.evaluate").catch((e) => {
+  // ページの中で fn を実行する（arg は、fn へ渡す値）。返らなければ Unresponsive。ほかの失敗（ページの切り替わりなど）は fallback を返す。
+  const ask = (fn, fallback, arg) =>
+    within(page.evaluate(fn, arg), ASK_TIMEOUT_MS, "page.evaluate").catch((e) => {
       if (e instanceof Unresponsive) throw e;
       return fallback;
     });
@@ -204,6 +208,26 @@ async function drive(browser, page, opt, result, env) {
     }
     result.canvas = { ...box, ...(await countPixels(browser, png)), changed: !first.equals(png), changeGapMs: CHANGE_GAP_MS };
   }
+
+  // localStorage の中身。頼まれたときだけ読む。合否は決めない（保存の往復の値を照らすのは tools/web_smoke.py）。
+  if (opt.localStorage) {
+    result.localStorage = await ask(
+      (prefix) => {
+        try {
+          const entries = {};
+          for (let i = 0; i < window.localStorage.length; i += 1) {
+            const key = window.localStorage.key(i);
+            if (key !== null && key.startsWith(prefix)) entries[key] = window.localStorage.getItem(key);
+          }
+          return { prefix, entries, error: null };
+        } catch (e) {
+          return { prefix, entries: null, error: String(e) }; // localStorage に触れると例外になる文書
+        }
+      },
+      { prefix: opt.localStorage, entries: null, error: "page.evaluate failed" },
+      opt.localStorage,
+    );
+  }
 }
 
 async function main() {
@@ -231,6 +255,7 @@ async function main() {
     untilAt: null,
     state: null,
     canvas: null,
+    localStorage: null,
     elapsedMs: null,
   };
   const fail = (kind, detail) => result.failures.push({ t: now(), kind, detail: String(detail).slice(0, 4000) });
