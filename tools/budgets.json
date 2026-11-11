@@ -2,9 +2,27 @@
   "_notes": {
     "html_max_bytes": "仮の値：設計の「HTMLの上限を1 MB」を1,000,000バイトと読んだ。段4（仕上げと公開）で合わせる。",
     "rule_file_max_bytes": "仮の値：規則ファイルが頭だけ読まれる大きさより十分小さい、という試作の置き方。規則ファイルが増えて窮屈になった時に合わせる。",
-    "run_renders_tolerance": "仮の値：実描画の回数を tick数の半分の前後3回まで許す。試作の置き方。全体の検証の中で外れが出た時に合わせる。"
+    "run_renders_tolerance": "仮の値：実描画の回数を tick数の半分の前後3回まで許す。試作の置き方。全体の検証の中で外れが出た時に合わせる。",
+    "web_updates_per_s_min": "仮の値：段0の通過条件の線（更新が毎秒59回以上）。開発環境のヘッドレスのChromiumでの線。走行の場面で測る段0 区切り10で合わせる。",
+    "web_renders_per_s_min": "仮の値：段0の通過条件の線（実描画が毎秒29回以上）。合わせる時は上と同じ。",
+    "web_update_ms_p95_max": "仮の値：段0の通過条件の線（更新1回が4 ms以内、95%点）。実機では測っていない。合わせる時は上と同じ。",
+    "web_render_ms_p95_max": "仮の値：段0の通過条件の線（実描画1回が12 ms以内、95%点）。実機では測っていない。合わせる時は上と同じ。",
+    "web_probe_ticks": "仮の値：慣らしの60 tickの後に、通過条件の600 tickを測る。ブラウザ版は実時間で回るので、約11秒かかる。全体の検証が3分に近づいた時に合わせる。",
+    "web_probe_warmup_ticks": "仮の値：頭の60 tick（1秒）は測らない。起動の直後はブラウザ版のPythonが3〜4.5倍遅い、という試作の実測から。段0 区切り10で合わせる。",
+    "web_renders_tolerance": "仮の値：ブラウザ版の実描画の回数を tick数の半分の前後、この回数まで許す。この環境の実測では差が0〜2回。アプリが実時間を RenderGate へ渡さないと、重い周期で3分の2ほどに落ちる（240 tickで88回）。段0 区切り10で合わせる。",
+    "web_shipped_watch_s": "仮の値：何も渡さずに開く筋書きで、開始のクリックの後に見続ける秒数。タイトルまで進む筋書きにする時（段0 区切り5より後）に合わせる。",
+    "web_timeout_s": "仮の値：筋書き1本の時間切れ（秒）。この環境では、ランタイムの読み込みが約3秒、筋書きが約15秒で終わる。全体の検証の中で時間切れが出た時に合わせる。"
   },
   "html_max_bytes": 1000000,
   "rule_file_max_bytes": 6000,
-  "run_renders_tolerance": 3
+  "run_renders_tolerance": 3,
+  "web_updates_per_s_min": 59,
+  "web_renders_per_s_min": 29,
+  "web_update_ms_p95_max": 4,
+  "web_render_ms_p95_max": 12,
+  "web_probe_ticks": 660,
+  "web_probe_warmup_ticks": 60,
+  "web_renders_tolerance": 12,
+  "web_shipped_watch_s": 3,
+  "web_timeout_s": 90
 }

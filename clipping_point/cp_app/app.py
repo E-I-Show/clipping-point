@@ -10,6 +10,11 @@ Pyxelの描画関数を直に呼ぶのは、裏画面を消す、描画命令の
   CP_SMOKE_TICKS=<回すtick数>                既定は120
   CP_SMOKE_DRIVER=flip|run                   flip：自前のループ（速い）。run：pyxel.run（本番と同じ経路）
 結果ファイルは全tickの後にだけ書く。終了コードが0でも、結果ファイルが無ければ回り切っていない。
+
+ブラウザ版で外から渡す値（tools/web_smoke.py が使う）。読む所と形は cp_app/web_bridge.py。
+  window.CP_PROBE = {ticks, warmup_ticks}   あれば、決まったtickの後に、結果の1行と完了の合図をコンソールへ出す
+値が無ければ普通に起動する。結果を出した後も終了しない（ブラウザ版では sys.exit と pyxel.quit を呼ばない）。
+更新1回と実描画1回の時間は、この値があるときだけ測る（cp_app/perf.py）。測った値は世界へ渡さない。
 """
 import json
 import os
@@ -24,7 +29,9 @@ from cp_core.sim import Sim
 from cp_ui.canvas import SCREEN_H, SCREEN_W, Canvas
 from cp_ui.screens import COL_BACK, TITLE, build_placeholder
 
+from . import web_bridge
 from .canvas_pyxel import execute
+from .perf import PerfMeter
 
 DRIVERS = ("flip", "run")
 # 速い経路だけ、Pyxelの周期を上げて実時間の待ちを縮める。世界は fps を読まないので、結果は変わらない。
@@ -57,8 +64,13 @@ def read_run_config(env) -> RunConfig | None:
 
 
 class App:
-    def __init__(self, run_config: RunConfig | None = None) -> None:
+    def __init__(self, run_config: RunConfig | None = None, probe: web_bridge.Probe | None = None, js=None) -> None:
         self.run_config = run_config
+        self.probe = probe  # ブラウザ版で外から渡された、回すtick数の指定。無ければ None
+        self.js = js  # ブラウザの機能（js のモジュール）。デスクトップ版では None
+        self.probe_reported = False
+        # 処理時間は、外から回すtick数を渡されたときだけ測る。世界（Sim）へは渡さない。
+        self.meter = PerfMeter(probe.warmup_ticks) if probe is not None else None
         fast = run_config is not None and run_config.driver == "flip"
         pyxel.init(
             SCREEN_W,
@@ -82,19 +94,28 @@ class App:
 
     # --- 毎秒60回 ---
     def update(self) -> None:
+        started_s = time.perf_counter()
         self.sim.step()
         self.gate.on_tick()
         self.ticks += 1
+        if self.meter is not None:
+            self.meter.on_update(started_s, time.perf_counter())
         config = self.run_config
         if config is not None and self.ticks >= config.ticks:
             self.finish_run(config)
+        probe = self.probe
+        if probe is not None and not self.probe_reported and self.ticks >= probe.ticks:
+            self.finish_probe()
 
     # --- Pyxelが毎周期呼ぶ。実描画は毎秒30回に間引く ---
     def draw(self) -> None:
         # 実時間は見た目の判断（間引き）にだけ使う。世界へは渡さない。
         if self.gate.should_render(time.perf_counter() * 1000.0):
             self.renders += 1
+            started_s = time.perf_counter()
             self.render()
+            if self.meter is not None:
+                self.meter.on_render(started_s, time.perf_counter())
         # 裏画面を画面へ写すのは毎回。描かない周期でも、Pyxelが性能表示とカーソルを画面に描き足すため。
         pyxel.blt(0, 0, self.back, 0, 0, SCREEN_W, SCREEN_H)
 
@@ -134,6 +155,22 @@ class App:
             # pyxel.run の中から抜ける。pyxel.quit() は常に終了コード0で終わり、失敗を消すので使わない。
             sys.exit(0)
 
+    # --- ブラウザ版で、外から回すtick数を渡されたときの口 ---
+    def finish_probe(self) -> None:
+        """決まったtickの後に1度だけ呼ぶ。結果の1行と完了の合図をコンソールへ出す。終了はしない。"""
+        self.probe_reported = True
+        result = {
+            "ticks": self.ticks,
+            "renders": self.renders,
+            "sim": self.sim.summary(),
+            "warmup_ticks": self.probe.warmup_ticks,
+            "perf": self.meter.report(),
+            "platform": sys.platform,
+            "python": sys.version.split()[0],
+            "pyxel": pyxel.VERSION,
+        }
+        web_bridge.emit_result(self.js, result)
+
     def run(self) -> None:
         config = self.run_config
         if config is not None and config.driver == "flip":
@@ -149,4 +186,5 @@ class App:
 
 
 def main() -> None:
-    App(read_run_config(os.environ)).run()
+    js = web_bridge.browser_js(sys.platform)  # デスクトップ版では None
+    App(read_run_config(os.environ), web_bridge.read_probe(js), js).run()

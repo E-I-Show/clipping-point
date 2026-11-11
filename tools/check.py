@@ -1,11 +1,13 @@
 """静的な検査。ゲームは1 tickも回さない。
 
-  python3 tools/check.py [--only syntax|arch|rules|canon]
+  python3 tools/check.py [--only syntax|arch|rules|canon|areas]
 
   syntax   clipping_point/、tools/、tests/ の全 .py が compile できる
   arch     層の分離（tools/arch_check.py。純Pythonの層のソースをASTで解析し、許可した一覧と照らす）
   rules    規則ファイルの見張り（tools/rules_guard.py）
   canon    正本の見張り（tools/canon_guard.py）
+  areas    出荷するコード（clipping_point/）とテスト（tests/）の全ファイルが、分野ごとの組の表
+           （tools/verify.py の AREAS）のどれかの分野に当たる
 終了コード：0＝全節が合格、1＝問題のある節がある、2＝調べた件数が0の節か、回り切れなかった節がある。
 最後の1行の「節=数」は、その節で調べた件数。
 """
@@ -15,6 +17,7 @@ import sys
 import arch_check
 import canon_guard
 import rules_guard
+import verify
 from _common import APP, FAIL, INCOMPLETE, OK, ROOT, TESTS, TOOLS, finish, load_budgets
 
 MAX_DETAILS = 40  # 1つの節で画面に出す問題の行数の上限
@@ -45,7 +48,11 @@ def canon() -> tuple:
     return canon_guard.check_canon(ROOT)
 
 
-SECTIONS = {"syntax": syntax, "arch": arch, "rules": rules, "canon": canon}
+def areas() -> tuple:
+    return verify.unassigned_files(ROOT)
+
+
+SECTIONS = {"syntax": syntax, "arch": arch, "rules": rules, "canon": canon, "areas": areas}
 
 
 def main() -> int:

@@ -23,9 +23,14 @@ PY = sys.executable
 SCRATCH = OUT / "selftest"
 # 複製するもの。道具、テスト、見張りが読むファイルの全部。足りなければ control の件が落ちる。
 COPY_ITEMS = ("clipping_point", "tools", "tests", ".claude/rules", "docs/canon", "docs/handoff.md", "CLAUDE.md", "pytest.ini")
-CASE_TIMEOUT_S = 180  # 1件の時間切れ（秒）。いちばん長い件（--realtime）でも数秒で終わる
+CASE_TIMEOUT_S = 180  # 1件の時間切れ（秒）。いちばん長い件（verify --all。ブラウザ版の煙テストを含む）で約40秒
+
+RUNTIME_CACHE = ".cache"  # ランタイムの写しの置き場。複製には、ここへのリンクだけを置く（中身は書き換えない）
 
 APP_PY = "clipping_point/cp_app/app.py"
+BRIDGE_PY = "clipping_point/cp_app/web_bridge.py"
+WEBRUN_JS = "tools/web/webrun.js"
+SUMS = "tools/web/SHA256SUMS"
 SIM_PY = "clipping_point/cp_core/sim.py"
 GATE_PY = "clipping_point/cp_core/fixed_loop.py"
 CANVAS_PY = "clipping_point/cp_ui/canvas.py"
@@ -41,6 +46,14 @@ STALE_JUNIT = (
 )
 STALE_RESULT = '{"ticks": 120, "renders": 60, "sim": {"tick": 120}, "back_ink": 3981, "screen_diff": 0, "driver": "flip"}\n'
 EXIT_0_TEST = "import os\n\n\ndef test_zz_exit():\n    os._exit(0)\n"
+# 前回の実行が残した、合格の形の、ブラウザ版の実行役の結果。
+STALE_WEB_PAGE = (
+    '{"htmlSha256": "", "failures": [], "clickedAt": 3500, "untilAt": 7000, "state": {"initialized": true},'
+    ' "canvas": {"ink": 35000}, "console": [{"t": 7000, "type": "log", "text": "CP_PROBE_RESULT {\\"ticks\\": 240,'
+    ' \\"renders\\": 120, \\"sim\\": {\\"tick\\": 240}, \\"platform\\": \\"emscripten\\", \\"python\\": \\"3.14.2\\",'
+    ' \\"perf\\": {\\"updates\\": 180, \\"updates_per_s\\": 60.0, \\"renders_per_s\\": 30.0, \\"update_ms_p95\\": 0.1,'
+    ' \\"render_ms_p95\\": 0.2}}"}, {"t": 7000, "type": "log", "text": "CP_PROBE_DONE"}]}\n'
+)
 
 
 # --- 壊し方 ---
@@ -91,6 +104,23 @@ IN_DRAW = "        if self.gate.should_render(time.perf_counter() * 1000.0):\n"
 PRESENT = "        pyxel.blt(0, 0, self.back, 0, 0, SCREEN_W, SCREEN_H)\n"
 EXECUTE = "        execute(canvas.commands, self.back)\n"
 QUIT_EARLY = IN_UPDATE + "        if self.ticks == 5:\n            pyxel.quit()\n"
+# ブラウザ版の煙テスト。probe の件は、慣らしの60 tickの後に180 tick（3秒）だけ測って、件の時間を縮める。
+WEB, WEB_SHIPPED = tool("web_smoke"), tool("web_smoke", "--only", "shipped")
+WEB_PROBE = tool("web_smoke", "--only", "probe", "--ticks", "240")
+VERIFY_ALL = tool("verify", "--all")
+FETCH_CHECK = tool("web/fetch_runtime", "--check")
+ONLY_ON_WEB = "        if sys.platform == 'emscripten' and self.ticks == 5:\n"
+BUSY_6_MS = (
+    "        if sys.platform == 'emscripten':\n            busy_until = time.perf_counter() + 0.006\n"
+    "            while time.perf_counter() < busy_until:\n                pass\n"
+)
+FETCH_OUTSIDE = "\nif sys.platform == 'emscripten':\n    import js\n\n    js.fetch('https://example.com/ping')\n"
+RENDER_COUNT = "            self.renders += 1\n"
+# 実描画のある周期を20 ms重くする（測る区間の外に置く。更新と実描画の時間の線には掛からない）。
+HEAVY_FRAME = (
+    "            if sys.platform == 'emscripten':\n                busy_until = time.perf_counter() + 0.020\n"
+    "                while time.perf_counter() < busy_until:\n                    pass\n"
+)
 
 # (名前, 壊し方の並び, 回す道具, 期待する終了コード, 最後の1行にあるはずの語)
 CASES = [
@@ -104,6 +134,12 @@ CASES = [
     ("control_run_realtime", [], RUN_RT, {0}, "run: OK"),
     ("control_export", [], EXPORT, {0}, "export: OK"),
     ("control_export_leaves_out_caches", [add("clipping_point/cp_core/__pycache__/sim.cpython-313.pyc", "x")], EXPORT, {0}, "export: OK"),
+    ("control_fetch_runtime_check", [], FETCH_CHECK, {0}, "fetch_runtime: OK"),
+    ("control_web_smoke", [], WEB, {0}, "web_smoke: OK scenarios=2 shipped=ok probe=ok"),
+    ("control_web_smoke_short_probe", [], WEB_PROBE, {0}, "web_smoke: OK scenarios=1 probe=ok"),
+    ("control_web_heavy_frame_keeps_30_renders", [rep(APP_PY, RENDER_COUNT, RENDER_COUNT + HEAVY_FRAME)], WEB_PROBE, {0}, "web_smoke: OK scenarios=1 probe=ok"),
+    ("control_verify_list", [], tool("verify", "--list"), {0}, "verify: OK mode=list"),
+    ("control_verify_all", [], VERIFY_ALL, {0}, "verify: OK mode=all steps=6 ok=6 failed=0"),
     # --- check：構文 ---
     ("check_syntax_error_in_app", [rep(SIM_PY, "    def step(self) -> None:\n", "    def step(self) -> None\n")], CHECK, {1}, "failed=syntax"),
     ("check_syntax_error_in_test_file", [add("tests/test_zz_broken.py", "def test_zz(:\n    pass\n")], CHECK, {1}, "failed=syntax"),
@@ -198,6 +234,47 @@ CASES = [
     ("export_unknown_file_type", [add("clipping_point/data/notes.txt", "notes\n")], EXPORT, {1}, "failed=unknown_type"),
     ("export_over_size_limit", [rep("tools/budgets.json", '"html_max_bytes": 1000000', '"html_max_bytes": 1000')], EXPORT, {1}, "failed=size"),
     ("export_main_py_missing", [rm("clipping_point/main.py")], EXPORT, {2}, "reason=pyxel_package_failed"),
+    # --- check：分野ごとの組の表（tools/verify.py の AREAS）に当たらないファイル ---
+    ("check_shipped_file_in_no_area", [add("clipping_point/cp_core/vehicle.py", '"""placeholder"""\n')], CHECK, {1}, "failed=areas"),
+    ("check_test_file_in_no_area", [add("tests/test_zz_new.py", "def test_zz_new():\n    assert True\n")], CHECK, {1}, "failed=areas"),
+    # --- fetch_runtime：ランタイムの写しの照合 ---
+    ("fetch_runtime_checksum_mismatch", [rep(SUMS, "0ecaf7fa", "1ecaf7fa")], FETCH_CHECK, {1}, "reason=checksum_mismatch"),
+    ("fetch_runtime_cache_missing", [rm(RUNTIME_CACHE)], FETCH_CHECK, {2}, "reason=missing"),
+    # --- web-smoke：回り切れない（2。合格にしない） ---
+    ("web_runtime_mirror_missing", [rm(RUNTIME_CACHE)], WEB, {2}, "reason=no_runtime_mirror"),
+    ("web_runtime_mirror_does_not_match_sums", [rep(SUMS, "0ecaf7fa", "1ecaf7fa")], WEB, {2}, "reason=runtime_mirror_mismatch"),
+    ("web_build_fails", [rm("clipping_point/main.py")], WEB, {2}, "reason=export_failed"),
+    ("web_too_few_ticks", [], tool("web_smoke", "--only", "probe", "--ticks", "30"), {2}, "reason=too_few_ticks"),
+    ("web_no_done_signal", [rep(BRIDGE_PY, "    js.console.log(DONE_MARK)\n", "    pass\n")], [*WEB_PROBE, "--timeout", "15"], {2}, "incomplete=probe.no_done_signal"),
+    # 実行役が、結果を書かずに終了コード0で終わる。前回の合格の形の結果が残っていても、読まない。
+    (
+        "web_stale_result_is_not_reused",
+        [add("out/web_smoke/probe.json", STALE_WEB_PAGE), rep(WEBRUN_JS, 'const crypto = require("crypto");\n', "process.exit(0);\n")],
+        WEB_PROBE, {2}, "incomplete=probe.no_runner_result",
+    ),
+    # --- web-smoke：ブラウザ版でだけ起きる崩れ（1）。どれも、デスクトップ版の道具（run）は通る ---
+    ("web_python_error_only_in_browser", [rep(APP_PY, IN_UPDATE, IN_UPDATE + ONLY_ON_WEB + "            raise RuntimeError('planted')\n")], WEB_SHIPPED, {1}, "failed=shipped.error_overlay"),
+    ("web_request_outside_mirror", [app(APP_PY, FETCH_OUTSIDE)], WEB_SHIPPED, {1}, "shipped.outside_mirror"),
+    ("web_blank_screen", [rep(APP_PY, PRESENT, "        pass\n")], WEB_SHIPPED, {1}, "failed=shipped.canvas_ink"),
+    ("web_probe_ticks_short", [rep(APP_PY, "self.ticks >= probe.ticks:", "self.ticks >= probe.ticks - 1:")], WEB_PROBE, {1}, "failed=probe.ticks"),
+    ("web_summary_differs_from_desktop", [rep(APP_PY, IN_UPDATE, IN_UPDATE + ONLY_ON_WEB + "            self.sim.step()\n")], WEB_PROBE, {1}, "failed=probe.sim"),
+    ("web_update_over_the_time_line", [rep(APP_PY, IN_UPDATE, IN_UPDATE + BUSY_6_MS)], WEB_PROBE, {1}, "probe.update_ms_p95"),
+    # アプリが実時間を RenderGate へ渡さない。デスクトップ版の道具では見えず、ブラウザ版の実描画の回数で見える。
+    # 差が出るのは、実描画のある周期が1周期（16.7 ms）に収まらないときだけ。重い周期を足して確かめる
+    # （重くしただけなら毎秒30回のまま通ることは、control_web_heavy_frame_keeps_30_renders で見る）。
+    (
+        "web_gate_gets_no_real_time",
+        [rep(APP_PY, RENDER_COUNT, RENDER_COUNT + HEAVY_FRAME), rep(APP_PY, IN_DRAW, "        if self.gate.should_render():\n")],
+        WEB_PROBE, {1}, "failed=probe.renders",
+    ),
+    # --- verify：1本落ちても最後まで回し、失敗にする。回らなかった手順も失敗に数える ---
+    (
+        "verify_one_step_fails",
+        [rep("tests/test_sim.py", "    assert Sim().tick == 0\n", "    assert Sim().tick == 1\n")],
+        VERIFY_ALL, {1}, "steps=6 ok=5 failed=1 failed_steps=test",
+    ),
+    ("verify_step_cannot_run", [rm("tools/run.py")], VERIFY_ALL, {1}, "steps=6 ok=4 failed=2 failed_steps=run,run-realtime"),
+    ("verify_nothing_asked", [], tool("verify"), {2}, "reason=nothing_asked"),
 ]
 
 
@@ -247,6 +324,10 @@ def copy_repo(work: Path) -> None:
             shutil.copytree(source, target, ignore=ignore)
         else:
             shutil.copyfile(source, target)
+    # ランタイムの写し（約45 MB）は複製せず、リンクを置く。複製の中の道具は、ここを読むだけ
+    # （取得して書き込む `fetch_runtime.py` は、--check を付けた形でしか回さない）。
+    if (ROOT / RUNTIME_CACHE).is_dir():
+        (work / RUNTIME_CACHE).symlink_to(ROOT / RUNTIME_CACHE, target_is_directory=True)
 
 
 def last_line(out: str, err: str) -> str:

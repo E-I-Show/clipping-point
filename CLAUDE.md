@@ -156,3 +156,4 @@ Pyxel 3.0の3D機能（Pyxel Cube）で作る、初代PS時代風ローポリゴ
 | `.claude/rules/tools.md` | `tools/` の検証の道具 |
 | `.claude/rules/sim-core.md` | 固定刻みの間引き（`cp_core/fixed_loop.py`）と世界（`cp_core/sim.py`）、そのテスト |
 | `.claude/rules/ui.md` | `cp_ui/` と描画命令の実行（`cp_app/canvas_pyxel.py`）、そのテスト |
+| `.claude/rules/web.md` | ブラウザ版の煙テスト（`tools/web_smoke.py`、`tools/web/`）とブラウザとの橋（`cp_app/web_bridge.py`）、そのテスト |
