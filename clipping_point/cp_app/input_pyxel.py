@@ -36,6 +36,7 @@ BUTTON_KEYS = {
     "confirm": ("KEY_Z", "KEY_RETURN", "GAMEPAD1_BUTTON_A", "GAMEPAD1_BUTTON_START"),
     "back": ("KEY_X", "KEY_ESCAPE", "GAMEPAD1_BUTTON_B"),
 }
+NO_BUTTONS = frozenset()
 
 
 def _clamp(value: float, low: float, high: float) -> float:
@@ -47,17 +48,20 @@ class PyxelInput:
 
     def __init__(self, pyxel) -> None:
         self._btn, self._btnp, self._btnv = pyxel.btn, pyxel.btnp, pyxel.btnv
+        # 無い名前は、ここ（起動時）で AttributeError になる。
+        self._steer_axis, self._throttle_axis, self._brake_axis = (getattr(pyxel, name) for name in (STEER_AXIS, THROTTLE_AXIS, BRAKE_AXIS))
+        # 1 tickに、同じキーを2度読まない。読むキーを、重なりを除いて並べ、1つずつにビットを割り当てる。
+        # 読んだ結果は、ビットを重ねた整数1つにまとめる（ブラウザ版では、辞書やジェネレータで組み立てるより軽い。実測）。
+        groups = (STEER_LEFT_KEYS, STEER_RIGHT_KEYS, THROTTLE_KEYS, BRAKE_KEYS, *BUTTON_KEYS.values())
+        bit_of = {name: 1 << index for index, name in enumerate(dict.fromkeys(name for group in groups for name in group))}
+        self._keys = tuple((bit, getattr(pyxel, name)) for name, bit in bit_of.items())  # (ビット, Pyxelのキーの値)
 
-        def codes(names: tuple) -> tuple:
-            return tuple(getattr(pyxel, name) for name in names)  # 無い名前は、ここ（起動時）で AttributeError
+        def mask(names: tuple) -> int:
+            return sum(bit_of[name] for name in names)
 
-        self._steer_axis, self._throttle_axis, self._brake_axis = codes((STEER_AXIS, THROTTLE_AXIS, BRAKE_AXIS))
-        self._steer_left, self._steer_right = codes(STEER_LEFT_KEYS), codes(STEER_RIGHT_KEYS)
-        self._throttle, self._brake = codes(THROTTLE_KEYS), codes(BRAKE_KEYS)
-        self._buttons = tuple((name, codes(keys)) for name, keys in BUTTON_KEYS.items())
-        groups = (self._steer_left, self._steer_right, self._throttle, self._brake, *(keys for _, keys in self._buttons))
-        # 1 tickに、同じキーを2度読まない。読むキーを、重なりを除いて並べておく。
-        self._keys = tuple(dict.fromkeys(code for group in groups for code in group))
+        self._steer_left, self._steer_right = mask(STEER_LEFT_KEYS), mask(STEER_RIGHT_KEYS)
+        self._throttle, self._brake = mask(THROTTLE_KEYS), mask(BRAKE_KEYS)
+        self._buttons = tuple((name, mask(keys)) for name, keys in BUTTON_KEYS.items())  # (ボタンの名, そのキーのビット)
         self.reads = 0  # read() を呼んだ回数。検証が、1 tickに1度だけ呼ばれていることを見るのに使う
 
     def read(self, is_web: bool, direct) -> InputFrame:
@@ -74,13 +78,13 @@ class PyxelInput:
             raise ValueError("direct trigger values are read only in the browser")
         self.reads += 1
         btn, btnp, btnv = self._btn, self._btnp, self._btnv
-        down = {code: btn(code) for code in self._keys}
-        hit = {code: btnp(code) for code in self._keys}
-
-        def any_down(keys: tuple) -> bool:
-            return any(down[code] for code in keys)
-
-        throttle_digital, brake_digital = int(any_down(self._throttle)), int(any_down(self._brake))
+        down = hit = 0  # 押しているキーのビットと、押した瞬間のキーのビット
+        for bit, key in self._keys:
+            if btn(key):
+                down |= bit
+            if btnp(key):
+                hit |= bit
+        throttle_digital, brake_digital = int(bool(down & self._throttle)), int(bool(down & self._brake))
         if direct is not None:
             left, right = direct
             throttle_analog, brake_analog = _clamp(float(right), 0.0, 1.0), _clamp(float(left), 0.0, 1.0)
@@ -93,11 +97,11 @@ class PyxelInput:
             brake_analog = _clamp(btnv(self._brake_axis) / AXIS_MAX, 0.0, 1.0)
         return InputFrame(
             steer_analog=_clamp(-btnv(self._steer_axis) / AXIS_MAX, -1.0, 1.0),  # 左が正に直す
-            steer_digital=int(any_down(self._steer_left)) - int(any_down(self._steer_right)),  # 両方なら0
+            steer_digital=int(bool(down & self._steer_left)) - int(bool(down & self._steer_right)),  # 両方なら0
             throttle_analog=throttle_analog,
             throttle_digital=throttle_digital,
             brake_analog=brake_analog,
             brake_digital=brake_digital,
-            held=frozenset(name for name, keys in self._buttons if any_down(keys)),
-            pressed=frozenset(name for name, keys in self._buttons if any(hit[code] for code in keys)),
+            held=frozenset(name for name, mask in self._buttons if down & mask) if down else NO_BUTTONS,
+            pressed=frozenset(name for name, mask in self._buttons if hit & mask) if hit else NO_BUTTONS,
         )

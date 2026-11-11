@@ -14,9 +14,12 @@ import urllib.error
 
 import pytest
 
+import input_reference
 import web_smoke
 from conftest import ROOT
-from cp_app import web_bridge
+from cp_app import input_web, web_bridge
+from cp_app.input_trace import InputTrace
+from cp_core.input_frame import BUTTONS, QUANTIZED_FIELDS, button_bits
 
 fetch_runtime = web_smoke.fetch_runtime  # tools/web/ の中。web_smoke が読み込んだものを使う
 SHA = "a" * 64
@@ -24,6 +27,13 @@ BUDGETS = json.loads((ROOT / "tools" / "budgets.json").read_text(encoding="utf-8
 TOLERANCE = BUDGETS["web_renders_tolerance"]
 TICKS, WARMUP = 660, 60
 RENDERS, MEASURED_RENDERS = TICKS // 2, (TICKS - WARMUP) // 2
+# 台本を渡す筋書きと、偽のコントローラーの筋書きの値。
+SCRIPT_VALUE, SCRIPT = input_reference.load_script(input_reference.SMOKE_SCRIPT)
+SCRIPT_TICKS = BUDGETS["web_script_ticks"]
+STAGE, SETTLE = BUDGETS["web_pad_stage_ticks"], BUDGETS["web_pad_settle_ticks"]
+PAD_TICKS = web_smoke.pad_ticks(STAGE)
+FIELD = {name: index for index, name in enumerate(QUANTIZED_FIELDS)}
+WARN_LINE = {"t": 5, "type": "warning", "text": input_web.WARN_MARK + " direct trigger read failed: AttributeError: mapping"}
 
 
 def page(**changes) -> dict:
@@ -210,6 +220,437 @@ def test_web_smoke_probe_summary_must_equal_the_desktop_one():
 def test_web_smoke_probe_python_error_is_reported_with_the_values():
     bad = page(untilAt=14000, failures=[{"t": 9, "kind": "error_overlay", "detail": "Traceback"}])
     assert probe_failed(result(), a_page=bad) == ["error_overlay"]
+
+
+# --- 筋書きの並びと、直読みの警告（どの筋書きでも見る） ---
+def test_web_smoke_scenarios_come_in_the_fixed_order():
+    assert web_smoke.SCENARIOS == ("shipped", "probe", "script", "gamepad")
+    assert tuple(web_smoke.RUNNERS) == web_smoke.SCENARIOS
+
+
+def test_web_smoke_input_warning_fails_the_shipped_and_the_probe_scenario():
+    # 直読みは、読めないときに「未接続」と同じ値を返す。読み方の誤りは、警告の行でしか拾えない。
+    assert failed(web_smoke.judge_shipped(page(console=[WARN_LINE]), SHA)) == ["input_warn"]
+    assert probe_failed(result(), a_page=page(untilAt=14000, console=[WARN_LINE])) == ["input_warn"]
+
+
+def test_web_smoke_other_console_lines_are_not_input_warnings():
+    lines = [{"t": 1, "type": "warning", "text": "some other warning"}, {"t": 2, "type": "log", "text": "CP_PROBE_DONE"}]
+    assert failed(web_smoke.judge_shipped(page(console=lines), SHA)) == []
+
+
+# --- 台本を渡して開く筋書き ---
+def trace_report(rows, max_changes: int = 100000) -> dict:
+    """tickごとの値の列から、アプリが出す形の入力の跡を作る。"""
+    trace = InputTrace(max_changes)
+    for tick, row in enumerate(rows):
+        trace.on_tick(tick, row)
+    return trace.report()
+
+
+def script_rows() -> list:
+    return input_reference.quantized_rows(SCRIPT, SCRIPT_TICKS)
+
+
+def script_result(**changes) -> dict:
+    """問題の無い、台本を渡した筋書きの結果。"""
+    base = {
+        "ticks": SCRIPT_TICKS,
+        "renders": SCRIPT_TICKS // 2,
+        "sim": input_reference.sim_summary(SCRIPT, SCRIPT_TICKS),
+        "warmup_ticks": 0,
+        "platform": "emscripten",
+        "python": "3.14.2",
+        "pyxel": "3.0.1",
+        "input_source": "script",
+        "adapter_reads": 0,
+        "inputs": trace_report(script_rows()),
+    }
+    return {**base, **changes}
+
+
+def script_failed(res, desktop_sim=None, a_page=None) -> list:
+    sim = input_reference.sim_summary(SCRIPT, SCRIPT_TICKS) if desktop_sim is None else desktop_sim
+    return failed(web_smoke.judge_script(a_page or page(untilAt=6000), SHA, res, sim, SCRIPT, SCRIPT_TICKS))
+
+
+def changed_row(rows: list, tick: int, **values) -> list:
+    """rows の tick の値を、名前で書き換えた列。"""
+    row = list(rows[tick])
+    for name, value in values.items():
+        row[FIELD[name]] = value
+    return [*rows[:tick], tuple(row), *rows[tick + 1:]]
+
+
+def test_web_smoke_clean_script_scenario_passes():
+    assert script_failed(script_result()) == []
+
+
+def test_web_smoke_script_scenario_runs_past_the_end_of_the_script():
+    assert SCRIPT_TICKS > SCRIPT.total_ticks  # 台本を過ぎた後の、何も押していない入力も通す
+    assert BUDGETS["web_input_trace_max"] > len(trace_report(script_rows())["changes"])  # 打ち切りにならない
+
+
+@pytest.mark.parametrize(
+    "res, names",
+    [
+        (script_result(platform="linux"), ["platform"]),
+        (script_result(ticks=SCRIPT_TICKS - 1), ["ticks"]),
+        (script_result(input_source="adapter"), ["input_source"]),
+        (script_result(input_source="mixed"), ["input_source"]),
+        (script_result(input_source=None), ["input_source"]),
+        (script_result(adapter_reads=SCRIPT_TICKS), ["adapter_reads"]),
+        (script_result(adapter_reads=None), ["adapter_reads"]),
+        (script_result(sim={"tick": SCRIPT_TICKS, "input_digest": 1}), ["sim", "sim_reference"]),
+        (script_result(sim=None), ["sim", "sim_reference"]),
+        (script_result(inputs=None), ["trace_complete", "trace"]),
+        (script_result(inputs=trace_report(script_rows(), max_changes=5)), ["trace_complete", "trace"]),
+        (script_result(inputs={**trace_report(script_rows()), "truncated": True}), ["trace_complete", "trace"]),
+        (script_result(inputs=trace_report(changed_row(script_rows(), 40, steer_digital=0))), ["trace"]),
+        (script_result(inputs=trace_report(changed_row(script_rows(), SCRIPT_TICKS - 1, held=1))), ["trace"]),
+        (script_result(inputs=trace_report([script_rows()[0], *script_rows()[:-1]])), ["trace"]),  # 1 tick遅れ
+        (script_result(inputs=trace_report([(0,) * 8] * SCRIPT_TICKS)), ["trace"]),  # 入力アダプタから読んだ（何も押していない）
+    ],
+)
+def test_web_smoke_script_each_deviation_fails_under_its_own_name(res, names):
+    assert script_failed(res) == names
+
+
+def test_web_smoke_script_summary_must_equal_the_desktop_one_and_the_reference():
+    # デスクトップ版だけが違う（ブラウザ版は参照と同じ）なら、sim だけが落ちる。
+    assert script_failed(script_result(), desktop_sim={"tick": SCRIPT_TICKS, "input_digest": 1}) == ["sim"]
+    # 何も押していない入力で回した世界の要約は、台本の参照と違う。
+    neutral = input_reference.sim_summary(None, SCRIPT_TICKS)
+    assert script_failed(script_result(sim=neutral), desktop_sim=neutral) == ["sim_reference"]
+
+
+def test_web_smoke_script_python_error_and_input_warning_are_reported():
+    bad = page(untilAt=6000, failures=[{"t": 9, "kind": "error_overlay", "detail": "Traceback"}])
+    assert script_failed(script_result(), a_page=bad) == ["error_overlay"]
+    assert script_failed(script_result(), a_page=page(untilAt=6000, console=[WARN_LINE])) == ["input_warn"]
+
+
+def test_web_smoke_first_difference_names_the_first_tick_that_differs():
+    rows = script_rows()
+    assert web_smoke.first_difference(rows, list(rows)) is None
+    assert web_smoke.first_difference(changed_row(rows, 17, brake_digital=1), rows) == 17
+    assert web_smoke.first_difference(rows[:50], rows) == 50  # 長さが違う
+
+
+def test_web_smoke_probe_script_line_sets_the_window_value():
+    line = web_smoke.probe_script({"ticks": SCRIPT_TICKS, "script": SCRIPT_VALUE, "trace_max": 400})
+    head = f"window.{web_bridge.PROBE_NAME} = "
+    assert line.startswith(head) and line.endswith(";")
+    assert json.loads(line[len(head):-1]) == {"ticks": SCRIPT_TICKS, "script": SCRIPT_VALUE, "trace_max": 400}
+
+
+# --- 偽のコントローラーを差し込んで開く筋書き ---
+def pad_rows(lag: int = 1) -> list:
+    """予定どおりに見えたときの、tickごとの値。段の値は、境目から lag tick遅れて見える。押した瞬間は、見えた最初のtickだけ。"""
+    rows, previous = [], (0,) * len(QUANTIZED_FIELDS)
+    for stage in web_smoke.PAD_STAGES:
+        want = web_smoke.pad_expected_row(stage)
+        rows += [previous] * lag + [want] * (STAGE - lag)
+        previous = want
+    press_tick = web_smoke.PAD_PRESS_STAGE * STAGE + lag
+    return changed_row(rows, press_tick, pressed=rows[press_tick][FIELD["held"]])
+
+
+def pad_log(entries=None) -> list:
+    entries = [(index + 1, index * STAGE) for index in range(len(web_smoke.PAD_STAGES))] if entries is None else entries
+    return [{"t": 1, "type": "log", "text": f"CP_FAKE_PAD stage={stage} tick={tick}"} for stage, tick in entries]
+
+
+def pad_page(**changes) -> dict:
+    return page(**{"untilAt": 9000, "console": pad_log(), **changes})
+
+
+def pad_result(rows=None, **changes) -> dict:
+    """問題の無い、偽のコントローラーの筋書きの結果。世界の要約は、渡した列から計算する。"""
+    rows = pad_rows() if rows is None else rows
+    base = {
+        "ticks": PAD_TICKS,
+        "renders": PAD_TICKS // 2,
+        "sim": {"tick": PAD_TICKS, "input_digest": input_reference.digest_of(rows)},
+        "warmup_ticks": 0,
+        "platform": "emscripten",
+        "python": "3.14.2",
+        "pyxel": "3.0.1",
+        "input_source": "adapter",
+        "adapter_reads": PAD_TICKS,
+        "inputs": trace_report(rows),
+    }
+    return {**base, **changes}
+
+
+def pad_failed(res, a_page=None, settle: int = SETTLE) -> list:
+    return failed(web_smoke.judge_gamepad(a_page or pad_page(), SHA, res, STAGE, settle))
+
+
+def stage_names(*numbers) -> list:
+    return [f"pad_stage_{number}" for number in numbers]
+
+
+ALL_STAGES = stage_names(*range(1, len(web_smoke.PAD_STAGES) + 1))
+
+
+def test_web_smoke_pad_plan_is_the_nine_stages_of_the_request():
+    stages = web_smoke.PAD_STAGES
+    assert len(stages) == 9 and PAD_TICKS == 9 * STAGE
+    assert [stage.pad is None for stage in stages] == [True, False, False, False, False, True, False, False, True]
+    assert [stage.pad["mapping"] for stage in stages if stage.pad] == ["standard"] * 4 + [""] * 2
+    # 接続するときは、全部0で接続する。値は次の段で変える。
+    for index in (1, 6):
+        assert stages[index].pad["buttons"] == {} and stages[index].pad["axes"] == [0, 0, 0, 0]
+    assert stages[2].pad["buttons"] == {"7": 0.3}
+    assert stages[3].pad["buttons"] == {"7": 1.0, "6": 0.6}
+    assert stages[4].pad["buttons"] == {"0": 1.0, "12": 1.0} and stages[4].pad["axes"] == [-1.0, 0, 0, 0]
+    assert stages[7].pad["buttons"] == {"6": 0.6, "7": 1.0}
+
+
+def test_web_smoke_pad_plan_nudges_the_stick_before_it_is_moved():
+    # ブラウザ版のランタイムは、接続の後の最初の軸の変化を、Pyxelへ届けない（実測）。先に、わずかに動かしておく。
+    stages = web_smoke.PAD_STAGES
+    assert 0 < web_smoke.AXIS_NUDGE <= 0.01
+    assert stages[2].pad["axes"][0] == web_smoke.AXIS_NUDGE and stages[3].pad["axes"][0] == web_smoke.AXIS_NUDGE
+    assert "steer_analog" not in stages[2].expect and "steer_analog" not in stages[3].expect  # この値そのものは、見えない
+
+
+def test_web_smoke_pad_stages_expect_the_values_of_the_request():
+    rows = [web_smoke.pad_expected_row(stage) for stage in web_smoke.PAD_STAGES]
+    zero = (0,) * 8
+    assert rows[0] == rows[1] == zero  # 段1、2：全部0
+    assert rows[2] == (0, 0, 300, 0, 0, 0, 0, 0)  # 段3：アクセルのアナログ値が300。アクセルのデジタル値も0
+    assert rows[3] == (0, 0, 1000, 0, 600, 0, 0, 0)  # 段4：アクセルが1000、ブレーキが600
+    assert rows[4] == (1000, 0, 0, 1, 0, 0, button_bits(("up", "confirm")), 0)  # 段5：舵が+1000（左が正）、Aボタン、十字キーの上
+    assert rows[5] == rows[6] == rows[8] == zero  # 段6、9：押したまま切断すると、全部0へ戻る（実測）。段7：標準でない並びで接続
+    assert rows[7] == (0, 0, 0, 1, 0, 1, 0, 0)  # 段8：標準でない並びのトリガーは、デジタル値へ入る。アナログ値は0
+
+
+def test_web_smoke_pad_plan_for_the_fake_gamepad_is_plain_json():
+    plan = web_smoke.pad_plan(STAGE)
+    assert json.loads(json.dumps(plan)) == plan
+    assert [entry["until"] for entry in plan] == [STAGE * (index + 1) for index in range(9)]
+    assert [entry["pad"] for entry in plan] == [stage.pad for stage in web_smoke.PAD_STAGES]
+
+
+def test_web_smoke_pad_init_script_is_the_plan_line_then_the_fake_gamepad_then_the_probe_line():
+    script = web_smoke.pad_init_script(STAGE, 400)
+    lines = script.splitlines()
+    assert lines[0] == f"window.{web_smoke.PAD_PLAN_NAME} = {json.dumps(web_smoke.pad_plan(STAGE))};"
+    assert lines[-1] == f"window.{web_bridge.PROBE_NAME} = " + json.dumps({"ticks": PAD_TICKS, "trace_max": 400}) + ";"
+    assert web_smoke.FAKE_PAD_JS.read_text(encoding="utf-8").strip() in script
+    assert "script" not in json.loads(lines[-1].split(" = ", 1)[1].rstrip(";"))  # 台本は渡さない
+
+
+def test_web_smoke_fake_gamepad_uses_the_names_the_tool_and_the_app_use():
+    source = web_smoke.FAKE_PAD_JS.read_text(encoding="utf-8")
+    assert f"window.{web_smoke.PAD_PLAN_NAME}" in source  # 予定を置く名前
+    assert f"window.{web_bridge.TICK_NAME}" in source  # アプリが置く tick の印
+    assert 'const LOG_MARK = "CP_FAKE_PAD";' in source and "${LOG_MARK} stage=${index + 1} tick=${tick}" in source
+    assert web_smoke.PAD_LOG.fullmatch("CP_FAKE_PAD stage=3 tick=60").groups() == ("3", "60")
+    assert "navigator.getGamepads = " in source
+    assert "gamepadconnected" in source and "gamepaddisconnected" in source and "setTimeout" in source
+
+
+@pytest.mark.parametrize("lag", [0, 1, 2, SETTLE - 1])
+def test_web_smoke_clean_gamepad_scenario_passes_with_a_lag_inside_the_settle_ticks(lag):
+    assert pad_failed(pad_result(pad_rows(lag))) == []
+    assert web_smoke.pad_lag(pad_rows(lag), STAGE) == lag
+
+
+def test_web_smoke_gamepad_values_that_arrive_after_the_settle_ticks_fail():
+    # 判定する最初のtickに、ちょうど見えた形。値は間に合うが、押した瞬間が、段の頭の外になる。
+    assert pad_failed(pad_result(pad_rows(SETTLE))) == [*stage_names(5), "pad_pressed_once"]
+    # さらに1 tick遅れると、値が変わる段（3、4、5、6、8、9）が落ちる。
+    assert pad_failed(pad_result(pad_rows(SETTLE + 1))) == [*stage_names(3, 4, 5, 6, 8, 9), "pad_pressed_once"]
+
+
+@pytest.mark.parametrize("number", range(1, 10))
+def test_web_smoke_gamepad_wrong_value_in_a_stage_fails_under_that_stage(number):
+    start = (number - 1) * STAGE
+    for tick in (start + SETTLE, start + STAGE - 1):  # 判定する最初のtickと、最後のtick
+        assert pad_failed(pad_result(changed_row(pad_rows(), tick, steer_digital=-1))) == stage_names(number)
+
+
+@pytest.mark.parametrize("number", range(1, 10))
+def test_web_smoke_gamepad_head_of_each_stage_is_not_judged(number):
+    tick = (number - 1) * STAGE + SETTLE - 1  # 判定しない最後のtick
+    assert pad_failed(pad_result(changed_row(pad_rows(), tick, steer_digital=-1))) == []
+
+
+def all_ticks(rows: list, number: int, **values) -> list:
+    """段 number の全tickの値を、名前で書き換えた列。"""
+    for tick in range((number - 1) * STAGE, number * STAGE):
+        rows = changed_row(rows, tick, **values)
+    return rows
+
+
+def test_web_smoke_gamepad_steer_with_the_wrong_sign_fails_stage_5():
+    assert pad_failed(pad_result(all_ticks(pad_rows(), 5, steer_analog=-1000))) == stage_names(5)
+
+
+def test_web_smoke_gamepad_swapped_triggers_fail_stages_3_and_4():
+    rows = all_ticks(pad_rows(), 3, throttle_analog=0, brake_analog=300)
+    rows = all_ticks(rows, 4, throttle_analog=600, brake_analog=1000)
+    assert pad_failed(pad_result(rows)) == stage_names(3, 4)
+
+
+def test_web_smoke_gamepad_pyxel_trigger_in_the_digital_value_during_a_direct_read_fails():
+    # 直読みができたtickに、Pyxel経由の2値のトリガーがデジタル値へ入った形。
+    rows = all_ticks(pad_rows(), 3, throttle_digital=1)
+    rows = all_ticks(rows, 4, throttle_digital=1, brake_digital=1)
+    assert pad_failed(pad_result(rows)) == stage_names(3, 4)
+
+
+def test_web_smoke_gamepad_direct_read_that_never_works_fails_stages_3_and_4():
+    # 直読みが、いつも「未接続」を返す形（空の枠の見分けの誤りなど）。Pyxel経由の2値のトリガーが、デジタル値へ入る。
+    rows = all_ticks(pad_rows(), 3, throttle_analog=0, throttle_digital=1)
+    rows = all_ticks(rows, 4, throttle_analog=0, brake_analog=0, throttle_digital=1, brake_digital=1)
+    assert pad_failed(pad_result(rows)) == stage_names(3, 4)
+
+
+def test_web_smoke_gamepad_values_left_after_the_unplug_fail_stages_6_and_9():
+    rows = all_ticks(pad_rows(), 6, steer_analog=1000, throttle_digital=1)
+    rows = all_ticks(rows, 9, throttle_digital=1, brake_digital=1)
+    assert pad_failed(pad_result(rows)) == stage_names(6, 9)
+
+
+def test_web_smoke_gamepad_pressed_must_stay_empty_in_stages_2_to_4():
+    for number in (2, 3, 4):
+        in_head = (number - 1) * STAGE + 1  # 段の頭の、判定しないtickでも見る
+        assert pad_failed(pad_result(changed_row(pad_rows(), in_head, pressed=button_bits(("confirm",))))) == ["pad_pressed_quiet"]
+    # 段1と、段6より後は、見ない（段の頭の中なら）。
+    for number in (1, 6, 7, 8, 9):
+        in_head = (number - 1) * STAGE + 1
+        assert pad_failed(pad_result(changed_row(pad_rows(), in_head, pressed=button_bits(("confirm",))))) == []
+
+
+def test_web_smoke_gamepad_confirm_must_be_pressed_on_exactly_one_tick_in_the_head_of_stage_5():
+    start = 4 * STAGE
+    press = button_bits(("up", "confirm"))
+    twice = changed_row(pad_rows(), start + 3, pressed=press)
+    assert pad_failed(pad_result(twice)) == ["pad_pressed_once"]
+    never = changed_row(pad_rows(), start + 1, pressed=0)
+    assert pad_failed(pad_result(never)) == ["pad_pressed_once"]
+    only_up = changed_row(pad_rows(), start + 1, pressed=button_bits(("up",)))
+    assert pad_failed(pad_result(only_up)) == ["pad_pressed_once"]
+    late = changed_row(never, start + SETTLE, pressed=press)  # 段の頭の外
+    assert pad_failed(pad_result(late)) == [*stage_names(5), "pad_pressed_once"]
+
+
+def test_web_smoke_gamepad_truncated_or_missing_trace_fails_everything_that_needs_it():
+    needs_trace = ["trace_complete", "sim_from_trace", *ALL_STAGES, "pad_pressed_quiet", "pad_pressed_once"]
+    assert pad_failed(pad_result(inputs=trace_report(pad_rows(), max_changes=4))) == needs_trace
+    assert pad_failed(pad_result(inputs=None)) == needs_trace
+    assert pad_failed(pad_result(inputs={"changes": [], "truncated": False})) == needs_trace
+
+
+def test_web_smoke_gamepad_world_must_have_received_the_frames_of_the_trace():
+    # 入力の跡から計算し直した入力の要約値が、世界の要約と同じこと。
+    assert pad_failed(pad_result(sim={"tick": PAD_TICKS, "input_digest": 1})) == ["sim_from_trace"]
+    digest = input_reference.digest_of(pad_rows())
+    assert pad_failed(pad_result(sim={"tick": PAD_TICKS - 1, "input_digest": digest})) == ["sim_from_trace"]
+    assert pad_failed(pad_result(sim=None)) == ["sim_from_trace"]
+
+
+@pytest.mark.parametrize(
+    "changes, names",
+    [
+        ({"platform": "linux"}, ["platform"]),
+        ({"ticks": PAD_TICKS + 1}, ["ticks"]),
+        ({"input_source": "script"}, ["input_source"]),
+        ({"input_source": None}, ["input_source"]),
+        ({"adapter_reads": 2 * PAD_TICKS}, ["adapter_reads"]),
+        ({"adapter_reads": 0}, ["adapter_reads"]),
+        ({"adapter_reads": None}, ["adapter_reads"]),
+    ],
+)
+def test_web_smoke_gamepad_each_other_deviation_fails_under_its_own_name(changes, names):
+    assert pad_failed(pad_result(**changes)) == names
+
+
+@pytest.mark.parametrize(
+    "entries",
+    [
+        [],
+        [(1, 0)],
+        [(index + 1, index * STAGE) for index in range(8)],  # 最後の段へ入っていない
+        [(index + 1, index * STAGE + (1 if index == 4 else 0)) for index in range(9)],  # 段5へ、境目の1 tick後に入った
+        [(index + 1, 0) for index in range(9)],  # tick の印が置かれず、全部の段を頭で通った形にはならないが、境目が違う
+    ],
+)
+def test_web_smoke_gamepad_fake_pad_must_enter_every_stage_at_its_boundary(entries):
+    assert pad_failed(pad_result(), a_page=pad_page(console=pad_log(entries))) == ["pad_plan"]
+
+
+def test_web_smoke_gamepad_input_warning_and_python_error_are_reported():
+    assert pad_failed(pad_result(), a_page=pad_page(console=[*pad_log(), WARN_LINE])) == ["input_warn"]
+    bad = pad_page(failures=[{"t": 9, "kind": "error_overlay", "detail": "Traceback"}])
+    assert pad_failed(pad_result(), a_page=bad) == ["error_overlay"]
+
+
+def test_web_smoke_pad_lag_is_none_when_a_stage_never_shows_its_values():
+    assert web_smoke.pad_lag(all_ticks(pad_rows(), 5, steer_analog=-1000), STAGE) is None
+    assert web_smoke.pad_lag(pad_rows(0), STAGE) == 0
+
+
+def test_web_smoke_pad_stage_with_an_unknown_value_name_is_an_error():
+    typo = web_smoke.PadStage("typo", None, {"throttle": 300})
+    with pytest.raises(ValueError):
+        web_smoke.pad_expected_row(typo)
+
+
+def test_web_smoke_pad_budgets_leave_ticks_to_judge_and_room_in_the_trace():
+    assert 0 <= SETTLE < STAGE
+    assert BUDGETS["web_input_trace_max"] > len(trace_report(pad_rows())["changes"])
+    assert web_smoke.PAD_PRESS_BUTTON in BUTTONS
+
+
+# --- 回す前の守り。何も開かずに2 ---
+def guarded_main(monkeypatch, capsys, argv: list, **budget_changes) -> tuple:
+    """道具の値を差し替えて main() を回す。何かを回そうとしたら失敗にする。返すのは (終了コード, 最後の1行)。"""
+
+    def must_not_run(*args, **kwargs):
+        pytest.fail("守りを通り抜けて、先へ進んだ")
+
+    monkeypatch.setattr(web_smoke, "load_budgets", lambda: {**BUDGETS, **budget_changes})
+    monkeypatch.setattr(web_smoke.shutil, "which", must_not_run)
+    monkeypatch.setattr(web_smoke.shutil, "rmtree", must_not_run)
+    monkeypatch.setattr(web_smoke, "run", must_not_run)
+    monkeypatch.setattr(sys, "argv", ["web_smoke.py", *argv])
+    return web_smoke.main(), last_line(capsys)
+
+
+@pytest.mark.parametrize("settle", [STAGE, STAGE + 5, -1])
+def test_web_smoke_pad_stage_without_a_tick_to_judge_is_2_before_anything_is_opened(monkeypatch, capsys, settle):
+    # 段の頭で判定しないtick数が、段の長さ以上。どの段も、何も見ずに通ってしまう。
+    for argv in (["--only", "gamepad"], []):
+        code, line = guarded_main(monkeypatch, capsys, argv, web_pad_settle_ticks=settle)
+        assert code == 2 and "reason=pad_stage_too_short" in line and "scenarios=0" in line
+
+
+def test_web_smoke_script_ticks_shorter_than_the_script_is_2_before_anything_is_opened(monkeypatch, capsys):
+    for argv in (["--only", "script"], []):
+        code, line = guarded_main(monkeypatch, capsys, argv, web_script_ticks=SCRIPT.total_ticks - 1)
+        assert code == 2 and "reason=ticks_shorter_than_script" in line and "scenarios=0" in line
+
+
+def test_web_smoke_unreadable_script_is_2_before_anything_is_opened(monkeypatch, capsys, tmp_path):
+    broken = tmp_path / "script.json"
+    broken.write_text('{"segments": []}', encoding="utf-8")
+    monkeypatch.setattr(input_reference, "SMOKE_SCRIPT", broken)
+    code, line = guarded_main(monkeypatch, capsys, ["--only", "script"])
+    assert code == 2 and "reason=script_unreadable" in line
+
+
+def test_web_smoke_guards_of_one_scenario_do_not_stop_the_others(monkeypatch, capsys):
+    # 回さない筋書きの守りでは止まらない。ここでは、次の確かめ（node があるか）まで進むことを見る。
+    monkeypatch.setattr(web_smoke, "load_budgets", lambda: {**BUDGETS, "web_pad_settle_ticks": STAGE, "web_script_ticks": 1})
+    monkeypatch.setattr(web_smoke.shutil, "which", lambda name: None)
+    monkeypatch.setattr(sys, "argv", ["web_smoke.py", "--only", "probe"])
+    assert web_smoke.main() == 2
+    assert "reason=no_node" in last_line(capsys)
 
 
 # --- ランタイムの写しの照合 ---

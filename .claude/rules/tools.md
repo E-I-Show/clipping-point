@@ -29,7 +29,7 @@ paths:
 - 全体の検証で回す手順と順：`tools/verify.py` の `STEPS`。まだ無い手順は `NOT_YET`
 - 純Pythonの層で使ってよいimportの一覧：`tools/arch_check.py` の `STDLIB_ALLOWED` と `LAYER_ALLOWED`
 - テストの件数の下限：`tests/count_floor.txt`（増えたら自動で上がる。下げるのは `tools/test.py --update-floor`）
-- 画面なしで回す口の環境変数（`CP_SMOKE`、`CP_SMOKE_TICKS`、`CP_SMOKE_DRIVER`）：`clipping_point/cp_app/app.py` の頭の注
+- 画面なしで回す口の環境変数（`CP_SMOKE`、`CP_SMOKE_TICKS`、`CP_SMOKE_DRIVER`、`CP_SMOKE_SCRIPT`）：`clipping_point/cp_app/app.py` の頭の注
 
 ## Xを足したらYも
 

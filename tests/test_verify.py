@@ -13,6 +13,7 @@ import pytest
 import verify
 from conftest import ROOT
 
+INPUT = "操作補正と入力"
 UI = "画面（2D）"
 WEB = "ブラウザ連携"
 LOOP = "メインループと世界の状態"
@@ -61,6 +62,30 @@ def test_verify_files_map_to_their_areas():
     assert names_of("clipping_point/cp_app/app.py") == [LOOP]
     assert names_of("tools/web/webrun.js") == [TOOLS_AREA]
     assert names_of("tests/snapshots/canon_digest.json") == [TOOLS_AREA]
+
+
+def test_verify_input_files_map_to_the_input_area_and_the_direct_read_to_the_web_area():
+    for path in (
+        "clipping_point/cp_core/input_frame.py", "clipping_point/cp_core/input_script.py", "clipping_point/cp_app/input_pyxel.py",
+        "clipping_point/cp_app/input_trace.py", "tests/test_input_frame.py", "tests/test_input_script.py",
+        "tests/test_input_pyxel.py", "tests/test_input_trace.py",
+    ):
+        assert names_of(path) == [INPUT], path
+    # 直読みは、計画の表の「ブラウザ連携（入力の直読み、保存先、ファイルの受け渡し）」。
+    assert names_of("clipping_point/cp_app/input_web.py") == [WEB]
+    assert names_of("tests/test_input_web.py") == [WEB]
+    # 道具の側（台本、参照、偽のコントローラー）は、道具の分野。
+    for path in ("tools/input_script_smoke.json", "tools/input_reference.py", "tools/web/fake_gamepad.js"):
+        assert names_of(path) == [TOOLS_AREA], path
+
+
+def test_verify_focused_plan_for_the_input_area_follows_the_plan_table():
+    # 計画の表の「操作補正と入力」：run、drive、web-smoke。drive は、まだ無い手順。
+    plan, kind, not_yet = verify.plan_for([area(INPUT)], [], focused=True)
+    assert kind == "focused"
+    assert step_names(plan) == ["check", "test", "run", "web-smoke"]
+    assert plan[1][1][-2:] == ["-k", "input_frame or input_script or input_pyxel or input_trace"]
+    assert not_yet == ["drive"]
 
 
 def test_verify_file_outside_every_area_is_unknown():
@@ -155,7 +180,7 @@ def test_verify_focused_plan_joins_areas_in_the_fixed_order():
     plan, kind, _ = verify.plan_for([area(UI), area(WEB)], [], focused=True)
     assert kind == "focused"
     assert step_names(plan) == ["check", "test", "run", "web-smoke"]
-    assert plan[1][1][-2:] == ["-k", "canvas or screens or web_bridge"]
+    assert plan[1][1][-2:] == ["-k", "canvas or screens or web_bridge or input_web"]
 
 
 def test_verify_focused_plan_falls_back_to_everything():

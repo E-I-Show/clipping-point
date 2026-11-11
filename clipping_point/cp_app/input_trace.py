@@ -23,10 +23,11 @@ class InputTrace:
 
     def on_tick(self, tick: int, values: tuple) -> None:
         """更新1回ごとに呼ぶ。tick は、0始まりの更新の番号。values は、そのtickの入力フレームを量子化した値。"""
+        values = tuple(values)
         if self.truncated or values == self._last:
             return
         self._last = values
-        self._changes.append((tick, tuple(values)))
+        self._changes.append((tick, values))
         if len(self._changes) >= self.max_changes:
             self.truncated = True
 

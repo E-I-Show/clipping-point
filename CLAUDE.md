@@ -63,16 +63,16 @@ Pyxel 3.0の3D機能（Pyxel Cube）で作る、初代PS時代風ローポリゴ
 
 | すること | コマンド |
 | --- | --- |
-| 全体の検証（約30秒。check → test → run → run --realtime → export → web-smoke。`--selftest` を付けると約6分） | `python3 tools/verify.py --all [--selftest]` |
+| 全体の検証（約50秒。check → test → run → run --realtime → export → web-smoke。`--selftest` を付けると約10分半） | `python3 tools/verify.py --all [--selftest]` |
 | 変更したファイルから触れた分野を引いて回す（基点の既定は、直近の区切りのコミット） | `python3 tools/verify.py --touched [--base REV]` |
 | 分野ごとの組の表を出す | `python3 tools/verify.py --list` |
 | 静的な検査（構文、層の分離、規則ファイルの見張り、正本の見張り、分野の見張り） | `python3 tools/check.py [--only syntax\|arch\|rules\|canon\|areas]` |
 | テスト | `python3 tools/test.py [-k "語 or 語"]` |
-| 画面なしで回す（速い経路） | `python3 tools/run.py [--ticks N]` |
-| 画面なしで回す（本番と同じ経路） | `python3 tools/run.py --realtime [--ticks N]` |
+| 画面なしで回す（速い経路。道具の台本を渡す） | `python3 tools/run.py [--ticks N] [--script FILE\|--no-script]` |
+| 画面なしで回す（本番と同じ経路。入力アダプタから読む） | `python3 tools/run.py --realtime [--ticks N]` |
 | 配布物のHTMLを作って検査する | `python3 tools/export.py` |
-| ブラウザ版の煙テスト（約25秒） | `python3 tools/web_smoke.py [--only shipped\|probe]` |
-| 道具をわざと壊して確かめる（約6分） | `python3 tools/selftest_break.py [--only 名前の頭]` |
+| ブラウザ版の煙テスト（約45秒） | `python3 tools/web_smoke.py [--only shipped\|probe\|script\|gamepad]` |
+| 道具をわざと壊して確かめる（約10分） | `python3 tools/selftest_break.py [--only 名前の頭]` |
 | 環境のセットアップ（新しいコンテナで1度。環境に登録してある） | `bash tools/setup_env.sh` |
 | ランタイムの写しの取得と照合 | `python3 tools/web/fetch_runtime.py [--check]` |
 | テストの件数の下限を下げる | `python3 tools/test.py --update-floor` |
@@ -173,3 +173,4 @@ Pyxel 3.0の3D機能（Pyxel Cube）で作る、初代PS時代風ローポリゴ
 | `.claude/rules/sim-core.md` | 固定刻みの間引き（`cp_core/fixed_loop.py`）と世界（`cp_core/sim.py`）、そのテスト |
 | `.claude/rules/ui.md` | `cp_ui/` と描画命令の実行（`cp_app/canvas_pyxel.py`）、そのテスト |
 | `.claude/rules/web.md` | ブラウザ版の煙テスト（`tools/web_smoke.py`、`tools/web/`）とブラウザ連携（`cp_app/web_bridge.py`）、そのテスト |
+| `.claude/rules/controls.md` | 入力フレームと台本（`cp_core/input_frame.py`、`input_script.py`）、入力アダプタ、直読み、入力の跡（`cp_app/input_pyxel.py`、`input_web.py`、`input_trace.py`）、偽のコントローラー、そのテスト |

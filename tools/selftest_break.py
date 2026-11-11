@@ -17,13 +17,14 @@ import tempfile
 import time
 from pathlib import Path
 
+import input_reference
 from _common import FAIL, INCOMPLETE, OK, OUT, ROOT, child_env, finish, run
 
 PY = sys.executable
 SCRATCH = OUT / "selftest"
 # 複製するもの。道具、テスト、見張りが読むファイルの全部。足りなければ control の件が落ちる。
 COPY_ITEMS = ("clipping_point", "tools", "tests", ".claude/rules", ".claude/agents", ".claude/settings.json","docs/canon", "docs/handoff.md", "CLAUDE.md", "pytest.ini")
-CASE_TIMEOUT_S = 180  # 1件の時間切れ（秒）。いちばん長い件（verify --all。ブラウザ版の煙テストを含む）で約40秒
+CASE_TIMEOUT_S = 180  # 1件の時間切れ（秒）。いちばん長い件（verify --all。ブラウザ版の煙テストの4本を含む）で約55秒
 
 RUNTIME_CACHE = ".cache"  # ランタイムの写しの置き場。複製には、ここへのリンクだけを置く（中身は書き換えない）
 
@@ -35,6 +36,13 @@ SIM_PY = "clipping_point/cp_core/sim.py"
 GATE_PY = "clipping_point/cp_core/fixed_loop.py"
 CANVAS_PY = "clipping_point/cp_ui/canvas.py"
 UI_RULE = ".claude/rules/ui.md"
+FRAME_PY = "clipping_point/cp_core/input_frame.py"
+SCRIPT_PY = "clipping_point/cp_core/input_script.py"
+PYXEL_INPUT_PY = "clipping_point/cp_app/input_pyxel.py"
+WEB_INPUT_PY = "clipping_point/cp_app/input_web.py"
+TRACE_PY = "clipping_point/cp_app/input_trace.py"
+BUDGETS_JSON = "tools/budgets.json"
+SMOKE_SCRIPT_JSON = "tools/input_script_smoke.json"
 SKIP_ALL_HOOK = (
     "\n\ndef pytest_collection_modifyitems(items):\n    import pytest\n\n"
     "    for item in items:\n        item.add_marker(pytest.mark.skip(reason='planted'))\n"
@@ -44,16 +52,25 @@ STALE_JUNIT = (
     '<?xml version="1.0" encoding="utf-8"?><testsuites>'
     '<testsuite name="pytest" errors="0" failures="0" skipped="0" tests="999"></testsuite></testsuites>\n'
 )
-STALE_RESULT = '{"ticks": 120, "renders": 60, "sim": {"tick": 120}, "back_ink": 3981, "screen_diff": 0, "driver": "flip"}\n'
+# いまの結果の形に合わせる（入力の出どころ、入力アダプタを呼んだ回数、入力の要約値つきの世界の要約）。読まれたら合格になる形。
+STALE_RESULT = json.dumps({
+    "ticks": 120, "renders": 60, "sim": input_reference.sim_summary(input_reference.load_script(input_reference.SMOKE_SCRIPT)[1], 120),
+    "back_ink": 4321, "screen_diff": 0, "driver": "flip", "input_source": "script", "adapter_reads": 0,
+}) + "\n"
 EXIT_0_TEST = "import os\n\n\ndef test_zz_exit():\n    os._exit(0)\n"
-# 前回の実行が残した、合格の形の、ブラウザの実行役の結果。
-STALE_WEB_PAGE = (
-    '{"htmlSha256": "", "failures": [], "clickedAt": 3500, "untilAt": 7000, "state": {"initialized": true},'
-    ' "canvas": {"ink": 35000}, "console": [{"t": 7000, "type": "log", "text": "CP_PROBE_RESULT {\\"ticks\\": 240,'
-    ' \\"renders\\": 120, \\"sim\\": {\\"tick\\": 240}, \\"platform\\": \\"emscripten\\", \\"python\\": \\"3.14.2\\",'
-    ' \\"perf\\": {\\"updates\\": 180, \\"updates_per_s\\": 60.0, \\"renders_per_s\\": 30.0, \\"update_ms_p95\\": 0.1,'
-    ' \\"render_ms_p95\\": 0.2}}"}, {"t": 7000, "type": "log", "text": "CP_PROBE_DONE"}]}\n'
-)
+# 前回の実行が残した、合格の形の、ブラウザの実行役の結果（240 tickの probe。入力アダプタから、何も押していない入力を読んだ形）。
+STALE_WEB_RESULT = {
+    "ticks": 240, "renders": 120, "sim": input_reference.sim_summary(None, 240), "platform": "emscripten", "python": "3.14.2",
+    "input_source": "adapter", "adapter_reads": 240, "warmup_ticks": 60,
+    "perf": {"updates": 180, "renders": 90, "updates_per_s": 60.0, "renders_per_s": 30.0, "update_ms_p95": 0.1, "render_ms_p95": 0.2},
+}
+STALE_WEB_PAGE = json.dumps({
+    "htmlSha256": "", "failures": [], "clickedAt": 3500, "untilAt": 7000, "state": {"initialized": True}, "canvas": {"ink": 35000},
+    "console": [
+        {"t": 7000, "type": "log", "text": "CP_PROBE_RESULT " + json.dumps(STALE_WEB_RESULT)},
+        {"t": 7000, "type": "log", "text": "CP_PROBE_DONE"},
+    ],
+}) + "\n"
 
 
 # --- 壊し方 ---
@@ -99,7 +116,7 @@ CHECK, TEST, RUN, RUN_RT, EXPORT = tool("check"), tool("test"), tool("run"), too
 # テストを1件、集められない名前に変える。件数だけが1つ減る。
 # テストのファイルを丸ごと消す形にしない（規則ファイルの当て先の空振りが先に落ちて、件数の下限まで届かない）。
 FEWER_TESTS = rep("tests/test_sim.py", "def test_sim_starts_at_tick_zero():", "def no_longer_collected():")
-IN_UPDATE = "        self.sim.step()\n"
+IN_UPDATE = "        self.sim.step(frame)\n"
 IN_DRAW = "        if self.gate.should_render(time.perf_counter() * 1000.0):\n"
 PRESENT = "        pyxel.blt(0, 0, self.back, 0, 0, SCREEN_W, SCREEN_H)\n"
 EXECUTE = "        execute(canvas.commands, self.back)\n"
@@ -127,6 +144,20 @@ RENDER_HEAD = "        canvas = Canvas()\n"  # render() の頭
 METER_RENDER = "                self.meter.on_render(started_s, time.perf_counter())\n"
 # 実描画のある周期を20 ms重くする（測る区間の外に置く。更新と実描画の時間の線には掛からない）。
 HEAVY_FRAME = busy_on_web(20, indent="            ")
+# 入力の土台。台本を渡す筋書きと、偽のコントローラーの筋書きは、1本ずつ回す（段の長さは縮めない）。
+WEB_SCRIPT, WEB_PAD = tool("web_smoke", "--only", "script"), tool("web_smoke", "--only", "gamepad")
+FROM_SCRIPT = "            return self.script.frame_at(self.sim.tick)\n"  # 台本から入力フレームを作る所
+FROM_ADAPTER = "        return self.adapter.read(self.js is not None, self.triggers.read())\n"  # 入力アダプタから作る所
+STEER_AXIS_READ = "steer_analog=_clamp(-btnv(self._steer_axis) / AXIS_MAX, -1.0, 1.0)"
+DIRECT_ANALOG = "            throttle_analog, brake_analog = _clamp(float(right), 0.0, 1.0), _clamp(float(left), 0.0, 1.0)\n"
+# 直読みができたtickにも、Pyxel経由の2値のトリガーをデジタル値へ入れる。
+DIRECT_PLUS_DIGITAL = (
+    DIRECT_ANALOG
+    + "            throttle_digital = 1 if throttle_digital or btnv(self._throttle_axis) > 0 else 0\n"
+    + "            brake_digital = 1 if brake_digital or btnv(self._brake_axis) > 0 else 0\n"
+)
+SKIP_EMPTY_SLOT = "        if is_empty_slot(pad):\n            continue\n"
+INT_TO_FLOAT = "    if type(value) is int:\n        value = float(value)\n"  # アナログ値の整数を、小数に直す所
 
 # (名前, 壊し方の並び, 回す道具, 期待する終了コード, 最後の1行にあるはずの語)
 CASES = [
@@ -136,18 +167,21 @@ CASES = [
     ("control_test_k", [], tool("test", "-k", "sim or canvas"), {0}, "test: OK"),
     ("control_test_floor_rises", [add("tests/test_zz_more.py", "def test_zz_more():\n    assert True\n")], TEST, {0}, "floor_was="),
     ("control_test_update_floor", [FEWER_TESTS], tool("test", "--update-floor"), {0}, "floor_was="),
-    ("control_run", [], RUN, {0}, "run: OK"),
-    ("control_run_realtime", [], RUN_RT, {0}, "run: OK"),
+    ("control_run", [], RUN, {0}, "run: OK driver=flip input=script"),
+    ("control_run_realtime", [], RUN_RT, {0}, "run: OK driver=run input=adapter"),
+    # 台本の有無は、どちらの経路でも入れ替えられる。
+    ("control_run_without_script", [], tool("run", "--no-script"), {0}, "run: OK driver=flip input=adapter"),
+    ("control_run_realtime_with_script", [], tool("run", "--realtime", "--script", SMOKE_SCRIPT_JSON), {0}, "run: OK driver=run input=script"),
     ("control_export", [], EXPORT, {0}, "export: OK"),
     ("control_export_leaves_out_caches", [add("clipping_point/cp_core/__pycache__/sim.cpython-313.pyc", "x")], EXPORT, {0}, "export: OK"),
     ("control_fetch_runtime_check", [], FETCH_CHECK, {0}, "fetch_runtime: OK"),
-    ("control_web_smoke", [], WEB, {0}, "web_smoke: OK scenarios=2 shipped=ok probe=ok"),
+    ("control_web_smoke", [], WEB, {0}, "web_smoke: OK scenarios=4 shipped=ok probe=ok script=ok gamepad=ok"),
     ("control_web_smoke_short_probe", [], WEB_PROBE, {0}, "web_smoke: OK scenarios=1 probe=ok"),
     ("control_web_heavy_frame_keeps_30_renders", [rep(APP_PY, RENDER_COUNT, RENDER_COUNT + HEAVY_FRAME)], WEB_PROBE, {0}, "web_smoke: OK scenarios=1 probe=ok"),
     ("control_verify_list", [], tool("verify", "--list"), {0}, "verify: OK mode=list"),
     ("control_verify_all", [], VERIFY_ALL, {0}, "verify: OK mode=all steps=6 ok=6 failed=0"),
     # --- check：構文 ---
-    ("check_syntax_error_in_app", [rep(SIM_PY, "    def step(self) -> None:\n", "    def step(self) -> None\n")], CHECK, {1}, "failed=syntax"),
+    ("check_syntax_error_in_app", [rep(SIM_PY, "    def step(self, frame: InputFrame) -> None:\n", "    def step(self, frame: InputFrame) -> None\n")], CHECK, {1}, "failed=syntax"),
     ("check_syntax_error_in_test_file", [add("tests/test_zz_broken.py", "def test_zz(:\n    pass\n")], CHECK, {1}, "failed=syntax"),
     ("check_syntax_error_in_tool", [app("tools/run.py", "\ndef broken(:\n    pass\n")], CHECK, {1}, "failed=syntax"),
     # --- check：層の分離（cp_core と cp_ui へ、エンジン、上の層、乱数、実時間を持ち込む） ---
@@ -265,7 +299,7 @@ CASES = [
     ("web_request_outside_mirror", [app(APP_PY, FETCH_OUTSIDE)], WEB_SHIPPED, {1}, "shipped.outside_mirror"),
     ("web_blank_screen", [rep(APP_PY, PRESENT, "        pass\n")], WEB_SHIPPED, {1}, "failed=shipped.canvas_ink"),
     ("web_probe_ticks_short", [rep(APP_PY, "self.ticks >= probe.ticks:", "self.ticks >= probe.ticks - 1:")], WEB_PROBE, {1}, "failed=probe.ticks"),
-    ("web_summary_differs_from_desktop", [rep(APP_PY, IN_UPDATE, IN_UPDATE + ONLY_ON_WEB + "            self.sim.step()\n")], WEB_PROBE, {1}, "failed=probe.sim"),
+    ("web_summary_differs_from_desktop", [rep(APP_PY, IN_UPDATE, IN_UPDATE + ONLY_ON_WEB + "            self.sim.step(frame)\n")], WEB_PROBE, {1}, "failed=probe.sim"),
     # 通過条件の線。更新1回の時間、実描画1回の時間、更新の毎秒の回数（実描画の毎秒の回数は web_gate_gets_no_real_time）。
     ("web_update_over_the_time_line", [rep(APP_PY, IN_UPDATE, IN_UPDATE + busy_on_web(6))], WEB_PROBE, {1}, "probe.update_ms_p95"),
     ("web_render_over_the_time_line", [rep(APP_PY, RENDER_HEAD, RENDER_HEAD + busy_on_web(15))], WEB_PROBE, {1}, "probe.render_ms_p95"),
@@ -294,6 +328,69 @@ CASES = [
     ("verify_touched_outside_a_git_work_tree", [], tool("verify", "--touched"), {2}, "reason=git_failed"),
     # --- test：アプリが実時間を RenderGate へ渡していることの守りのテスト ---
     ("test_app_drops_real_time_for_the_gate", [rep(APP_PY, IN_DRAW, "        if self.gate.should_render():\n")], TEST, {1}, "reason=failed"),
+    # --- 入力の土台：test（入力フレーム、台本、入力アダプタ、直読み、入力の跡、世界） ---
+    ("test_sim_accepts_anything_as_a_frame", [rep(SIM_PY, "        if not isinstance(frame, InputFrame):\n", "        if False:\n")], TEST, {1}, "reason=failed"),
+    ("test_frame_rejects_whole_analog_values", [rep(FRAME_PY, INT_TO_FLOAT, "")], TEST, {1}, "reason=failed"),
+    # 台本の「押した瞬間」が、区間の全tickに立つ。アプリと参照が同じ台本の読み方を通るので、run では見えない。テストで拾う。
+    (
+        "test_script_pressed_on_every_tick_of_a_segment",
+        [rep(SCRIPT_PY, "        return self._first[index] if tick == self._starts[index] else self._rest[index]\n", "        return self._first[index]\n")],
+        TEST, {1}, "reason=failed",
+    ),
+    ("test_adapter_keeps_the_steer_axis_sign", [rep(PYXEL_INPUT_PY, STEER_AXIS_READ, STEER_AXIS_READ.replace("-btnv", "btnv"))], TEST, {1}, "reason=failed"),
+    ("test_adapter_reads_the_axis_with_btn", [rep(PYXEL_INPUT_PY, STEER_AXIS_READ, STEER_AXIS_READ.replace("-btnv", "-btn"))], TEST, {1}, "reason=failed"),
+    (
+        "test_direct_read_looks_past_a_pad_that_is_not_standard",
+        [rep(WEB_INPUT_PY, "        if pad.mapping != STANDARD_MAPPING:\n            return None\n", "        if pad.mapping != STANDARD_MAPPING:\n            continue\n")],
+        TEST, {1}, "reason=failed",
+    ),
+    ("test_trace_keeps_every_tick", [rep(TRACE_PY, "        if self.truncated or values == self._last:\n", "        if self.truncated:\n")], TEST, {1}, "reason=failed"),
+    # --- 入力の土台：run（速い経路。台本を渡して回す） ---
+    # アプリが、入力フレームの代わりに、何も押していない入力フレームを世界へ渡す。
+    ("run_world_gets_neutral_instead_of_the_frame", [rep(APP_PY, IN_UPDATE, "        self.sim.step(NEUTRAL)\n")], RUN, {1}, "failed=sim not_yet="),
+    # 台本を1 tickずらして読む。
+    ("run_script_read_one_tick_off", [rep(APP_PY, FROM_SCRIPT, FROM_SCRIPT.replace("self.sim.tick", "self.sim.tick + 1"))], RUN, {1}, "failed=sim not_yet="),
+    # 台本があるのに、入力アダプタから読む。
+    ("run_script_is_ignored", [rep(APP_PY, "        if self.script is not None:\n", "        if False:\n")], RUN, {1}, "failed=input_source,adapter_reads,sim"),
+    ("run_ticks_shorter_than_the_script", [], tool("run", "--ticks", "60"), {2}, "reason=ticks_shorter_than_script"),
+    ("run_script_file_is_not_a_script", [], tool("run", "--script", BUDGETS_JSON), {2}, "reason=script_unreadable"),
+    ("run_script_file_is_missing", [], tool("run", "--script", "tools/no_such_script.json"), {2}, "reason=script_unreadable"),
+    # 道具が、台本を相対パスで渡す。アプリは、起動時に例外にする（pyxel.init が作業ディレクトリを変えるため）。
+    (
+        "run_script_path_is_relative",
+        [rep("tools/run.py", '        env["CP_SMOKE_SCRIPT"] = str(script_path)\n', f'        env["CP_SMOKE_SCRIPT"] = "{SMOKE_SCRIPT_JSON}"\n')],
+        RUN, {1}, "reason=app_exit_code",
+    ),
+    # --- 入力の土台：run --realtime（台本を渡さず、入力アダプタを実物のPyxelで毎tick呼ぶ） ---
+    ("run_realtime_adapter_read_twice_per_tick", [rep(APP_PY, FROM_ADAPTER, "        self.adapter.read(self.js is not None, None)\n" + FROM_ADAPTER)], RUN_RT, {1}, "failed=adapter_reads"),
+    # 軸のキーを btn で読む。実物のPyxelの中で落ちる。
+    ("run_realtime_axis_key_read_with_btn", [rep(PYXEL_INPUT_PY, STEER_AXIS_READ, STEER_AXIS_READ.replace("-btnv", "-btn"))], RUN_RT, {1}, "reason=app_exit_code"),
+    # 割り当ての表に、Pyxelに無い定数の名前がある。起動時に落ちる（押されるまで分からない形にしない）。
+    ("run_realtime_unknown_pyxel_constant", [rep(PYXEL_INPUT_PY, '"shift_up": ("KEY_S", ', '"shift_up": ("KEY_NO_SUCH", ')], RUN_RT, {1}, "reason=app_exit_code"),
+    # --- 入力の土台：web-smoke（回り切れない。2。何も開かない） ---
+    ("web_pad_stage_has_no_tick_to_judge", [rep(BUDGETS_JSON, '"web_pad_settle_ticks": 10', '"web_pad_settle_ticks": 30')], WEB_PAD, {2}, "reason=pad_stage_too_short"),
+    ("web_script_ticks_shorter_than_the_script", [rep(BUDGETS_JSON, '"web_script_ticks": 120', '"web_script_ticks": 40')], WEB_SCRIPT, {2}, "reason=ticks_shorter_than_script"),
+    ("web_script_file_is_not_a_script", [rep(SMOKE_SCRIPT_JSON, '"segments"', '"parts"')], WEB_SCRIPT, {2}, "reason=script_unreadable"),
+    # --- 入力の土台：web-smoke の筋書き script（台本を渡して開く）。どれも、デスクトップ版の道具（run）は通る ---
+    # ブラウザ版でだけ、台本を読まずに入力アダプタから読む。
+    (
+        "web_script_ignored_only_in_browser",
+        [rep(APP_PY, "        if self.script is not None:\n", "        if self.script is not None and sys.platform != 'emscripten':\n")],
+        WEB_SCRIPT, {1}, "failed=script.input_source",
+    ),
+    # 入力の跡が打ち切られる（件数の上限が小さい）。合格にしない。
+    ("web_script_trace_is_truncated", [rep(BUDGETS_JSON, '"web_input_trace_max": 400', '"web_input_trace_max": 5')], WEB_SCRIPT, {1}, "failed=script.trace_complete"),
+    # アナログ値の整数を受けない。台本の 1.0 と -1.0 は、JavaScriptを通ると整数で届くので、ブラウザ版でだけ落ちる。
+    ("web_script_whole_analog_values_are_rejected", [rep(FRAME_PY, INT_TO_FLOAT, "")], WEB_SCRIPT, {1}, "failed=script.error_overlay"),
+    # --- 入力の土台：web-smoke の筋書き gamepad（偽のコントローラーを差し込んで開く） ---
+    ("web_pad_steer_axis_sign_is_kept", [rep(PYXEL_INPUT_PY, STEER_AXIS_READ, STEER_AXIS_READ.replace("-btnv", "btnv"))], WEB_PAD, {1}, "failed=gamepad.pad_stage_5"),
+    ("web_pad_triggers_are_swapped", [rep(PYXEL_INPUT_PY, "            left, right = direct\n", "            right, left = direct\n")], WEB_PAD, {1}, "failed=gamepad.pad_stage_3,gamepad.pad_stage_4"),
+    # 直読みができたtickに、Pyxel経由の2値のトリガーをデジタル値へ入れる。
+    ("web_pad_pyxel_trigger_goes_digital_beside_a_direct_read", [rep(PYXEL_INPUT_PY, DIRECT_ANALOG, DIRECT_PLUS_DIGITAL)], WEB_PAD, {1}, "failed=gamepad.pad_stage_3,gamepad.pad_stage_4"),
+    # 空のコントローラーの枠を見分けずに、属性を読む。例外は捕まえられて「未接続」と同じ値になるので、直読みの警告でしか落ちない。
+    ("web_pad_empty_slot_is_not_told_apart", [rep(WEB_INPUT_PY, SKIP_EMPTY_SLOT, "")], WEB_PAD, {1}, "failed=gamepad.input_warn"),
+    # tick の印を置かない。偽のコントローラーが、予定を進められない。
+    ("web_pad_tick_mark_is_not_set", [rep(APP_PY, "            web_bridge.mark_tick(self.js, self.ticks)\n", "            pass\n")], WEB_PAD, {1}, "failed=gamepad.pad_plan"),
 ]
 
 

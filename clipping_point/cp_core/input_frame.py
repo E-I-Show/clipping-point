@@ -86,6 +86,8 @@ NEUTRAL = InputFrame()  # 何も押していない入力フレーム
 
 def button_bits(names) -> int:
     """ボタンの名の集まりを、BUTTONS の並びのビットにする。"""
+    if not names:
+        return 0  # 何も押していないtickが大半。毎tick 2度呼ばれるので、組み立てを省く
     return sum(1 << index for index, name in enumerate(BUTTONS) if name in names)
 
 

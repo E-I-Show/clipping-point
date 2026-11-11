@@ -70,6 +70,20 @@ class Area:
 # check の areas の節が落ち、そのファイルの分野を決めさせるため。
 AREAS = (
     Area(
+        # 並びは、計画の表の順（操作補正と入力 → 画面（2D）→ ブラウザ連携 → …）。
+        "操作補正と入力",
+        (
+            "clipping_point/cp_core/input_frame.py", "clipping_point/cp_core/input_script.py",
+            "clipping_point/cp_app/input_pyxel.py", "clipping_point/cp_app/input_trace.py",
+            "tests/test_input_frame.py", "tests/test_input_script.py", "tests/test_input_pyxel.py", "tests/test_input_trace.py",
+        ),
+        # 計画の表のテストの絞りは「操作補正、保存する項目、セッティングの順」。どれも、まだテストが無い
+        # （操作補正は段1 区切り4、保存する項目は段0 区切り7、セッティングの順は段1）。いまは、入力のテストの語だけ。作る区切りで足す。
+        "input_frame or input_script or input_pyxel or input_trace",
+        # 計画の表のとおり。drive は段1で作る（いまは NOT_YET）。
+        ("run", "drive", "web-smoke"),
+    ),
+    Area(
         "画面（2D）",
         (
             "clipping_point/cp_ui/__init__.py", "clipping_point/cp_ui/canvas.py", "clipping_point/cp_ui/screens.py",
@@ -82,9 +96,13 @@ AREAS = (
     ),
     Area(
         "ブラウザ連携",
-        ("clipping_point/cp_app/web_bridge.py", "tests/test_web_bridge.py"),
-        # 計画の表のテストの絞りは「保存」。保存のテストは段0 区切り7で作るので、いまは橋のテストだけ。その区切りで足す。
-        "web_bridge",
+        # 直読み（input_web）は、計画の表の「ブラウザ連携（入力の直読み、保存先、ファイルの受け渡し）」に入る。
+        (
+            "clipping_point/cp_app/web_bridge.py", "clipping_point/cp_app/input_web.py",
+            "tests/test_web_bridge.py", "tests/test_input_web.py",
+        ),
+        # 計画の表のテストの絞りは「保存」。保存のテストは段0 区切り7で作るので、いまは橋と直読みのテストだけ。その区切りで足す。
+        "web_bridge or input_web",
         ("web-smoke",),
     ),
     Area(

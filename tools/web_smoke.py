@@ -1,45 +1,110 @@
 """ブラウザ版の煙テスト。出荷するHTMLそのものを、ヘッドレスのChromiumで開く。
 
-  python3 tools/web_smoke.py [--only shipped|probe] [--ticks N] [--timeout 秒]
+  python3 tools/web_smoke.py [--only shipped|probe|script|gamepad] [--ticks N] [--timeout 秒]
 
 開くのは、この道具が tools/export.py を回して作らせた dist/clipping_point.html そのもの（同じバイト列）。
 煙テスト用に作り直したHTMLは開かない。ランタイムへの要求は、ランタイムの写し（.cache/pyxel_web/mirror/）へ差し替える。
-筋書きは2本。順に、1本ずつ回す。
+筋書きは4本。順に、1本ずつ回す。どの筋書きでも、直読みの警告（cp_app/input_web.py の WARN_MARK の付いたコンソールの行）が0件であることを見る。
   shipped  何も渡さずに開く。見るもの：Pythonの例外が無い、エラー表示が無い、読み込みの失敗が無い、
            ランタイムの写しの外への要求が無い、開始のクリックの後の決めた秒数で画面が描かれている（背景と違う画素がある）。
   probe    ページを開く前に差し込むスクリプトで、回すtick数（window.CP_PROBE）を置いて開く。
            アプリがコンソールへ出す結果の1行と完了の合図を待つ。見るもの：上に加えて、回したtick、
            世界の要約がデスクトップ版と同じ、実描画の回数、更新と実描画の毎秒の回数、更新1回と実描画1回の時間（95%点）、
            ブラウザ版であること（sys.platform が emscripten）、Pythonの版。線は tools/budgets.json。
+  script   window.CP_PROBE に、回すtick数、道具の台本（tools/input_script_smoke.json）、入力の跡の件数の上限を置いて開く。
+           見るもの：ブラウザ版であること、回したtick、入力の出どころが台本で、入力アダプタを呼んでいない、
+           世界の要約がデスクトップ版（同じ台本を渡して回した）と同じで、参照（tools/input_reference.py）とも同じ、
+           入力の跡が打ち切られていない、入力の跡が、台本を入力フレームへ直して量子化した列と、全tickで同じ。
+  gamepad  偽のコントローラー（tools/web/fake_gamepad.js）を差し込んで開く。台本は渡さない。予定と、判定に使う値は PAD_STAGES。
+           見るもの：ブラウザ版であること、回したtick、入力の出どころが入力アダプタで、呼んだ回数が回したtickと同じ、
+           偽のコントローラーが予定の段を境目のtickで通った、入力の跡が打ち切られていない、
+           入力の跡から計算し直した入力の要約値が世界の要約と同じ（アプリが読んだ入力フレームが、そのまま世界へ渡っている）、
+           段ごとに、頭の判定しないtickを除いた全tickで、入力の跡から戻した値が PAD_STAGES のとおり、押した瞬間の立ち方。
+script と gamepad は、処理時間と回数の線を見ない（見るのは probe）。慣らしは0。
 終了コード：0＝合格、1＝問題あり、2＝回り切れない（ランタイムの写しが無い・照合が合わない、node が無い、
-ビルドできない、デスクトップ版の参照が取れない、ブラウザの実行役の結果が無い、完了の合図が出ない）。2を合格にしない。
+ビルドできない、デスクトップ版の参照が取れない、ブラウザの実行役の結果が無い、完了の合図が出ない、台本が読めない、
+回すtick数が台本の合計より短い、偽のコントローラーの段に判定するtickが無い）。2を合格にしない。
 ページが返らない（Pythonが主スレッドを握ったまま。失敗の種類 unresponsive）は、1にする。
 線の判定に使うのは、慣らし（頭の測らないtick）を除いた値。慣らしを入れた値は、最後の1行の with_warmup= に
 「更新の毎秒の回数/実描画の毎秒の回数/更新1回のms/実描画1回のms」の順で出す（判定には使わない）。
+最後の1行の script_changes= は、台本の筋書きの入力の跡の件数。pad_lag= は、偽のコントローラーの筋書きで、
+見えるはずの値が、段の境目から何tick遅れて見えたかの最大（判定しないtick数の余裕を見るための値）。
 結果は out/web_smoke/ に書く。前回の結果は、回す前に消す。
 """
 import argparse
 import hashlib
 import json
+import re
 import shutil
 import sys
+from dataclasses import dataclass
 
+import input_reference
 from _common import APP, DIST, FAIL, INCOMPLETE, OK, OUT, TOOLS, child_env, finish, load_budgets, run, show_tail
 
-# fetch_runtime（ランタイムの写しの置き場と照合）と、cp_app.web_bridge（外から渡す値の名前と、結果の行の頭）を読む。
-# どちらも pyxel を読み込まない。後ろに足す（標準ライブラリの名前を隠さないように）。
+# fetch_runtime（ランタイムの写しの置き場と照合）と、cp_app の、pyxel を読み込まないモジュール（外から渡す値の名前、
+# 結果の行の頭、直読みの警告の印、入力の跡の戻し方）を読む。後ろに足す（標準ライブラリの名前を隠さないように）。
 for extra_path in (str(TOOLS / "web"), str(APP)):
     if extra_path not in sys.path:
         sys.path.append(extra_path)
 
 import fetch_runtime  # noqa: E402
-from cp_app import web_bridge  # noqa: E402
+from cp_app import input_trace, input_web, web_bridge  # noqa: E402
+from cp_core.input_frame import BUTTONS, QUANTIZED_FIELDS, button_bits  # noqa: E402
 
 WORK = OUT / "web_smoke"
 HTML = DIST / f"{APP.name}.html"
 WEBRUN = TOOLS / "web" / "webrun.js"
-SCENARIOS = ("shipped", "probe")
+FAKE_PAD_JS = TOOLS / "web" / "fake_gamepad.js"
+SCENARIOS = ("shipped", "probe", "script", "gamepad")
 MIN_MEASURED_TICKS = 60  # 慣らしの後に測るtick数の下限。これより短いと、毎秒の回数が1回の揺れで線を外れる
+PAD_PLAN_NAME = "CP_FAKE_PAD_PLAN"  # 偽のコントローラーの予定を置く、window の値の名前（fake_gamepad.js と同じ）
+PAD_LOG = re.compile(r"CP_FAKE_PAD stage=(\d+) tick=(\d+)")  # 偽のコントローラーが、段へ入るたびにコンソールへ出す行
+STANDARD, NOT_STANDARD = "standard", ""  # Gamepad API の mapping。標準の並びと、標準でない並び
+# 左スティックを、先にわずかに動かしておく値。ブラウザ版のランタイム（SDL）は、接続の後の最初の軸の変化を、その軸の
+# 始まりの値として覚えるだけで、Pyxelへは届けない（実測。試作も、値を動かす前に0.01の段を挟んでいた）。
+# 0からいきなり −1 へ動かすだけだと、Pyxel経由の値は0のままになる。この値そのものは、Pyxel経由では見えない。
+AXIS_NUDGE = 0.01
+
+
+@dataclass(frozen=True)
+class PadStage:
+    """偽のコントローラーの予定の1段と、その段で見えるはずの値。"""
+
+    name: str
+    pad: object  # 段の頭で、偽のコントローラーが見せる状態（fake_pad() の辞書）。None は未接続（コントローラーの枠が全部空）
+    expect: dict  # 入力の跡から戻した値（QUANTIZED_FIELDS の名: 値）。書いていない名は0
+
+
+def fake_pad(mapping: str, axes: tuple = (0, 0, 0, 0), buttons: dict | None = None) -> dict:
+    """偽のコントローラーの状態。buttons は、0でないボタンの「番号: 値」（標準の並びで、6が左トリガー、7が右トリガー）。"""
+    return {"mapping": mapping, "axes": list(axes), "buttons": {str(index): value for index, value in (buttons or {}).items()}}
+
+
+# 偽のコントローラーの予定と、判定に使う値。ここ1か所に持つ。1段の長さと、段の頭で判定しないtick数は tools/budgets.json。
+# 接続するときは、全部0で接続し、値は次の段で変える（試作と同じ手順）。
+# expect は、この環境での実測を元に置いた。段6と段9（押したまま切断）は、Pyxel経由の値も全部0へ戻る。
+# 段8（標準でない並び）は、直読みをせず、Pyxel経由の2値のトリガーをデジタル値へ入れる。
+PAD_STAGES = (
+    PadStage("unplugged", None, {}),
+    PadStage("standard", fake_pad(STANDARD), {}),
+    PadStage("right_trigger_0.3", fake_pad(STANDARD, (AXIS_NUDGE, 0, 0, 0), {7: 0.3}), {"throttle_analog": 300}),
+    PadStage("triggers_1.0_and_0.6", fake_pad(STANDARD, (AXIS_NUDGE, 0, 0, 0), {7: 1.0, 6: 0.6}), {"throttle_analog": 1000, "brake_analog": 600}),
+    PadStage(
+        # トリガーは0。左スティックを左いっぱい（軸0が −1）、Aボタン（ボタン0）、十字キーの上（ボタン12）。
+        "stick_left_a_up",
+        fake_pad(STANDARD, (-1.0, 0, 0, 0), {0: 1.0, 12: 1.0}),
+        {"steer_analog": 1000, "throttle_digital": 1, "held": button_bits(("up", "confirm"))},
+    ),
+    PadStage("unplugged_while_held", None, {}),
+    PadStage("not_standard", fake_pad(NOT_STANDARD), {}),
+    PadStage("not_standard_triggers", fake_pad(NOT_STANDARD, buttons={6: 0.6, 7: 1.0}), {"throttle_digital": 1, "brake_digital": 1}),
+    PadStage("unplugged_again", None, {}),
+)
+PAD_QUIET_STAGES = (1, 2, 3)  # 段2〜4（0始まりの番号）。どのtickでも、押した瞬間は空
+PAD_PRESS_STAGE = 4  # 段5（0始まりの番号）。頭の、判定しないtickの中の1 tickだけ、押した瞬間に PAD_PRESS_BUTTON が立つ
+PAD_PRESS_BUTTON = "confirm"
+PRESSED_AT = QUANTIZED_FIELDS.index("pressed")
 # tools/web/webrun.js が集める失敗の種類と、その読み方。並びは、最後の1行の failed= に出す順。
 FAILURE_KINDS = {
     "no_start_prompt": "開始の表示が出ない（ランタイムが読み込めていない）",
@@ -71,6 +136,9 @@ def page_checks(page: dict, html_sha256: str) -> list:
     other = sorted({str(f.get("kind")) for f in failures} - set(FAILURE_KINDS))
     checks.append(("other_failure", not other, f"知らない種類の失敗がある：{other}"))
     checks.append(("html_bytes", page.get("htmlSha256") == html_sha256, "開いたHTMLが、export が作ったHTMLと同じバイト列でない"))
+    # 直読みは、読めないときに例外を捕まえて「未接続」と同じ値を返す。読み方の誤りを、警告の行で拾う。
+    warns = [str(c.get("text", "")) for c in page.get("console") or [] if input_web.WARN_MARK in str(c.get("text", ""))]
+    checks.append(("input_warn", not warns, f"直読みの警告がある（{len(warns)}件）：{' '.join(warns[:1])[:300]}"))
     return checks
 
 
@@ -137,6 +205,142 @@ def judge_probe(page: dict, html_sha256: str, result: dict, desktop_sim, ticks: 
     ]
 
 
+def input_checks(result: dict, ticks: int, source: str) -> list:
+    """入力に関わる筋書き（script、gamepad）で、どちらでも見ること。source は "script" か "adapter"。"""
+    reads, want_reads = result.get("adapter_reads"), ticks if source == "adapter" else 0
+    return [
+        ("platform", result.get("platform") == web_bridge.WEB_PLATFORM, f"ブラウザ版でない（sys.platform が {result.get('platform')!r}）"),
+        ("ticks", result.get("ticks") == ticks, f"回したtickが {result.get('ticks')}（{ticks} のはず）"),
+        ("input_source", result.get("input_source") == source, f"入力の出どころが {result.get('input_source')!r}（{source!r} のはず）"),
+        ("adapter_reads", reads == want_reads, f"入力アダプタを呼んだ回数が {reads}（{want_reads} のはず）"),
+    ]
+
+
+def read_trace(result: dict, ticks: int) -> tuple:
+    """結果の入力の跡を、tickごとの値の組の列に戻す。返すのは (列, 理由)。戻せなければ（打ち切り、形の違い）列は None。"""
+    try:
+        return input_trace.expand(result.get("inputs"), ticks), ""
+    except ValueError as exc:
+        return None, str(exc)
+
+
+def first_difference(rows: list, want_rows: list):
+    """2つの列が最初に違うtick。同じなら None。長さが違えば、短いほうの次のtick。"""
+    for tick, (row, want) in enumerate(zip(rows, want_rows)):
+        if row != want:
+            return tick
+    return None if len(rows) == len(want_rows) else min(len(rows), len(want_rows))
+
+
+def judge_script(page: dict, html_sha256: str, result: dict, desktop_sim, script, ticks: int) -> list:
+    """台本を渡して開く筋書きの確かめ。script は検査済みの台本。desktop_sim は、同じ台本を渡したデスクトップ版の世界の要約。"""
+    want_sim, want_rows = input_reference.sim_summary(script, ticks), input_reference.quantized_rows(script, ticks)
+    rows, why = read_trace(result, ticks)
+    bad_tick = None if rows is None else first_difference(rows, want_rows)
+    detail = "" if rows is None or bad_tick is None else f"tick {bad_tick} が {rows[bad_tick]}（台本は {want_rows[bad_tick]}。並びは {QUANTIZED_FIELDS}）"
+    sim = result.get("sim")
+    return page_checks(page, html_sha256) + input_checks(result, ticks, "script") + [
+        ("sim", desktop_sim is not None and sim == desktop_sim, f"世界の要約がデスクトップ版と違う（ブラウザ版 {sim}、デスクトップ版 {desktop_sim}）"),
+        ("sim_reference", sim == want_sim, f"世界の要約が参照と違う（ブラウザ版 {sim}、参照 {want_sim}）"),
+        ("trace_complete", rows is not None, f"入力の跡が使えない（{why}）"),
+        ("trace", rows is not None and bad_tick is None, f"入力の跡が台本と違う：{detail or '入力の跡が使えない'}"),
+    ]
+
+
+def pad_plan(stage_ticks: int) -> list:
+    """偽のコントローラーへ渡す予定。形は tools/web/fake_gamepad.js の頭の注。"""
+    return [{"until": (index + 1) * stage_ticks, "pad": stage.pad} for index, stage in enumerate(PAD_STAGES)]
+
+
+def pad_ticks(stage_ticks: int) -> int:
+    """偽のコントローラーの筋書きで回すtick数。最後の段の終わりまで。"""
+    return stage_ticks * len(PAD_STAGES)
+
+
+def pad_expected_row(stage: PadStage) -> tuple:
+    unknown = sorted(set(stage.expect) - set(QUANTIZED_FIELDS))
+    if unknown:
+        raise ValueError(f"PAD_STAGES の {stage.name} に、知らない名がある：{unknown}")
+    return tuple(stage.expect.get(name, 0) for name in QUANTIZED_FIELDS)
+
+
+def read_pad_log(page: dict) -> list:
+    """偽のコントローラーが段へ入った跡。[(段の番号（1始まり）, そのときの tick の印), …]"""
+    hits = (PAD_LOG.fullmatch(str(c.get("text", ""))) for c in page.get("console") or [])
+    return [(int(hit.group(1)), int(hit.group(2))) for hit in hits if hit]
+
+
+def pad_lag(rows: list, stage_ticks: int):
+    """見えるはずの値が、段の境目から何tick遅れて見えたかの、全部の段での最大。どこかの段で1度も見えなければ None。
+
+    押した瞬間は比べない（見えた最初のtickにだけ立つので、入れると、その段がいつも1 tick遅れに見える）。
+    """
+    worst = 0
+    for index, stage in enumerate(PAD_STAGES):
+        want, start = pad_expected_row(stage)[:PRESSED_AT], index * stage_ticks
+        seen = [offset for offset, row in enumerate(rows[start:start + stage_ticks]) if row[:PRESSED_AT] == want]
+        if not seen:
+            return None
+        worst = max(worst, seen[0])
+    return worst
+
+
+def judge_gamepad(page: dict, html_sha256: str, result: dict, stage_ticks: int, settle_ticks: int) -> list:
+    """偽のコントローラーを差し込んで開く筋書きの確かめ。settle_ticks は、段の頭で判定しないtick数。"""
+    ticks = pad_ticks(stage_ticks)
+    rows, why = read_trace(result, ticks)
+    no_trace = "入力の跡が使えないので、見られない"
+    want_log = [(index + 1, index * stage_ticks) for index in range(len(PAD_STAGES))]
+    log = read_pad_log(page)
+    sim = result.get("sim")
+    want_sim = None if rows is None else {"tick": ticks, "input_digest": input_reference.digest_of(rows)}
+    checks = page_checks(page, html_sha256) + input_checks(result, ticks, "adapter") + [
+        ("pad_plan", log == want_log, f"偽のコントローラーが、予定の段を境目のtickで通っていない（通った跡 {log}。tick の印が置かれていない、など）"),
+        ("trace_complete", rows is not None, f"入力の跡が使えない（{why}）"),
+        (
+            "sim_from_trace",
+            rows is not None and sim == want_sim,
+            f"世界の要約が、入力の跡から計算し直した値と違う（世界 {sim}、入力の跡から {want_sim}）" if rows is not None else no_trace,
+        ),
+    ]
+    for index, stage in enumerate(PAD_STAGES):
+        name, start = f"pad_stage_{index + 1}", index * stage_ticks
+        if rows is None:
+            checks.append((name, False, no_trace))
+            continue
+        want = pad_expected_row(stage)
+        bad = [tick for tick in range(start + settle_ticks, start + stage_ticks) if rows[tick] != want]
+        seen = rows[bad[0]] if bad else want
+        checks.append((
+            name, not bad,
+            f"段{index + 1}（{stage.name}）の tick {bad[0] if bad else '-'} が {seen}（{want} のはず。並びは {QUANTIZED_FIELDS}。違うtickが {len(bad)} 個）",
+        ))
+    if rows is None:
+        return checks + [("pad_pressed_quiet", False, no_trace), ("pad_pressed_once", False, no_trace)]
+    quiet = [tick for index in PAD_QUIET_STAGES for tick in range(index * stage_ticks, (index + 1) * stage_ticks) if rows[tick][PRESSED_AT] != 0]
+    press_start, bit = PAD_PRESS_STAGE * stage_ticks, 1 << BUTTONS.index(PAD_PRESS_BUTTON)
+    presses = [tick for tick in range(press_start, press_start + stage_ticks) if rows[tick][PRESSED_AT] & bit]
+    return checks + [
+        ("pad_pressed_quiet", not quiet, f"段2〜4で、押した瞬間が立っている（tick {quiet[:5]}）"),
+        (
+            "pad_pressed_once",
+            len(presses) == 1 and presses[0] < press_start + settle_ticks,
+            f"段5で、押した瞬間の {PAD_PRESS_BUTTON} が立ったtickが {presses}（段の頭の {settle_ticks} tickの中の、1 tickだけのはず）",
+        ),
+    ]
+
+
+def probe_script(value: dict) -> str:
+    """外から渡す値（window.CP_PROBE）を置く、差し込むスクリプトの1行。"""
+    return f"window.{web_bridge.PROBE_NAME} = {json.dumps(value)};"
+
+
+def pad_init_script(stage_ticks: int, trace_max: int) -> str:
+    """偽のコントローラーの筋書きで差し込むスクリプト。予定を置く1行、fake_gamepad.js の中身、外から渡す値を置く1行。"""
+    plan_line = f"window.{PAD_PLAN_NAME} = {json.dumps(pad_plan(stage_ticks))};"
+    return "\n".join([plan_line, FAKE_PAD_JS.read_text(encoding="utf-8"), probe_script({"ticks": pad_ticks(stage_ticks), "trace_max": trace_max})])
+
+
 def open_page(name: str, timeout_s: float, extra: list):
     """ブラウザの実行役（webrun.js）を1本回し、結果のJSONを読む。読めなければ None。"""
     json_path = WORK / f"{name}.json"
@@ -156,10 +360,31 @@ def open_page(name: str, timeout_s: float, extra: list):
     return page
 
 
-def desktop_reference(ticks: int):
-    """デスクトップ版を同じtick数だけ画面なしで回し、世界の要約を返す。取れなければ None。"""
-    result_path = WORK / "desktop.json"
+def open_with_probe(name: str, timeout_s: float, init_script: str, html_sha256: str) -> tuple:
+    """外から値を渡して開き、アプリがコンソールへ出した結果を読む。返すのは (ページ, 結果, 確かめ, 回り切れない理由)。
+
+    結果が読めたら、確かめは None（呼ぶ側が、筋書きの判定の関数で作る）。
+    結果が読めないとき、失敗の合図があれば問題あり（確かめを返す）、何も無ければ回り切れていない（理由を返す）。
+    """
+    page = open_page(name, timeout_s, ["--init-script", init_script, "--until", f"^{web_bridge.DONE_MARK}$"])
+    if page is None:
+        return None, None, None, "no_runner_result"
+    result, reason = read_probe_result(page)
+    if result is not None:
+        return page, result, None, ""
+    checks = page_checks(page, html_sha256)
+    if all(ok for _, ok, _ in checks):
+        print(f"  web_smoke: [{name}] 結果が読めない（{reason}）。失敗の合図も無い。時間切れ {timeout_s:g} 秒")
+        return page, None, None, reason
+    return page, None, checks + [(reason, False, "アプリの結果が読めない")], ""
+
+
+def desktop_reference(name: str, ticks: int, script_path=None):
+    """デスクトップ版を同じtick数だけ画面なしで回し、世界の要約を返す。取れなければ None。script_path があれば、その台本を渡す。"""
+    result_path = WORK / f"desktop_{name}.json"
     env = child_env(CP_SMOKE=result_path, CP_SMOKE_TICKS=ticks, CP_SMOKE_DRIVER="flip")
+    if script_path is not None:
+        env["CP_SMOKE_SCRIPT"] = str(script_path)
     code, out, err = run([sys.executable, APP / "main.py"], timeout=60 + ticks / 20, env=env, cwd=WORK)
     try:
         data = json.loads(result_path.read_text(encoding="utf-8")) if code == 0 else None
@@ -169,6 +394,66 @@ def desktop_reference(ticks: int):
         show_tail(out, err)
         return None
     return data["sim"]
+
+
+def scenario_shipped(args, budgets: dict, html_sha256: str, context: dict) -> tuple:
+    """何も渡さずに開く。返すのは (確かめ, 最後の1行に出す値, 回り切れない理由)。回り切れなければ、確かめは None。"""
+    page = open_page("shipped", args.timeout, ["--watch-ms", int(budgets["web_shipped_watch_s"] * 1000)])
+    if page is None:
+        return None, [], "no_runner_result"
+    return judge_shipped(page, html_sha256), [f"canvas_ink={(page.get('canvas') or {}).get('ink')}"], ""
+
+
+def scenario_probe(args, budgets: dict, html_sha256: str, context: dict) -> tuple:
+    """回すtick数を渡して開く。処理時間と回数の線を見る。"""
+    warmup_ticks = budgets["web_probe_warmup_ticks"]
+    desktop_sim = desktop_reference("probe", args.ticks)
+    if desktop_sim is None:
+        return None, [], "no_desktop_reference"
+    init_script = probe_script({"ticks": args.ticks, "warmup_ticks": warmup_ticks})
+    page, result, checks, reason = open_with_probe("probe", args.timeout, init_script, html_sha256)
+    if result is None:
+        return checks, [], reason
+    perf = result.get("perf") if isinstance(result.get("perf"), dict) else {}
+    whole = perf.get("with_warmup") if isinstance(perf.get("with_warmup"), dict) else {}
+    fact = (
+        f"ticks={result.get('ticks')} renders={result.get('renders')} "
+        + " ".join(f"{key}={perf.get(key)}" for key in TIMING_CHECKS)
+        + " with_warmup=" + "/".join(str(whole.get(key)) for key in TIMING_CHECKS)
+        + f" python={result.get('python')}"
+    )
+    return judge_probe(page, html_sha256, result, desktop_sim, args.ticks, warmup_ticks, budgets), [fact], ""
+
+
+def scenario_script(args, budgets: dict, html_sha256: str, context: dict) -> tuple:
+    """台本を渡して開く。台本は、main() が先に読んで検査したもの。"""
+    ticks, script_value, script = budgets["web_script_ticks"], context["script_value"], context["script"]
+    desktop_sim = desktop_reference("script", ticks, input_reference.SMOKE_SCRIPT)
+    if desktop_sim is None:
+        return None, [], "no_desktop_reference"
+    init_script = probe_script({"ticks": ticks, "script": script_value, "trace_max": budgets["web_input_trace_max"]})
+    page, result, checks, reason = open_with_probe("script", args.timeout, init_script, html_sha256)
+    if result is None:
+        return checks, [], reason
+    inputs = result.get("inputs") if isinstance(result.get("inputs"), dict) else {}
+    changes = inputs.get("changes")
+    fact = f"script_changes={len(changes) if isinstance(changes, list) else None}"
+    return judge_script(page, html_sha256, result, desktop_sim, script, ticks), [fact], ""
+
+
+def scenario_gamepad(args, budgets: dict, html_sha256: str, context: dict) -> tuple:
+    """偽のコントローラーを差し込んで開く。"""
+    stage_ticks, settle_ticks = budgets["web_pad_stage_ticks"], budgets["web_pad_settle_ticks"]
+    init_script = pad_init_script(stage_ticks, budgets["web_input_trace_max"])
+    page, result, checks, reason = open_with_probe("gamepad", args.timeout, init_script, html_sha256)
+    if result is None:
+        return checks, [], reason
+    rows, _ = read_trace(result, pad_ticks(stage_ticks))
+    fact = f"pad_lag={None if rows is None else pad_lag(rows, stage_ticks)}"
+    return judge_gamepad(page, html_sha256, result, stage_ticks, settle_ticks), [fact], ""
+
+
+RUNNERS = {"shipped": scenario_shipped, "probe": scenario_probe, "script": scenario_script, "gamepad": scenario_gamepad}
 
 
 def main() -> int:
@@ -183,6 +468,22 @@ def main() -> int:
     min_ticks = warmup_ticks + MIN_MEASURED_TICKS
     if "probe" in names and args.ticks < min_ticks:
         return finish("web_smoke", INCOMPLETE, f"scenarios=0 reason=too_few_ticks min={min_ticks}")
+    context = {}
+    if "script" in names:
+        try:
+            context["script_value"], context["script"] = input_reference.load_script(input_reference.SMOKE_SCRIPT)
+        except ValueError as exc:
+            print(f"  web_smoke: 台本が読めない：{exc}")
+            return finish("web_smoke", INCOMPLETE, "scenarios=0 reason=script_unreadable")
+        # 台本の終わりまで回さないと、台本の後ろの入力が世界へ届いたことを見られない。
+        script_ticks, total = budgets["web_script_ticks"], context["script"].total_ticks
+        if script_ticks < total:
+            return finish("web_smoke", INCOMPLETE, f"scenarios=0 reason=ticks_shorter_than_script ticks={script_ticks} script_ticks={total}")
+    if "gamepad" in names:
+        # どの段にも、判定するtickが1個以上あること。無ければ、何も見ずに合格になる。
+        stage_ticks, settle_ticks = budgets["web_pad_stage_ticks"], budgets["web_pad_settle_ticks"]
+        if not 0 <= settle_ticks < stage_ticks:
+            return finish("web_smoke", INCOMPLETE, f"scenarios=0 reason=pad_stage_too_short stage_ticks={stage_ticks} settle_ticks={settle_ticks}")
     if not shutil.which("node"):
         return finish("web_smoke", INCOMPLETE, "scenarios=0 reason=no_node")
     try:
@@ -206,46 +507,12 @@ def main() -> int:
     states, failed, incomplete, facts = {}, [], [], []
     checks_total = problems_total = 0
     for name in names:
-        if name == "shipped":
-            page = open_page(name, args.timeout, ["--watch-ms", int(budgets["web_shipped_watch_s"] * 1000)])
-            if page is None:
-                states[name] = INCOMPLETE
-                incomplete.append(f"{name}.no_runner_result")
-                continue
-            checks = judge_shipped(page, html_sha256)
-            facts.append(f"canvas_ink={(page.get('canvas') or {}).get('ink')}")
-        else:
-            desktop_sim = desktop_reference(args.ticks)
-            if desktop_sim is None:
-                states[name] = INCOMPLETE
-                incomplete.append(f"{name}.no_desktop_reference")
-                continue
-            script = f"window.{web_bridge.PROBE_NAME} = {json.dumps({'ticks': args.ticks, 'warmup_ticks': warmup_ticks})};"
-            page = open_page(name, args.timeout, ["--init-script", script, "--until", f"^{web_bridge.DONE_MARK}$"])
-            if page is None:
-                states[name] = INCOMPLETE
-                incomplete.append(f"{name}.no_runner_result")
-                continue
-            result, reason = read_probe_result(page)
-            if result is None:
-                # 結果が読めない。失敗の合図があれば問題あり、何も無ければ回り切れていない。
-                checks = page_checks(page, html_sha256)
-                if all(ok for _, ok, _ in checks):
-                    states[name] = INCOMPLETE
-                    incomplete.append(f"{name}.{reason}")
-                    print(f"  web_smoke: [{name}] 結果が読めない（{reason}）。失敗の合図も無い。時間切れ {args.timeout:g} 秒")
-                    continue
-                checks.append((reason, False, "アプリの結果が読めない"))
-            else:
-                checks = judge_probe(page, html_sha256, result, desktop_sim, args.ticks, warmup_ticks, budgets)
-                perf = result.get("perf") if isinstance(result.get("perf"), dict) else {}
-                whole = perf.get("with_warmup") if isinstance(perf.get("with_warmup"), dict) else {}
-                facts.append(
-                    f"ticks={result.get('ticks')} renders={result.get('renders')} "
-                    + " ".join(f"{key}={perf.get(key)}" for key in TIMING_CHECKS)
-                    + " with_warmup=" + "/".join(str(whole.get(key)) for key in TIMING_CHECKS)
-                    + f" python={result.get('python')}"
-                )
+        checks, scenario_facts, reason = RUNNERS[name](args, budgets, html_sha256, context)
+        if checks is None:
+            states[name] = INCOMPLETE
+            incomplete.append(f"{name}.{reason}")
+            continue
+        facts += scenario_facts
         bad = [(check, message) for check, ok, message in checks if not ok]
         for check, message in bad:
             print(f"  web_smoke: [{name}] {message}")

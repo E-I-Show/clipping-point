@@ -33,7 +33,7 @@ paths:
 ## テストと道具
 
 - テスト `tests/test_canvas.py`：描画命令が呼んだ順にたまる。整数でない値を受けない。`execute()` が全命令を順に描き、知らない種類を例外にする。
-- テスト `tests/test_screens.py`：仮の表示の文字。英数字だけであること。画面の内に収まること。
+- テスト `tests/test_screens.py`：仮の表示の文字（入力フレームの値の2行を含む）。英数字と記号だけであること。画面の内に収まること（10個のボタンを全部押した状態でも）。
 - 道具 `python3 tools/run.py`：実際の画素を見る（裏画面が空でないこと、画面が裏画面と同じこと）。
 - 道具 `python3 tools/test.py`：`cp_app/canvas_pyxel.py` が pyxel を読み込むと、`reason=pyxel_loaded` で落ちる。
 
