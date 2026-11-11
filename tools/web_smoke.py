@@ -12,7 +12,10 @@
            世界の要約がデスクトップ版と同じ、実描画の回数、更新と実描画の毎秒の回数、更新1回と実描画1回の時間（95%点）、
            ブラウザ版であること（sys.platform が emscripten）、Pythonの版。線は tools/budgets.json。
 終了コード：0＝合格、1＝問題あり、2＝回り切れない（ランタイムの写しが無い・照合が合わない、node が無い、
-ビルドできない、デスクトップ版の参照が取れない、実行役の結果が無い、完了の合図が出ない）。2を合格にしない。
+ビルドできない、デスクトップ版の参照が取れない、ブラウザの実行役の結果が無い、完了の合図が出ない）。2を合格にしない。
+ページが返らない（Pythonが主スレッドを握ったまま。失敗の種類 unresponsive）は、1にする。
+線の判定に使うのは、慣らし（頭の測らないtick）を除いた値。慣らしを入れた値は、最後の1行の with_warmup= に
+「更新の毎秒の回数/実描画の毎秒の回数/更新1回のms/実描画1回のms」の順で出す（判定には使わない）。
 結果は out/web_smoke/ に書く。前回の結果は、回す前に消す。
 """
 import argparse
@@ -40,6 +43,7 @@ MIN_MEASURED_TICKS = 60  # 慣らしの後に測るtick数の下限。これよ�
 # tools/web/webrun.js が集める失敗の種類と、その読み方。並びは、最後の1行の failed= に出す順。
 FAILURE_KINDS = {
     "no_start_prompt": "開始の表示が出ない（ランタイムが読み込めていない）",
+    "unresponsive": "ページが返らない（Pythonが主スレッドを握ったまま、など）",
     "error_overlay": "Pyxelのエラー表示がある（Pythonの例外）",
     "fatal_error": "ランタイムが致命的なエラーを記した",
     "console_error": "コンソールにエラーの行がある",
@@ -99,6 +103,7 @@ def judge_probe(page: dict, html_sha256: str, result: dict, desktop_sim, ticks: 
     """回すtick数を渡して開く筋書きの確かめ。result は、アプリがコンソールへ出した結果。"""
     perf = result.get("perf") if isinstance(result.get("perf"), dict) else {}
     renders, tolerance = result.get("renders"), budgets["web_renders_tolerance"]
+    measured_renders, measured_ticks = perf.get("renders"), ticks - warmup_ticks
     python = str(result.get("python", ""))
     ups, rps = perf.get("updates_per_s"), perf.get("renders_per_s")
     update_ms, render_ms = perf.get("update_ms_p95"), perf.get("render_ms_p95")
@@ -119,6 +124,12 @@ def judge_probe(page: dict, html_sha256: str, result: dict, desktop_sim, ticks: 
             type(renders) is int and abs(renders - ticks // 2) <= tolerance,
             f"実描画が {renders} 回（{ticks // 2} 回の前後 {tolerance} 回のはず。毎秒30回）",
         ),
+        (
+            # 時間を測る所が、実描画のたびに1度だけ呼ばれていること（数える所の付け間違いを拾う）。
+            "perf_renders",
+            type(measured_renders) is int and abs(measured_renders - measured_ticks // 2) <= tolerance,
+            f"時間を測った実描画が {measured_renders} 回（慣らしを除いて {measured_ticks // 2} 回の前後 {tolerance} 回のはず）",
+        ),
         ("updates_per_s", is_number(ups) and ups >= ups_min, f"更新が毎秒 {ups} 回（{ups_min} 回以上のはず）"),
         ("renders_per_s", is_number(rps) and rps >= rps_min, f"実描画が毎秒 {rps} 回（{rps_min} 回以上のはず）"),
         ("update_ms_p95", is_number(update_ms) and update_ms <= update_max, f"更新1回が {update_ms} ms（95%点。{update_max} ms以内のはず）"),
@@ -127,7 +138,7 @@ def judge_probe(page: dict, html_sha256: str, result: dict, desktop_sim, ticks: 
 
 
 def open_page(name: str, timeout_s: float, extra: list):
-    """実行役（webrun.js）を1本回し、結果のJSONを読む。読めなければ None。"""
+    """ブラウザの実行役（webrun.js）を1本回し、結果のJSONを読む。読めなければ None。"""
     json_path = WORK / f"{name}.json"
     cmd = [
         "node", WEBRUN, "--html", HTML, "--mirror", fetch_runtime.MIRROR, "--json", json_path,
@@ -140,7 +151,7 @@ def open_page(name: str, timeout_s: float, extra: list):
         page = None
     if not isinstance(page, dict):
         show_tail(out, err)
-        print(f"  web_smoke: [{name}] 実行役の結果が無い（実行役の終了コード {code}）")
+        print(f"  web_smoke: [{name}] ブラウザの実行役の結果が無い（終了コード {code}）")
         return None
     return page
 
@@ -228,7 +239,13 @@ def main() -> int:
             else:
                 checks = judge_probe(page, html_sha256, result, desktop_sim, args.ticks, warmup_ticks, budgets)
                 perf = result.get("perf") if isinstance(result.get("perf"), dict) else {}
-                facts.append(f"ticks={result.get('ticks')} renders={result.get('renders')} " + " ".join(f"{key}={perf.get(key)}" for key in TIMING_CHECKS) + f" python={result.get('python')}")
+                whole = perf.get("with_warmup") if isinstance(perf.get("with_warmup"), dict) else {}
+                facts.append(
+                    f"ticks={result.get('ticks')} renders={result.get('renders')} "
+                    + " ".join(f"{key}={perf.get(key)}" for key in TIMING_CHECKS)
+                    + " with_warmup=" + "/".join(str(whole.get(key)) for key in TIMING_CHECKS)
+                    + f" python={result.get('python')}"
+                )
         bad = [(check, message) for check, ok, message in checks if not ok]
         for check, message in bad:
             print(f"  web_smoke: [{name}] {message}")
