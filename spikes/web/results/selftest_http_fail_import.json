@@ -1,0 +1,135 @@
+{
+ "url": "http://127.0.0.1:8765/apps/fail_import.html",
+ "mirror": null,
+ "console": [
+  {
+   "t": 127,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 128,
+   "type": "log",
+   "text": "{command: play, name: fail_import.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIAO4Oa10sYEvPCQAAAAcAAAAiAAAAZmFpbF9pbX…faW1wb3J0L21haW4ucHlQSwUGAAAAAAQABAAfAQAAZhgAAAAA}"
+  },
+  {
+   "t": 1978,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 2261,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 2909,
+   "type": "error",
+   "text": "Traceback (most recent call last):\n  File \"/lib/python314.zip/_pyodide/_base.py\", line 539, in eval_code\n    .run(globals, locals)\n     ~~~^^^^^^^^^^^^^^^^^\n  File \"/lib/python314.zip/_pyodide/_base.py\", line 366, in run\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 3, in <module>\n  File \"/lib/python3.14/site-packages/pyxel/cli.py\", line 166, in play_pyxel_app\n    runpy.run_path(startup_script_file, run_name=\"__main__\")\n    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/tmp/.pyxel/play/42_0da4b055-5b62-4c8e-830c-01b54e2c1c6b/fail_import/main.py\", line 3, in <module>\n    raise RuntimeError(\"boom at import time\")\nRuntimeError: boom at import time\n"
+  }
+ ],
+ "failures": [
+  {
+   "t": 2909,
+   "kind": "console.error",
+   "detail": "Traceback (most recent call last):\n  File \"/lib/python314.zip/_pyodide/_base.py\", line 539, in eval_code\n    .run(globals, locals)\n     ~~~^^^^^^^^^^^^^^^^^\n  File \"/lib/python314.zip/_pyodide/_base.py\", line 366, in run\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 3, in <module>\n  File \"/lib/python3.14/site-packages/pyxel/cli.py\", line 166, in play_pyxel_app\n    runpy.run_path(startup_script_file, run_name=\"__main__\")\n    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/tmp/.pyxel/play/42_0da4b055-5b62-4c8e-830c-01b54e2c1c6b/fail_import/main.py\", line 3, in <module>\n    raise RuntimeError(\"boom at import time\")\nRuntimeError: boom at import time\n"
+  },
+  {
+   "t": 3517,
+   "kind": "pyxel-error-overlay",
+   "detail": "Traceback (most recent call last):\n  File \"/lib/python314.zip/_pyodide/_base.py\", line 539, in eval_code\n    .run(globals, locals)\n     ~~~^^^^^^^^^^^^^^^^^\n  File \"/lib/python314.zip/_pyodide/_base.py\", line 366, in run\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 3, in <module>\n  File \"/lib/python3.14/site-packages/pyxel/cli.py\", line 166, in play_pyxel_app\n    runpy.run_path(startup_script_file, run_name=\"__main__\")\n    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/tmp/.pyxel/play/42_0da4b055-5b62-4c8e-830c-01b54e2c1c6b/fail_import/main.py\", line 3, in <module>\n    raise RuntimeError(\"boom at import time\")\nRuntimeError: boom at import time\n"
+  },
+  {
+   "t": 3517,
+   "kind": "until-not-seen",
+   "detail": "no console line matched /^SPIKE_DONE/ within 20000 ms"
+  }
+ ],
+ "requests": [
+  {
+   "t": 115,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/apps/fail_import.html"
+  },
+  {
+   "t": 124,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.js"
+  },
+  {
+   "t": 129,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.css"
+  },
+  {
+   "t": 130,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 187,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 187,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/import_hook.py"
+  },
+  {
+   "t": 189,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 195,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 195,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 197,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 237,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 1983,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 2303,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/click_to_start_114x14.png"
+  }
+ ],
+ "downloads": [],
+ "allowed": [],
+ "actions": [],
+ "filechoosers": [],
+ "passed": false,
+ "promptAt": 2747,
+ "clickedAt": 2752,
+ "state": {
+  "overlayText": "Traceback (most recent call last):\n  File \"/lib/python314.zip/_pyodide/_base.py\", line 539, in eval_code\n    .run(globals, locals)\n     ~~~^^^^^^^^^^^^^^^^^\n  File \"/lib/python314.zip/_pyodide/_base.py\", line 366, in run\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 3, in <module>\n  File \"/lib/python3.14/site-packages/pyxel/cli.py\", line 166, in play_pyxel_app\n    runpy.run_path(startup_script_file, run_name=\"__main__\")\n    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/tmp/.pyxel/play/42_0da4b055-5b62-4c8e-830c-01b54e2c1c6b/fail_import/main.py\", line 3, in <module>\n    raise RuntimeError(\"boom at import time\")\nRuntimeError: boom at import time\n",
+  "hasFatalError": false,
+  "initialized": true,
+  "canvas": {
+   "width": 300,
+   "height": 150,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": null,
+ "elapsedMs": 3596
+}

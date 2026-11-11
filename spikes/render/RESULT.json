@@ -1,0 +1,286 @@
+{
+ "summary": "Pyxel Cube は CLIPPING POINT の描画方式として十分に使える。320x240・32色・夕方パレットで、周回路（路面/縁石/芝/砂/ガードレール/看板/観客席/木）+ 車6台 + 空と山の背景 + HUD を裏画面に描いて blt する試作が、ネイティブでもブラウザ版（ヘッドレス Chromium）でも同じ絵で動いた。1フレームの実描画（背景+3D 約7,000三角形+HUD）はブラウザで中央値 3.1〜4.8 ms、約12,500三角形でも 4.1〜5.6 ms（p95 最大 8.7 ms）で、30 fps の枠（33 ms）に対して余裕が大きい。\n設計に効く癖は4つ。(1) テクスチャはアフィン補間（初代PSと同じ歪み）で、UV は 0..1 にクランプされ繰り返しが無い。カメラ近くの大きな路面四角形は高コントラスト模様が大きく曲がる（バンパー視点では 3 m 角でも曲がる）。(2) 陰影は面ごとのフラット8段階で、テクスチャの各テクセルにも掛かる。pyxel.pal は Cube に効かない。車の色分けは「色見本テクスチャ+UV」1 Primitive が最良で、ボディ色とブレーキランプはテクスチャのテクセル書き換えで実行時に変えられる。(3) 深度バッファは draw() 呼び出しごとに消える。clear_color=None なら先に描いた 2D 背景が残る。far は画素単位で切れ、near は三角形を正しく切る（足元の欠けは near<=1.0 なら出ない）。(4) Cube は画面外のノードを自動では捨てない（頂点変換の費用が残る）ので、コース区間ノードの visible 切り替えは安いわりに効く。\n座標系は右手系・Y上・前方 -Z・角度は度。ロジックの「+x が 0、+z が +π/2」には、車モデルを「鼻先 +X・右 +Z」で作り T(x,y,z)·Ry(-heading°)·Rz(pitch°)·Rx(roll°) を使えばよい（描いて確認済み）。車と景観物は Python のコード（断面表からの生成）で十分作れる（箱形クーペ 270 三角形を 0.6 ms で生成）。\n見た目は初代PSらしい（フラット陰影のディザ、アフィン歪み、最近傍テクスチャ、望遠のTVカメラ）。足りないのは路面テクスチャの作り込み（今はノイズが強くちらつく）、車の細部（灯火・ナンバー等の絵）、TV望遠時の背景拡大の組み込み、遠景の切れ目対策の実地確認。",
+ "confirmed": [
+  {
+   "claim": "座標系: Vec3.FORWARD=(0,0,-1), BACK=(0,0,1), RIGHT=(1,0,0), LEFT=(-1,0,0), UP=(0,1,0), DOWN=(0,-1,0)。右手系・Y上。カメラはローカル -Z を向き、-z を見るカメラでは +x が画面右、+y が画面上に写る。",
+   "evidence": "e01_coords.py を実行（out/e01_coords.json）。-z を向くカメラで (3,0,-10) の箱の重心が x=222.6、(0,3,-10) の箱が y=56.4 に写った。"
+  },
+  {
+   "claim": "角度は度。Mat4.from_euler(Vec3(ex,ey,ez)) は Rz(ez)*Ry(ey)*Rx(ex)（X→Y→Z の順に掛かる）。from_euler(0,90,0) は X→(0,0,-1), Z→(1,0,0)（+Y から見て反時計回り）。(90,0,0) は Y→(0,0,1)。(0,0,90) は X→(0,1,0)。行列は列ベクトル流儀で平行移動は [r][3]。m.rotate_y(a) は m*R（後ろから掛ける=ローカル回転）、m.translate(v) は m*T(v)。rotate_x(a) は from_axis_angle(X, a) と一致。",
+   "evidence": "e01_coords.py で 6 通りの積と from_euler(30,40,50) を比較し一致したのは Rz*Ry*Rx のみ。T.rotate_y(90)==T*R が True、R*T は False。"
+  },
+  {
+   "claim": "Mat4.look_at(eye, target, up=UP) はカメラ→ワールドの変換（pos=eye、FORWARD.to_world_dir が target-eye の正規化）で、そのまま Camera.transform に入れられる。Node.forward/right/up は変換の -Z/+X/+Y 列。Quat.from_direction(+x)*FORWARD=(1,0,0)。",
+   "evidence": "e01_coords.py。look_at((5,2,5)->(5,0,15)) の pos=(5,2,5)、FORWARD→(0,-0.196,0.981)、RIGHT→(-1,0,0)。"
+  },
+  {
+   "claim": "Camera.fov は垂直画角（度）。既定値は fov=60, near=0.1, far=1000, ortho_size=None, clear_color=None。描画範囲の縦横比は draw の w/h に従う。",
+   "evidence": "e01: fov=60 で距離10・高さ tan(30°)*10 の点が画面最上行(y=1)、横 tan(30°)*10 の点が x=279.5(=160+120)。camera.rs の Camera::new を読んだ。e04: 240x60 の描画範囲で箱が 12px、320x240 で 46px（高さ比 1/4 に比例）。"
+  },
+  {
+   "claim": "ロジックの取り決め（平面 (x,z)、高さ y、向き +x が 0・+z が +π/2）からの変換式: 車モデルを「鼻先 +X、右 +Z、上 +Y、原点=接地中心」で作り、M = Mat4.from_translation(Vec3(x,y,z)).rotate_y(-degrees(heading)).rotate_z(degrees(pitch)).rotate_x(degrees(roll))。heading 増加は上から見て右回り（右旋回）。pitch>0 で鼻上げ、roll>0 で右側が下がる。",
+   "evidence": "e03_car.py で描画して確認。heading=0 を +z 側のカメラから見てヘッドライトの重心 x=269.5（画面右=+x）、テール x=50.7。heading=+π/2 で鼻先がカメラ(+z)を向く。roll=+8° を後方から見て右側が下がる、pitch=+8° で前が上がる（out/sheet_e03.png を目視）。"
+  },
+  {
+   "claim": "テクスチャ付きの面にも Shading が掛かる（テクセルの色番号ごとに (色,レベル)→2色の対を引き、(x+y)%2 の市松で打つ）。単色テクスチャの箱と単色指定の箱は画素が完全に一致。shaded(False) では素の色のみ。",
+   "evidence": "e02_palette.py: 色23の 4x4 テクスチャの箱と col=23 の箱の画素数の内訳がどちらも {23:8118, 20:1413}、shaded(False) は {23:9531}。draw.rs の make_shaded_sampler / raster.rs の dither_pick を読んだ。"
+  },
+  {
+   "claim": "陰影は面単位のフラット。レベル = round(clamp(-n·d/(|n||d|),0,1)*7)。光の向きの既定は (0.5,-1.0,-0.8)。BASE_LEVEL=5（表ではレベル4と5が元の色）。真上向きの面は既定の光でレベル5=元の色のまま。光に背を向けた面は全てレベル0。法線は面ごと（face_count*3 個、省略時は描画時に頂点から計算）。UV は頂点ごと（vertex_count*2 個）。",
+   "evidence": "raster.rs の face_shade_level、shading.rs の BASE_LEVEL、draw.rs の prim を読んだ。e02 で 32色すべて table[c][5]==(c,c) を確認。"
+  },
+  {
+   "claim": "テクスチャ参照は最近傍で、UV は 0..1 にクランプされる（繰り返し不可）。テクスチャ補間と深度はアフィン（遠近補正なし）。",
+   "evidence": "draw.rs make_image_sampler（xi=(u*w) as i32 を clamp）、raster.rs の rasterize_textured_triangle 直前のコメント「UV and z interpolation is affine」と重心座標の線形補間を読んだ。e04 の市松路面の画像で歪みを目視（out/sheet_e04_affine.png）。"
+  },
+  {
+   "claim": "pyxel.pal は Cube の描画に効かない（単色でもテクスチャでも）。描画先 Image の pal も効かない。裏画面を pyxel.blt で画面へ写すときの pal は効く（画面全体の色置換）。",
+   "evidence": "e02: pyxel.pal(BLUE,RED) 後の scene.draw の内訳が pal 無しと同一 {23:8118,20:1413}。buf.pal 後に target=buf へ描いても同一。blt 時の pal では {12:8118,20:1413} に変わった。"
+  },
+  {
+   "claim": "ボディ色の作り分けは3通りが使える: (a) 車ごとの色見本テクスチャ（32x32）を作る。(b) テクスチャ Image のテクセルを実行時に書き換えると、Node.from_mesh で作った保持型ノードにも反映される（ブレーキランプの点灯/消灯、ボディ色）。(c) ノードごとに別の Shading を持たせ、色番号の行を別の色の行で上書きする。なお Node.from_mesh の後で mesh.col_img を差し替えても既存ノードには効かない。",
+   "evidence": "e07_dyn_tex.py: テール見本を BLUE に書き換え→BRAKE 画素 1015→0。ボディ見本を BLUE→RED 画素 5180→325、BLUE 5542。mesh.col_img=黄色テクスチャ の後も黄色画素 0。e02: node.shading に行を入れ替えた Shading を付けると BLUE テクセルが {12:8118,11:1413} で描かれた。"
+  },
+  {
+   "claim": "車の色分けは「部位ごとの単色 Primitive」と「色見本テクスチャ+UV の 1 Primitive」で絵が完全に同じで、速さも同じ。",
+   "evidence": "e06_misc.py: 6台の描画が 単色6グループ(即時) 0.685 ms / 色見本テクスチャ(即時) 0.672 ms / 色見本テクスチャ(保持型) 0.621 ms（中央値、200回）。両者の画素差 0。"
+  },
+  {
+   "claim": "pyxel.colors を32色にすると Image に 16〜31 番を置ける（pset/pget で往復）。Shading(pyxel.colors) は 32色で 2.3 ms で作れ、32色すべてでレベル4〜5が元の色、行ごとの異なる段数は 2〜6。暗い側にはパレット内の近い暗色との市松が選ばれる（例: RED(12) はレベル0〜3 が (11,12)、ASPH_M(3) は (2,2),(2,2),(2,3),(2,3),(3,3),(3,3),(3,4),(4,4)、WHITE(5) は (28,28),(28,28),(28,5),(28,5),(5,5)…）。暗い兄弟色が無い色（黒、タイヤ色、水色）は 2 段しか変化しない。",
+   "evidence": "e02_palette.py（out/e02_palette.json に 3 時間帯の全表、out/e02_shading_chart_evening.png ほかを目視）。"
+  },
+  {
+   "claim": "Shading の表は sh[col, level] で (primary, secondary) を読み書きできる。範囲外は IndexError。build(colors) を呼ぶと手で直した値は消える。行を全レベル同じ色にすると、その色は同じ Primitive の中でも暗くならない（発光色）。",
+   "evidence": "e02: sh[RED,0]=(BLUE,BLUE) の読み戻し [23,23]、build 後 [11,12]。sh[40,0] と sh[RED,8] は IndexError。fix_shading で BRAKE と CREAM の行を平らにし、試作画像でテール/ヘッドライトが陰影なしで出ることを目視。"
+  },
+  {
+   "claim": "時間帯の差し替え手順: pyxel.colors[:] = 新パレット → shading.build(pyxel.colors) → 手直しを再適用 → 背景画像を作り直す。色番号の役割を固定しておけばテクスチャとメッシュはそのまま使える。",
+   "evidence": "common.apply_palette を noon / overcast / evening で実行（1.5〜1.9 ms）。e10_proto.py を 3 時間帯で描き out/sheet_tod.png を目視（昼・薄曇り・夕方とも破綻なし）。"
+  },
+  {
+   "claim": "far は画素単位の打ち切り（三角形ごとに消えるのではなく far 平面で切れる）。水平なカメラで地面が切れる行は 地平線から (カメラ高さ/far)*f 画素下（f=(H/2)/tan(fov/2)）で、実測と一致。",
+   "evidence": "raster.rs の depth_in_clip_range を読んだ。e04: fov60・far=300 で地面の最初の行が 高さ0.62 m→120、2.1 m→121、8.0 m→126（式の値 0.43/1.45/5.54 px）。far=150 では 121/123/131。"
+  },
+  {
+   "claim": "near は三角形を near 平面で正しく切る（頂点が背後にあっても三角形ごと消えない）。カメラの足元を通る 1400 m の巨大な地面三角形でも near<=1.0 なら欠けは 0。near=3.0・高さ 0.62 m では画面下が大きく欠ける。",
+   "evidence": "draw.rs の clip_triangle_to_near を読んだ。e04: near 0.05/0.3/1.0 で穴 0 画素（タイル 1400 m と 50 m の両方、カメラ高さ 0.62 と 2.1）。near=3.0・高さ0.62 で 24,960 画素の穴。"
+  },
+  {
+   "claim": "Camera.clear_color=None のとき描画先は消されず、先に 2D で描いた背景の上に 3D が重なる。深度バッファは Camera が持ち、draw() の呼び出しごとに消える（同じ Camera を使う別の根ノードを続けて draw すると、後から描いた遠い箱が手前の箱を上書きする）。1回の draw の中では描く順に関係なく深度判定が効く。",
+   "evidence": "e04: 近い赤箱の根→遠い青箱の根の順に draw して中心画素が青(23)。1つの根に両方入れると赤(12)。clear_color=None で印の色が 59,376 画素残った。試作画像で空と山の上にコースが重なっている。"
+  },
+  {
+   "claim": "draw(x,y,w,h,target) は指定の矩形だけに描く（矩形の外は 0 画素も変わらない。clear_color はその矩形だけを塗る）。target に pyxel.Image を渡せる。scene.draw の後に Image.text / rect で HUD を重ねられる。",
+   "evidence": "e04: buf に (180,40,120,90) で車を描き、矩形外の変化 0 画素、矩形内の未消去 0 画素（out/e04_viewport_preview.png を目視）。試作画像の HUD。"
+  },
+  {
+   "claim": "テクスチャのアフィン歪みは、カメラに近い大きな四角形で強い。1.5 m 市松の路面で、バンパー視点(高さ0.62 m)は 12x12 m と 6x6 m が破綻、3x3 m でも折れが見え、1.5x1.5 m でほぼ正しい。チェイス視点(高さ2.1 m)は 6x6 m が手前で大きく折れ、3x3 m でほぼ許容、6x3 m は折れが残る。",
+   "evidence": "e04_quirks.py の画像 out/sheet_e04_affine.png と out/sheet_e04_affine_chase.png を目視。試作のバンパー視点（5.1 m x 6 m の路面四角形）でも手前のノイズ模様が斜めに流れた。"
+  },
+  {
+   "claim": "ノイズの多いテクスチャは走行中ずっとちらつく。カメラが 1 フレームに 1.38 m 進む（150 km/h・30 fps 相当）と、地面の画素の 31〜33% が毎フレーム色を変える（距離によらず）。単色に近いテクスチャでは 遠方 15.6% / 中距離 6.6% / 手前 0.2% に下がる。",
+   "evidence": "e06_misc.py の shimmer（バンパー視点、連続4フレームの画素比較）。out/e06_flat_textures_bumper.png を目視（単色だと路面が平板すぎる）。"
+  },
+  {
+   "claim": "地面の大きな板（y=-0.02〜-0.2）とコース（y=0）の間に深度の競り合いは出ない（near 0.1 / 0.3、far 300）。",
+   "evidence": "e06: コースだけ描いた絵と地面+コースの絵を比べ、コースの画素で地面が勝った数が 3 視点×3 通りの隙間×2 通りの near すべて 0。"
+  },
+  {
+   "claim": "保持型（Mesh と Node.from_mesh）と即時型（on_draw で作成済み Primitive を prim()）の速さは誤差の範囲で同じ。1枚に結合したメッシュは区間分割+visible より遅かった。",
+   "evidence": "e05_perf.py（各200回の中央値、チェイス）: 区間ノード+visible 2.26 ms / 即時+マスク 2.34 ms / 区間ノード全部表示 2.52 ms / 結合メッシュ 2.72 ms（バンパーでは 3.69 ms）。"
+  },
+  {
+   "claim": "Cube は画面外のノードや Primitive を自動では捨てない（全頂点を変換し、画面外の三角形は投影後に捨てる）。真上を向いて何も写らない状態でも約6,800三角形で 0.96〜1.19 ms かかり、全ノード非表示なら 0.013 ms。区間ノードの visible 切り替えは意味がある（1.1 km の試作で 0.25〜0.4 ms、約1割）。",
+   "evidence": "draw.rs の prim（頂点キャッシュに全頂点を投影、節ごとの視錐台判定なし）を読んだ。e05 の look_away_up と nothing_visible、cull1/cull0 の比較。"
+  },
+  {
+   "claim": "Node.sprite は常にカメラ正対・陰影なしで、pos は板の中心。colkey で抜ける。木 19〜41 枚で 0.04 ms。",
+   "evidence": "draw.rs の sprite（shaded=false, CULL_NONE, カメラの right/up で四隅）を読んだ。e04: 原点・高さ2 のスプライトが行 99〜140（中心 119.5）。e05 の sprites_only。試作画像の木。"
+  },
+  {
+   "claim": "車の影は on_draw で shaded(False) → decal(1.0) → dither(0.5) → elli(横たえた行列, 4.4, 2.0, 黒) → dither(1.0) → decal() で、路面に半透明（市松）の楕円として出る。decal は受け側の色だけ塗り替え深度は変えない（rect / elli / plane だけが対応）。",
+   "evidence": "common.Car.on_draw を試作で実行し画像を目視（車の下に網点の影）。draw.rs の draw_decal のコメントを読んだ。"
+  },
+  {
+   "claim": "Node.opacity=0.5 と dither(0.5) はどちらも画素の半分を間引く（Mesh ノードにも効く）。shaded(False) などの描画状態は次のノードに漏れない。",
+   "evidence": "e04: 箱の赤画素 2116→1058（opacity、dither、Mesh ノードの3通り）。e07: 陰影なしノードの後に描いた箱が 2 色で陰影付き。"
+  },
+  {
+   "claim": "タイヤは Mesh(primitives, transforms, parents, names, col_img) の子として作り、Node.from_mesh 後に find_by_name で取り出して transform を書き換えれば、舵角と回転を見た目に出せる。1つの車輪 Primitive を4輪で共有できる（左輪は rotate_y(180) で反転）。",
+   "evidence": "common.make_car_mesh / Car.set_pose / wheel_transform を e03 と試作で実行、前輪の切れを画像で目視。"
+  },
+  {
+   "claim": "車と景観物は Python のコードで作れる。断面表（9断面×8点）から箱形クーペを生成: 270 三角形（ボディ 182 = 胴体112+前後の蓋20+床2+ウイング28+ミラー20、車輪 22×4）。生成 0.6 ms。コース 3,520 三角形の生成は Python 部 7.8 ms + Primitive 化 0.58 ms。",
+   "evidence": "common.build_car_body / build_wheel / build_track_section を実行（e03、e05 の mesh_build_ms）。out/e03_car_front34.png ほかを目視。"
+  },
+  {
+   "claim": "Mesh.from_glb は付属の GLB を読め、テクスチャは読み込み時点のパレットの色番号に変換された Image になる。",
+   "evidence": "e06: examples/cube/assets/garden_coin.glb → 要素5、36三角形、col_img は 16x16 の Image、夕方32色パレット下で色番号 {5,18,19}。"
+  },
+  {
+   "claim": "pyxel.blt の scale 引数で背景を拡大できる（TV カメラの望遠で背景を合わせる用）。地平線の行は拡大後も画面中央に保てる。",
+   "evidence": "__init__.pyi の Image.blt（rotate, scale はコピー領域の中心基準）を読み、e08_bgscale.py で 1/2/4 倍を描いて地平線の上下の色を確認。2倍・4倍で 0.51 ms。"
+  },
+  {
+   "claim": "同じ試作をブラウザ版（Pyodide 3.14.2、ヘッドレス Chromium）で動かせた。裏画面 pyxel.Image(320,240) に背景+3D+HUD を描き blt する形で、画面はネイティブと同じ絵。例外・失敗信号なし。",
+   "evidence": "pyxel package webapp webapp/main.py → pyxel app2html → webrun.js --mirror … --shot。結果 PASS（out/web_result.json、out/web_shot.png を目視）。重い版 webapp2 も PASS（out/web2_result.json）。"
+  },
+  {
+   "claim": "試作の目視評価: 初代PSらしく見える。効いているのは 面ごとのフラット陰影と市松ディザ、最近傍テクスチャ、アフィン歪み、赤白縁石、板の木、望遠の TV カメラ（fov 8.8°で6台が圧縮されて写る）。足りない点: 路面テクスチャがノイズ過多で近景が荒い / 車の灯火が色面だけで細部が無い / 車体の下の影以外の影が無い / 遠近の空気感（霧）が無い / TV 望遠で背景の山が拡大されない（試作は等倍のまま） / ピッチとロールで車輪も一緒に浮く（試作は車輪を車体の子にしたため）。",
+   "evidence": "out/proto_evening_chase.png、proto_evening_bumper.png、proto_evening_tv.png、proto_evening_tv_wide.png（2倍拡大）と out/sheet_proto_evening.png を自分で開いて見た。"
+  }
+ ],
+ "recommendations": [
+  "座標と行列: ロジックは (x, z) 平面・y 上・heading は +x が 0 で +z が +π/2（右旋回が正）のまま。描画アダプタに car_transform(x,y,z,heading,pitch,roll) = Mat4.from_translation(Vec3(x,y,z)).rotate_y(-degrees(heading)).rotate_z(degrees(pitch)).rotate_x(degrees(roll)) を1か所だけ置く。モデルは全て「鼻先 +X・右 +Z・上 +Y・原点は接地中心」で作る（Cube の FORWARD=-Z には合わせない）。from_euler は Rz*Ry*Rx の順なのでヨー・ピッチ・ロールには使わず、rotate_y→rotate_z→rotate_x の連鎖で書く。角度は全て度。",
+  "車のノード構成: 車の根ノード（位置+ヨー）の下に、車体ノード（ピッチ・ロールだけ）と車輪4つ（根の直下。舵角は rotate_y(-steer°)、回転は rotate_z）を置く。試作のように車輪を車体の子にするとロールで車輪が浮く。車輪 Primitive は1つを共有し、左輪は rotate_y(180)。影は根ノードの on_draw で decal(1.0)+dither(0.5)+elli。",
+  "車の色分け: 部位ごとに Primitive を分けず、車ごとに 32x32 の Image を1枚持つ。上段を 4x4 px の色見本（body / body2 / glass / tire / bumper / head / tail / under / silver / black / stripe）、下段に 16x16 の車輪の絵。面の UV は色見本の中心 ((i%8)*4+2)/32 を3頂点とも同じ値にする。ボディは1 Primitive（頂点は面ごとに独立）。ボディ色の色違いは色見本の塗り替え、ブレーキランプは tail 見本を BRAKE と暗赤で書き換える（保持型ノードにも即反映）。灯火の色番号は Shading の行を全レベル同色にして暗くならないようにする。pyxel.pal と mesh.col_img の後からの差し替えは使わない。",
+  "パレット: 32色の色番号に役割を固定する（試作の割り当て: 0 黒 / 1 紺 / 2-4 アスファルト3階調 / 5 白 / 6-8 芝3階調 / 9-10 砂2 / 11-12 赤2 / 13 橙 / 14 黄 / 15 クリーム(ヘッドライト) / 16-19 空4 / 20-21 山2 / 22-24 青3 / 25 ガラス / 26 幹 / 27 濃緑 / 28 銀 / 29 タイヤ / 30 ブレーキ / 31 桃）。主要な色には必ず1段暗い兄弟色を入れる（Shading がそれを影に選ぶ。無い色は 2 段しか変化しない）。時間帯は「色番号は同じで RGB だけ違う」パレット3本をデータで持ち、切り替えは pyxel.colors[:] = pal → shading.build(pyxel.colors) → 手直し表を再適用 → 背景画像の作り直し、を1関数にまとめる（約2 ms）。手直しは (色, レベル, primary, secondary) の表としてデータで持つ（build で消えるため）。",
+  "カメラ: near=0.3、far=300 を基本にする（near は 1.0 を超えないこと。バンパー視点で足元が欠ける）。チェイス: eye=車位置-前方*6.2+上2.1、注視点=車位置+前方*6.0+上0.9、fov 58。バンパー: eye=車位置+前方*1.6+上0.62、注視点=30 m 先の高さ0.5、fov 62、自車は visible=False。TV: コース脇の固定点（ガードレールの外 2.5 m、高さ 3.5〜6 m）から車を look_at、fov=clamp(degrees(2*atan(枠の大きさ[m]/距離)), 6, 55)（枠 7 m で望遠、16 m で広角）。カメラ位置は看板の陰にならない所をデータで持つ。ヘリは look_at で真上寄りから。",
+  "背景と描画順: 毎回 (1) 裏画面に背景（空と山の横長画像）を blt、(2) root.draw(0,0,320,240,buf) を Camera.clear_color=None で、(3) buf に HUD、(4) pyxel.blt(0,0,buf,…) の順。背景の地平線の行は y_h = H/2 + f*tan(カメラの仰角)、f=(H/2)/tan(fov/2)。横スクロールはカメラ方位[度]*f*π/180 画素（fov 58 で 3.78 px/度、一周 約1,360 px）に合わせる（試作は 5.33 px/度で合っていない）。TV 望遠では blt の scale を f の比で掛ける（費用 0.5 ms）。地平線より下は遠い地面の色で塗っておく（far で切れた先が見えるため。カメラ高さ 8 m・far 300 で地平線の 6 px 下まで背景が見える）。",
+  "コースのメッシュ: 約50 m ごとの区間を Node.from_mesh のノードにし、毎フレーム「区間中心までの距離 < far+半径、かつカメラ前方への射影 > -半径」で visible を切る。路面の四角形はレース中のカメラ近くで 3 m x 3 m 以下を目安にする（幅12 m を4分割、長さ3 m 刻み）。全周を細かくすると三角形が増えるので、区間ごとに細かい版と粗い版（6 m 角）の2つの Primitive を持ち距離で visible を切り替える案を第一候補にする。加えて模様の作りで歪みを隠す: 路面本体は低コントラスト、白線・縁石・スタート線は細い別の帯の四角形にして模様の境界をポリゴンの辺に合わせる。",
+  "テクスチャ: UV は繰り返せないので、256x256 のアトラス1枚に矩形で並べ、四角形ごとに矩形（0.5 テクセル内側）を割り当てる。路面は 64x32（幅方向12 m=64 テクセル）。遠景のちらつきを抑えるため、路面・芝・砂のノイズは今の試作より弱くし、粗い版の区間には単色に近い矩形を使う。看板は表だけ CULL_BACK、裏は暗色の別四角形（両面描画だと裏から文字が鏡像に見える）。",
+  "小物: 木は Node.sprite（位置は板の中心なので y=高さ/2、colkey=0、陰影なし）。Python 側で距離と前後を見て描く枚数を絞る。観客席と看板はテクスチャ付きの四角形。ブレーキランプなど陰影を掛けたくない面は Shading の行の上書きで足りる（別 Primitive にして shaded(False) でも可）。遠くの区間を徐々に消したい場合は Node.opacity（画素の間引き）が使える。",
+  "モデルの作り方: 初期版は Python のコードで作る。車は「断面表（x, 敷居の半幅, ベルト高さ, ベルト半幅, 上面高さ, 上面半幅）+ (区間, 帯)→色見本の表 + 車輪位置」をデータ（JSON）にし、4車種は表の差し替えで作る。三角形数は 222（ウイングとミラー無し）〜270。GLB は、後で外部の道具で作った細かいモデルを足すときの受け口として Mesh.from_glb を残すだけにする（読み込み時のパレットで色番号が決まる点に注意）。",
+  "描画時間の配分: ブラウザでも 7,000〜12,500 三角形の1フレームが 3〜6 ms（p95 9 ms 以下）なので、30 fps の枠では描画より物理60 Hz と Python 側の処理に余裕を回せる。路面の細分化や景観物の追加（画面内 3,000〜5,000 三角形）は許容できる見込み。ただし画面外の三角形も 1,000 個あたり約 0.15 ms（ネイティブ）かかるので、区間の visible 切り替えは必ず入れる。",
+  "検証の仕組み: 今回の e10_proto.py のように「決めた車位置とカメラで描いて PNG を保存する巡回スクリプト」と、印の色の画素数を数える検査（背景が残る、矩形の外が変わらない、灯火の色が出る、穴が無い）をそのままテストにする。3 時間帯×3 カメラの PNG を毎回出す。"
+ ],
+ "numbers": [
+  {
+   "what": "ブラウザ版: 1フレームの実描画（背景 blt + 3D + HUD、裏画面へ）",
+   "value": "中央値 チェイス 3.1〜3.5 ms / バンパー 2.7〜3.1 ms / TV望遠 4.0 ms / TV広角 4.4〜4.8 ms。p95 4.1〜7.9 ms。走りながら（車6台の姿勢更新+区間の表示切替込み、120フレーム）中央値 3.5 ms、p95 3.9 ms、最大 4.1 ms",
+   "conditions": "ヘッドレス Chromium・Pyodide 3.14.2・このコンテナ。約7,000三角形（地面1,568 + コース3,520 + 車6台1,620 + 看板等82 + 木の板）。各84回。time.perf_counter（ブラウザでは 0.1 ms 刻み）。out/web_perf.json"
+  },
+  {
+   "what": "ブラウザ版: 重い版の1フレーム",
+   "value": "中央値 チェイス 4.6 ms / バンパー 4.1 ms / TV望遠 4.9 ms / TV広角 5.6 ms、p95 6.3〜8.6 ms。区間の表示切替なしでは 4.8 / 4.8 / 5.3 / 6.1 ms。走りながら 中央値 5.6 ms、p95 7.7 ms",
+   "conditions": "同上。約12,500三角形（地面 25 m タイル 6,272 + コース幅4分割 4,400 + 車 1,620 + 他）。out/web2_perf.json"
+  },
+  {
+   "what": "ネイティブ: 3D の draw だけ（区間ノード+visible）",
+   "value": "中央値 チェイス 2.26 ms / バンパー 2.25 ms / TV望遠 2.55 ms / TV広角 3.00 ms（p95 2.5〜4.7 ms）。全区間表示では 2.52 / 2.63 / 2.97 / 3.35 ms",
+   "conditions": "CPython 3.13 headless、320x240、約7,000三角形、各200回。他の調査が同じコンテナで動いており実行ごとに ±0.5〜1 ms ぶれる。out/e05_perf_native.json"
+  },
+  {
+   "what": "ネイティブ: 描き方の比較（チェイス / バンパー）",
+   "value": "区間ノード+visible 2.26 / 2.25 ms、即時 prim()+マスク 2.34 / 2.33 ms、結合メッシュ1枚 2.72 / 3.69 ms",
+   "conditions": "同上、各200回の中央値"
+  },
+  {
+   "what": "ネイティブ: 内訳（チェイス）",
+   "value": "地面 0.80 ms / コース（9区間）0.82 ms / 車6台 0.52 ms / 木19枚 0.04 ms / 看板等 0.035 ms / 何も表示しない 0.013 ms。背景 blt 0.006 ms、HUD 0.002 ms、画面への blt 0.003 ms、車6台の姿勢+区間の表示判定 0.045 ms",
+   "conditions": "同上、各200回の中央値"
+  },
+  {
+   "what": "画面外の三角形の費用",
+   "value": "約6,800三角形で 0.96〜1.19 ms（何も写らない向き）= 1,000三角形あたり約 0.15〜0.17 ms",
+   "conditions": "ネイティブ、頂点を面ごとに独立させたメッシュ（1三角形3頂点）"
+  },
+  {
+   "what": "三角形数",
+   "value": "車1台 270（ボディ 182、車輪 22×4。ウイングとミラーを外すと 222）。試作コース 1,126 m: 220 区切り（5.1 m 刻み）×16 = 3,520、22 区間ノード。画面に入る区間は 9〜14",
+   "conditions": "common.py の生成結果、out/e10_proto_evening.json"
+  },
+  {
+   "what": "生成と読み込みの時間",
+   "value": "車の Primitive 0.59 ms、コース 3,520三角形 7.8 ms（Python）+ 0.58 ms（Primitive 化と法線）、アトラス 256x256 2.4 ms、背景 640x240 を pset で作る 39.6 ms。試作シーン全体の構築 ネイティブ 44.6 ms / ブラウザ 90.7 ms（重い版 74 / 148 ms）",
+   "conditions": "ネイティブは e05、ブラウザは webapp の world_build_ms"
+  },
+  {
+   "what": "Shading と時間帯の切り替え",
+   "value": "Shading(32色) の作成 2.3 ms、パレット差し替え+build+手直し 1.5〜1.9 ms、LEVEL_COUNT=8、元の色はレベル4〜5",
+   "conditions": "ネイティブ、e02"
+  },
+  {
+   "what": "アフィン歪みが目立たない路面四角形の大きさ",
+   "value": "バンパー視点（高さ 0.62 m）: 1.5 m 角で良好、3 m 角で折れが見える、6 m 角以上は破綻。チェイス視点（高さ 2.1 m）: 3 m 角でほぼ良好、6 m 角は手前で大きく折れる",
+   "conditions": "1.5 m の市松模様（最悪条件）、fov 62、目視。out/sheet_e04_affine*.png"
+  },
+  {
+   "what": "ちらつき（1フレームで色が変わる地面画素の割合）",
+   "value": "ノイズのテクスチャ: 遠 33.4% / 中 30.7% / 近 31.5%。単色に近いテクスチャ: 遠 15.6% / 中 6.6% / 近 0.2%",
+   "conditions": "バンパー視点、1フレーム 1.38 m 前進（150 km/h・30 fps 相当）、連続4フレーム、車と木は非表示"
+  },
+  {
+   "what": "far で地面が切れる位置",
+   "value": "地平線から (カメラ高さ/far)*f 画素下。fov60・far300 で 高さ0.62 m→0 px、2.1 m→1 px、8 m→6 px（far150 では 1 / 3 / 11 px）",
+   "conditions": "水平なカメラ、320x240、f=207.8 px、e04 の実測"
+  },
+  {
+   "what": "near の上限",
+   "value": "near<=1.0 で足元の欠け 0 画素、near=3.0 で 24,960 画素欠ける",
+   "conditions": "カメラ高さ 0.62 m、fov 60、少し下向き、e04"
+  },
+  {
+   "what": "カメラの設定値（試作で使った値）",
+   "value": "チェイス fov 58・後方 6.2 m・高さ 2.1 m、バンパー fov 62・高さ 0.62 m、TV望遠 fov 8.8〜12°（距離 約70〜90 m）、TV広角 fov 55、near 0.3、far 300",
+   "conditions": "world.py の cam_chase / cam_bumper / cam_tv"
+  },
+  {
+   "what": "背景の拡大 blt",
+   "value": "等倍 0.004 ms、2倍・4倍 0.51 ms",
+   "conditions": "ネイティブ、320x240 全面、100回の中央値、e08"
+  },
+  {
+   "what": "車6台の描画（色分け方式の比較）",
+   "value": "単色 Primitive 6組 0.685 ms / 色見本テクスチャ即時 0.672 ms / 色見本テクスチャ保持型 0.621 ms、画素差 0",
+   "conditions": "ネイティブ、fov 40 の俯瞰、各200回の中央値、e06"
+  }
+ ],
+ "unverified": [
+  "ブラウザ版の時間は、このコンテナのヘッドレス Chromium でだけ測った。実際の PC やスマホのブラウザでの時間、長時間動かしたときの p95 や最大値は未確認。",
+  "ネイティブの時間は、同じコンテナで他の調査が動いている中で測ったため ±0.5〜1 ms ぶれる。描く順番（地面を先か後か）による差は、ぶれに埋もれて結論が出なかった。",
+  "動いている絵は見ていない（静止画の目視と画素の数え上げだけ）。ディザの市松が動くときの見え方、ちらつきの体感、アフィン歪みが走行中にどう見えるかは未確認。",
+  "far=300 での切れ目の見え方は、試作コースが 1.1 km の平面で 300 m 先に背の高い物がほとんど無く、実地では確認できていない（far=120 との見比べでも差が出なかった）。Node.opacity による遠方の徐々に消す処理は、画素が半分になる仕組みだけ確認し、コースでの見た目は未確認。",
+  "路面の細かい版と粗い版を距離で切り替える仕組み、白線や縁石を別の帯にして歪みを隠す作りは、推奨として書いたが実装していない。",
+  "TV 望遠での背景拡大は blt の scale を単体で確かめただけで、試作のカメラには組み込んでいない（試作の TV 画面は背景が等倍のまま）。背景の横スクロール量も試作は画角と合っていない。",
+  "高低差のあるコース（坂、バンク）は描いていない。試作は平面だけ。",
+  "頂点を共有した（添字で使い回す）メッシュにしたときの速さは未測定。今回は全て1三角形3頂点の独立頂点。",
+  "PNG ファイルから 32色パレットの画像を読む方法（Image.from_image / load）と、Image.set の文字列で 16 番以上の色を書けるかは未確認。今回のテクスチャは全てコード（pset / rect / circ / text）で作った。",
+  "GLB で車を作る場合との比較は実物では行えていない（この環境に Blender / Blockbench が無い）。付属の GLB が読めて、テクスチャが読み込み時のパレットの色番号になることだけ確認した。GLB の面ごとの色やモーションを車に使う検討は未確認。",
+  "光の向き（Shading.direction）を時間帯で変えることは自分では試していない（サンプル c03 / c04 が代入している）。夕方の低い光で側面のレベルがどうなるかは未確認。",
+  "スプライトの板はカメラの上下の傾きにも正対するので、高い位置の TV カメラやヘリ視点では木が寝て見える可能性がある。未確認。観客など数百枚規模のスプライトの時間も未測定（測ったのは 19〜41 枚）。",
+  "ヘリ視点のカメラは作っていない。",
+  "e06_misc.py の中のブレーキランプ検査（brake_lamp_texel_rewrite）は、他車のランプを数えてしまう作りで無効。正しい確認は e07_dyn_tex.py のほう。",
+  "車の見た目の作り込み（ホイールアーチ、灯火の形、ナンバー、4車種の作り分け）は未着手。試作は箱形クーペ1種の色違いだけ。270 三角形は企画の上限 250 を少し超えている（ウイングとミラーを外せば 222）。",
+  "追加で入れたパッケージは無い（Pillow は元から入っており、見比べ用の並べ画像にだけ使った）。"
+ ],
+ "artifacts": [
+  "<scratchpad>/spikes/render/common.py",
+  "<scratchpad>/spikes/render/world.py",
+  "<scratchpad>/spikes/render/e10_proto.py",
+  "<scratchpad>/spikes/render/e01_coords.py",
+  "<scratchpad>/spikes/render/e02_palette.py",
+  "<scratchpad>/spikes/render/e03_car.py",
+  "<scratchpad>/spikes/render/e04_quirks.py",
+  "<scratchpad>/spikes/render/e05_perf.py",
+  "<scratchpad>/spikes/render/e06_misc.py",
+  "<scratchpad>/spikes/render/e07_dyn_tex.py",
+  "<scratchpad>/spikes/render/e08_bgscale.py",
+  "<scratchpad>/spikes/render/webapp/main.py",
+  "<scratchpad>/spikes/render/webapp.html",
+  "<scratchpad>/spikes/render/webapp2.html",
+  "<scratchpad>/spikes/render/out/proto_evening_chase.png",
+  "<scratchpad>/spikes/render/out/proto_evening_bumper.png",
+  "<scratchpad>/spikes/render/out/proto_evening_tv.png",
+  "<scratchpad>/spikes/render/out/proto_evening_tv_wide.png",
+  "<scratchpad>/spikes/render/out/sheet_proto_evening.png",
+  "<scratchpad>/spikes/render/out/sheet_tod.png",
+  "<scratchpad>/spikes/render/out/web_shot.png",
+  "<scratchpad>/spikes/render/out/web_perf.json",
+  "<scratchpad>/spikes/render/out/web2_perf.json",
+  "<scratchpad>/spikes/render/out/e05_perf_native.json",
+  "<scratchpad>/spikes/render/out/e01_coords.json",
+  "<scratchpad>/spikes/render/out/e02_palette.json",
+  "<scratchpad>/spikes/render/out/e02_shading_chart_evening.png",
+  "<scratchpad>/spikes/render/out/e04_quirks.json",
+  "<scratchpad>/spikes/render/out/sheet_e04_affine.png",
+  "<scratchpad>/spikes/render/out/sheet_e04_affine_chase.png",
+  "<scratchpad>/spikes/render/out/e04_viewport_preview.png",
+  "<scratchpad>/spikes/render/out/e06_misc.json",
+  "<scratchpad>/spikes/render/out/e07_dyn_tex.json",
+  "<scratchpad>/spikes/render/out/sheet_e03.png",
+  "<scratchpad>/spikes/render/out/e03_car_front34.png",
+  "<scratchpad>/spikes/render/out/sheet_e06.png"
+ ],
+ "report_path": ""
+}

@@ -1,0 +1,602 @@
+{
+ "tsubame": {
+  "accel_full_throttle": {
+   "t0_100": 6.883333333333314,
+   "t0_400m": 14.950000000000323,
+   "vmax_kmh": 225.04397404876246,
+   "top_gear": 5,
+   "top_rpm": 8199.466227251667
+  },
+  "accel_tcs_driver": {
+   "t0_100": 6.849999999999981,
+   "t0_400m": 14.933333333333655,
+   "vmax_kmh": 225.05712438176747,
+   "top_gear": 5,
+   "top_rpm": 8198.187126554647
+  },
+  "brake_100_full_pedal": {
+   "dist_m": 44.070442286919175,
+   "time_s": 3.183333333333333,
+   "peak_decel_g": 0.9161273128522777,
+   "max_lateral_dev_m": 0.0
+  },
+  "brake_100_abs_driver": {
+   "dist_m": 43.31255374148837,
+   "time_s": 3.1333333333333333,
+   "peak_decel_g": 0.9445727244455828,
+   "max_lateral_dev_m": 0.0
+  },
+  "brake_200_abs_driver": {
+   "dist_m": 162.4221004515822,
+   "time_s": 5.983333333333333,
+   "peak_decel_g": 1.0437816839352347,
+   "max_lateral_dev_m": 0.0
+  },
+  "circle_R30": {
+   "max_lat_g": 0.892,
+   "ackermann_deg": 4.908,
+   "by_g": {
+    "0.30g": {
+     "steer_deg": 5.036,
+     "extra_deg": 0.128,
+     "body_slip_deg": 2.33,
+     "slipF_deg": -0.84,
+     "slipR_deg": -0.72
+    },
+    "0.50g": {
+     "steer_deg": 5.105,
+     "extra_deg": 0.197,
+     "body_slip_deg": 1.73,
+     "slipF_deg": -1.51,
+     "slipR_deg": -1.33
+    },
+    "0.70g": {
+     "steer_deg": 5.378,
+     "extra_deg": 0.47,
+     "body_slip_deg": 0.95,
+     "slipF_deg": -2.56,
+     "slipR_deg": -2.1
+    },
+    "0.85g": {
+     "steer_deg": 6.841,
+     "extra_deg": 1.932,
+     "body_slip_deg": 0.15,
+     "slipF_deg": -4.85,
+     "slipR_deg": -2.86
+    }
+   },
+   "fail": {
+    "t": 39.483333333332375,
+    "speed_kmh": 60.18536110139938,
+    "radius_err_m": 2.5012704214953843,
+    "body_slip_deg": 0.42284897367030805,
+    "sy_front": 2.5594528230970153,
+    "sy_rear": 0.2644637578051466,
+    "mode": "understeer(front washes out)"
+   }
+  },
+  "circle_R80": {
+   "max_lat_g": 0.87,
+   "ackermann_deg": 1.841,
+   "by_g": {
+    "0.30g": {
+     "steer_deg": 1.992,
+     "extra_deg": 0.151,
+     "body_slip_deg": 0.41,
+     "slipF_deg": -0.88,
+     "slipR_deg": -0.74
+    },
+    "0.50g": {
+     "steer_deg": 2.072,
+     "extra_deg": 0.231,
+     "body_slip_deg": -0.17,
+     "slipF_deg": -1.54,
+     "slipR_deg": -1.31
+    },
+    "0.70g": {
+     "steer_deg": 2.391,
+     "extra_deg": 0.55,
+     "body_slip_deg": -0.92,
+     "slipF_deg": -2.61,
+     "slipR_deg": -2.06
+    },
+    "0.85g": {
+     "steer_deg": 4.244,
+     "extra_deg": 2.404,
+     "body_slip_deg": -1.63,
+     "slipF_deg": -5.19,
+     "slipR_deg": -2.75
+    }
+   },
+   "fail": {
+    "t": 51.53333333333169,
+    "speed_kmh": 96.38404356502943,
+    "radius_err_m": 2.5046465658787014,
+    "body_slip_deg": -1.426240858072435,
+    "sy_front": 1.380548982055013,
+    "sy_rear": 0.3261426667131234,
+    "mode": "understeer(front washes out)"
+   }
+  }
+ },
+ "kazane": {
+  "accel_full_throttle": {
+   "t0_100": 6.816666666666648,
+   "t0_400m": 14.916666666666988,
+   "vmax_kmh": 212.77716923815862,
+   "top_gear": 5,
+   "top_rpm": 7199.5430703492575
+  },
+  "accel_tcs_driver": {
+   "t0_100": 6.633333333333315,
+   "t0_400m": 14.76666666666698,
+   "vmax_kmh": 212.8686267685986,
+   "top_gear": 5,
+   "top_rpm": 7199.349786008544
+  },
+  "brake_100_full_pedal": {
+   "dist_m": 42.52317019350082,
+   "time_s": 3.1,
+   "peak_decel_g": 0.9845664367098332,
+   "max_lateral_dev_m": 0.0
+  },
+  "brake_100_abs_driver": {
+   "dist_m": 42.14886070589472,
+   "time_s": 3.0666666666666664,
+   "peak_decel_g": 0.9822178055234818,
+   "max_lateral_dev_m": 0.0
+  },
+  "brake_200_abs_driver": {
+   "dist_m": 157.71809540293555,
+   "time_s": 5.85,
+   "peak_decel_g": 1.0915102249630522,
+   "max_lateral_dev_m": 0.0
+  },
+  "circle_R30": {
+   "max_lat_g": 0.91,
+   "ackermann_deg": 4.335,
+   "by_g": {
+    "0.30g": {
+     "steer_deg": 4.48,
+     "extra_deg": 0.144,
+     "body_slip_deg": 1.48,
+     "slipF_deg": -0.88,
+     "slipR_deg": -0.74
+    },
+    "0.50g": {
+     "steer_deg": 4.533,
+     "extra_deg": 0.198,
+     "body_slip_deg": 0.85,
+     "slipF_deg": -1.55,
+     "slipR_deg": -1.36
+    },
+    "0.70g": {
+     "steer_deg": 4.714,
+     "extra_deg": 0.378,
+     "body_slip_deg": -0.01,
+     "slipF_deg": -2.59,
+     "slipR_deg": -2.23
+    },
+    "0.85g": {
+     "steer_deg": 5.247,
+     "extra_deg": 0.912,
+     "body_slip_deg": -1.6,
+     "slipF_deg": -4.67,
+     "slipR_deg": -3.87
+    }
+   },
+   "fail": {
+    "t": 40.13333333333234,
+    "speed_kmh": 60.74905221995253,
+    "radius_err_m": 2.5124214221006795,
+    "body_slip_deg": -1.73496468898412,
+    "sy_front": 2.3231539863280424,
+    "sy_rear": 0.4747227104228704,
+    "mode": "understeer(front washes out)"
+   }
+  },
+  "circle_R80": {
+   "max_lat_g": 0.906,
+   "ackermann_deg": 1.626,
+   "by_g": {
+    "0.30g": {
+     "steer_deg": 1.781,
+     "extra_deg": 0.155,
+     "body_slip_deg": 0.08,
+     "slipF_deg": -0.9,
+     "slipR_deg": -0.76
+    },
+    "0.50g": {
+     "steer_deg": 1.831,
+     "extra_deg": 0.205,
+     "body_slip_deg": -0.52,
+     "slipF_deg": -1.56,
+     "slipR_deg": -1.36
+    },
+    "0.70g": {
+     "steer_deg": 1.999,
+     "extra_deg": 0.373,
+     "body_slip_deg": -1.37,
+     "slipF_deg": -2.57,
+     "slipR_deg": -2.21
+    },
+    "0.85g": {
+     "steer_deg": 2.664,
+     "extra_deg": 1.038,
+     "body_slip_deg": -2.73,
+     "slipF_deg": -4.57,
+     "slipR_deg": -3.59
+    }
+   },
+   "fail": {
+    "t": 53.94999999999822,
+    "speed_kmh": 99.33647667618344,
+    "radius_err_m": 2.5099557929819127,
+    "body_slip_deg": -4.992447833166666,
+    "sy_front": 1.5921206940803545,
+    "sy_rear": 0.7640119387321985,
+    "mode": "understeer(front washes out)"
+   }
+  }
+ },
+ "shirogane": {
+  "accel_full_throttle": {
+   "t0_100": 6.016666666666651,
+   "t0_400m": 14.200000000000285,
+   "vmax_kmh": 256.1851719315139,
+   "top_gear": 5,
+   "top_rpm": 7199.233091833771
+  },
+  "accel_tcs_driver": {
+   "t0_100": 5.616666666666652,
+   "t0_400m": 13.866666666666935,
+   "vmax_kmh": 256.1692736981306,
+   "top_gear": 5,
+   "top_rpm": 7198.865015009216
+  },
+  "brake_100_full_pedal": {
+   "dist_m": 40.20949052666446,
+   "time_s": 2.9166666666666665,
+   "peak_decel_g": 1.007371857327593,
+   "max_lateral_dev_m": 0.0
+  },
+  "brake_100_abs_driver": {
+   "dist_m": 39.34894767131217,
+   "time_s": 2.85,
+   "peak_decel_g": 1.0613820311345001,
+   "max_lateral_dev_m": 0.0
+  },
+  "brake_200_abs_driver": {
+   "dist_m": 149.34249071544315,
+   "time_s": 5.5,
+   "peak_decel_g": 1.1324167252818433,
+   "max_lateral_dev_m": 0.0
+  },
+  "circle_R30": {
+   "max_lat_g": 0.956,
+   "ackermann_deg": 5.099,
+   "by_g": {
+    "0.30g": {
+     "steer_deg": 5.215,
+     "extra_deg": 0.115,
+     "body_slip_deg": 2.06,
+     "slipF_deg": -0.81,
+     "slipR_deg": -0.7
+    },
+    "0.50g": {
+     "steer_deg": 5.266,
+     "extra_deg": 0.167,
+     "body_slip_deg": 1.49,
+     "slipF_deg": -1.43,
+     "slipR_deg": -1.27
+    },
+    "0.70g": {
+     "steer_deg": 5.422,
+     "extra_deg": 0.323,
+     "body_slip_deg": 0.74,
+     "slipF_deg": -2.33,
+     "slipR_deg": -2.03
+    },
+    "0.85g": {
+     "steer_deg": 5.873,
+     "extra_deg": 0.774,
+     "body_slip_deg": -0.17,
+     "slipF_deg": -3.69,
+     "slipR_deg": -2.93
+    }
+   },
+   "fail": {
+    "t": 41.76666666666558,
+    "speed_kmh": 61.90542719762867,
+    "radius_err_m": 2.5234249900308257,
+    "body_slip_deg": -1.723682219645444,
+    "sy_front": 2.76378956123476,
+    "sy_rear": 0.5164191723344693,
+    "mode": "understeer(front washes out)"
+   }
+  },
+  "circle_R80": {
+   "max_lat_g": 0.955,
+   "ackermann_deg": 1.912,
+   "by_g": {
+    "0.30g": {
+     "steer_deg": 2.038,
+     "extra_deg": 0.126,
+     "body_slip_deg": 0.32,
+     "slipF_deg": -0.83,
+     "slipR_deg": -0.72
+    },
+    "0.50g": {
+     "steer_deg": 2.09,
+     "extra_deg": 0.178,
+     "body_slip_deg": -0.23,
+     "slipF_deg": -1.44,
+     "slipR_deg": -1.26
+    },
+    "0.70g": {
+     "steer_deg": 2.242,
+     "extra_deg": 0.33,
+     "body_slip_deg": -0.97,
+     "slipF_deg": -2.33,
+     "slipR_deg": -2.0
+    },
+    "0.85g": {
+     "steer_deg": 2.63,
+     "extra_deg": 0.718,
+     "body_slip_deg": -1.86,
+     "slipF_deg": -3.61,
+     "slipR_deg": -2.9
+    }
+   },
+   "fail": {
+    "t": 56.416666666664746,
+    "speed_kmh": 100.78873774408113,
+    "radius_err_m": 2.517877246429478,
+    "body_slip_deg": -3.668492588030676,
+    "sy_front": 1.568313458348182,
+    "sy_rear": 0.6165123804418422,
+    "mode": "understeer(front washes out)"
+   }
+  }
+ },
+ "arashi": {
+  "accel_full_throttle": {
+   "t0_100": 5.33333333333332,
+   "t0_400m": 13.516666666666918,
+   "vmax_kmh": 248.05562894043445,
+   "top_gear": 5,
+   "top_rpm": 7199.012178280879
+  },
+  "accel_tcs_driver": {
+   "t0_100": 5.33333333333332,
+   "t0_400m": 13.516666666666918,
+   "vmax_kmh": 248.05562894043445,
+   "top_gear": 5,
+   "top_rpm": 7199.012178280879
+  },
+  "brake_100_full_pedal": {
+   "dist_m": 41.35469262072464,
+   "time_s": 2.9833333333333334,
+   "peak_decel_g": 0.9788804069997343,
+   "max_lateral_dev_m": 0.0
+  },
+  "brake_100_abs_driver": {
+   "dist_m": 40.24135611652383,
+   "time_s": 2.9166666666666665,
+   "peak_decel_g": 1.0283164963331874,
+   "max_lateral_dev_m": 0.0
+  },
+  "brake_200_abs_driver": {
+   "dist_m": 151.85717610635172,
+   "time_s": 5.583333333333333,
+   "peak_decel_g": 1.1153224365375276,
+   "max_lateral_dev_m": 0.0
+  },
+  "circle_R30": {
+   "max_lat_g": 0.944,
+   "ackermann_deg": 4.794,
+   "by_g": {
+    "0.30g": {
+     "steer_deg": 4.96,
+     "extra_deg": 0.166,
+     "body_slip_deg": 2.17,
+     "slipF_deg": -0.83,
+     "slipR_deg": -0.67
+    },
+    "0.50g": {
+     "steer_deg": 5.017,
+     "extra_deg": 0.224,
+     "body_slip_deg": 1.6,
+     "slipF_deg": -1.45,
+     "slipR_deg": -1.24
+    },
+    "0.70g": {
+     "steer_deg": 5.211,
+     "extra_deg": 0.417,
+     "body_slip_deg": 0.86,
+     "slipF_deg": -2.38,
+     "slipR_deg": -1.97
+    },
+    "0.85g": {
+     "steer_deg": 5.845,
+     "extra_deg": 1.051,
+     "body_slip_deg": 0.05,
+     "slipF_deg": -3.82,
+     "slipR_deg": -2.78
+    }
+   },
+   "fail": {
+    "t": 41.44999999999893,
+    "speed_kmh": 61.95370589830711,
+    "radius_err_m": 2.5103287262263407,
+    "body_slip_deg": -0.2841316159361788,
+    "sy_front": 2.478050341229735,
+    "sy_rear": 0.34715273180830303,
+    "mode": "understeer(front washes out)"
+   }
+  },
+  "circle_R80": {
+   "max_lat_g": 0.916,
+   "ackermann_deg": 1.798,
+   "by_g": {
+    "0.30g": {
+     "steer_deg": 1.979,
+     "extra_deg": 0.181,
+     "body_slip_deg": 0.38,
+     "slipF_deg": -0.86,
+     "slipR_deg": -0.68
+    },
+    "0.50g": {
+     "steer_deg": 2.041,
+     "extra_deg": 0.243,
+     "body_slip_deg": -0.17,
+     "slipF_deg": -1.47,
+     "slipR_deg": -1.23
+    },
+    "0.70g": {
+     "steer_deg": 2.247,
+     "extra_deg": 0.449,
+     "body_slip_deg": -0.88,
+     "slipF_deg": -2.39,
+     "slipR_deg": -1.94
+    },
+    "0.85g": {
+     "steer_deg": 2.753,
+     "extra_deg": 0.955,
+     "body_slip_deg": -1.72,
+     "slipF_deg": -3.74,
+     "slipR_deg": -2.77
+    }
+   },
+   "fail": {
+    "t": 55.08333333333149,
+    "speed_kmh": 99.6324010125895,
+    "radius_err_m": 2.5117869711087337,
+    "body_slip_deg": -2.0168727405982048,
+    "sy_front": 1.4243208151968316,
+    "sy_rear": 0.39814794093129,
+    "mode": "understeer(front washes out)"
+   }
+  }
+ },
+ "mikazuki": {
+  "accel_full_throttle": {
+   "t0_100": 5.016666666666654,
+   "t0_400m": 13.333333333333576,
+   "vmax_kmh": 259.32933739944184,
+   "top_gear": 5,
+   "top_rpm": 7595.227966808591
+  },
+  "accel_tcs_driver": {
+   "t0_100": 5.016666666666654,
+   "t0_400m": 13.333333333333576,
+   "vmax_kmh": 259.32884884756584,
+   "top_gear": 5,
+   "top_rpm": 7595.213618205631
+  },
+  "brake_100_full_pedal": {
+   "dist_m": 39.403084415288234,
+   "time_s": 2.8666666666666667,
+   "peak_decel_g": 1.0306217989700612,
+   "max_lateral_dev_m": 0.0
+  },
+  "brake_100_abs_driver": {
+   "dist_m": 40.38349657436419,
+   "time_s": 2.933333333333333,
+   "peak_decel_g": 1.0399999190411768,
+   "max_lateral_dev_m": 0.0
+  },
+  "brake_200_abs_driver": {
+   "dist_m": 152.17474158408257,
+   "time_s": 5.616666666666666,
+   "peak_decel_g": 1.118117437499283,
+   "max_lateral_dev_m": 0.0
+  },
+  "circle_R30": {
+   "max_lat_g": 0.945,
+   "ackermann_deg": 4.679,
+   "by_g": {
+    "0.30g": {
+     "steer_deg": 4.827,
+     "extra_deg": 0.148,
+     "body_slip_deg": 1.33,
+     "slipF_deg": -0.83,
+     "slipR_deg": -0.69
+    },
+    "0.50g": {
+     "steer_deg": 4.909,
+     "extra_deg": 0.23,
+     "body_slip_deg": 0.78,
+     "slipF_deg": -1.46,
+     "slipR_deg": -1.24
+    },
+    "0.70g": {
+     "steer_deg": 5.139,
+     "extra_deg": 0.46,
+     "body_slip_deg": 0.08,
+     "slipF_deg": -2.38,
+     "slipR_deg": -1.93
+    },
+    "0.85g": {
+     "steer_deg": 5.816,
+     "extra_deg": 1.137,
+     "body_slip_deg": -0.67,
+     "slipF_deg": -3.82,
+     "slipR_deg": -2.69
+    }
+   },
+   "fail": {
+    "t": 41.349999999998936,
+    "speed_kmh": 62.07153695175812,
+    "radius_err_m": 2.513293977485766,
+    "body_slip_deg": -0.8835103119118899,
+    "sy_front": 2.4463137898081406,
+    "sy_rear": 0.3328720791203714,
+    "mode": "understeer(front washes out)"
+   }
+  },
+  "circle_R80": {
+   "max_lat_g": 0.94,
+   "ackermann_deg": 1.755,
+   "by_g": {
+    "0.30g": {
+     "steer_deg": 1.916,
+     "extra_deg": 0.161,
+     "body_slip_deg": 0.06,
+     "slipF_deg": -0.86,
+     "slipR_deg": -0.7
+    },
+    "0.50g": {
+     "steer_deg": 1.994,
+     "extra_deg": 0.239,
+     "body_slip_deg": -0.47,
+     "slipF_deg": -1.47,
+     "slipR_deg": -1.23
+    },
+    "0.70g": {
+     "steer_deg": 2.217,
+     "extra_deg": 0.463,
+     "body_slip_deg": -1.16,
+     "slipF_deg": -2.37,
+     "slipR_deg": -1.91
+    },
+    "0.85g": {
+     "steer_deg": 2.817,
+     "extra_deg": 1.062,
+     "body_slip_deg": -1.89,
+     "slipF_deg": -3.71,
+     "slipR_deg": -2.65
+    }
+   },
+   "fail": {
+    "t": 55.73333333333145,
+    "speed_kmh": 100.31737697985216,
+    "radius_err_m": 2.514740100267005,
+    "body_slip_deg": -2.33957085910254,
+    "sy_front": 1.3686667868151359,
+    "sy_rear": 0.4039070894250563,
+    "mode": "understeer(front washes out)"
+   }
+  }
+ }
+}

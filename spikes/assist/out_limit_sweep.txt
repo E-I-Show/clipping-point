@@ -1,0 +1,201 @@
+tsubame   100 coast       km 0.00 lim  2.32 | beta   2.5 syf  0.52 syr  0.48 g 0.86/0.86 t0.7g 0.45
+tsubame   100 coast       km 0.10 lim  3.27 | beta   5.2 syf  0.99 syr  0.86 g 0.94/0.91 t0.7g 0.3
+tsubame   100 coast       km 0.20 lim  4.22 | beta   8.1 syf  1.51 syr  1.27 g 0.95/0.91 t0.7g 0.22
+tsubame   100 coast       km 0.30 lim  5.15 | beta  10.2 syf  1.93 syr  1.56 g 0.95/0.91 t0.7g 0.18
+tsubame   100 coast       km 0.45 lim  6.42 | beta  11.5 syf  2.28 syr  1.74 g 0.95/0.89 t0.7g 0.13
+tsubame   100 coast       km 0.65 lim  7.93 | beta  10.8 syf  2.39 syr  1.64 g 0.94/0.89 t0.7g 0.12
+tsubame   100 coast       km 1.10 lim 11.34 | beta   7.7 syf  2.41 syr  1.21 g 0.92/0.89 t0.7g 0.12
+tsubame   100 hold+assist km 0.00 lim  1.91 | beta   2.0 syf  0.45 syr  0.40 g 0.81/0.78 t0.7g 0.47
+tsubame   100 hold+assist km 0.10 lim  2.67 | beta   3.3 syf  0.71 syr  0.58 g 0.91/0.88 t0.7g 0.3
+tsubame   100 hold+assist km 0.20 lim  3.41 | beta   4.2 syf  0.94 syr  0.72 g 0.93/0.87 t0.7g 0.22
+tsubame   100 hold+assist km 0.30 lim  4.09 | beta   5.2 syf  1.17 syr  0.86 g 0.94/0.81 t0.7g 0.18
+tsubame   100 hold+assist km 0.45 lim  5.34 | beta   6.0 syf  1.44 syr  0.96 g 0.94/0.86 t0.7g 0.13
+tsubame   100 hold+assist km 0.65 lim  7.00 | beta   6.1 syf  1.66 syr  0.98 g 0.94/0.89 t0.7g 0.12
+tsubame   100 hold+assist km 1.10 lim 10.47 | beta   5.2 syf  2.02 syr  0.86 g 0.93/0.87 t0.7g 0.12
+tsubame   140 coast       km 0.00 lim  1.15 | beta   2.9 syf  0.48 syr  0.46 g 0.86/0.84 t0.7g 0.62
+tsubame   140 coast       km 0.10 lim  2.07 | beta   9.3 syf  1.47 syr  1.35 g 0.96/0.95 t0.7g 0.32
+tsubame   140 coast       km 0.20 lim  3.10 | beta  16.5 syf  2.64 syr  2.36 g 0.96/0.90 t0.7g 0.23
+tsubame   140 coast       km 0.30 lim  4.10 | beta  21.2 syf  3.51 syr  3.06 g 0.96/0.87 t0.7g 0.18
+tsubame   140 coast       km 0.45 lim  5.40 | beta  23.5 syf  4.11 syr  3.42 g 0.96/0.86 t0.7g 0.13
+tsubame   140 coast       km 0.65 lim  6.77 | beta  21.2 syf  3.94 syr  3.06 g 0.96/0.87 t0.7g 0.12
+tsubame   140 coast       km 1.10 lim  9.78 | beta  13.8 syf  3.23 syr  1.96 g 0.94/0.87 t0.7g 0.12
+tsubame   140 hold+assist km 0.00 lim  0.96 | beta   1.4 syf  0.29 syr  0.24 g 0.64/0.62 t0.7g None
+tsubame   140 hold+assist km 0.10 lim  1.74 | beta   3.0 syf  0.59 syr  0.47 g 0.88/0.82 t0.7g 0.33
+tsubame   140 hold+assist km 0.20 lim  2.50 | beta   5.5 syf  1.02 syr  0.81 g 0.95/0.83 t0.7g 0.23
+tsubame   140 hold+assist km 0.30 lim  3.29 | beta   7.6 syf  1.42 syr  1.11 g 0.96/0.85 t0.7g 0.18
+tsubame   140 hold+assist km 0.45 lim  4.46 | beta   9.4 syf  1.83 syr  1.35 g 0.96/0.88 t0.7g 0.15
+tsubame   140 hold+assist km 0.65 lim  6.00 | beta   9.9 syf  2.12 syr  1.42 g 0.96/0.90 t0.7g 0.12
+tsubame   140 hold+assist km 1.10 lim  9.41 | beta   8.8 syf  2.44 syr  1.26 g 0.94/0.89 t0.7g 0.12
+tsubame   180 coast       km 0.00 lim  0.70 | beta   3.2 syf  0.48 syr  0.47 g 0.87/0.87 t0.7g 0.82
+tsubame   180 coast       km 0.10 lim  1.62 | beta  15.1 syf  2.26 syr  2.12 g 0.97/0.92 t0.7g 0.33
+tsubame   180 coast       km 0.20 lim  2.62 | beta  26.2 syf  4.15 syr  3.84 g 0.97/0.88 t0.7g 0.23
+tsubame   180 coast       km 0.30 lim  3.60 | beta  32.4 syf  5.48 syr  4.93 g 0.98/0.86 t0.7g 0.18
+tsubame   180 coast       km 0.45 lim  4.87 | beta  34.7 syf  6.25 syr  5.37 g 0.98/0.85 t0.7g 0.13
+tsubame   180 coast       km 0.65 lim  6.25 | beta  30.5 syf  5.64 syr  4.56 g 0.97/0.85 t0.7g 0.1
+tsubame   180 coast       km 1.10 lim  9.20 | beta  17.6 syf  3.79 syr  2.47 g 0.95/0.90 t0.7g 0.1
+tsubame   180 hold+assist km 0.00 lim  0.59 | beta   1.1 syf  0.21 syr  0.17 g 0.52/0.50 t0.7g None
+tsubame   180 hold+assist km 0.10 lim  1.36 | beta   3.0 syf  0.56 syr  0.45 g 0.87/0.79 t0.7g 0.35
+tsubame   180 hold+assist km 0.20 lim  2.12 | beta   4.7 syf  0.88 syr  0.68 g 0.94/0.86 t0.7g 0.25
+tsubame   180 hold+assist km 0.30 lim  2.89 | beta   6.1 syf  1.17 syr  0.86 g 0.96/0.89 t0.7g 0.18
+tsubame   180 hold+assist km 0.45 lim  4.03 | beta   7.4 syf  1.51 syr  1.04 g 0.96/0.91 t0.7g 0.13
+tsubame   180 hold+assist km 0.65 lim  5.54 | beta   8.0 syf  1.79 syr  1.11 g 0.96/0.92 t0.7g 0.1
+tsubame   180 hold+assist km 1.10 lim  8.94 | beta   7.3 syf  2.18 syr  1.03 g 0.95/0.89 t0.7g 0.1
+kazane    100 coast       km 0.00 lim  2.11 | beta   3.4 syf  0.60 syr  0.58 g 0.90/0.90 t0.7g 0.45
+kazane    100 coast       km 0.10 lim  3.26 | beta   9.2 syf  1.52 syr  1.38 g 0.95/0.94 t0.7g 0.28
+kazane    100 coast       km 0.20 lim  4.56 | beta  15.2 syf  2.55 syr  2.24 g 0.96/0.90 t0.7g 0.22
+kazane    100 coast       km 0.30 lim  5.78 | beta  18.9 syf  3.28 syr  2.79 g 0.96/0.88 t0.7g 0.18
+kazane    100 coast       km 0.45 lim  7.18 | beta  20.3 syf  3.70 syr  2.99 g 0.96/0.87 t0.7g 0.15
+kazane    100 coast       km 0.65 lim  8.24 | beta  17.6 syf  3.45 syr  2.58 g 0.95/0.90 t0.7g 0.15
+kazane    100 coast       km 1.10 lim 11.08 | beta  10.9 syf  2.85 syr  1.60 g 0.94/0.87 t0.7g 0.15
+kazane    100 hold+assist km 0.00 lim  1.68 | beta   2.4 syf  0.46 syr  0.41 g 0.81/0.78 t0.7g 0.47
+kazane    100 hold+assist km 0.10 lim  2.40 | beta   5.0 syf  0.89 syr  0.77 g 0.92/0.85 t0.7g 0.28
+kazane    100 hold+assist km 0.20 lim  3.27 | beta   7.1 syf  1.29 syr  1.07 g 0.95/0.85 t0.7g 0.22
+kazane    100 hold+assist km 0.30 lim  4.16 | beta   9.2 syf  1.70 syr  1.36 g 0.95/0.85 t0.7g 0.18
+kazane    100 hold+assist km 0.45 lim  5.38 | beta  10.7 syf  2.08 syr  1.57 g 0.95/0.84 t0.7g 0.15
+kazane    100 hold+assist km 0.65 lim  6.89 | beta  10.4 syf  2.26 syr  1.53 g 0.95/0.84 t0.7g 0.15
+kazane    100 hold+assist km 1.10 lim 10.15 | beta   7.9 syf  2.37 syr  1.18 g 0.93/0.84 t0.7g 0.15
+kazane    140 coast       km 0.00 lim  1.07 | beta   6.3 syf  0.91 syr  0.91 g 0.96/0.95 t0.7g 0.62
+kazane    140 coast       km 0.10 lim  2.45 | beta  27.1 syf  4.20 syr  4.03 g 0.96/0.88 t0.7g 0.3
+kazane    140 coast       km 0.20 lim  4.18 | beta  39.9 syf  7.24 syr  6.58 g 0.97/0.85 t0.7g 0.23
+kazane    140 coast       km 0.30 lim  5.95 | beta  46.8 syf  9.86 syr  8.38 g 0.97/0.84 t0.7g 0.18
+kazane    140 coast       km 0.45 lim  7.84 | beta  49.8 syf 11.89 syr  9.34 g 0.97/0.83 t0.7g 0.15
+kazane    140 coast       km 0.65 lim  8.59 | beta  44.7 syf 10.07 syr  7.74 g 0.97/0.83 t0.7g 0.13
+kazane    140 coast       km 1.10 lim  9.98 | beta  22.0 syf  4.64 syr  3.16 g 0.95/0.87 t0.7g 0.13
+kazane    140 hold+assist km 0.00 lim  0.85 | beta   1.9 syf  0.33 syr  0.30 g 0.70/0.69 t0.7g 2.7
+kazane    140 hold+assist km 0.10 lim  1.63 | beta   5.5 syf  0.90 syr  0.79 g 0.93/0.85 t0.7g 0.32
+kazane    140 hold+assist km 0.20 lim  2.55 | beta  10.1 syf  1.64 syr  1.42 g 0.96/0.92 t0.7g 0.23
+kazane    140 hold+assist km 0.30 lim  3.45 | beta  15.2 syf  2.49 syr  2.13 g 0.96/0.92 t0.7g 0.18
+kazane    140 hold+assist km 0.45 lim  4.67 | beta  18.2 syf  3.13 syr  2.57 g 0.96/0.91 t0.7g 0.15
+kazane    140 hold+assist km 0.65 lim  6.12 | beta  17.3 syf  3.22 syr  2.43 g 0.95/0.91 t0.7g 0.13
+kazane    140 hold+assist km 1.10 lim  9.34 | beta  11.5 syf  2.83 syr  1.61 g 0.94/0.85 t0.7g 0.13
+kazane    180 coast       km 0.00 lim  0.70 | beta  13.4 syf  1.83 syr  1.88 g 0.97/0.96 t0.7g 0.73
+kazane    180 coast       km 0.10 lim  2.52 | beta  46.4 syf  8.59 syr  8.19 g 0.98/0.86 t0.7g 0.3
+kazane    180 coast       km 0.20 lim  5.48 | beta  61.0 syf 17.31 syr 14.13 g 0.98/0.83 t0.7g 0.22
+kazane    180 coast       km 0.30 lim  9.72 | beta  68.7 syf 36.95 syr 20.15 g 0.99/0.82 t0.7g 0.18
+kazane    180 coast       km 0.45 lim 14.23 | beta  72.1 syf 119.44 syr 24.34 g 0.99/0.82 t0.7g 0.15
+kazane    180 coast       km 0.65 lim 12.69 | beta  68.4 syf 48.69 syr 19.83 g 0.98/0.82 t0.7g 0.13
+kazane    180 coast       km 1.10 lim 10.25 | beta  44.5 syf 10.68 syr  7.60 g 0.97/0.83 t0.7g 0.12
+kazane    180 hold+assist km 0.00 lim  0.52 | beta   1.6 syf  0.26 syr  0.24 g 0.62/0.62 t0.7g None
+kazane    180 hold+assist km 0.10 lim  1.34 | beta   7.2 syf  1.10 syr  1.00 g 0.97/0.93 t0.7g 0.33
+kazane    180 hold+assist km 0.20 lim  2.25 | beta  16.6 syf  2.56 syr  2.32 g 0.97/0.91 t0.7g 0.23
+kazane    180 hold+assist km 0.30 lim  3.11 | beta  22.2 syf  3.55 syr  3.15 g 0.97/0.89 t0.7g 0.18
+kazane    180 hold+assist km 0.45 lim  4.30 | beta  25.0 syf  4.22 syr  3.59 g 0.97/0.88 t0.7g 0.15
+kazane    180 hold+assist km 0.65 lim  5.75 | beta  23.1 syf  4.14 syr  3.29 g 0.97/0.88 t0.7g 0.13
+kazane    180 hold+assist km 1.10 lim  8.94 | beta  14.7 syf  3.29 syr  2.04 g 0.95/0.88 t0.7g 0.13
+shirogane 100 coast       km 0.00 lim  2.61 | beta   2.6 syf  0.53 syr  0.49 g 0.92/0.91 t0.7g 0.38
+shirogane 100 coast       km 0.10 lim  3.57 | beta   5.2 syf  0.98 syr  0.86 g 1.00/0.96 t0.7g 0.27
+shirogane 100 coast       km 0.20 lim  4.54 | beta   8.0 syf  1.49 syr  1.25 g 1.00/0.96 t0.7g 0.2
+shirogane 100 coast       km 0.30 lim  5.50 | beta  10.1 syf  1.91 syr  1.55 g 1.00/0.95 t0.7g 0.17
+shirogane 100 coast       km 0.45 lim  6.78 | beta  11.4 syf  2.27 syr  1.73 g 1.00/0.94 t0.7g 0.15
+shirogane 100 coast       km 0.65 lim  8.29 | beta  10.8 syf  2.39 syr  1.63 g 1.00/0.93 t0.7g 0.13
+shirogane 100 coast       km 1.10 lim 11.67 | beta   7.8 syf  2.41 syr  1.21 g 0.98/0.94 t0.7g 0.13
+shirogane 100 hold+assist km 0.00 lim  2.07 | beta   2.0 syf  0.45 syr  0.39 g 0.85/0.83 t0.7g 0.4
+shirogane 100 hold+assist km 0.10 lim  2.83 | beta   4.0 syf  0.80 syr  0.67 g 0.94/0.90 t0.7g 0.27
+shirogane 100 hold+assist km 0.20 lim  3.53 | beta   5.2 syf  1.07 syr  0.85 g 0.98/0.92 t0.7g 0.22
+shirogane 100 hold+assist km 0.30 lim  4.38 | beta   6.3 syf  1.32 syr  0.99 g 0.99/0.92 t0.7g 0.17
+shirogane 100 hold+assist km 0.45 lim  5.63 | beta   7.2 syf  1.61 syr  1.12 g 0.99/0.92 t0.7g 0.15
+shirogane 100 hold+assist km 0.65 lim  7.17 | beta   7.2 syf  1.83 syr  1.13 g 0.98/0.92 t0.7g 0.13
+shirogane 100 hold+assist km 1.10 lim 10.50 | beta   6.1 syf  2.13 syr  0.96 g 0.96/0.89 t0.7g 0.13
+shirogane 140 coast       km 0.00 lim  1.27 | beta   2.8 syf  0.47 syr  0.45 g 0.90/0.89 t0.7g 0.53
+shirogane 140 coast       km 0.10 lim  2.17 | beta   7.9 syf  1.26 syr  1.14 g 1.01/1.00 t0.7g 0.3
+shirogane 140 coast       km 0.20 lim  3.15 | beta  13.6 syf  2.19 syr  1.94 g 1.01/0.97 t0.7g 0.22
+shirogane 140 coast       km 0.30 lim  4.13 | beta  17.8 syf  2.96 syr  2.55 g 1.02/0.94 t0.7g 0.18
+shirogane 140 coast       km 0.45 lim  5.42 | beta  20.1 syf  3.52 syr  2.90 g 1.02/0.93 t0.7g 0.15
+shirogane 140 coast       km 0.65 lim  6.81 | beta  18.4 syf  3.46 syr  2.63 g 1.01/0.94 t0.7g 0.12
+shirogane 140 coast       km 1.10 lim  9.90 | beta  12.2 syf  2.98 syr  1.74 g 1.00/0.92 t0.7g 0.12
+shirogane 140 hold+assist km 0.00 lim  1.04 | beta   1.9 syf  0.35 syr  0.31 g 0.77/0.76 t0.7g 0.65
+shirogane 140 hold+assist km 0.10 lim  1.79 | beta   4.5 syf  0.78 syr  0.66 g 0.96/0.88 t0.7g 0.3
+shirogane 140 hold+assist km 0.20 lim  2.60 | beta   6.6 syf  1.17 syr  0.96 g 1.00/0.91 t0.7g 0.22
+shirogane 140 hold+assist km 0.30 lim  3.43 | beta   8.4 syf  1.53 syr  1.21 g 1.01/0.91 t0.7g 0.18
+shirogane 140 hold+assist km 0.45 lim  4.61 | beta  10.0 syf  1.92 syr  1.43 g 1.00/0.91 t0.7g 0.15
+shirogane 140 hold+assist km 0.65 lim  6.14 | beta  10.2 syf  2.16 syr  1.45 g 1.00/0.91 t0.7g 0.13
+shirogane 140 hold+assist km 1.10 lim  9.50 | beta   8.3 syf  2.37 syr  1.20 g 0.98/0.93 t0.7g 0.12
+shirogane 180 coast       km 0.00 lim  0.76 | beta   3.0 syf  0.46 syr  0.45 g 0.90/0.90 t0.7g 0.67
+shirogane 180 coast       km 0.10 lim  1.67 | beta  12.9 syf  1.93 syr  1.80 g 1.03/0.99 t0.7g 0.3
+shirogane 180 coast       km 0.20 lim  2.69 | beta  23.9 syf  3.76 syr  3.45 g 1.03/0.94 t0.7g 0.22
+shirogane 180 coast       km 0.30 lim  3.68 | beta  30.3 syf  5.06 syr  4.52 g 1.04/0.92 t0.7g 0.18
+shirogane 180 coast       km 0.45 lim  4.97 | beta  32.9 syf  5.86 syr  5.02 g 1.04/0.91 t0.7g 0.13
+shirogane 180 coast       km 0.65 lim  6.35 | beta  29.2 syf  5.37 syr  4.32 g 1.03/0.91 t0.7g 0.12
+shirogane 180 coast       km 1.10 lim  9.28 | beta  17.2 syf  3.71 syr  2.40 g 1.01/0.96 t0.7g 0.12
+shirogane 180 hold+assist km 0.00 lim  0.63 | beta   1.6 syf  0.27 syr  0.24 g 0.67/0.65 t0.7g None
+shirogane 180 hold+assist km 0.10 lim  1.42 | beta   4.9 syf  0.80 syr  0.69 g 0.99/0.89 t0.7g 0.32
+shirogane 180 hold+assist km 0.20 lim  2.22 | beta   8.0 syf  1.33 syr  1.12 g 1.02/0.92 t0.7g 0.23
+shirogane 180 hold+assist km 0.30 lim  3.01 | beta  10.7 syf  1.82 syr  1.49 g 1.02/0.94 t0.7g 0.18
+shirogane 180 hold+assist km 0.45 lim  4.17 | beta  12.9 syf  2.28 syr  1.79 g 1.02/0.94 t0.7g 0.13
+shirogane 180 hold+assist km 0.65 lim  5.68 | beta  13.0 syf  2.52 syr  1.80 g 1.01/0.93 t0.7g 0.12
+shirogane 180 hold+assist km 1.10 lim  9.04 | beta  10.2 syf  2.60 syr  1.42 g 1.00/0.93 t0.7g 0.12
+arashi    100 coast       km 0.00 lim  2.49 | beta   2.7 syf  0.55 syr  0.51 g 0.92/0.90 t0.7g 0.4
+arashi    100 coast       km 0.10 lim  3.48 | beta   5.6 syf  1.05 syr  0.93 g 0.99/0.96 t0.7g 0.27
+arashi    100 coast       km 0.20 lim  4.49 | beta   8.9 syf  1.63 syr  1.37 g 0.99/0.95 t0.7g 0.2
+arashi    100 coast       km 0.30 lim  5.50 | beta  11.3 syf  2.10 syr  1.72 g 0.99/0.95 t0.7g 0.17
+arashi    100 coast       km 0.45 lim  6.80 | beta  12.7 syf  2.48 syr  1.91 g 0.99/0.93 t0.7g 0.13
+arashi    100 coast       km 0.65 lim  8.28 | beta  11.9 syf  2.57 syr  1.79 g 0.98/0.92 t0.7g 0.12
+arashi    100 coast       km 1.10 lim 11.64 | beta   8.4 syf  2.52 syr  1.30 g 0.96/0.92 t0.7g 0.12
+arashi    100 hold+assist km 0.00 lim  1.96 | beta   1.9 syf  0.42 syr  0.37 g 0.83/0.81 t0.7g 0.42
+arashi    100 hold+assist km 0.10 lim  2.72 | beta   2.9 syf  0.65 syr  0.53 g 0.93/0.90 t0.7g 0.27
+arashi    100 hold+assist km 0.20 lim  3.45 | beta   4.1 syf  0.92 syr  0.70 g 0.97/0.91 t0.7g 0.2
+arashi    100 hold+assist km 0.30 lim  4.16 | beta   5.1 syf  1.16 syr  0.84 g 0.98/0.91 t0.7g 0.17
+arashi    100 hold+assist km 0.45 lim  5.33 | beta   6.0 syf  1.43 syr  0.96 g 0.98/0.91 t0.7g 0.13
+arashi    100 hold+assist km 0.65 lim  6.85 | beta   6.1 syf  1.67 syr  0.98 g 0.98/0.89 t0.7g 0.12
+arashi    100 hold+assist km 1.10 lim 10.30 | beta   5.3 syf  2.03 syr  0.87 g 0.96/0.87 t0.7g 0.12
+arashi    140 coast       km 0.00 lim  1.19 | beta   2.8 syf  0.48 syr  0.45 g 0.89/0.88 t0.7g 0.58
+arashi    140 coast       km 0.10 lim  2.08 | beta   7.6 syf  1.22 syr  1.11 g 1.00/0.99 t0.7g 0.3
+arashi    140 coast       km 0.20 lim  3.06 | beta  13.9 syf  2.24 syr  1.99 g 1.00/0.96 t0.7g 0.22
+arashi    140 coast       km 0.30 lim  4.03 | beta  18.4 syf  3.04 syr  2.63 g 1.00/0.93 t0.7g 0.17
+arashi    140 coast       km 0.45 lim  5.30 | beta  20.7 syf  3.62 syr  2.99 g 1.01/0.92 t0.7g 0.13
+arashi    140 coast       km 0.65 lim  6.70 | beta  19.0 syf  3.56 syr  2.72 g 1.00/0.93 t0.7g 0.1
+arashi    140 coast       km 1.10 lim  9.83 | beta  12.6 syf  3.03 syr  1.78 g 0.98/0.91 t0.7g 0.1
+arashi    140 hold+assist km 0.00 lim  0.99 | beta   1.6 syf  0.31 syr  0.27 g 0.71/0.69 t0.7g 2.53
+arashi    140 hold+assist km 0.10 lim  1.74 | beta   3.2 syf  0.61 syr  0.50 g 0.93/0.85 t0.7g 0.3
+arashi    140 hold+assist km 0.20 lim  2.52 | beta   5.0 syf  0.96 syr  0.75 g 0.98/0.92 t0.7g 0.22
+arashi    140 hold+assist km 0.30 lim  3.30 | beta   6.5 syf  1.26 syr  0.95 g 0.99/0.94 t0.7g 0.17
+arashi    140 hold+assist km 0.45 lim  4.51 | beta   7.9 syf  1.62 syr  1.14 g 0.99/0.96 t0.7g 0.13
+arashi    140 hold+assist km 0.65 lim  6.02 | beta   8.4 syf  1.89 syr  1.20 g 0.99/0.94 t0.7g 0.1
+arashi    140 hold+assist km 1.10 lim  9.43 | beta   7.3 syf  2.21 syr  1.05 g 0.98/0.92 t0.7g 0.1
+arashi    180 coast       km 0.00 lim  0.72 | beta   2.7 syf  0.42 syr  0.41 g 0.87/0.86 t0.7g 0.77
+arashi    180 coast       km 0.10 lim  1.61 | beta  12.5 syf  1.87 syr  1.74 g 1.01/0.98 t0.7g 0.3
+arashi    180 coast       km 0.20 lim  2.58 | beta  21.9 syf  3.42 syr  3.12 g 1.02/0.93 t0.7g 0.22
+arashi    180 coast       km 0.30 lim  3.53 | beta  27.9 syf  4.61 syr  4.10 g 1.02/0.91 t0.7g 0.17
+arashi    180 coast       km 0.45 lim  4.80 | beta  30.5 syf  5.34 syr  4.55 g 1.02/0.90 t0.7g 0.12
+arashi    180 coast       km 0.65 lim  6.18 | beta  26.7 syf  4.87 syr  3.90 g 1.02/0.90 t0.7g 0.1
+arashi    180 coast       km 1.10 lim  9.21 | beta  16.7 syf  3.65 syr  2.34 g 1.00/0.95 t0.7g 0.1
+arashi    180 hold+assist km 0.00 lim  0.60 | beta   1.2 syf  0.22 syr  0.19 g 0.57/0.54 t0.7g None
+arashi    180 hold+assist km 0.10 lim  1.37 | beta   3.6 syf  0.64 syr  0.53 g 0.95/0.87 t0.7g 0.32
+arashi    180 hold+assist km 0.20 lim  2.14 | beta   6.0 syf  1.05 syr  0.85 g 1.00/0.94 t0.7g 0.22
+arashi    180 hold+assist km 0.30 lim  2.93 | beta   7.9 syf  1.42 syr  1.11 g 1.01/0.95 t0.7g 0.17
+arashi    180 hold+assist km 0.45 lim  4.08 | beta   9.8 syf  1.85 syr  1.37 g 1.01/0.94 t0.7g 0.13
+arashi    180 hold+assist km 0.65 lim  5.60 | beta  10.4 syf  2.14 syr  1.45 g 1.01/0.95 t0.7g 0.1
+arashi    180 hold+assist km 1.10 lim  8.98 | beta   8.9 syf  2.40 syr  1.24 g 0.99/0.94 t0.7g 0.1
+--- slower stick (ana_t_full) at km 0.3 / 0.65, kazane + shirogane, coast ---
+kazane    100 km 0.30 t_full 0.05 | beta  19.0 syf  3.30 syr  2.80 g 0.96/0.88 t0.7g 0.18
+kazane    100 km 0.30 t_full 0.09 | beta  18.9 syf  3.28 syr  2.79 g 0.96/0.88 t0.7g 0.18
+kazane    100 km 0.30 t_full 0.25 | beta  17.2 syf  2.99 syr  2.53 g 0.96/0.89 t0.7g 0.25
+kazane    100 km 0.30 t_full 0.50 | beta  13.6 syf  2.40 syr  2.00 g 0.95/0.91 t0.7g 0.38
+kazane    100 km 0.65 t_full 0.05 | beta  17.6 syf  3.45 syr  2.58 g 0.95/0.90 t0.7g 0.15
+kazane    100 km 0.65 t_full 0.09 | beta  17.6 syf  3.45 syr  2.58 g 0.95/0.90 t0.7g 0.15
+kazane    100 km 0.65 t_full 0.25 | beta  15.7 syf  3.12 syr  2.29 g 0.95/0.90 t0.7g 0.2
+kazane    100 km 0.65 t_full 0.50 | beta  12.1 syf  2.54 syr  1.78 g 0.95/0.89 t0.7g 0.28
+kazane    180 km 0.30 t_full 0.05 | beta  69.4 syf 42.04 syr 20.98 g 0.99/0.82 t0.7g 0.17
+kazane    180 km 0.30 t_full 0.09 | beta  68.7 syf 36.95 syr 20.15 g 0.99/0.82 t0.7g 0.18
+kazane    180 km 0.30 t_full 0.25 | beta  63.3 syf 21.01 syr 15.58 g 0.99/0.83 t0.7g 0.25
+kazane    180 km 0.30 t_full 0.50 | beta  53.1 syf 11.93 syr 10.39 g 0.98/0.84 t0.7g 0.35
+kazane    180 km 0.65 t_full 0.05 | beta  68.4 syf 48.69 syr 19.83 g 0.98/0.82 t0.7g 0.13
+kazane    180 km 0.65 t_full 0.09 | beta  68.4 syf 48.69 syr 19.83 g 0.98/0.82 t0.7g 0.13
+kazane    180 km 0.65 t_full 0.25 | beta  61.8 syf 22.14 syr 14.54 g 0.98/0.82 t0.7g 0.18
+kazane    180 km 0.65 t_full 0.50 | beta  51.3 syf 12.35 syr  9.72 g 0.98/0.84 t0.7g 0.25
+shirogane 100 km 0.30 t_full 0.05 | beta  10.2 syf  1.92 syr  1.55 g 1.00/0.95 t0.7g 0.17
+shirogane 100 km 0.30 t_full 0.09 | beta  10.1 syf  1.91 syr  1.55 g 1.00/0.95 t0.7g 0.17
+shirogane 100 km 0.30 t_full 0.25 | beta   9.5 syf  1.81 syr  1.45 g 1.00/0.95 t0.7g 0.23
+shirogane 100 km 0.30 t_full 0.50 | beta   8.0 syf  1.60 syr  1.25 g 1.00/0.96 t0.7g 0.37
+shirogane 100 km 0.65 t_full 0.05 | beta  10.8 syf  2.39 syr  1.63 g 1.00/0.93 t0.7g 0.13
+shirogane 100 km 0.65 t_full 0.09 | beta  10.8 syf  2.39 syr  1.63 g 1.00/0.93 t0.7g 0.13
+shirogane 100 km 0.65 t_full 0.25 | beta  10.0 syf  2.26 syr  1.52 g 1.00/0.93 t0.7g 0.18
+shirogane 100 km 0.65 t_full 0.50 | beta   8.2 syf  1.99 syr  1.27 g 0.99/0.94 t0.7g 0.27
+shirogane 180 km 0.30 t_full 0.05 | beta  30.6 syf  5.12 syr  4.58 g 1.04/0.91 t0.7g 0.17
+shirogane 180 km 0.30 t_full 0.09 | beta  30.3 syf  5.06 syr  4.52 g 1.04/0.92 t0.7g 0.18
+shirogane 180 km 0.30 t_full 0.25 | beta  27.2 syf  4.47 syr  3.99 g 1.03/0.92 t0.7g 0.23
+shirogane 180 km 0.30 t_full 0.50 | beta  20.5 syf  3.31 syr  2.90 g 1.03/0.94 t0.7g 0.35
+shirogane 180 km 0.65 t_full 0.05 | beta  29.2 syf  5.37 syr  4.32 g 1.03/0.91 t0.7g 0.12
+shirogane 180 km 0.65 t_full 0.09 | beta  29.2 syf  5.37 syr  4.32 g 1.03/0.91 t0.7g 0.12
+shirogane 180 km 0.65 t_full 0.25 | beta  25.0 syf  4.55 syr  3.62 g 1.03/0.92 t0.7g 0.17
+shirogane 180 km 0.65 t_full 0.50 | beta  18.6 syf  3.41 syr  2.61 g 1.03/0.94 t0.7g 0.25

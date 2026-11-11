@@ -1,0 +1,170 @@
+{
+ "url": "http://127.0.0.1:8765/apps/fail_callback.html",
+ "mirror": null,
+ "console": [
+  {
+   "t": 113,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 113,
+   "type": "log",
+   "text": "{command: play, name: fail_callback.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIAO4Oa10sYEvPCQAAAAcAAAAkAAAAZmFpbF9jYW…sYmFjay9tYWluLnB5UEsFBgAAAAAEAAQAJwEAAG0ZAAAAAA==}"
+  },
+  {
+   "t": 1896,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 2144,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 2888,
+   "type": "warning",
+   "text": "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)"
+  },
+  {
+   "t": 2923,
+   "type": "warning",
+   "text": "[.WebGL-0x118c00e37e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 2938,
+   "type": "warning",
+   "text": "[.WebGL-0x118c00e37e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 2950,
+   "type": "warning",
+   "text": "[.WebGL-0x118c00e37e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 2994,
+   "type": "warning",
+   "text": "[.WebGL-0x118c00e37e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  },
+  {
+   "t": 3198,
+   "type": "error",
+   "text": "PythonError: Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_9283b179-ff21-4e2b-aeb5-0c03a59b281c/fail_callback/main.py\", line 10, in bad_callback\n    raise KeyError(\"boom inside a JS-called Python callback\")\nKeyError: 'boom inside a JS-called Python callback'\n\n    at new_error (http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:568655)\n    at http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.wasm:wasm-function[275]:0x65562\n    at http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.wasm:wasm-function[276]:0x6562a\n    at callPyObjectKwargs (http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:623504)\n    at Module.callPyObject (http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:624713)\n    at Function.apply (http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:641016)\n    at Object.apply (http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:637437)"
+  }
+ ],
+ "failures": [
+  {
+   "t": 3198,
+   "kind": "console.error",
+   "detail": "PythonError: Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_9283b179-ff21-4e2b-aeb5-0c03a59b281c/fail_callback/main.py\", line 10, in bad_callback\n    raise KeyError(\"boom inside a JS-called Python callback\")\nKeyError: 'boom inside a JS-called Python callback'\n\n    at new_error (http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:568655)\n    at http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.wasm:wasm-function[275]:0x65562\n    at http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.wasm:wasm-function[276]:0x6562a\n    at callPyObjectKwargs (http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:623504)\n    at Module.callPyObject (http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:624713)\n    at Function.apply (http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:641016)\n    at Object.apply (http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:637437)"
+  },
+  {
+   "t": 3200,
+   "kind": "pageerror",
+   "detail": "PythonError: Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_9283b179-ff21-4e2b-aeb5-0c03a59b281c/fail_callback/main.py\", line 10, in bad_callback\n    raise KeyError(\"boom inside a JS-called Python callback\")\nKeyError: 'boom inside a JS-called Python callback'\n\n    at new_error (http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:568655)\n    at http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.wasm:wasm-function[275]:0x65562\n    at http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.wasm:wasm-function[276]:0x6562a\n    at callPyObjectKwargs (http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:623504)\n    at Module.callPyObject (http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:624713)\n    at Function.apply (http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:641016)\n    at Object.apply (http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:637437)"
+  },
+  {
+   "t": 3835,
+   "kind": "pyxel-error-overlay",
+   "detail": "PythonError: Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_9283b179-ff21-4e2b-aeb5-0c03a59b281c/fail_callback/main.py\", line 10, in bad_callback\n    raise KeyError(\"boom inside a JS-called Python callback\")\nKeyError: 'boom inside a JS-called Python callback'\n\n    at new_error (http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:568655)\n    at http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.wasm:wasm-function[275]:0x65562\n    at http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.wasm:wasm-function[276]:0x6562a\n    at callPyObjectKwargs (http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:623504)\n    at Module.callPyObject (http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:624713)\n    at Function.apply (http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:641016)\n    at Object.apply (http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:637437)"
+  },
+  {
+   "t": 3835,
+   "kind": "hasFatalError",
+   "detail": "window.pyxelContext.hasFatalError is true"
+  },
+  {
+   "t": 3835,
+   "kind": "until-not-seen",
+   "detail": "no console line matched /^SPIKE_DONE/ within 20000 ms"
+  }
+ ],
+ "requests": [
+  {
+   "t": 99,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/apps/fail_callback.html"
+  },
+  {
+   "t": 110,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.js"
+  },
+  {
+   "t": 115,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.css"
+  },
+  {
+   "t": 117,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 173,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 173,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/import_hook.py"
+  },
+  {
+   "t": 176,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 190,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 190,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 190,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 227,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 1900,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 2184,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/click_to_start_114x14.png"
+  }
+ ],
+ "downloads": [],
+ "allowed": [],
+ "actions": [],
+ "filechoosers": [],
+ "passed": false,
+ "promptAt": 2630,
+ "clickedAt": 2635,
+ "state": {
+  "overlayText": "PythonError: Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_9283b179-ff21-4e2b-aeb5-0c03a59b281c/fail_callback/main.py\", line 10, in bad_callback\n    raise KeyError(\"boom inside a JS-called Python callback\")\nKeyError: 'boom inside a JS-called Python callback'\n\n    at new_error (http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:568655)\n    at http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.wasm:wasm-function[275]:0x65562\n    at http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.wasm:wasm-function[276]:0x6562a\n    at callPyObjectKwargs (http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:623504)\n    at Module.callPyObject (http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:624713)\n    at Function.apply (http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:641016)\n    at Object.apply (http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:637437)",
+  "hasFatalError": true,
+  "initialized": true,
+  "canvas": {
+   "width": 960,
+   "height": 720,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": null,
+ "elapsedMs": 3925
+}

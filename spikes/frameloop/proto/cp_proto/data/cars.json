@@ -1,0 +1,8 @@
+{
+  "cars": [
+    {"id": "tsubame_1600", "name": "TSUBAME 1600", "layout": "FF", "power_ps": 165, "mass_kg": 1040, "car_class": "B"},
+    {"id": "kazane_rs", "name": "KAZANE RS", "layout": "FR", "power_ps": 145, "mass_kg": 960, "car_class": "B"},
+    {"id": "shirogane_gtt", "name": "SHIROGANE GT-T", "layout": "FR", "power_ps": 280, "mass_kg": 1340, "car_class": "A"},
+    {"id": "arashi_4t", "name": "ARASHI 4T", "layout": "4WD", "power_ps": 280, "mass_kg": 1390, "car_class": "A"}
+  ]
+}

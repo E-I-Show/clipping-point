@@ -1,0 +1,160 @@
+{
+ "url": "file://<scratchpad>/spikes/web/build/fail_update.html",
+ "mirror": "mirror",
+ "console": [
+  {
+   "t": 129,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 129,
+   "type": "log",
+   "text": "{command: play, name: fail_update.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIAO4Oa10sYEvPCQAAAAcAAAAiAAAAZmFpbF91cG…fdXBkYXRlL21haW4ucHlQSwUGAAAAAAQABAAfAQAADhkAAAAA}"
+  },
+  {
+   "t": 2245,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 2614,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 3020,
+   "type": "warning",
+   "text": "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)"
+  },
+  {
+   "t": 3054,
+   "type": "warning",
+   "text": "[.WebGL-0x3e2406d51000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3068,
+   "type": "warning",
+   "text": "[.WebGL-0x3e2406d51000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3084,
+   "type": "warning",
+   "text": "[.WebGL-0x3e2406d51000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3114,
+   "type": "warning",
+   "text": "[.WebGL-0x3e2406d51000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  },
+  {
+   "t": 3741,
+   "type": "error",
+   "text": "Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_08a7aefc-c05b-4874-b535-102a1917e797/fail_update/main.py\", line 10, in update\n    raise ValueError(\"boom in update at frame 20\")\nValueError: boom in update at frame 20\n"
+  }
+ ],
+ "failures": [
+  {
+   "t": 3741,
+   "kind": "console.error",
+   "detail": "Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_08a7aefc-c05b-4874-b535-102a1917e797/fail_update/main.py\", line 10, in update\n    raise ValueError(\"boom in update at frame 20\")\nValueError: boom in update at frame 20\n"
+  },
+  {
+   "t": 4392,
+   "kind": "pyxel-error-overlay",
+   "detail": "Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_08a7aefc-c05b-4874-b535-102a1917e797/fail_update/main.py\", line 10, in update\n    raise ValueError(\"boom in update at frame 20\")\nValueError: boom in update at frame 20\n"
+  },
+  {
+   "t": 4392,
+   "kind": "until-not-seen",
+   "detail": "no console line matched /^SPIKE_DONE/ within 20000 ms"
+  }
+ ],
+ "requests": [
+  {
+   "t": 116,
+   "status": 200,
+   "url": "file://<scratchpad>/spikes/web/build/fail_update.html"
+  },
+  {
+   "t": 125,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel.js"
+  },
+  {
+   "t": 131,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel.css"
+  },
+  {
+   "t": 134,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 293,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 312,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/import_hook.py"
+  },
+  {
+   "t": 312,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 404,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 433,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 555,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 581,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 2339,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 2654,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/images/click_to_start_114x14.png"
+  }
+ ],
+ "downloads": [],
+ "allowed": [],
+ "actions": [],
+ "filechoosers": [],
+ "passed": false,
+ "promptAt": 2790,
+ "clickedAt": 2794,
+ "state": {
+  "overlayText": "Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_08a7aefc-c05b-4874-b535-102a1917e797/fail_update/main.py\", line 10, in update\n    raise ValueError(\"boom in update at frame 20\")\nValueError: boom in update at frame 20\n",
+  "hasFatalError": false,
+  "initialized": true,
+  "canvas": {
+   "width": 960,
+   "height": 720,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": null,
+ "elapsedMs": 4441
+}

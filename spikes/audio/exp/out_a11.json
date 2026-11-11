@@ -1,0 +1,23 @@
+{
+ "4ch_x_gain0.5": {
+  "max": 32767.0,
+  "min": -32768.0,
+  "at_limit": 1559,
+  "n": 17640,
+  "max_adjacent_jump": 58783.0
+ },
+ "1ch_gain1.0": {
+  "max": 32767.0,
+  "min": -32768.0,
+  "at_limit": 121,
+  "n": 6615,
+  "max_adjacent_jump": 41670.0
+ },
+ "1ch_gain2.0": {
+  "max": 32767.0,
+  "min": -32768.0,
+  "at_limit": 3497,
+  "n": 6615,
+  "max_adjacent_jump": 65535.0
+ }
+}

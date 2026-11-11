@@ -1,0 +1,88 @@
+{
+ "mode": "tour",
+ "platform": "linux",
+ "python": "3.13.18",
+ "pyxel": "3.0.1",
+ "shots": [
+  {
+   "file": "<scratchpad>/spikes/harness/repo/out/tour/menu_typical.png",
+   "ink": 7809,
+   "ink_outside_screen": 0,
+   "ink_unrecorded": 0,
+   "items": 11,
+   "screen": "menu",
+   "variant": "typical",
+   "violations": []
+  },
+  {
+   "file": "<scratchpad>/spikes/harness/repo/out/tour/menu_extreme.png",
+   "ink": 7978,
+   "ink_outside_screen": 0,
+   "ink_unrecorded": 0,
+   "items": 11,
+   "screen": "menu",
+   "variant": "extreme",
+   "violations": []
+  },
+  {
+   "file": "<scratchpad>/spikes/harness/repo/out/tour/hud_typical.png",
+   "ink": 846,
+   "ink_outside_screen": 0,
+   "ink_unrecorded": 0,
+   "items": 14,
+   "screen": "hud",
+   "variant": "typical",
+   "violations": []
+  },
+  {
+   "file": "<scratchpad>/spikes/harness/repo/out/tour/hud_extreme.png",
+   "ink": 1125,
+   "ink_outside_screen": 0,
+   "ink_unrecorded": 0,
+   "items": 14,
+   "screen": "hud",
+   "variant": "extreme",
+   "violations": []
+  },
+  {
+   "file": "<scratchpad>/spikes/harness/repo/out/tour/settings_typical.png",
+   "ink": 42848,
+   "ink_outside_screen": 0,
+   "ink_unrecorded": 0,
+   "items": 68,
+   "screen": "settings",
+   "variant": "typical",
+   "violations": []
+  },
+  {
+   "file": "<scratchpad>/spikes/harness/repo/out/tour/settings_extreme.png",
+   "ink": 42848,
+   "ink_outside_screen": 0,
+   "ink_unrecorded": 0,
+   "items": 68,
+   "screen": "settings",
+   "variant": "extreme",
+   "violations": []
+  },
+  {
+   "file": "<scratchpad>/spikes/harness/repo/out/tour/theater_typical.png",
+   "ink": 57018,
+   "ink_outside_screen": 0,
+   "ink_unrecorded": 0,
+   "items": 30,
+   "screen": "theater",
+   "variant": "typical",
+   "violations": []
+  },
+  {
+   "file": "<scratchpad>/spikes/harness/repo/out/tour/theater_extreme.png",
+   "ink": 57044,
+   "ink_outside_screen": 0,
+   "ink_unrecorded": 0,
+   "items": 93,
+   "screen": "theater",
+   "variant": "extreme",
+   "violations": []
+  }
+ ]
+}

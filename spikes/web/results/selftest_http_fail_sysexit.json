@@ -1,0 +1,160 @@
+{
+ "url": "http://127.0.0.1:8765/apps/fail_sysexit.html",
+ "mirror": null,
+ "console": [
+  {
+   "t": 120,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 121,
+   "type": "log",
+   "text": "{command: play, name: fail_sysexit.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIAO4Oa10sYEvPCQAAAAcAAAAjAAAAZmFpbF9zeX…5c2V4aXQvbWFpbi5weVBLBQYAAAAABAAEACMBAAADGQAAAAA=}"
+  },
+  {
+   "t": 1911,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 2183,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 2913,
+   "type": "warning",
+   "text": "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)"
+  },
+  {
+   "t": 2948,
+   "type": "warning",
+   "text": "[.WebGL-0x283c01045400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 2960,
+   "type": "warning",
+   "text": "[.WebGL-0x283c01045400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 2989,
+   "type": "warning",
+   "text": "[.WebGL-0x283c01045400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3019,
+   "type": "warning",
+   "text": "[.WebGL-0x283c01045400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  },
+  {
+   "t": 3646,
+   "type": "error",
+   "text": "Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_4b458df0-fae9-4118-b778-eeac191aaeb0/fail_sysexit/main.py\", line 12, in update\n    sys.exit(3)\n    ~~~~~~~~^^^\nSystemExit: 3\n"
+  }
+ ],
+ "failures": [
+  {
+   "t": 3647,
+   "kind": "console.error",
+   "detail": "Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_4b458df0-fae9-4118-b778-eeac191aaeb0/fail_sysexit/main.py\", line 12, in update\n    sys.exit(3)\n    ~~~~~~~~^^^\nSystemExit: 3\n"
+  },
+  {
+   "t": 4286,
+   "kind": "pyxel-error-overlay",
+   "detail": "Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_4b458df0-fae9-4118-b778-eeac191aaeb0/fail_sysexit/main.py\", line 12, in update\n    sys.exit(3)\n    ~~~~~~~~^^^\nSystemExit: 3\n"
+  },
+  {
+   "t": 4286,
+   "kind": "until-not-seen",
+   "detail": "no console line matched /^SPIKE_DONE/ within 20000 ms"
+  }
+ ],
+ "requests": [
+  {
+   "t": 108,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/apps/fail_sysexit.html"
+  },
+  {
+   "t": 117,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.js"
+  },
+  {
+   "t": 123,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.css"
+  },
+  {
+   "t": 125,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 180,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/import_hook.py"
+  },
+  {
+   "t": 180,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 188,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 198,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 199,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 199,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 238,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 1915,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 2223,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/click_to_start_114x14.png"
+  }
+ ],
+ "downloads": [],
+ "allowed": [],
+ "actions": [],
+ "filechoosers": [],
+ "passed": false,
+ "promptAt": 2669,
+ "clickedAt": 2674,
+ "state": {
+  "overlayText": "Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_4b458df0-fae9-4118-b778-eeac191aaeb0/fail_sysexit/main.py\", line 12, in update\n    sys.exit(3)\n    ~~~~~~~~^^^\nSystemExit: 3\n",
+  "hasFatalError": false,
+  "initialized": true,
+  "canvas": {
+   "width": 960,
+   "height": 720,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": null,
+ "elapsedMs": 4355
+}

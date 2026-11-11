@@ -1,0 +1,209 @@
+{
+ "python": "3.14.6 (main, Jul 18 2026, 17:01:31) [Clang 22.1.3 ]",
+ "platform": "linux",
+ "speed": {
+  "python": "3.14.6",
+  "platform": "linux",
+  "implementation": "cpython",
+  "timer_resolution_us": 0.0790000740380492,
+  "repeats": 5,
+  "float_loop": {
+   "units": 300000,
+   "unit": "iteration",
+   "runs_ms": [
+    71.13,
+    71.21,
+    70.63,
+    69.09,
+    73.72
+   ],
+   "best_ns_per_unit": 230.3,
+   "median_ns_per_unit": 237.1,
+   "first_ns_per_unit": 237.1
+  },
+  "attr_loop_slots": {
+   "units": 300000,
+   "unit": "iteration",
+   "runs_ms": [
+    71.1,
+    70.01,
+    70.24,
+    58.46,
+    60.14
+   ],
+   "best_ns_per_unit": 194.9,
+   "median_ns_per_unit": 233.4,
+   "first_ns_per_unit": 237.0
+  },
+  "attr_loop_dict": {
+   "units": 300000,
+   "unit": "iteration",
+   "runs_ms": [
+    63.36,
+    62.88,
+    97.57,
+    103.04,
+    70.81
+   ],
+   "best_ns_per_unit": 209.6,
+   "median_ns_per_unit": 236.0,
+   "first_ns_per_unit": 211.2
+  },
+  "call_loop": {
+   "units": 300000,
+   "unit": "iteration",
+   "runs_ms": [
+    33.15,
+    35.69,
+    33.31,
+    32.32,
+    32.1
+   ],
+   "best_ns_per_unit": 107.0,
+   "median_ns_per_unit": 110.5,
+   "first_ns_per_unit": 110.5
+  },
+  "vehicle_6cars": {
+   "units": 21600,
+   "unit": "car-tick",
+   "runs_ms": [
+    92.2,
+    101.18,
+    94.21,
+    101.23,
+    103.82
+   ],
+   "best_ns_per_unit": 4268.5,
+   "median_ns_per_unit": 4684.2,
+   "first_ns_per_unit": 4268.5
+  }
+ },
+ "libm": {
+  "sqrt": "febfbc48001a96f8",
+  "sin": "508143859c7956bc",
+  "cos": "b83516bd2937631f",
+  "tan": "4f0a3b6e4ae0909c",
+  "atan": "a1951eafe6345aff",
+  "asin": "1a9839062172c89d",
+  "acos": "50b370d049968952",
+  "exp": "f33fa94362733e7f",
+  "log": "8931eeb0a899df18",
+  "tanh": "e133568b2470a50e",
+  "floor": "c6311152e5f3a4ed",
+  "atan2": "36d6d895416a9ee2",
+  "hypot": "0fc78b82d12fa385",
+  "pow": "27cc4732ab2eabc1",
+  "**0.5": "83614c93d77a0e4d",
+  "fmod": "4a6831a120397aa4",
+  "%": "53a32086cc85c70b",
+  "radians/degrees": "7e3772acfd3898ab",
+  "arith(+-*/)": "3175cea7b9389a1f"
+ },
+ "libm_first": {
+  "sin": [
+   "c8dffce5bfcad03f",
+   "e08ccadcbe19d13f",
+   "e37a1ccfa168d13f",
+   "e955b33b68b7d13f",
+   "ba837ea11106d23f",
+   "b5f89c7f9d54d23f",
+   "6a0c5e550ba3d23f",
+   "134942a25af1d23f"
+  ],
+  "cos": [
+   "fafcc36f00e1ee3f",
+   "d122cdf327d6ee3f",
+   "862514f21ccbee3f",
+   "0cc7b07cdfbfee3f",
+   "8a720da66fb4ee3f",
+   "f31de780cda8ee3f",
+   "222b4d20f99cee3f",
+   "1c49a197f290ee3f"
+  ]
+ },
+ "determinism": {
+  "ticks": 36000,
+  "cars": 6,
+  "checkpoint": 600,
+  "final_hash": "626d0617cb9472a7",
+  "final_car0": [
+   "-5079.289072592831",
+   "6941.959046515438",
+   "-2.695131844944106",
+   "40.254933832579475",
+   "-2.588393895667623",
+   "0.26180657310161143"
+  ],
+  "checkpoints": [
+   "aed1c63f1d32aaa0",
+   "0ecf1e014b1cd830",
+   "d79bab38b78116b4",
+   "b99f624f957a4546",
+   "1eda8f539cf87957",
+   "f594209a89606aa6",
+   "aa1a0c8eba82433f",
+   "c35c2b5e2fb3a402",
+   "74f6f71302e2e665",
+   "6013677d5b37702e",
+   "6e43035f3185c460",
+   "5956ac849623e3e0",
+   "9f27b7ebd1057676",
+   "364593987bb7a509",
+   "1f95b1a7453a4ffb",
+   "ec197962505021d8",
+   "b04d3870df54eedb",
+   "8d8ad18d6492aae6",
+   "05d03fc8c7c5bac4",
+   "710c9c3fc774189e",
+   "9ff31672e6c68752",
+   "8e27facf6336ad42",
+   "2c3a663cf0740437",
+   "d1231234a57ebc6e",
+   "2ef358668cc3cab0",
+   "af787c6f2122f5f0",
+   "34fd2575bce626ef",
+   "04174509805bf815",
+   "793f5b7852a2485e",
+   "f00ab784b56538a8",
+   "a6b6df7f0817a16a",
+   "e27d2d367a76f921",
+   "4c388f9290fc6f63",
+   "b4f052dc062e9915",
+   "85b46361e9e80cd1",
+   "8957b8ce6250a8c4",
+   "d75dd2819b914c60",
+   "d97e2ae822e602f0",
+   "3df1696032d41295",
+   "c094a1c217f0db6d",
+   "a4a9f7b1a381feb2",
+   "80e175cd2a37a803",
+   "2033c68424d461e8",
+   "bba809bf02820f8f",
+   "7b46674a3d7617ba",
+   "90c72c70d8c1e518",
+   "11d9902e6220b112",
+   "62933d906139ef0c",
+   "7cbd467cd0830969",
+   "6654f3e5a8c71737",
+   "a02149034fe44389",
+   "bbe1b23a5eaf1c49",
+   "e6817a50313be4cb",
+   "f00d8247dd5a2df1",
+   "276381cd4180b0f1",
+   "2541ae5edcec370c",
+   "9d3f96d57a0d08a9",
+   "71397fcd5627acbd",
+   "eec69c0943f6e939",
+   "626d0617cb9472a7"
+  ]
+ },
+ "determinism_nolibm": {
+  "final_hash": "ee13da0624dd548b",
+  "final": [
+   "76.07783921252137",
+   "30.657134960913623",
+   "0.010100376132867328",
+   "0.004081552880784805"
+  ]
+ }
+}

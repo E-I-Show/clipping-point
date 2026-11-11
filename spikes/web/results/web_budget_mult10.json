@@ -1,0 +1,149 @@
+{
+ "url": "http://127.0.0.1:8765/apps/budget.html#mult=10&n=900",
+ "mirror": null,
+ "console": [
+  {
+   "t": 114,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 114,
+   "type": "log",
+   "text": "{command: play, name: budget.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIABYQa10sYEvPCQAAAAcAAAAdAAAAYnVkZ2V0Ly…AYnVkZ2V0L21haW4ucHlQSwUGAAAAAAQABAALAQAAcBwAAAAA}"
+  },
+  {
+   "t": 1819,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 2096,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 2834,
+   "type": "warning",
+   "text": "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)"
+  },
+  {
+   "t": 2887,
+   "type": "warning",
+   "text": "[.WebGL-0x165409d39000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 2920,
+   "type": "warning",
+   "text": "[.WebGL-0x165409d39000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 2933,
+   "type": "warning",
+   "text": "[.WebGL-0x165409d39000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 2947,
+   "type": "warning",
+   "text": "[.WebGL-0x165409d39000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  },
+  {
+   "t": 18842,
+   "type": "log",
+   "text": "RESULT_JSON budget {\"params\": {\"mult\": 10, \"n\": 900, \"render\": 2}, \"updates_per_s\": 60.0, \"renders_per_s\": 29.97, \"update_ms\": {\"n\": 900, \"mean\": 0.515, \"median\": 0.5, \"p95\": 0.8, \"max\": 1.2}, \"render_ms\": {\"n\": 449, \"mean\": 2.37, \"median\": 2.3, \"p95\": 3.4, \"max\": 5.7}, \"first_60_ticks_excluded\": true}"
+  },
+  {
+   "t": 18842,
+   "type": "log",
+   "text": "SPIKE_DONE"
+  }
+ ],
+ "failures": [],
+ "requests": [
+  {
+   "t": 99,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/apps/budget.html"
+  },
+  {
+   "t": 110,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.js"
+  },
+  {
+   "t": 115,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.css"
+  },
+  {
+   "t": 116,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 173,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/import_hook.py"
+  },
+  {
+   "t": 173,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 178,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 184,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 184,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 188,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 228,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 1823,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 2135,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/click_to_start_114x14.png"
+  }
+ ],
+ "downloads": [],
+ "allowed": [],
+ "actions": [],
+ "filechoosers": [],
+ "passed": true,
+ "promptAt": 2583,
+ "clickedAt": 2588,
+ "state": {
+  "overlayText": null,
+  "hasFatalError": false,
+  "initialized": true,
+  "canvas": {
+   "width": 960,
+   "height": 720,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": 18842,
+ "elapsedMs": 19266
+}

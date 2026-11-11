@@ -1,0 +1,30 @@
+PASS round trip exact: 1 car 20 s (samples, events, header) -- 400 samples x 1 cars, 2 events, 2414 bytes
+PASS re-saving the loaded replay gives byte-identical file: 1 car 20 s
+PASS base64 round trip: 1 car 20 s -- 3220 chars for 2414 bytes (x1.334)
+PASS round trip exact: 6 cars 5 min (samples, events, header) -- 6000 samples x 6 cars, 81 events, 150336 bytes
+PASS re-saving the loaded replay gives byte-identical file: 6 cars 5 min
+PASS base64 round trip: 6 cars 5 min -- 200448 chars for 150336 bytes (x1.333)
+PASS 1 byte corrupted anywhere -> rejected (all 2414 positions x 3 masks of the small file) -- {'E_NOT_CPR': 12, 'E_CORRUPT': 7205, 'E_TOO_NEW': 5, 'E_TRUNCATED': 20}
+PASS 1 bit flipped at 1500 random positions of the 6-car file -> rejected -- {'E_CORRUPT': 1500}
+PASS adjacent bytes swapped (500 tries) -> rejected
+PASS cut at every length 0..2413 -> rejected; E_TRUNCATED except the empty file -- {'E_NOT_CPR': 1, 'E_TRUNCATED': 2413}
+PASS 6-car file cut at 300 random lengths -> E_TRUNCATED -- {'E_TRUNCATED': 300}
+PASS extra bytes after the checksum -> E_CORRUPT
+PASS empty, text, PNG, zip -> E_NOT_CPR
+PASS CRLF -> LF text-mode damage -> E_CORRUPT (signature damaged)
+PASS major version newer than this build -> E_TOO_NEW (checked before length and CRC)
+PASS same major, newer minor with an unknown header key and an unknown chunk -> loads, extras ignored
+PASS unknown sample codec id -> E_TOO_NEW
+PASS a major-1 file read by a (simulated) major-2 build goes through the upgrade function
+PASS 13 kinds of invalid header -> E_BAD_HEADER -- {'missing course': 'E_BAD_HEADER', 'n_cars 0': 'E_BAD_HEADER', 'n_cars 2 but 1 car listed': 'E_BAD_HEADER', 'sample_div 0': 'E_BAD_HEADER', 'tick_hz 50': 'E_BAD_HEADER', 'float in header': 'E_BAD_HEADER', 'quant step 0': 'E_BAD_HEADER', 'quant origin not 3 ints': 'E_BAD_HEADER', 'title not ASCII': 'E_BAD_HEADER', 'title too long': 'E_BAD_HEADER', 'cars[0] without setup': 'E_BAD_HEADER', 'n_samples huge': 'E_BAD_HEADER', 'n_samples is a string': 'E_BAD_HEADER'}
+PASS header that is not JSON -> E_BAD_HEADER
+PASS n_samples not matching the body -> E_CORRUPT
+PASS body without sample chunk -> E_CORRUPT
+PASS sample chunk inflating to 50 MB instead of 5600 bytes -> E_CORRUPT without inflating it all -- 0.2 ms
+PASS unknown course / layout / newer course data / unknown car / unknown mode -> E_UNKNOWN_CONTENT with a specific code -- {'unknown course': ('E_UNKNOWN_CONTENT', ['E_UNKNOWN_COURSE']), 'unknown layout': ('E_UNKNOWN_CONTENT', ['E_UNKNOWN_LAYOUT']), 'course data newer': ('E_UNKNOWN_CONTENT', ['E_COURSE_TOO_NEW']), 'unknown car': ('E_UNKNOWN_CONTENT', ['E_UNKNOWN_CAR']), 'unknown mode': ('E_UNKNOWN_CONTENT', ['E_UNKNOWN_MODE'])}
+PASS course data older than the build -> plays, with warning W_COURSE_OLDER -- [('warn', 'W_COURSE_OLDER', 'akane_short v1 < v3')]
+PASS without a catalog the file still loads (theatre list can show it greyed out)
+PASS invalid base64 text -> E_CORRUPT
+PASS mutation check: without the file CRC32, single-bit damage gets through with changed content (so the CRC is what catches it) -- 295 of 2410 damaged files accepted, 288 with changed content
+PASS peek_cpr returns version + validated header without inflating -- 0.100 ms for a 150336 byte file
+29 checks, 0 failed

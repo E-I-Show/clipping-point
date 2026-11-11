@@ -1,0 +1,144 @@
+{
+ "brake_lamp_texel_rewrite": {
+  "on": {
+   "BRAKE_px": 53,
+   "RED_D_px": 65
+  },
+  "off": {
+   "BRAKE_px": 53,
+   "RED_D_px": 65
+  }
+ },
+ "zfight_ground_vs_track": {
+  "gap0.05_near0.3_chase": {
+   "track_px": 43009,
+   "px_where_ground_wins": 0
+  },
+  "gap0.05_near0.3_bumper": {
+   "track_px": 39243,
+   "px_where_ground_wins": 0
+  },
+  "gap0.05_near0.3_tv_wide": {
+   "track_px": 52114,
+   "px_where_ground_wins": 0
+  },
+  "gap0.05_near0.1_chase": {
+   "track_px": 43009,
+   "px_where_ground_wins": 0
+  },
+  "gap0.05_near0.1_bumper": {
+   "track_px": 39243,
+   "px_where_ground_wins": 0
+  },
+  "gap0.05_near0.1_tv_wide": {
+   "track_px": 52114,
+   "px_where_ground_wins": 0
+  },
+  "gap0.02_near0.3_chase": {
+   "track_px": 43009,
+   "px_where_ground_wins": 0
+  },
+  "gap0.02_near0.3_bumper": {
+   "track_px": 39243,
+   "px_where_ground_wins": 0
+  },
+  "gap0.02_near0.3_tv_wide": {
+   "track_px": 52114,
+   "px_where_ground_wins": 0
+  },
+  "gap0.02_near0.1_chase": {
+   "track_px": 43009,
+   "px_where_ground_wins": 0
+  },
+  "gap0.02_near0.1_bumper": {
+   "track_px": 39243,
+   "px_where_ground_wins": 0
+  },
+  "gap0.02_near0.1_tv_wide": {
+   "track_px": 52114,
+   "px_where_ground_wins": 0
+  },
+  "gap0.2_near0.3_chase": {
+   "track_px": 43009,
+   "px_where_ground_wins": 0
+  },
+  "gap0.2_near0.3_bumper": {
+   "track_px": 39243,
+   "px_where_ground_wins": 0
+  },
+  "gap0.2_near0.3_tv_wide": {
+   "track_px": 52114,
+   "px_where_ground_wins": 0
+  },
+  "gap0.2_near0.1_chase": {
+   "track_px": 43009,
+   "px_where_ground_wins": 0
+  },
+  "gap0.2_near0.1_bumper": {
+   "track_px": 39243,
+   "px_where_ground_wins": 0
+  },
+  "gap0.2_near0.1_tv_wide": {
+   "track_px": 52114,
+   "px_where_ground_wins": 0
+  }
+ },
+ "shimmer_changed_fraction_noise_textures": {
+  "rows121-125(dist>~40m)": 0.334,
+  "rows126-135(~13-40m)": 0.307,
+  "rows136-169(~4-13m)": 0.315
+ },
+ "shimmer_changed_fraction_flat_textures": {
+  "rows121-125(dist>~40m)": 0.156,
+  "rows126-135(~13-40m)": 0.066,
+  "rows136-169(~4-13m)": 0.002
+ },
+ "car_flat_groups": {
+  "2": 44,
+  "30": 8,
+  "12": 86,
+  "25": 16,
+  "15": 8,
+  "0": 20
+ },
+ "car6_draw_ms": {
+  "flat_per_color_prims(immediate)": {
+   "median_ms": 0.685,
+   "p95_ms": 0.976
+  },
+  "swatch_texture(immediate prim)": {
+   "median_ms": 0.672,
+   "p95_ms": 0.812
+  },
+  "swatch_texture(retained Node.from_mesh)": {
+   "median_ms": 0.621,
+   "p95_ms": 0.747
+  }
+ },
+ "car_flat_vs_texture_pixel_diff": 0,
+ "glb_probe_garden_coin": {
+  "primitives": 5,
+  "names": [
+   "coin",
+   "Visual",
+   "Coin",
+   "Coin",
+   "Coin_primitive_0"
+  ],
+  "col_img_type": "Image",
+  "motions": 0,
+  "tex_size": [
+   16,
+   16
+  ],
+  "tex_index_hist_with_32color_evening_palette": {
+   "5": 37,
+   "18": 49,
+   "19": 170
+  },
+  "tris": 36,
+  "has_normals": [
+   108
+  ]
+ }
+}

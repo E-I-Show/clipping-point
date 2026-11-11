@@ -1,0 +1,36 @@
+{
+ "ok": true,
+ "ticks": 120,
+ "draw_calls": 119,
+ "renders": 61,
+ "fingerprint": "bfa090eb7cbb65b6",
+ "shift_count": 3,
+ "driver": "run",
+ "wall_s": 1.984,
+ "pyxel_frame_count": 119,
+ "pyxel_version": "3.0.1",
+ "cwd_before_init": "/home/user",
+ "cwd_after_init": "<scratchpad>/spikes/frameloop/proto/cp_proto/cp_app",
+ "app_root": "<scratchpad>/spikes/frameloop/proto/cp_proto",
+ "cars": [
+  "tsubame_1600",
+  "kazane_rs",
+  "shirogane_gtt",
+  "arashi_4t"
+ ],
+ "track_points": 48,
+ "pyxres_pixel": 3,
+ "logo_size": [
+  40,
+  10
+ ],
+ "screen_colors": [
+  1,
+  3,
+  7,
+  8,
+  9,
+  10,
+  13
+ ]
+}

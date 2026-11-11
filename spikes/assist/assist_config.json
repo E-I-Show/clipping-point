@@ -1,0 +1,240 @@
+{
+ "format": "clipping-point-assist",
+ "version": 1,
+ "items": {
+  "steer_curve": {
+   "label": "STEER CURVE",
+   "low": "LINEAR",
+   "high": "SOFT",
+   "values": {
+    "steer_k": [
+     0.0,
+     0.2,
+     0.4,
+     0.6,
+     0.8
+    ]
+   }
+  },
+  "steer_speed": {
+   "label": "STEER SPEED",
+   "low": "SLOW",
+   "high": "FAST",
+   "values": {
+    "dig_t_full": [
+     0.5,
+     0.4,
+     0.32,
+     0.25,
+     0.19
+    ],
+    "dig_t_return": [
+     0.32,
+     0.26,
+     0.21,
+     0.17,
+     0.13
+    ],
+    "ana_t_full": [
+     0.16,
+     0.12,
+     0.09,
+     0.07,
+     0.05
+    ]
+   }
+  },
+  "steer_limit": {
+   "label": "SPEED LOCK",
+   "low": "WIDE",
+   "high": "TIGHT",
+   "values": {
+    "limit_km": [
+     0.5,
+     0.3,
+     0.2,
+     0.12,
+     0.08
+    ],
+    "limit_ka": [
+     1.25,
+     1.1,
+     1.0,
+     0.92,
+     0.85
+    ],
+    "clip_k": [
+     2.4,
+     1.9,
+     1.5,
+     1.25,
+     1.1
+    ]
+   }
+  },
+  "counter": {
+   "label": "COUNTER",
+   "low": "OFF",
+   "high": "STRONG",
+   "values": {
+    "cs_gain": [
+     0.0,
+     0.6,
+     1.0,
+     1.0,
+     1.0
+    ],
+    "cs_km": [
+     0.0,
+     0.0,
+     0.15,
+     0.3,
+     0.5
+    ],
+    "cs_rate": [
+     1.0,
+     1.5,
+     2.0,
+     2.5,
+     3.0
+    ]
+   }
+  },
+  "throttle_curve": {
+   "label": "THROTTLE CURVE",
+   "low": "LINEAR",
+   "high": "SOFT",
+   "values": {
+    "throttle_k": [
+     0.0,
+     0.2,
+     0.4,
+     0.6,
+     0.8
+    ]
+   }
+  },
+  "brake_curve": {
+   "label": "BRAKE CURVE",
+   "low": "LINEAR",
+   "high": "SOFT",
+   "values": {
+    "brake_k": [
+     0.0,
+     0.2,
+     0.4,
+     0.6,
+     0.8
+    ]
+   }
+  },
+  "pedal_speed": {
+   "label": "PEDAL SPEED",
+   "low": "SLOW",
+   "high": "FAST",
+   "values": {
+    "thr_t_up": [
+     0.5,
+     0.38,
+     0.28,
+     0.2,
+     0.12
+    ],
+    "thr_t_down": [
+     0.2,
+     0.16,
+     0.12,
+     0.09,
+     0.06
+    ],
+    "brk_t_up": [
+     0.32,
+     0.24,
+     0.18,
+     0.13,
+     0.08
+    ],
+    "brk_t_down": [
+     0.16,
+     0.13,
+     0.1,
+     0.08,
+     0.05
+    ]
+   }
+  },
+  "deadzone": {
+   "label": "DEAD ZONE",
+   "low": "SMALL",
+   "high": "LARGE",
+   "values": {
+    "steer_dz": [
+     0.03,
+     0.06,
+     0.1,
+     0.15,
+     0.2
+    ]
+   }
+  }
+ },
+ "presets": {
+  "analog": {
+   "steer_curve": 2,
+   "steer_speed": 2,
+   "steer_limit": 2,
+   "counter": 2,
+   "throttle_curve": 1,
+   "brake_curve": 1,
+   "pedal_speed": 2,
+   "deadzone": 2
+  },
+  "digital": {
+   "steer_curve": 0,
+   "steer_speed": 2,
+   "steer_limit": 3,
+   "counter": 2,
+   "throttle_curve": 0,
+   "brake_curve": 0,
+   "pedal_speed": 2,
+   "deadzone": 2
+  }
+ },
+ "fixed": {
+  "limit_mode": "physics",
+  "simple_v0": 11.0,
+  "simple_floor": 0.1,
+  "limit_mu_min": 0.5,
+  "clip_on": false,
+  "clip_v0": 6.0,
+  "clip_v1": 12.0,
+  "steer_sat": 0.97,
+  "pedal_dz": 0.04,
+  "pedal_sat": 0.97,
+  "pedal_ana_t": 0.06,
+  "dig_rate_start": 0.35,
+  "dig_ramp_t": 0.6,
+  "dig_limit_frac": 1.0,
+  "cs_slide0": 0.95,
+  "cs_slide1": 1.35,
+  "cs_beta_min_deg": 3.0,
+  "cs_v_min": 5.0,
+  "cs_hold_t": 0.3,
+  "abs_target": 0.97,
+  "abs_target_turn": 0.8,
+  "abs_u_lo_rear": 0.15,
+  "abs_recover": 4.0,
+  "abs_min": 0.05,
+  "coast_thr": 0.12,
+  "coast_sy0": 0.6,
+  "coast_sy1": 0.95,
+  "coast_v_min": 8.0,
+  "tcs_u_hi": 0.97,
+  "tcs_u_lo_rear": 0.3,
+  "tcs_u_lo_front": 0.55,
+  "tcs_sy0": 0.55,
+  "tcs_sy1": 1.05,
+  "tcs_recover": 1.6,
+  "tcs_min": 0.06
+ }
+}

@@ -1,0 +1,170 @@
+{
+ "url": "file://<scratchpad>/spikes/web/build/fail_callback.html",
+ "mirror": "mirror",
+ "console": [
+  {
+   "t": 132,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 132,
+   "type": "log",
+   "text": "{command: play, name: fail_callback.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIAO4Oa10sYEvPCQAAAAcAAAAkAAAAZmFpbF9jYW…sYmFjay9tYWluLnB5UEsFBgAAAAAEAAQAJwEAAG0ZAAAAAA==}"
+  },
+  {
+   "t": 2334,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 2720,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 3118,
+   "type": "warning",
+   "text": "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)"
+  },
+  {
+   "t": 3154,
+   "type": "warning",
+   "text": "[.WebGL-0x20f40017a200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3164,
+   "type": "warning",
+   "text": "[.WebGL-0x20f40017a200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3186,
+   "type": "warning",
+   "text": "[.WebGL-0x20f40017a200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3216,
+   "type": "warning",
+   "text": "[.WebGL-0x20f40017a200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  },
+  {
+   "t": 3422,
+   "type": "error",
+   "text": "PythonError: Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_96b7cbae-b7ef-408f-a785-6b6475736bce/fail_callback/main.py\", line 10, in bad_callback\n    raise KeyError(\"boom inside a JS-called Python callback\")\nKeyError: 'boom inside a JS-called Python callback'\n\n    at new_error (https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:568655)\n    at https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.wasm:wasm-function[275]:0x65562\n    at https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.wasm:wasm-function[276]:0x6562a\n    at callPyObjectKwargs (https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:623504)\n    at Module.callPyObject (https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:624713)\n    at Function.apply (https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:641016)\n    at Object.apply (https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:637437)"
+  }
+ ],
+ "failures": [
+  {
+   "t": 3422,
+   "kind": "console.error",
+   "detail": "PythonError: Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_96b7cbae-b7ef-408f-a785-6b6475736bce/fail_callback/main.py\", line 10, in bad_callback\n    raise KeyError(\"boom inside a JS-called Python callback\")\nKeyError: 'boom inside a JS-called Python callback'\n\n    at new_error (https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:568655)\n    at https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.wasm:wasm-function[275]:0x65562\n    at https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.wasm:wasm-function[276]:0x6562a\n    at callPyObjectKwargs (https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:623504)\n    at Module.callPyObject (https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:624713)\n    at Function.apply (https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:641016)\n    at Object.apply (https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:637437)"
+  },
+  {
+   "t": 3424,
+   "kind": "pageerror",
+   "detail": "PythonError: Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_96b7cbae-b7ef-408f-a785-6b6475736bce/fail_callback/main.py\", line 10, in bad_callback\n    raise KeyError(\"boom inside a JS-called Python callback\")\nKeyError: 'boom inside a JS-called Python callback'\n\n    at new_error (https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:568655)\n    at https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.wasm:wasm-function[275]:0x65562\n    at https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.wasm:wasm-function[276]:0x6562a\n    at callPyObjectKwargs (https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:623504)\n    at Module.callPyObject (https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:624713)\n    at Function.apply (https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:641016)\n    at Object.apply (https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:637437)"
+  },
+  {
+   "t": 4082,
+   "kind": "pyxel-error-overlay",
+   "detail": "PythonError: Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_96b7cbae-b7ef-408f-a785-6b6475736bce/fail_callback/main.py\", line 10, in bad_callback\n    raise KeyError(\"boom inside a JS-called Python callback\")\nKeyError: 'boom inside a JS-called Python callback'\n\n    at new_error (https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:568655)\n    at https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.wasm:wasm-function[275]:0x65562\n    at https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.wasm:wasm-function[276]:0x6562a\n    at callPyObjectKwargs (https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:623504)\n    at Module.callPyObject (https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:624713)\n    at Function.apply (https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:641016)\n    at Object.apply (https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:637437)"
+  },
+  {
+   "t": 4082,
+   "kind": "hasFatalError",
+   "detail": "window.pyxelContext.hasFatalError is true"
+  },
+  {
+   "t": 4082,
+   "kind": "until-not-seen",
+   "detail": "no console line matched /^SPIKE_DONE/ within 20000 ms"
+  }
+ ],
+ "requests": [
+  {
+   "t": 116,
+   "status": 200,
+   "url": "file://<scratchpad>/spikes/web/build/fail_callback.html"
+  },
+  {
+   "t": 127,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel.js"
+  },
+  {
+   "t": 148,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel.css"
+  },
+  {
+   "t": 149,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 317,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 335,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/import_hook.py"
+  },
+  {
+   "t": 335,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 425,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 454,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 566,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 585,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 2436,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 2764,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/images/click_to_start_114x14.png"
+  }
+ ],
+ "downloads": [],
+ "allowed": [],
+ "actions": [],
+ "filechoosers": [],
+ "passed": false,
+ "promptAt": 2881,
+ "clickedAt": 2885,
+ "state": {
+  "overlayText": "PythonError: Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_96b7cbae-b7ef-408f-a785-6b6475736bce/fail_callback/main.py\", line 10, in bad_callback\n    raise KeyError(\"boom inside a JS-called Python callback\")\nKeyError: 'boom inside a JS-called Python callback'\n\n    at new_error (https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:568655)\n    at https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.wasm:wasm-function[275]:0x65562\n    at https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.wasm:wasm-function[276]:0x6562a\n    at callPyObjectKwargs (https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:623504)\n    at Module.callPyObject (https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:624713)\n    at Function.apply (https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:641016)\n    at Object.apply (https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs:1:637437)",
+  "hasFatalError": true,
+  "initialized": true,
+  "canvas": {
+   "width": 960,
+   "height": 720,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": null,
+ "elapsedMs": 4128
+}

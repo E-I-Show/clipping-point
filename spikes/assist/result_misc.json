@@ -1,0 +1,231 @@
+{
+ "step_cost_us": {
+  "analog, assist on": 3.12,
+  "digital, assist on": 2.88,
+  "analog, assist off": 2.06
+ },
+ "rate_30hz": {
+  "stop_100_0_m_and_lock_ticks": {
+   "60Hz": [
+    40.6,
+    36
+   ],
+   "30Hz": [
+    40.4,
+    34
+   ],
+   "60Hz_mu0.5": [
+    80.0,
+    46
+   ],
+   "30Hz_mu0.5": [
+    80.1,
+    48
+   ]
+  },
+  "exit_peak_beta_deg_and_dv3s": {
+   "60Hz": [
+    2.1,
+    12.0
+   ],
+   "30Hz": [
+    2.1,
+    12.0
+   ]
+  }
+ },
+ "laps_30hz_vs_60hz": [
+  {
+   "hz": 60,
+   "car": "kazane",
+   "input": "analog",
+   "clean_laps_of_9": 4,
+   "mean_flying": 80.8,
+   "spins": 3,
+   "off2": 6,
+   "off4": 2,
+   "walls": 2,
+   "resets": 2
+  },
+  {
+   "hz": 60,
+   "car": "kazane",
+   "input": "digital",
+   "clean_laps_of_9": 6,
+   "mean_flying": 81.7,
+   "spins": 6,
+   "off2": 8,
+   "off4": 3,
+   "walls": 3,
+   "resets": 0
+  },
+  {
+   "hz": 60,
+   "car": "shirogane",
+   "input": "analog",
+   "clean_laps_of_9": 6,
+   "mean_flying": 75.75,
+   "spins": 0,
+   "off2": 3,
+   "off4": 1,
+   "walls": 0,
+   "resets": 0
+  },
+  {
+   "hz": 60,
+   "car": "shirogane",
+   "input": "digital",
+   "clean_laps_of_9": 5,
+   "mean_flying": 77.24,
+   "spins": 0,
+   "off2": 4,
+   "off4": 0,
+   "walls": 0,
+   "resets": 0
+  },
+  {
+   "hz": 30,
+   "car": "kazane",
+   "input": "analog",
+   "clean_laps_of_9": 4,
+   "mean_flying": 82.08,
+   "spins": 4,
+   "off2": 6,
+   "off4": 3,
+   "walls": 2,
+   "resets": 2
+  },
+  {
+   "hz": 30,
+   "car": "kazane",
+   "input": "digital",
+   "clean_laps_of_9": 9,
+   "mean_flying": 79.96,
+   "spins": 0,
+   "off2": 0,
+   "off4": 0,
+   "walls": 0,
+   "resets": 0
+  },
+  {
+   "hz": 30,
+   "car": "shirogane",
+   "input": "analog",
+   "clean_laps_of_9": 5,
+   "mean_flying": 75.85,
+   "spins": 0,
+   "off2": 4,
+   "off4": 0,
+   "walls": 0,
+   "resets": 0
+  },
+  {
+   "hz": 30,
+   "car": "shirogane",
+   "input": "digital",
+   "clean_laps_of_9": 4,
+   "mean_flying": 78.57,
+   "spins": 2,
+   "off2": 5,
+   "off4": 2,
+   "walls": 0,
+   "resets": 2
+  }
+ ],
+ "validation": {
+  "cases": 17,
+  "rejected": 17,
+  "detail": [
+   [
+    "unknown top key",
+    "rejected"
+   ],
+   [
+    "missing items",
+    "rejected"
+   ],
+   [
+    "4 stages",
+    "rejected"
+   ],
+   [
+    "non monotonic",
+    "rejected"
+   ],
+   [
+    "NaN",
+    "rejected"
+   ],
+   [
+    "bool as number",
+    "rejected"
+   ],
+   [
+    "curve k > 1",
+    "rejected"
+   ],
+   [
+    "zero time",
+    "rejected"
+   ],
+   [
+    "non ASCII label",
+    "rejected"
+   ],
+   [
+    "preset stage 5",
+    "rejected"
+   ],
+   [
+    "preset missing item",
+    "rejected"
+   ],
+   [
+    "unknown fixed key",
+    "rejected"
+   ],
+   [
+    "limit_mode typo",
+    "rejected"
+   ],
+   [
+    "reversed pair",
+    "rejected"
+   ],
+   [
+    "wrong version",
+    "rejected"
+   ],
+   [
+    "level out of range",
+    "rejected"
+   ],
+   [
+    "unknown level item",
+    "rejected"
+   ]
+  ],
+  "file_round_trip_equal": true
+ },
+ "adapter": {
+  "stick_from_device(-32768)": -1.0,
+  "stick_from_device(16384)": 0.5,
+  "pedals_from_stick_y(-0.6)": [
+   0.6,
+   0.0
+  ],
+  "pedals_from_stick_y(0.8)": [
+   0.0,
+   0.8
+  ],
+  "digital_axis(L)": -1.0,
+  "digital_axis(both)": 0.0,
+  "is_two_valued([0,1,1,0])": true,
+  "is_two_valued([0,0.4,1])": false
+ },
+ "step_cost_us_quiet": {
+  "analog_on": 2.8,
+  "digital_on": 2.7,
+  "analog_off": 2.02
+ }
+}

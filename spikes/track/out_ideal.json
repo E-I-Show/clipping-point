@@ -1,0 +1,167 @@
+{
+ "relax_seconds": 0.42530812199993306,
+ "stations": 450,
+ "rows": [
+  {
+   "car": "A_SHIROGANE_FR_280ps_1340kg",
+   "lat_g": 1.0,
+   "lap_ideal_s": 63.5,
+   "lap_center_s": 68.44,
+   "v_min_kmh": 41.4,
+   "v_max_kmh": 163.8,
+   "line_length_m": 1755.2,
+   "profile_ms": 2.14
+  },
+  {
+   "car": "A_SHIROGANE_FR_280ps_1340kg",
+   "lat_g": 1.05,
+   "lap_ideal_s": 62.4,
+   "lap_center_s": 67.16,
+   "v_min_kmh": 42.4,
+   "v_max_kmh": 165.2,
+   "line_length_m": 1755.2,
+   "profile_ms": 2.11
+  },
+  {
+   "car": "A_SHIROGANE_FR_280ps_1340kg",
+   "lat_g": 1.1,
+   "lap_ideal_s": 61.38,
+   "lap_center_s": 65.97,
+   "v_min_kmh": 43.4,
+   "v_max_kmh": 166.2,
+   "line_length_m": 1755.2,
+   "profile_ms": 1.99
+  },
+  {
+   "car": "A_ARASHI_4WD_280ps_1390kg",
+   "lat_g": 1.0,
+   "lap_ideal_s": 63.06,
+   "lap_center_s": 68.41,
+   "v_min_kmh": 41.4,
+   "v_max_kmh": 161.4,
+   "line_length_m": 1755.2,
+   "profile_ms": 2.15
+  },
+  {
+   "car": "A_ARASHI_4WD_280ps_1390kg",
+   "lat_g": 1.05,
+   "lap_ideal_s": 62.01,
+   "lap_center_s": 67.19,
+   "v_min_kmh": 42.4,
+   "v_max_kmh": 162.3,
+   "line_length_m": 1755.2,
+   "profile_ms": 2.15
+  },
+  {
+   "car": "A_ARASHI_4WD_280ps_1390kg",
+   "lat_g": 1.1,
+   "lap_ideal_s": 61.03,
+   "lap_center_s": 66.05,
+   "v_min_kmh": 43.4,
+   "v_max_kmh": 163.5,
+   "line_length_m": 1755.2,
+   "profile_ms": 3.7
+  },
+  {
+   "car": "B_TSUBAME_FF_165ps_1040kg",
+   "lat_g": 1.0,
+   "lap_ideal_s": 65.11,
+   "lap_center_s": 69.89,
+   "v_min_kmh": 41.4,
+   "v_max_kmh": 152.5,
+   "line_length_m": 1755.2,
+   "profile_ms": 10.11
+  },
+  {
+   "car": "B_TSUBAME_FF_165ps_1040kg",
+   "lat_g": 1.05,
+   "lap_ideal_s": 64.04,
+   "lap_center_s": 68.65,
+   "v_min_kmh": 42.4,
+   "v_max_kmh": 153.7,
+   "line_length_m": 1755.2,
+   "profile_ms": 2.18
+  },
+  {
+   "car": "B_TSUBAME_FF_165ps_1040kg",
+   "lat_g": 1.1,
+   "lap_ideal_s": 63.04,
+   "lap_center_s": 67.48,
+   "v_min_kmh": 43.4,
+   "v_max_kmh": 154.6,
+   "line_length_m": 1755.2,
+   "profile_ms": 2.18
+  },
+  {
+   "car": "B_KAZANE_FR_145ps_960kg",
+   "lat_g": 1.0,
+   "lap_ideal_s": 65.3,
+   "lap_center_s": 70.15,
+   "v_min_kmh": 41.4,
+   "v_max_kmh": 150.6,
+   "line_length_m": 1755.2,
+   "profile_ms": 1.97
+  },
+  {
+   "car": "B_KAZANE_FR_145ps_960kg",
+   "lat_g": 1.05,
+   "lap_ideal_s": 64.24,
+   "lap_center_s": 68.91,
+   "v_min_kmh": 42.4,
+   "v_max_kmh": 151.7,
+   "line_length_m": 1755.2,
+   "profile_ms": 2.1
+  },
+  {
+   "car": "B_KAZANE_FR_145ps_960kg",
+   "lat_g": 1.1,
+   "lap_ideal_s": 63.25,
+   "lap_center_s": 67.75,
+   "v_min_kmh": 43.4,
+   "v_max_kmh": 152.6,
+   "line_length_m": 1755.2,
+   "profile_ms": 1.9
+  }
+ ],
+ "ref_car_lap_s": 62.4,
+ "line_min_radius_m": 13.5,
+ "max_abs_d": 4.7,
+ "corner_speeds_kmh": [
+  {
+   "name": "T1",
+   "v_min": 91.4
+  },
+  {
+   "name": "T2",
+   "v_min": 80.0
+  },
+  {
+   "name": "T3",
+   "v_min": 110.4
+  },
+  {
+   "name": "T4",
+   "v_min": 43.9
+  },
+  {
+   "name": "T5",
+   "v_min": 78.2
+  },
+  {
+   "name": "T6",
+   "v_min": 79.8
+  },
+  {
+   "name": "T7",
+   "v_min": 42.4
+  },
+  {
+   "name": "T8",
+   "v_min": 84.3
+  },
+  {
+   "name": "T9",
+   "v_min": 94.5
+  }
+ ]
+}

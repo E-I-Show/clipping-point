@@ -1,0 +1,12 @@
+PASS browser is Pyodide (emscripten)
+PASS browser reads native files: content CRC and header equal
+PASS interpolated poses (lerp + cubic, 20550 floats) bit-identical native vs browser
+PASS browser write -> browser read exact (6 cars 5 min)
+PASS browser rejects damaged / cut / empty / padded files
+PASS native reads the file written in the browser (load_cpr passes its CRC check, content CRC as reported)
+PASS localStorage round trip of the base64 text
+INFO file bytes rewritten in browser identical to native file (6 cars): True
+INFO file bytes rewritten in browser identical to native file (1 car): True
+INFO recording of the same synthetic drive identical native vs browser: True
+INFO differing sample bytes (browser drive vs native drive): 0 of 5600
+browser: {'python': '3.14.2', 'platform': 'emscripten', 'byteorder': 'little', 'zlib': '1.3.1', 'read_native_small_content_crc': 1982588776, 'read_native_big_content_crc': 1190822823, 'read_native_ok': True, 'pose_crc_small': 2918819481, 'pose_values': 20550, 'pose_crc_equal_native': True, 'pose_crc_big_equal_native': True, 'write_read_exact': True, 'rewritten_big_bytes_identical_to_native_file': True, 'rewritten_big_len': 150336, 'rewritten_small_bytes_identical_to_native_file': True, 'reject_codes': ['E_CORRUPT', 'E_TRUNCATED', 'E_NOT_CPR', 'E_CORRUPT'], 'browser_recorded_content_crc': 1982588776, 'browser_recorded_equals_native_recording': True, 'browser_recorded_differing_bytes': 0, 'browser_recorded_total_bytes': 5600, 'browser_file_crc32': 558161692, 't_load_big_ms': 73.3, 't_dump_big_ms': 253.2, 't_dump_big_level6_ms': 146.0, 't_peek_big_ms': 0.4, 't_b64_big_ms': 0.7, 't_unb64_big_ms': 0.7, 'recorder_tick_us_avg_6cars': 7.0, 'recorder_sample_tick_us_6cars': 17.0, 'pose_6cars_us_lerp': 29.43, 'pose_6cars_us_hermite': 40.47, 'localstorage_roundtrip': True, 'localstorage_len': 200448, 'localstorage_reload_exact': True, 'localstorage_quota_chars_at_least': 5000000, 'localstorage_quota_error': "JsException: QuotaExceededError: Failed to execute 'setItem' on 'Storage': Setting the value of 'cpr_quota_10' exceeded the quota.", 'location': 'file:'}

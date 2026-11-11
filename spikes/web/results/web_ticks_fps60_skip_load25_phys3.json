@@ -1,0 +1,146 @@
+{
+ "url": "http://127.0.0.1:8765/apps/ticks.html#fps=60&skip=1&load=25&phys=3",
+ "mirror": null,
+ "console": [
+  {
+   "t": 120,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 120,
+   "type": "log",
+   "text": "{command: play, name: ticks.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIANINa10sYEvPCQAAAAcAAAAcAAAAdGlja3MvLn…AAHRpY2tzL21haW4ucHlQSwUGAAAAAAQABAAHAQAA9B0AAAAA}"
+  },
+  {
+   "t": 2098,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 2404,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 3148,
+   "type": "warning",
+   "text": "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)"
+  },
+  {
+   "t": 3213,
+   "type": "warning",
+   "text": "[.WebGL-0x23f40a022000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3231,
+   "type": "warning",
+   "text": "[.WebGL-0x23f40a022000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3272,
+   "type": "warning",
+   "text": "[.WebGL-0x23f40a022000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3283,
+   "type": "warning",
+   "text": "[.WebGL-0x23f40a022000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  },
+  {
+   "t": 13676,
+   "type": "log",
+   "text": "RESULT_JSON ticks {\"params\": {\"fps\": 60, \"load\": 25, \"skip\": 1, \"n\": 600, \"phys\": 3}, \"span_s\": 9.981, \"updates_per_s\": 60.01, \"draw_calls_per_s\": 39.07, \"draw_work_per_s\": 19.54, \"update_interval_ms\": {\"n\": 599, \"mean\": 16.663, \"median\": 11.4, \"p05\": 3.0, \"p95\": 37.3, \"min\": 3.0, \"max\": 48.6}, \"draw_work_interval_ms\": {\"n\": 194, \"mean\": 51.181, \"median\": 50.2, \"p05\": 48.7, \"p95\": 56.0, \"min\": 47.5, \"max\": 70.7}, \"updates_between_draw_calls\": {\"0\": 1, \"2\": 185, \"1\": 199, \"3\": 14}, \"frame_count_step_set\": [1], \"interval_histogram_ms\": {\"0\": 208, \"4\": 1, \"8\": 148, \"12\": 45, \"16\": 2, \"20\": 0, \"24\": 0, \"28\": 0, \"32\": 101, \"36\": 91, \"40\": 2, \"44\": 0, \"48\": 1, \"52\": 0, \"56\": 0}}"
+  },
+  {
+   "t": 13676,
+   "type": "log",
+   "text": "SPIKE_DONE"
+  }
+ ],
+ "failures": [],
+ "requests": [
+  {
+   "t": 107,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/apps/ticks.html"
+  },
+  {
+   "t": 117,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.js"
+  },
+  {
+   "t": 133,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.css"
+  },
+  {
+   "t": 134,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 188,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 193,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/import_hook.py"
+  },
+  {
+   "t": 193,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 203,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 204,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 205,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 248,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 2103,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 2451,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/click_to_start_114x14.png"
+  }
+ ],
+ "downloads": [],
+ "passed": true,
+ "promptAt": 2890,
+ "clickedAt": 2895,
+ "state": {
+  "overlayText": null,
+  "hasFatalError": false,
+  "initialized": true,
+  "canvas": {
+   "width": 960,
+   "height": 720,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": 13676,
+ "elapsedMs": 14180
+}

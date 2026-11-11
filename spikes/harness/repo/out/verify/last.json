@@ -1,0 +1,71 @@
+{
+ "mode": "all",
+ "rows": [
+  {
+   "step": "check",
+   "exit": 0,
+   "seconds": 0.32,
+   "summary": "CHECK_OK sections=6 syntax=ok arch=ok import=ok data=ok adapter=ok docs=ok"
+  },
+  {
+   "step": "test",
+   "exit": 0,
+   "seconds": 1.06,
+   "summary": "TEST_OK passed=45 failed=0 errors=0 skipped=0 selected=45 collected=45"
+  },
+  {
+   "step": "screen-check",
+   "exit": 0,
+   "seconds": 0.07,
+   "summary": "SCREEN_CHECK_OK screens=16/16 violations=0 not_checked=0"
+  },
+  {
+   "step": "run",
+   "exit": 0,
+   "seconds": 0.35,
+   "summary": "RUN_OK ticks=120 renders=60 screens=5 fingerprint=7fff92978ca507e3-120-menu driver=flip packaged=False wall=0.133s problems=0"
+  },
+  {
+   "step": "run-realtime",
+   "exit": 0,
+   "seconds": 2.22,
+   "summary": "RUN_OK ticks=120 renders=60 screens=5 fingerprint=7fff92978ca507e3-120-menu driver=run packaged=False wall=1.989s problems=0"
+  },
+  {
+   "step": "run-pack",
+   "exit": 0,
+   "seconds": 0.88,
+   "summary": "RUN_OK ticks=600 renders=300 screens=5 fingerprint=cc102a6f13fdbc95-600-menu driver=flip packaged=False wall=0.667s problems=0"
+  },
+  {
+   "step": "tour",
+   "exit": 0,
+   "seconds": 0.46,
+   "summary": "TOUR_OK shots=8/8 problems=0 dir=<scratchpad>/spikes/harness/repo/out/tour"
+  },
+  {
+   "step": "tour-pack",
+   "exit": 0,
+   "seconds": 0.56,
+   "summary": "TOUR_OK shots=8/8 problems=0 dir=<scratchpad>/spikes/harness/repo/out/tour"
+  },
+  {
+   "step": "export",
+   "exit": 0,
+   "seconds": 0.22,
+   "summary": "EXPORT_OK files=23 pyxapp_kb=25.4 html_kb=34.1 limit_html_kb=2048 problems=0 html=<scratchpad>/spikes/harness/repo/dist/clipping_point.html"
+  },
+  {
+   "step": "run-packaged",
+   "exit": 0,
+   "seconds": 0.39,
+   "summary": "RUN_OK ticks=120 renders=60 screens=5 fingerprint=7fff92978ca507e3-120-menu driver=flip packaged=True wall=0.141s problems=0"
+  },
+  {
+   "step": "web-smoke",
+   "exit": 0,
+   "seconds": 6.79,
+   "summary": "WEB_SMOKE_OK python=3.14.2 ticks=120 renders=59 storage=WebStorageBackend coarse_summary_equal=True exact_fingerprint_equal=True page_wall_s=1.986 problems=0"
+  }
+ ]
+}

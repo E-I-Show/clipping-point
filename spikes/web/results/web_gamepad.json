@@ -1,0 +1,239 @@
+{
+ "url": "http://127.0.0.1:8765/apps/gamepad.html",
+ "mirror": null,
+ "console": [
+  {
+   "t": 126,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 126,
+   "type": "log",
+   "text": "{command: play, name: gamepad.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIAAIQa10sYEvPCQAAAAcAAAAeAAAAZ2FtZXBhZC…nYW1lcGFkL21haW4ucHlQSwUGAAAAAAQABAAPAQAA2xwAAAAA}"
+  },
+  {
+   "t": 2067,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 2351,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 3076,
+   "type": "warning",
+   "text": "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)"
+  },
+  {
+   "t": 3110,
+   "type": "warning",
+   "text": "[.WebGL-0x5c08d77800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3124,
+   "type": "warning",
+   "text": "[.WebGL-0x5c08d77800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3134,
+   "type": "warning",
+   "text": "[.WebGL-0x5c08d77800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3151,
+   "type": "warning",
+   "text": "[.WebGL-0x5c08d77800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  },
+  {
+   "t": 3158,
+   "type": "log",
+   "text": "STAGE pad_connect"
+  },
+  {
+   "t": 3167,
+   "type": "log",
+   "text": "Connected 'Fake Standard Gamepad (STANDARD GAMEPAD Vendor: 045e Product: 028e)'"
+  },
+  {
+   "t": 3286,
+   "type": "log",
+   "text": "RESULT_JSON pad_step1 {\"pyxel\": {\"btnv\": {\"LEFTX\": 0, \"LEFTY\": 0, \"RIGHTX\": 0, \"RIGHTY\": 0, \"TRIGGERLEFT\": 0, \"TRIGGERRIGHT\": 0}, \"btn_pressed\": []}, \"raw\": {\"mapping\": \"standard\", \"axes\": [0.0, 0.0, 0.0, 0.0], \"lt\": 0.0, \"rt\": 0.0}, \"raw_read_ms\": 0.05}"
+  },
+  {
+   "t": 3286,
+   "type": "log",
+   "text": "STAGE pad_step1_done"
+  },
+  {
+   "t": 3441,
+   "type": "log",
+   "text": "RESULT_JSON pad_step2 {\"pyxel\": {\"btnv\": {\"LEFTX\": 0, \"LEFTY\": 0, \"RIGHTX\": 0, \"RIGHTY\": 0, \"TRIGGERLEFT\": 0, \"TRIGGERRIGHT\": 0}, \"btn_pressed\": []}, \"raw\": {\"mapping\": \"standard\", \"axes\": [0.01, 0.01, 0.01, 0.01], \"lt\": 0.0, \"rt\": 0.0}, \"raw_read_ms\": 0.05}"
+  },
+  {
+   "t": 3442,
+   "type": "log",
+   "text": "STAGE pad_step2_done"
+  },
+  {
+   "t": 3592,
+   "type": "log",
+   "text": "RESULT_JSON pad_step3 {\"pyxel\": {\"btnv\": {\"LEFTX\": 16383, \"LEFTY\": -8191, \"RIGHTX\": 32767, \"RIGHTY\": -32767, \"TRIGGERLEFT\": 0, \"TRIGGERRIGHT\": 32767}, \"btn_pressed\": [\"A\"]}, \"raw\": {\"mapping\": \"standard\", \"axes\": [0.5, -0.25, 1.0, -1.0], \"lt\": 0.05, \"rt\": 0.4}, \"raw_read_ms\": 0.05}"
+  },
+  {
+   "t": 3592,
+   "type": "log",
+   "text": "STAGE pad_step3_done"
+  },
+  {
+   "t": 3708,
+   "type": "log",
+   "text": "RESULT_JSON pad_step4 {\"pyxel\": {\"btnv\": {\"LEFTX\": 983, \"LEFTY\": -2621, \"RIGHTX\": 4915, \"RIGHTY\": 65, \"TRIGGERLEFT\": 32767, \"TRIGGERRIGHT\": 32767}, \"btn_pressed\": [\"A\", \"RIGHTSHOULDER\", \"DPAD_UP\"]}, \"raw\": {\"mapping\": \"standard\", \"axes\": [0.03, -0.08, 0.15, 0.002], \"lt\": 0.6, \"rt\": 1.0}, \"raw_read_ms\": 0.05}"
+  },
+  {
+   "t": 3708,
+   "type": "log",
+   "text": "STAGE pad_step4_done"
+  },
+  {
+   "t": 3875,
+   "type": "log",
+   "text": "RESULT_JSON pad_step5 {\"pyxel\": {\"btnv\": {\"LEFTX\": -32767, \"LEFTY\": 32767, \"RIGHTX\": -16383, \"RIGHTY\": 24575, \"TRIGGERLEFT\": 0, \"TRIGGERRIGHT\": 32767}, \"btn_pressed\": []}, \"raw\": {\"mapping\": \"standard\", \"axes\": [-1.0, 1.0, -0.5, 0.75], \"lt\": 0.09, \"rt\": 0.11}, \"raw_read_ms\": 0.05}"
+  },
+  {
+   "t": 3875,
+   "type": "log",
+   "text": "STAGE pad_step5_done"
+  },
+  {
+   "t": 4041,
+   "type": "log",
+   "text": "RESULT_JSON pad_step6 {\"pyxel\": {\"btnv\": {\"LEFTX\": 0, \"LEFTY\": 0, \"RIGHTX\": 0, \"RIGHTY\": 0, \"TRIGGERLEFT\": 0, \"TRIGGERRIGHT\": 0}, \"btn_pressed\": []}, \"raw\": {\"mapping\": \"standard\", \"axes\": [0.0, 0.0, 0.0, 0.0], \"lt\": 0.0, \"rt\": 0.0}, \"raw_read_ms\": 0.05}"
+  },
+  {
+   "t": 4042,
+   "type": "log",
+   "text": "STAGE pad_step6_done"
+  },
+  {
+   "t": 4042,
+   "type": "log",
+   "text": "SPIKE_DONE"
+  }
+ ],
+ "failures": [],
+ "requests": [
+  {
+   "t": 113,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/apps/gamepad.html"
+  },
+  {
+   "t": 125,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.js"
+  },
+  {
+   "t": 128,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.css"
+  },
+  {
+   "t": 129,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 184,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 185,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/import_hook.py"
+  },
+  {
+   "t": 189,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 196,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 196,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 196,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 241,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 2072,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 2396,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/click_to_start_114x14.png"
+  }
+ ],
+ "downloads": [],
+ "allowed": [],
+ "actions": [
+  {
+   "t": 3160,
+   "action": "eval:window.__padConnect()"
+  },
+  {
+   "t": 3323,
+   "action": "eval:window.__padSet(2,[0.01,0.01,0.01,0.01],{})"
+  },
+  {
+   "t": 3487,
+   "action": "eval:window.__padSet(3,[0.5,-0.25,1,-1],{7:0.4,6:0.05,0:1})"
+  },
+  {
+   "t": 3601,
+   "action": "eval:window.__padSet(4,[0.03,-0.08,0.15,0.002],{7:1.0,6:0.6,12:1,5:1})"
+  },
+  {
+   "t": 3769,
+   "action": "eval:window.__padSet(5,[-1,1,-0.5,0.75],{7:0.11,6:0.09,0:0,12:0,5:0})"
+  },
+  {
+   "t": 3932,
+   "action": "eval:window.__padSet(6,[0,0,0,0],{7:0,6:0})"
+  }
+ ],
+ "filechoosers": [],
+ "passed": true,
+ "promptAt": 2839,
+ "clickedAt": 2843,
+ "state": {
+  "overlayText": null,
+  "hasFatalError": false,
+  "initialized": true,
+  "canvas": {
+   "width": 960,
+   "height": 720,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": 4042,
+ "elapsedMs": 4521
+}

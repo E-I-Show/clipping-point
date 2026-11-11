@@ -1,0 +1,80 @@
+{
+ "env": {
+  "sys.platform": "emscripten",
+  "python": "3.14.2",
+  "import_js": true,
+  "location.protocol": "http:",
+  "location.origin": "http://127.0.0.1:8765",
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+  "has_localStorage": true,
+  "has_indexedDB": true,
+  "crossOriginIsolated": false,
+  "has_savePyxelFile": true,
+  "userActivation": {
+   "isActive": true,
+   "hasBeenActive": true
+  },
+  "pyodide.__version__": "314.0.7",
+  "ffi_names": [
+   "ConversionError",
+   "IN_PYODIDE",
+   "InternalError",
+   "JsArray",
+   "JsAsyncGenerator",
+   "JsAsyncIterable",
+   "JsAsyncIterator",
+   "JsBigInt",
+   "JsBuffer",
+   "JsCallable",
+   "JsCallableDoubleProxy",
+   "JsDomElement",
+   "JsDoubleProxy",
+   "JsException",
+   "JsFetchResponse",
+   "JsGenerator",
+   "JsIterable",
+   "JsIterator",
+   "JsMap",
+   "JsMutableMap",
+   "JsNull",
+   "JsOnceCallable",
+   "JsPromise",
+   "JsProxy",
+   "JsTypedArray",
+   "JsWeakRef",
+   "ToJsConverter",
+   "can_run_sync",
+   "create_once_callable",
+   "create_proxy",
+   "destroy_proxies",
+   "jsnull",
+   "register_js_module",
+   "run_sync",
+   "sys",
+   "t",
+   "to_js",
+   "unregister_js_module"
+  ]
+ },
+ "localstorage_basic": {
+  "keys_before": [
+   "cp_spike_persist"
+  ],
+  "persist_marker_before": "written-in-run-1",
+  "roundtrip": true,
+  "missing_is_None": false,
+  "missing_repr": "jsnull",
+  "missing_type": "JsNull",
+  "missing_is_falsy": true,
+  "missing_is_jsnull": true,
+  "undefined_attr_is_None": "hasattr False",
+  "type_of_value": "str",
+  "removed": true
+ },
+ "persist_after_reload": {
+  "value": "written-in-run-1",
+  "keys": [
+   "cp_spike_persist"
+  ]
+ }
+}

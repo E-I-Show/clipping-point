@@ -1,0 +1,3 @@
+screen overflow check, first run on the first draft of the screens (not a planted fault):
+theater/extreme (12 rows): out_of_box: box 'row_12' at (12,188) 296x12 leaves box 'list' (10,22) 300x176
+-> fixed by making the list panel 6 px taller (see cp_ui/screens.py draw_theater)

@@ -1,0 +1,149 @@
+{
+ "url": "file://<scratchpad>/spikes/track/webapp/trackbench.html",
+ "mirror": "<scratchpad>/spikes/web/mirror",
+ "console": [
+  {
+   "t": 171,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 171,
+   "type": "log",
+   "text": "{command: play, name: trackbench.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIAFcVa10sYEvPCQAAAAcAAAAhAAAAdHJhY2tiZW…iZW5jaC90cmFjay5weVBLBQYAAAAABAAEABkBAACBWQAAAAA=}"
+  },
+  {
+   "t": 3030,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 3518,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 4385,
+   "type": "warning",
+   "text": "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)"
+  },
+  {
+   "t": 4445,
+   "type": "warning",
+   "text": "[.WebGL-0x16dc0739b600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 4465,
+   "type": "warning",
+   "text": "[.WebGL-0x16dc0739b600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 4483,
+   "type": "warning",
+   "text": "[.WebGL-0x16dc0739b600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 4507,
+   "type": "warning",
+   "text": "[.WebGL-0x16dc0739b600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  },
+  {
+   "t": 7115,
+   "type": "log",
+   "text": "SPIKE_RESULT {\"platform\": \"emscripten\", \"python\": \"3.14.2\", \"load_validate_ms_first_best\": [102.3, 74.5], \"load_light_ms_best\": 36.9, \"query_hint_us_first_best\": [5.022, 4.494], \"query_hint_calls\": 18000, \"query_global_us_best\": 157.1, \"pose_at_us_best\": 2.015, \"ideal_us_best\": 0.82, \"surface_at_us_best\": 1.03, \"speed_profile_ms_best\": 6.1, \"build_mesh_adaptive_ms_best\": 22.0, \"obb_us_best\": 3.96, \"relax_racing_line_s\": 1.33, \"query_sum\": \"1511.9703245496305\", \"length\": \"1799.994077014239\"}"
+  },
+  {
+   "t": 7115,
+   "type": "log",
+   "text": "SPIKE_DONE"
+  }
+ ],
+ "failures": [],
+ "requests": [
+  {
+   "t": 150,
+   "status": 200,
+   "url": "file://<scratchpad>/spikes/track/webapp/trackbench.html"
+  },
+  {
+   "t": 165,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel.js"
+  },
+  {
+   "t": 189,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel.css"
+  },
+  {
+   "t": 190,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 390,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 419,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/import_hook.py"
+  },
+  {
+   "t": 419,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 543,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 740,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 741,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 773,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 3163,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 3571,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/images/click_to_start_114x14.png"
+  }
+ ],
+ "downloads": [],
+ "allowed": [],
+ "actions": [],
+ "filechoosers": [],
+ "passed": true,
+ "promptAt": 4077,
+ "clickedAt": 4083,
+ "state": {
+  "overlayText": null,
+  "hasFatalError": false,
+  "initialized": true,
+  "canvas": {
+   "width": 960,
+   "height": 720,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": 7115,
+ "elapsedMs": 7529
+}

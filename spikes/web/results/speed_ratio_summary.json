@@ -1,0 +1,127 @@
+{
+ "float_loop": {
+  "web_runs_ns": [
+   495.7,
+   445.0,
+   471.3
+  ],
+  "web_second_pass_ns": [
+   904.7,
+   466.0,
+   478.7
+  ],
+  "native313_ns": [
+   223.7,
+   200.1,
+   205.3
+  ],
+  "native314_ns": [
+   230.3,
+   223.8,
+   221.7
+  ],
+  "ratio_min_web_over_313": 2.22,
+  "ratio_min_web_over_314": 2.01,
+  "ratio_worst_web_over_313": 4.52
+ },
+ "attr_loop_slots": {
+  "web_runs_ns": [
+   632.3,
+   389.0,
+   381.0
+  ],
+  "web_second_pass_ns": [
+   810.0,
+   412.7,
+   395.7
+  ],
+  "native313_ns": [
+   235.3,
+   219.4,
+   203.0
+  ],
+  "native314_ns": [
+   194.9,
+   192.0,
+   207.4
+  ],
+  "ratio_min_web_over_313": 1.88,
+  "ratio_min_web_over_314": 1.98,
+  "ratio_worst_web_over_313": 3.99
+ },
+ "attr_loop_dict": {
+  "web_runs_ns": [
+   655.0,
+   396.0,
+   381.7
+  ],
+  "web_second_pass_ns": [
+   601.3,
+   392.3,
+   395.0
+  ],
+  "native313_ns": [
+   230.2,
+   221.7,
+   204.5
+  ],
+  "native314_ns": [
+   209.6,
+   199.6,
+   199.8
+  ],
+  "ratio_min_web_over_313": 1.87,
+  "ratio_min_web_over_314": 1.91,
+  "ratio_worst_web_over_313": 3.2
+ },
+ "call_loop": {
+  "web_runs_ns": [
+   381.7,
+   201.0,
+   198.0
+  ],
+  "web_second_pass_ns": [
+   314.3,
+   194.3,
+   194.3
+  ],
+  "native313_ns": [
+   118.3,
+   109.5,
+   112.1
+  ],
+  "native314_ns": [
+   107.0,
+   89.6,
+   89.9
+  ],
+  "ratio_min_web_over_313": 1.77,
+  "ratio_min_web_over_314": 2.17,
+  "ratio_worst_web_over_313": 3.49
+ },
+ "vehicle_6cars": {
+  "web_runs_ns": [
+   10305.6,
+   6588.0,
+   7009.3
+  ],
+  "web_second_pass_ns": [
+   10643.5,
+   6648.1,
+   6995.4
+  ],
+  "native313_ns": [
+   3737.5,
+   3428.4,
+   3442.1
+  ],
+  "native314_ns": [
+   4268.5,
+   3247.0,
+   3267.8
+  ],
+  "ratio_min_web_over_313": 1.92,
+  "ratio_min_web_over_314": 2.03,
+  "ratio_worst_web_over_313": 3.1
+ }
+}

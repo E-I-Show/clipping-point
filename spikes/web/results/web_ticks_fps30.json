@@ -1,0 +1,146 @@
+{
+ "url": "http://127.0.0.1:8765/apps/ticks.html#fps=30&n=300",
+ "mirror": null,
+ "console": [
+  {
+   "t": 132,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 132,
+   "type": "log",
+   "text": "{command: play, name: ticks.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIANINa10sYEvPCQAAAAcAAAAcAAAAdGlja3MvLn…AAHRpY2tzL21haW4ucHlQSwUGAAAAAAQABAAHAQAA9B0AAAAA}"
+  },
+  {
+   "t": 2014,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 2314,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 3047,
+   "type": "warning",
+   "text": "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)"
+  },
+  {
+   "t": 3087,
+   "type": "warning",
+   "text": "[.WebGL-0x137c00c56000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3101,
+   "type": "warning",
+   "text": "[.WebGL-0x137c00c56000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3114,
+   "type": "warning",
+   "text": "[.WebGL-0x137c00c56000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3157,
+   "type": "warning",
+   "text": "[.WebGL-0x137c00c56000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  },
+  {
+   "t": 14053,
+   "type": "log",
+   "text": "RESULT_JSON ticks {\"params\": {\"fps\": 30, \"load\": 0, \"skip\": 0, \"n\": 300, \"phys\": 0}, \"span_s\": 9.966, \"updates_per_s\": 30.0, \"draw_calls_per_s\": 30.1, \"draw_work_per_s\": 30.1, \"update_interval_ms\": {\"n\": 299, \"mean\": 33.332, \"median\": 33.3, \"p05\": 33.1, \"p95\": 33.5, \"min\": 31.0, \"max\": 35.8}, \"draw_work_interval_ms\": {\"n\": 299, \"mean\": 33.332, \"median\": 33.3, \"p05\": 33.1, \"p95\": 33.5, \"min\": 31.0, \"max\": 35.8}, \"updates_between_draw_calls\": {\"1\": 315}, \"frame_count_step_set\": [1], \"interval_histogram_ms\": {\"0\": 0, \"4\": 0, \"8\": 0, \"12\": 0, \"16\": 0, \"20\": 0, \"24\": 0, \"28\": 1, \"32\": 298, \"36\": 0, \"40\": 0, \"44\": 0, \"48\": 0, \"52\": 0, \"56\": 0}}"
+  },
+  {
+   "t": 14053,
+   "type": "log",
+   "text": "SPIKE_DONE"
+  }
+ ],
+ "failures": [],
+ "requests": [
+  {
+   "t": 117,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/apps/ticks.html"
+  },
+  {
+   "t": 129,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.js"
+  },
+  {
+   "t": 135,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.css"
+  },
+  {
+   "t": 137,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 193,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 194,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/import_hook.py"
+  },
+  {
+   "t": 196,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 207,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 207,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 208,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 250,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 2017,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 2356,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/click_to_start_114x14.png"
+  }
+ ],
+ "downloads": [],
+ "passed": true,
+ "promptAt": 2804,
+ "clickedAt": 2810,
+ "state": {
+  "overlayText": null,
+  "hasFatalError": false,
+  "initialized": true,
+  "canvas": {
+   "width": 960,
+   "height": 720,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": 14053,
+ "elapsedMs": 14416
+}

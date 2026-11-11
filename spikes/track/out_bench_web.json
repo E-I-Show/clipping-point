@@ -1,0 +1,149 @@
+{
+ "url": "file://<scratchpad>/spikes/track/webapp/trackbench.html",
+ "mirror": "<scratchpad>/spikes/web/mirror",
+ "console": [
+  {
+   "t": 187,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 187,
+   "type": "log",
+   "text": "{command: play, name: trackbench.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIAFcVa10sYEvPCQAAAAcAAAAhAAAAdHJhY2tiZW…iZW5jaC90cmFjay5weVBLBQYAAAAABAAEABkBAACBWQAAAAA=}"
+  },
+  {
+   "t": 2953,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 3429,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 3856,
+   "type": "warning",
+   "text": "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)"
+  },
+  {
+   "t": 3916,
+   "type": "warning",
+   "text": "[.WebGL-0x30c06a81c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3931,
+   "type": "warning",
+   "text": "[.WebGL-0x30c06a81c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3950,
+   "type": "warning",
+   "text": "[.WebGL-0x30c06a81c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3966,
+   "type": "warning",
+   "text": "[.WebGL-0x30c06a81c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  },
+  {
+   "t": 6701,
+   "type": "log",
+   "text": "SPIKE_RESULT {\"platform\": \"emscripten\", \"python\": \"3.14.2\", \"load_validate_ms_first_best\": [105.6, 49.2], \"load_light_ms_best\": 39.3, \"query_hint_us_first_best\": [6.106, 4.328], \"query_hint_calls\": 18000, \"query_global_us_best\": 167.3, \"pose_at_us_best\": 2.065, \"ideal_us_best\": 0.865, \"surface_at_us_best\": 1.005, \"speed_profile_ms_best\": 6.4, \"build_mesh_adaptive_ms_best\": 21.8, \"obb_us_best\": 3.98, \"relax_racing_line_s\": 1.45, \"query_sum\": \"1511.9703245496305\", \"length\": \"1799.994077014239\"}"
+  },
+  {
+   "t": 6701,
+   "type": "log",
+   "text": "SPIKE_DONE"
+  }
+ ],
+ "failures": [],
+ "requests": [
+  {
+   "t": 161,
+   "status": 200,
+   "url": "file://<scratchpad>/spikes/track/webapp/trackbench.html"
+  },
+  {
+   "t": 180,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel.js"
+  },
+  {
+   "t": 197,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel.css"
+  },
+  {
+   "t": 199,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 413,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 436,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/import_hook.py"
+  },
+  {
+   "t": 439,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 583,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 622,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 743,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 768,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 3105,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 3481,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/images/click_to_start_114x14.png"
+  }
+ ],
+ "downloads": [],
+ "allowed": [],
+ "actions": [],
+ "filechoosers": [],
+ "passed": true,
+ "promptAt": 3510,
+ "clickedAt": 3516,
+ "state": {
+  "overlayText": null,
+  "hasFatalError": false,
+  "initialized": true,
+  "canvas": {
+   "width": 960,
+   "height": 720,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": 6701,
+ "elapsedMs": 7117
+}

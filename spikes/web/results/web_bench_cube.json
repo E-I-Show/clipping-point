@@ -1,0 +1,156 @@
+{
+ "url": "http://127.0.0.1:8765/apps/bench_cube.html",
+ "mirror": null,
+ "console": [
+  {
+   "t": 127,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 127,
+   "type": "log",
+   "text": "{command: play, name: bench_cube.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIAIkNa10sYEvPCQAAAAcAAAAhAAAAYmVuY2hfY3…fY3ViZS9tYWluLnB5UEsFBgAAAAAEAAQAGwEAALcaAAAAAA==}"
+  },
+  {
+   "t": 2141,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 2465,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 3186,
+   "type": "warning",
+   "text": "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)"
+  },
+  {
+   "t": 3218,
+   "type": "warning",
+   "text": "[.WebGL-0x1c8400e59400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3231,
+   "type": "warning",
+   "text": "[.WebGL-0x1c8400e59400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3245,
+   "type": "warning",
+   "text": "[.WebGL-0x1c8400e59400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3283,
+   "type": "warning",
+   "text": "[.WebGL-0x1c8400e59400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  },
+  {
+   "t": 4941,
+   "type": "log",
+   "text": "RESULT_JSON cube_batch {\"frames\": 120, \"rows\": [{\"textured\": false, \"tris\": 512, \"draw_ms\": 0.87}, {\"textured\": false, \"tris\": 2048, \"draw_ms\": 1.107}, {\"textured\": false, \"tris\": 4050, \"draw_ms\": 1.437}, {\"textured\": false, \"tris\": 8192, \"draw_ms\": 2.074}, {\"textured\": true, \"tris\": 512, \"draw_ms\": 0.995}, {\"textured\": true, \"tris\": 2048, \"draw_ms\": 1.298}, {\"textured\": true, \"tris\": 4050, \"draw_ms\": 1.696}, {\"textured\": true, \"tris\": 8192, \"draw_ms\": 2.429}], \"distinct_colors_on_screen\": [5, 12, 13], \"cls_plus_40_text_ms\": 0.042}"
+  },
+  {
+   "t": 4948,
+   "type": "log",
+   "text": "LIVE scene tris=8192"
+  },
+  {
+   "t": 9903,
+   "type": "log",
+   "text": "RESULT_JSON cube_live {\"frames\": 150, \"draw_mean_ms\": 2.467, \"draw_median_ms\": 2.4, \"draw_max_ms\": 4.4, \"update_interval_mean_ms\": 33.266, \"update_interval_median_ms\": 33.3, \"update_interval_max_ms\": 34.8}"
+  },
+  {
+   "t": 9904,
+   "type": "log",
+   "text": "SPIKE_DONE frame=160"
+  }
+ ],
+ "failures": [],
+ "requests": [
+  {
+   "t": 111,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/apps/bench_cube.html"
+  },
+  {
+   "t": 123,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.js"
+  },
+  {
+   "t": 131,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.css"
+  },
+  {
+   "t": 132,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 189,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 189,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/import_hook.py"
+  },
+  {
+   "t": 192,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 201,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 201,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 205,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 246,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 2147,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 2510,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/click_to_start_114x14.png"
+  }
+ ],
+ "downloads": [],
+ "passed": true,
+ "promptAt": 2952,
+ "clickedAt": 2957,
+ "state": {
+  "overlayText": null,
+  "hasFatalError": false,
+  "initialized": true,
+  "canvas": {
+   "width": 960,
+   "height": 720,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": 9904,
+ "elapsedMs": 10408
+}

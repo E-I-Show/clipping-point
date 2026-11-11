@@ -1,0 +1,8 @@
+{
+ "splitmix_unit_ns": 380.1,
+ "stdlib_random_ns": 50.0,
+ "hash_unit_int_keys_ns": 1421.2,
+ "hash_unit_str_key_ns": 2625.1,
+ "lambda_overhead_ns": 23.6,
+ "python": "3.13.18"
+}

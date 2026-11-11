@@ -1,0 +1,5 @@
+{"ai": [
+  {"id": "akane_easy", "level": "EASY", "pace": 0.9, "brake_margin_m": 18},
+  {"id": "akane_normal", "level": "NORMAL", "pace": 0.96, "brake_margin_m": 9},
+  {"id": "akane_hard", "level": "HARD", "pace": 1.0, "brake_margin_m": 3}
+ ]}

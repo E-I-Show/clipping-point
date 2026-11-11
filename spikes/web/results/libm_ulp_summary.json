@@ -1,0 +1,50 @@
+{
+ "sin": {
+  "n": 4000,
+  "differing": 119,
+  "percent": 2.98,
+  "max_ulp": 1
+ },
+ "cos": {
+  "n": 4000,
+  "differing": 119,
+  "percent": 2.98,
+  "max_ulp": 1
+ },
+ "tan": {
+  "n": 4000,
+  "differing": 150,
+  "percent": 3.75,
+  "max_ulp": 1
+ },
+ "atan2": {
+  "n": 4000,
+  "differing": 706,
+  "percent": 17.65,
+  "max_ulp": 1
+ },
+ "exp": {
+  "n": 4000,
+  "differing": 2,
+  "percent": 0.05,
+  "max_ulp": 1
+ },
+ "sin_small": {
+  "n": 4000,
+  "differing": 83,
+  "percent": 2.08,
+  "max_ulp": 1
+ },
+ "cos_small": {
+  "n": 4000,
+  "differing": 93,
+  "percent": 2.33,
+  "max_ulp": 1
+ },
+ "atan2_small": {
+  "n": 4000,
+  "differing": 941,
+  "percent": 23.52,
+  "max_ulp": 1
+ }
+}

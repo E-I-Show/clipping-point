@@ -1,0 +1,69 @@
+{
+ "fingerprint": "7fff92978ca507e3-120-menu",
+ "mode": "run",
+ "platform": "linux",
+ "portable": {
+  "cars": {
+   "arashi_4t": {
+    "lap": 0,
+    "s": 7.874,
+    "v": 41.333
+   },
+   "kazane_rs": {
+    "lap": 0,
+    "s": 33.0,
+    "v": 42.053
+   },
+   "shirogane_gtt": {
+    "lap": 0,
+    "s": 25.831,
+    "v": 43.111
+   },
+   "tsubame_1600": {
+    "lap": 0,
+    "s": 17.338,
+    "v": 42.483
+   }
+  },
+  "grid": [
+   "kazane_rs",
+   "shirogane_gtt",
+   "tsubame_1600",
+   "arashi_4t"
+  ],
+  "rng": {
+   "ai": "f67ed2c2b09df547",
+   "grid": "13759d7a2250d35d"
+  },
+  "tick": 70
+ },
+ "python": "3.13.18",
+ "pyxel": "3.0.1",
+ "renders": 60,
+ "screen_colors": [
+  0,
+  1,
+  5,
+  7,
+  10,
+  13
+ ],
+ "storage": {
+  "backend": "FileBackend",
+  "keys": [
+   "blob",
+   "profile"
+  ],
+  "ok": true,
+  "used_bytes": 1514
+ },
+ "ticks": 120,
+ "visited": [
+  "menu",
+  "hud",
+  "settings",
+  "theater",
+  "menu"
+ ],
+ "wall_s": 0.134
+}

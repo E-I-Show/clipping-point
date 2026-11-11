@@ -1,0 +1,1274 @@
+{
+ "low_speed": [
+  {
+   "car": "kazane",
+   "substeps": 1,
+   "stop_clamp": 1.0,
+   "v_reg": 0.5,
+   "rest": {
+    "drift": 0.0,
+    "speed": 0.0,
+    "yaw": 0.0
+   },
+   "brake_stop": {
+    "stop_s": 1.9,
+    "min_vx": 0.0,
+    "final_speed": 0.0,
+    "vx_flips_last": 0.0,
+    "finite": true
+   },
+   "coast_lock": {
+    "rest_s": 11.416666666666666,
+    "yaw_flip_ratio": 0.004,
+    "yaw_zigzag": 1.2426801279473183e-05,
+    "ay_zigzag": 0.00033174498579232567,
+    "peak_yaw": 0.9261814441730355,
+    "finite": true
+   },
+   "creep": {
+    "speed": 1.8149870351994686,
+    "radius_m": 4.616688078667668,
+    "kinematic_radius_m": 4.31346908751753,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag_rel": 1.5185005123930498e-16
+   },
+   "donut": {
+    "after_5s": [
+     4.189487761628007,
+     0.8882718193358681
+    ],
+    "max_energy_gain_per_tick_J": 0.0,
+    "rest_s": 19.766666666666666,
+    "finite": true
+   }
+  },
+  {
+   "car": "kazane",
+   "substeps": 2,
+   "stop_clamp": 1.0,
+   "v_reg": 0.5,
+   "rest": {
+    "drift": 0.0,
+    "speed": 0.0,
+    "yaw": 0.0
+   },
+   "brake_stop": {
+    "stop_s": 1.9,
+    "min_vx": 0.0,
+    "final_speed": 0.0,
+    "vx_flips_last": 0.0,
+    "finite": true
+   },
+   "coast_lock": {
+    "rest_s": 9.766666666666666,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag": 1.095676576215163e-05,
+    "ay_zigzag": 0.0004520143102900542,
+    "peak_yaw": 0.9215929330584199,
+    "finite": true
+   },
+   "creep": {
+    "speed": 1.8083301607986806,
+    "radius_m": 4.768317393419637,
+    "kinematic_radius_m": 4.31346908751753,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag_rel": 1.5209942671526913e-16
+   },
+   "donut": {
+    "after_5s": [
+     4.201895646646477,
+     0.8906927344953782
+    ],
+    "max_energy_gain_per_tick_J": 0.0,
+    "rest_s": 19.78333333333333,
+    "finite": true
+   }
+  },
+  {
+   "car": "kazane",
+   "substeps": 4,
+   "stop_clamp": 1.0,
+   "v_reg": 0.5,
+   "rest": {
+    "drift": 0.0,
+    "speed": 0.0,
+    "yaw": 0.0
+   },
+   "brake_stop": {
+    "stop_s": 1.9,
+    "min_vx": 0.0,
+    "final_speed": 0.0,
+    "vx_flips_last": 0.0,
+    "finite": true
+   },
+   "coast_lock": {
+    "rest_s": 8.933333333333334,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag": 1.1711146893252172e-05,
+    "ay_zigzag": 0.0004494235886996072,
+    "peak_yaw": 0.9194416750478281,
+    "finite": true
+   },
+   "creep": {
+    "speed": 1.8082282172931472,
+    "radius_m": 4.765991536159637,
+    "kinematic_radius_m": 4.31346908751753,
+    "yaw_flip_ratio": 0.43,
+    "yaw_zigzag_rel": 5.413624609131507e-06
+   },
+   "donut": {
+    "after_5s": [
+     4.209206572753089,
+     0.8921587984181489
+    ],
+    "max_energy_gain_per_tick_J": 0.0,
+    "rest_s": 19.78333333333333,
+    "finite": true
+   }
+  },
+  {
+   "car": "kazane",
+   "substeps": 1,
+   "stop_clamp": 0.0,
+   "v_reg": 0.5,
+   "rest": {
+    "drift": 0.0,
+    "speed": 0.0,
+    "yaw": 0.0
+   },
+   "brake_stop": {
+    "stop_s": null,
+    "min_vx": -0.07946192710873128,
+    "final_speed": 0.05193536086010288,
+    "vx_flips_last": 1.0,
+    "finite": true
+   },
+   "coast_lock": {
+    "rest_s": null,
+    "yaw_flip_ratio": 0.805,
+    "yaw_zigzag": 0.1670451386292712,
+    "ay_zigzag": 4.821176951840237,
+    "peak_yaw": 0.9261814441730355,
+    "finite": true
+   },
+   "creep": {
+    "speed": 1.8092205972731985,
+    "radius_m": 4.770627982299845,
+    "kinematic_radius_m": 4.31346908751753,
+    "yaw_flip_ratio": 1.0,
+    "yaw_zigzag_rel": 0.19863138748747414
+   },
+   "donut": {
+    "after_5s": [
+     4.208548457034605,
+     0.8927460337942235
+    ],
+    "max_energy_gain_per_tick_J": 6.155563674425447,
+    "rest_s": null,
+    "finite": true
+   }
+  },
+  {
+   "car": "kazane",
+   "substeps": 2,
+   "stop_clamp": 0.0,
+   "v_reg": 0.5,
+   "rest": {
+    "drift": 0.0,
+    "speed": 0.0,
+    "yaw": 0.0
+   },
+   "brake_stop": {
+    "stop_s": null,
+    "min_vx": -0.03582989121435573,
+    "final_speed": 0.03183083104433282,
+    "vx_flips_last": 0.05084745762711865,
+    "finite": true
+   },
+   "coast_lock": {
+    "rest_s": null,
+    "yaw_flip_ratio": 0.005,
+    "yaw_zigzag": 6.114268960179588e-05,
+    "ay_zigzag": 0.008995717356444817,
+    "peak_yaw": 0.9215929330584199,
+    "finite": true
+   },
+   "creep": {
+    "speed": 1.8082843867569531,
+    "radius_m": 4.765978105450992,
+    "kinematic_radius_m": 4.31346908751753,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag_rel": 1.6714978638783922e-16
+   },
+   "donut": {
+    "after_5s": [
+     4.211484459795159,
+     0.8929398490973917
+    ],
+    "max_energy_gain_per_tick_J": 2.994164991498849e-07,
+    "rest_s": null,
+    "finite": true
+   }
+  },
+  {
+   "car": "kazane",
+   "substeps": 4,
+   "stop_clamp": 0.0,
+   "v_reg": 0.5,
+   "rest": {
+    "drift": 0.0,
+    "speed": 0.0,
+    "yaw": 0.0
+   },
+   "brake_stop": {
+    "stop_s": 2.433333333333333,
+    "min_vx": -0.018184373118876218,
+    "final_speed": 0.0,
+    "vx_flips_last": 0.0,
+    "finite": true
+   },
+   "coast_lock": {
+    "rest_s": 8.633333333333333,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag": 1.1568982037277728e-05,
+    "ay_zigzag": 0.0004096666813109825,
+    "peak_yaw": 0.9194416750478281,
+    "finite": true
+   },
+   "creep": {
+    "speed": 1.808228181406881,
+    "radius_m": 4.765991549287581,
+    "kinematic_radius_m": 4.31346908751753,
+    "yaw_flip_ratio": 0.427,
+    "yaw_zigzag_rel": 5.383920769863052e-06
+   },
+   "donut": {
+    "after_5s": [
+     4.208866065835873,
+     0.8920790250586613
+    ],
+    "max_energy_gain_per_tick_J": 0.0,
+    "rest_s": 19.8,
+    "finite": true
+   }
+  },
+  {
+   "car": "kazane",
+   "substeps": 1,
+   "stop_clamp": 0.0,
+   "v_reg": 2.0,
+   "rest": {
+    "drift": 0.0,
+    "speed": 0.0,
+    "yaw": 0.0
+   },
+   "brake_stop": {
+    "stop_s": 2.25,
+    "min_vx": -0.029917861182414147,
+    "final_speed": 0.0,
+    "vx_flips_last": 0.0,
+    "finite": true
+   },
+   "coast_lock": {
+    "rest_s": 10.2,
+    "yaw_flip_ratio": 0.004,
+    "yaw_zigzag": 3.720054422818035e-05,
+    "ay_zigzag": 0.002777754920206381,
+    "peak_yaw": 0.9261814441730355,
+    "finite": true
+   },
+   "creep": {
+    "speed": 1.8098441466744748,
+    "radius_m": 4.73172739331451,
+    "kinematic_radius_m": 4.31346908751753,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag_rel": 7.1146389665357455e-16
+   },
+   "donut": {
+    "after_5s": [
+     4.246419080566348,
+     0.9016639038740697
+    ],
+    "max_energy_gain_per_tick_J": 0.0,
+    "rest_s": 19.883333333333333,
+    "finite": true
+   }
+  },
+  {
+   "car": "kazane",
+   "substeps": 2,
+   "stop_clamp": 0.0,
+   "v_reg": 2.0,
+   "rest": {
+    "drift": 0.0,
+    "speed": 0.0,
+    "yaw": 0.0
+   },
+   "brake_stop": {
+    "stop_s": null,
+    "min_vx": 0.02622122301968701,
+    "final_speed": 0.06277866798968797,
+    "vx_flips_last": 0.0,
+    "finite": true
+   },
+   "coast_lock": {
+    "rest_s": 10.15,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag": 1.0432148394767705e-05,
+    "ay_zigzag": 0.0003362202544031525,
+    "peak_yaw": 0.9215929330584199,
+    "finite": true
+   },
+   "creep": {
+    "speed": 1.8094317428625535,
+    "radius_m": 4.731692024933171,
+    "kinematic_radius_m": 4.31346908751753,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag_rel": 1.69491433975438e-16
+   },
+   "donut": {
+    "after_5s": [
+     4.24596773281929,
+     0.9010463494689891
+    ],
+    "max_energy_gain_per_tick_J": 0.0,
+    "rest_s": 19.883333333333333,
+    "finite": true
+   }
+  },
+  {
+   "car": "kazane",
+   "substeps": 4,
+   "stop_clamp": 0.0,
+   "v_reg": 2.0,
+   "rest": {
+    "drift": 0.0,
+    "speed": 0.0,
+    "yaw": 0.0
+   },
+   "brake_stop": {
+    "stop_s": null,
+    "min_vx": 0.012494658795264567,
+    "final_speed": 0.031318374335007934,
+    "vx_flips_last": 0.0,
+    "finite": true
+   },
+   "coast_lock": {
+    "rest_s": 10.133333333333333,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag": 9.997135116748234e-06,
+    "ay_zigzag": 0.00029367319248788267,
+    "peak_yaw": 0.9194416750478281,
+    "finite": true
+   },
+   "creep": {
+    "speed": 1.8092257505901106,
+    "radius_m": 4.731674328468862,
+    "kinematic_radius_m": 4.31346908751753,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag_rel": 8.921584090742268e-17
+   },
+   "donut": {
+    "after_5s": [
+     4.246057042118673,
+     0.9008135960853407
+    ],
+    "max_energy_gain_per_tick_J": 0.0,
+    "rest_s": 19.866666666666667,
+    "finite": true
+   }
+  },
+  {
+   "car": "kazane",
+   "substeps": 1,
+   "stop_clamp": 0.0,
+   "v_reg": 4.0,
+   "rest": {
+    "drift": 0.0,
+    "speed": 0.0,
+    "yaw": 0.0
+   },
+   "brake_stop": {
+    "stop_s": 2.7666666666666666,
+    "min_vx": -0.05781730439697303,
+    "final_speed": 0.0,
+    "vx_flips_last": 0.0,
+    "finite": true
+   },
+   "coast_lock": {
+    "rest_s": 12.05,
+    "yaw_flip_ratio": 0.004,
+    "yaw_zigzag": 1.0706414307896816e-05,
+    "ay_zigzag": 0.0002488368619311634,
+    "peak_yaw": 0.9269978724093813,
+    "finite": true
+   },
+   "creep": {
+    "speed": 1.8363771881993776,
+    "radius_m": 4.636121930611333,
+    "kinematic_radius_m": 4.31346908751753,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag_rel": 1.213533756667587e-16
+   },
+   "donut": {
+    "after_5s": [
+     4.326874727349573,
+     0.9212986782543222
+    ],
+    "max_energy_gain_per_tick_J": 0.0,
+    "rest_s": 20.05,
+    "finite": true
+   }
+  },
+  {
+   "car": "kazane",
+   "substeps": 2,
+   "stop_clamp": 0.0,
+   "v_reg": 4.0,
+   "rest": {
+    "drift": 0.0,
+    "speed": 0.0,
+    "yaw": 0.0
+   },
+   "brake_stop": {
+    "stop_s": 2.8166666666666664,
+    "min_vx": -0.049084578029466176,
+    "final_speed": 0.0,
+    "vx_flips_last": 0.0,
+    "finite": true
+   },
+   "coast_lock": {
+    "rest_s": 12.0,
+    "yaw_flip_ratio": 0.004,
+    "yaw_zigzag": 9.187188061808441e-06,
+    "ay_zigzag": 0.000124406203001697,
+    "peak_yaw": 0.9224447658510295,
+    "finite": true
+   },
+   "creep": {
+    "speed": 1.8359346072105758,
+    "radius_m": 4.63614831739305,
+    "kinematic_radius_m": 4.31346908751753,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag_rel": 4.1896823585603624e-17
+   },
+   "donut": {
+    "after_5s": [
+     4.32627054664706,
+     0.9206284484927344
+    ],
+    "max_energy_gain_per_tick_J": 0.0,
+    "rest_s": 20.03333333333333,
+    "finite": true
+   }
+  },
+  {
+   "car": "kazane",
+   "substeps": 1,
+   "stop_clamp": 1.0,
+   "v_reg": 2.0,
+   "rest": {
+    "drift": 0.0,
+    "speed": 0.0,
+    "yaw": 0.0
+   },
+   "brake_stop": {
+    "stop_s": 1.9,
+    "min_vx": 0.0,
+    "final_speed": 0.0,
+    "vx_flips_last": 0.0,
+    "finite": true
+   },
+   "coast_lock": {
+    "rest_s": 11.416666666666666,
+    "yaw_flip_ratio": 0.004,
+    "yaw_zigzag": 1.2426801279473183e-05,
+    "ay_zigzag": 0.00033174498579232567,
+    "peak_yaw": 0.9261814441730355,
+    "finite": true
+   },
+   "creep": {
+    "speed": 1.8149870351994686,
+    "radius_m": 4.616688078667668,
+    "kinematic_radius_m": 4.31346908751753,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag_rel": 1.6644343278697842e-16
+   },
+   "donut": {
+    "after_5s": [
+     4.249313387499002,
+     0.9023432555040084
+    ],
+    "max_energy_gain_per_tick_J": 0.0,
+    "rest_s": 19.9,
+    "finite": true
+   }
+  },
+  {
+   "car": "kazane",
+   "substeps": 2,
+   "stop_clamp": 1.0,
+   "v_reg": 2.0,
+   "rest": {
+    "drift": 0.0,
+    "speed": 0.0,
+    "yaw": 0.0
+   },
+   "brake_stop": {
+    "stop_s": 1.9,
+    "min_vx": 0.0,
+    "final_speed": 0.0,
+    "vx_flips_last": 0.0,
+    "finite": true
+   },
+   "coast_lock": {
+    "rest_s": 10.15,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag": 1.0432148394767705e-05,
+    "ay_zigzag": 0.0003362202544031525,
+    "peak_yaw": 0.9215929330584199,
+    "finite": true
+   },
+   "creep": {
+    "speed": 1.8094317428625535,
+    "radius_m": 4.731692024933171,
+    "kinematic_radius_m": 4.31346908751753,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag_rel": 1.69491433975438e-16
+   },
+   "donut": {
+    "after_5s": [
+     4.24596773281929,
+     0.9010463494689891
+    ],
+    "max_energy_gain_per_tick_J": 0.0,
+    "rest_s": 19.883333333333333,
+    "finite": true
+   }
+  },
+  {
+   "car": "shirogane",
+   "substeps": 1,
+   "stop_clamp": 1.0,
+   "v_reg": 0.5,
+   "rest": {
+    "drift": 0.0,
+    "speed": 0.0,
+    "yaw": 0.0
+   },
+   "brake_stop": {
+    "stop_s": 1.8,
+    "min_vx": -0.0007656909223443457,
+    "final_speed": 0.0,
+    "vx_flips_last": 0.0,
+    "finite": true
+   },
+   "coast_lock": {
+    "rest_s": 12.183333333333334,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag": 6.644103005548881e-06,
+    "ay_zigzag": 0.00022957785815095586,
+    "peak_yaw": 0.8001103481909644,
+    "finite": true
+   },
+   "creep": {
+    "speed": 1.6986047137170601,
+    "radius_m": 5.359760043743972,
+    "kinematic_radius_m": 5.09563417745674,
+    "yaw_flip_ratio": 0.447,
+    "yaw_zigzag_rel": 3.8797865890180224e-05
+   },
+   "donut": {
+    "after_5s": [
+     3.949784463741404,
+     1.660261992037901
+    ],
+    "max_energy_gain_per_tick_J": 0.0,
+    "rest_s": 18.8,
+    "finite": true
+   }
+  },
+  {
+   "car": "shirogane",
+   "substeps": 2,
+   "stop_clamp": 1.0,
+   "v_reg": 0.5,
+   "rest": {
+    "drift": 0.0,
+    "speed": 0.0,
+    "yaw": 0.0
+   },
+   "brake_stop": {
+    "stop_s": 1.8,
+    "min_vx": 0.0,
+    "final_speed": 0.0,
+    "vx_flips_last": 0.0,
+    "finite": true
+   },
+   "coast_lock": {
+    "rest_s": 10.283333333333333,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag": 6.384654080882402e-06,
+    "ay_zigzag": 0.00031069908959194443,
+    "peak_yaw": 0.7958424382744241,
+    "finite": true
+   },
+   "creep": {
+    "speed": 1.6643471464021666,
+    "radius_m": 5.516044726980538,
+    "kinematic_radius_m": 5.09563417745674,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag_rel": 2.6285619572599007e-13
+   },
+   "donut": {
+    "after_5s": [
+     3.9506421401423246,
+     1.6315223739992304
+    ],
+    "max_energy_gain_per_tick_J": 0.0,
+    "rest_s": 18.866666666666667,
+    "finite": true
+   }
+  },
+  {
+   "car": "shirogane",
+   "substeps": 4,
+   "stop_clamp": 1.0,
+   "v_reg": 0.5,
+   "rest": {
+    "drift": 0.0,
+    "speed": 0.0,
+    "yaw": 0.0
+   },
+   "brake_stop": {
+    "stop_s": 1.8,
+    "min_vx": 0.0,
+    "final_speed": 0.0,
+    "vx_flips_last": 0.0,
+    "finite": true
+   },
+   "coast_lock": {
+    "rest_s": 9.316666666666666,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag": 6.9523567132780425e-06,
+    "ay_zigzag": 0.0003524243272845967,
+    "peak_yaw": 0.7939015312591258,
+    "finite": true
+   },
+   "creep": {
+    "speed": 1.663893698550901,
+    "radius_m": 5.507107470895563,
+    "kinematic_radius_m": 5.09563417745674,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag_rel": 3.173886187439344e-13
+   },
+   "donut": {
+    "after_5s": [
+     3.9508150568643043,
+     1.6202897024370622
+    ],
+    "max_energy_gain_per_tick_J": 0.0,
+    "rest_s": 18.9,
+    "finite": true
+   }
+  },
+  {
+   "car": "shirogane",
+   "substeps": 1,
+   "stop_clamp": 0.0,
+   "v_reg": 0.5,
+   "rest": {
+    "drift": 0.0,
+    "speed": 0.0,
+    "yaw": 0.0
+   },
+   "brake_stop": {
+    "stop_s": null,
+    "min_vx": -0.037344007918149576,
+    "final_speed": 0.00521262005175891,
+    "vx_flips_last": 1.0,
+    "finite": true
+   },
+   "coast_lock": {
+    "rest_s": null,
+    "yaw_flip_ratio": 0.76,
+    "yaw_zigzag": 0.14370250995791992,
+    "ay_zigzag": 3.899225523056823,
+    "peak_yaw": 0.8001103481909644,
+    "finite": true
+   },
+   "creep": {
+    "speed": 1.665328355437581,
+    "radius_m": 5.535184842160737,
+    "kinematic_radius_m": 5.09563417745674,
+    "yaw_flip_ratio": 1.0,
+    "yaw_zigzag_rel": 0.3124154699566294
+   },
+   "donut": {
+    "after_5s": [
+     3.9333682455295014,
+     1.6395262728310331
+    ],
+    "max_energy_gain_per_tick_J": 9.239081060033712,
+    "rest_s": null,
+    "finite": true
+   }
+  },
+  {
+   "car": "shirogane",
+   "substeps": 2,
+   "stop_clamp": 0.0,
+   "v_reg": 0.5,
+   "rest": {
+    "drift": 0.0,
+    "speed": 0.0,
+    "yaw": 0.0
+   },
+   "brake_stop": {
+    "stop_s": null,
+    "min_vx": -0.006976299640812821,
+    "final_speed": 0.013953032258401474,
+    "vx_flips_last": 0.0,
+    "finite": true
+   },
+   "coast_lock": {
+    "rest_s": null,
+    "yaw_flip_ratio": 0.01,
+    "yaw_zigzag": 4.609523554034698e-05,
+    "ay_zigzag": 0.008374760573351327,
+    "peak_yaw": 0.7958424382744241,
+    "finite": true
+   },
+   "creep": {
+    "speed": 1.6641118174306326,
+    "radius_m": 5.5071028025583395,
+    "kinematic_radius_m": 5.09563417745674,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag_rel": 3.2639037024397593e-13
+   },
+   "donut": {
+    "after_5s": [
+     3.955305873885257,
+     1.6368004905306226
+    ],
+    "max_energy_gain_per_tick_J": 2.2124291277458852e-05,
+    "rest_s": null,
+    "finite": true
+   }
+  },
+  {
+   "car": "shirogane",
+   "substeps": 4,
+   "stop_clamp": 0.0,
+   "v_reg": 0.5,
+   "rest": {
+    "drift": 0.0,
+    "speed": 0.0,
+    "yaw": 0.0
+   },
+   "brake_stop": {
+    "stop_s": 2.2333333333333334,
+    "min_vx": -0.015867315350950113,
+    "final_speed": 0.0,
+    "vx_flips_last": 0.0,
+    "finite": true
+   },
+   "coast_lock": {
+    "rest_s": 8.933333333333334,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag": 6.896856400895169e-06,
+    "ay_zigzag": 0.0003368064497046785,
+    "peak_yaw": 0.7939015312591258,
+    "finite": true
+   },
+   "creep": {
+    "speed": 1.6638936985212214,
+    "radius_m": 5.507107470897973,
+    "kinematic_radius_m": 5.09563417745674,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag_rel": 3.270338890933787e-13
+   },
+   "donut": {
+    "after_5s": [
+     3.9493923479284954,
+     1.6187777614193373
+    ],
+    "max_energy_gain_per_tick_J": 0.0,
+    "rest_s": 18.9,
+    "finite": true
+   }
+  },
+  {
+   "car": "shirogane",
+   "substeps": 1,
+   "stop_clamp": 0.0,
+   "v_reg": 2.0,
+   "rest": {
+    "drift": 0.0,
+    "speed": 0.0,
+    "yaw": 0.0
+   },
+   "brake_stop": {
+    "stop_s": 3.1,
+    "min_vx": -0.09302123712531588,
+    "final_speed": 0.0,
+    "vx_flips_last": 0.0,
+    "finite": true
+   },
+   "coast_lock": {
+    "rest_s": 10.633333333333333,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag": 1.8265080880425586e-05,
+    "ay_zigzag": 0.0016238029369715049,
+    "peak_yaw": 0.8001103481909644,
+    "finite": true
+   },
+   "creep": {
+    "speed": 1.6690789989123116,
+    "radius_m": 5.445391890631433,
+    "kinematic_radius_m": 5.09563417745674,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag_rel": 2.1704575085437197e-13
+   },
+   "donut": {
+    "after_5s": [
+     3.984561834566301,
+     1.6188363722904828
+    ],
+    "max_energy_gain_per_tick_J": 0.0,
+    "rest_s": 19.03333333333333,
+    "finite": true
+   }
+  },
+  {
+   "car": "shirogane",
+   "substeps": 2,
+   "stop_clamp": 0.0,
+   "v_reg": 2.0,
+   "rest": {
+    "drift": 0.0,
+    "speed": 0.0,
+    "yaw": 0.0
+   },
+   "brake_stop": {
+    "stop_s": 2.5666666666666664,
+    "min_vx": -0.030343083625314918,
+    "final_speed": 0.0,
+    "vx_flips_last": 0.0,
+    "finite": true
+   },
+   "coast_lock": {
+    "rest_s": 10.6,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag": 5.972727172192214e-06,
+    "ay_zigzag": 0.00024140801182586446,
+    "peak_yaw": 0.7958424382744241,
+    "finite": true
+   },
+   "creep": {
+    "speed": 1.6686340790826804,
+    "radius_m": 5.445323071584848,
+    "kinematic_radius_m": 5.09563417745674,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag_rel": 2.1054702821667742e-13
+   },
+   "donut": {
+    "after_5s": [
+     3.9855772805674055,
+     1.5972973086295255
+    ],
+    "max_energy_gain_per_tick_J": 0.0,
+    "rest_s": 19.066666666666666,
+    "finite": true
+   }
+  },
+  {
+   "car": "shirogane",
+   "substeps": 4,
+   "stop_clamp": 0.0,
+   "v_reg": 2.0,
+   "rest": {
+    "drift": 0.0,
+    "speed": 0.0,
+    "yaw": 0.0
+   },
+   "brake_stop": {
+    "stop_s": 2.716666666666667,
+    "min_vx": -0.021796552045419457,
+    "final_speed": 0.0,
+    "vx_flips_last": 0.0,
+    "finite": true
+   },
+   "coast_lock": {
+    "rest_s": 10.6,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag": 5.789938072206108e-06,
+    "ay_zigzag": 0.00023269676961173777,
+    "peak_yaw": 0.7939015312591258,
+    "finite": true
+   },
+   "creep": {
+    "speed": 1.6684118798203338,
+    "radius_m": 5.44528868051321,
+    "kinematic_radius_m": 5.09563417745674,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag_rel": 2.0915166834508691e-13
+   },
+   "donut": {
+    "after_5s": [
+     3.9877705724908523,
+     1.5906041092082668
+    ],
+    "max_energy_gain_per_tick_J": 0.0,
+    "rest_s": 19.066666666666666,
+    "finite": true
+   }
+  },
+  {
+   "car": "shirogane",
+   "substeps": 1,
+   "stop_clamp": 0.0,
+   "v_reg": 4.0,
+   "rest": {
+    "drift": 0.0,
+    "speed": 0.0,
+    "yaw": 0.0
+   },
+   "brake_stop": {
+    "stop_s": 3.1333333333333333,
+    "min_vx": -0.09589853002884352,
+    "final_speed": 0.0,
+    "vx_flips_last": 0.0,
+    "finite": true
+   },
+   "coast_lock": {
+    "rest_s": 12.7,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag": 5.741652739917099e-06,
+    "ay_zigzag": 0.00020591298875336915,
+    "peak_yaw": 0.8005783096458869,
+    "finite": true
+   },
+   "creep": {
+    "speed": 1.7223558141295097,
+    "radius_m": 5.382210781225525,
+    "kinematic_radius_m": 5.09563417745674,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag_rel": 2.332527030333688e-13
+   },
+   "donut": {
+    "after_5s": [
+     4.037933772169934,
+     1.586255708417069
+    ],
+    "max_energy_gain_per_tick_J": 0.0,
+    "rest_s": 19.216666666666665,
+    "finite": true
+   }
+  },
+  {
+   "car": "shirogane",
+   "substeps": 2,
+   "stop_clamp": 0.0,
+   "v_reg": 4.0,
+   "rest": {
+    "drift": 0.0,
+    "speed": 0.0,
+    "yaw": 0.0
+   },
+   "brake_stop": {
+    "stop_s": null,
+    "min_vx": 0.02221044774664773,
+    "final_speed": 0.0663136679015841,
+    "vx_flips_last": 0.01694915254237288,
+    "finite": true
+   },
+   "coast_lock": {
+    "rest_s": 12.666666666666666,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag": 5.01892949335444e-06,
+    "ay_zigzag": 0.00010446537906171471,
+    "peak_yaw": 0.796330378400378,
+    "finite": true
+   },
+   "creep": {
+    "speed": 1.7218559609888378,
+    "radius_m": 5.382224821137466,
+    "kinematic_radius_m": 5.09563417745674,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag_rel": 2.2792450905579025e-13
+   },
+   "donut": {
+    "after_5s": [
+     4.041711678997968,
+     1.5724642092129837
+    ],
+    "max_energy_gain_per_tick_J": 0.0,
+    "rest_s": 19.233333333333334,
+    "finite": true
+   }
+  },
+  {
+   "car": "shirogane",
+   "substeps": 1,
+   "stop_clamp": 1.0,
+   "v_reg": 2.0,
+   "rest": {
+    "drift": 0.0,
+    "speed": 0.0,
+    "yaw": 0.0
+   },
+   "brake_stop": {
+    "stop_s": 1.8,
+    "min_vx": -0.0022894439553942775,
+    "final_speed": 0.0,
+    "vx_flips_last": 0.0,
+    "finite": true
+   },
+   "coast_lock": {
+    "rest_s": 12.183333333333334,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag": 6.644103005548881e-06,
+    "ay_zigzag": 0.00022957785815095586,
+    "peak_yaw": 0.8001103481909644,
+    "finite": true
+   },
+   "creep": {
+    "speed": 1.6986047137170601,
+    "radius_m": 5.359760043743972,
+    "kinematic_radius_m": 5.09563417745674,
+    "yaw_flip_ratio": 0.447,
+    "yaw_zigzag_rel": 3.8797865890180224e-05
+   },
+   "donut": {
+    "after_5s": [
+     3.985157655125577,
+     1.61841938197299
+    ],
+    "max_energy_gain_per_tick_J": 0.0,
+    "rest_s": 19.03333333333333,
+    "finite": true
+   }
+  },
+  {
+   "car": "shirogane",
+   "substeps": 2,
+   "stop_clamp": 1.0,
+   "v_reg": 2.0,
+   "rest": {
+    "drift": 0.0,
+    "speed": 0.0,
+    "yaw": 0.0
+   },
+   "brake_stop": {
+    "stop_s": 1.8,
+    "min_vx": 0.0,
+    "final_speed": 0.0,
+    "vx_flips_last": 0.0,
+    "finite": true
+   },
+   "coast_lock": {
+    "rest_s": 10.6,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag": 5.972727172192214e-06,
+    "ay_zigzag": 0.00024140801182586446,
+    "peak_yaw": 0.7958424382744241,
+    "finite": true
+   },
+   "creep": {
+    "speed": 1.6686340790826804,
+    "radius_m": 5.445323071584848,
+    "kinematic_radius_m": 5.09563417745674,
+    "yaw_flip_ratio": 0.0,
+    "yaw_zigzag_rel": 2.1054702821667742e-13
+   },
+   "donut": {
+    "after_5s": [
+     3.9855772805674055,
+     1.5972973086295255
+    ],
+    "max_energy_gain_per_tick_J": 0.0,
+    "rest_s": 19.066666666666666,
+    "finite": true
+   }
+  }
+ ],
+ "convergence": [
+  {
+   "car": "tsubame",
+   "substeps": 1,
+   "slalom_pos_err_m": 0.12263909736839841,
+   "slalom_heading_err_deg": 0.28729991337619937,
+   "exit_pos_err_m": 0.1626795639989749,
+   "exit_heading_err_deg": 0.2830143291268564,
+   "exit_speed_err": 0.045867868294028113,
+   "exit_body_slip_deg": -0.17089523859856526,
+   "ref_body_slip_deg": -0.16273339771100942
+  },
+  {
+   "car": "tsubame",
+   "substeps": 2,
+   "slalom_pos_err_m": 0.054336201689147066,
+   "slalom_heading_err_deg": 0.13281118139879847,
+   "exit_pos_err_m": 0.07559799030794763,
+   "exit_heading_err_deg": 0.13129432103531116,
+   "exit_speed_err": 0.0211661700504564,
+   "exit_body_slip_deg": -0.1664654304997281,
+   "ref_body_slip_deg": -0.16273339771100942
+  },
+  {
+   "car": "tsubame",
+   "substeps": 4,
+   "slalom_pos_err_m": 0.023861301771724786,
+   "slalom_heading_err_deg": 0.05720316949795041,
+   "exit_pos_err_m": 0.03234238084612623,
+   "exit_heading_err_deg": 0.05597603919448508,
+   "exit_speed_err": 0.009087512907697715,
+   "exit_body_slip_deg": -0.1644887985046964,
+   "ref_body_slip_deg": -0.16273339771100942
+  },
+  {
+   "car": "tsubame",
+   "substeps": 8,
+   "slalom_pos_err_m": 0.007340702191243916,
+   "slalom_heading_err_deg": 0.0190477746962431,
+   "exit_pos_err_m": 0.010745560871060324,
+   "exit_heading_err_deg": 0.01866950935722227,
+   "exit_speed_err": 0.0029553200607779218,
+   "exit_body_slip_deg": -0.16322767315771833,
+   "ref_body_slip_deg": -0.16273339771100942
+  },
+  {
+   "car": "kazane",
+   "substeps": 1,
+   "slalom_pos_err_m": 0.190997751596534,
+   "slalom_heading_err_deg": 0.8580894237129523,
+   "exit_pos_err_m": 0.042444572869121754,
+   "exit_heading_err_deg": 1.223283905900754,
+   "exit_speed_err": 0.011562871182412948,
+   "exit_body_slip_deg": -65.26640575777196,
+   "ref_body_slip_deg": -66.5214241292472
+  },
+  {
+   "car": "kazane",
+   "substeps": 2,
+   "slalom_pos_err_m": 0.08477231873892477,
+   "slalom_heading_err_deg": 0.36403110805220246,
+   "exit_pos_err_m": 0.011941448582424297,
+   "exit_heading_err_deg": 0.6594212910732111,
+   "exit_speed_err": 0.007862819982745961,
+   "exit_body_slip_deg": -65.94755743522933,
+   "ref_body_slip_deg": -66.5214241292472
+  },
+  {
+   "car": "kazane",
+   "substeps": 4,
+   "slalom_pos_err_m": 0.03698924122308039,
+   "slalom_heading_err_deg": 0.1508508904519357,
+   "exit_pos_err_m": 0.01114441407836389,
+   "exit_heading_err_deg": 0.20876031894577013,
+   "exit_speed_err": 0.001463576632334096,
+   "exit_body_slip_deg": -66.27239351488383,
+   "ref_body_slip_deg": -66.5214241292472
+  },
+  {
+   "car": "kazane",
+   "substeps": 8,
+   "slalom_pos_err_m": 0.012303702790631504,
+   "slalom_heading_err_deg": 0.05058506690625732,
+   "exit_pos_err_m": 0.0037321659000830844,
+   "exit_heading_err_deg": 0.06988938100180879,
+   "exit_speed_err": 0.0004641298738601307,
+   "exit_body_slip_deg": -66.43702488681363,
+   "ref_body_slip_deg": -66.5214241292472
+  },
+  {
+   "car": "shirogane",
+   "substeps": 1,
+   "slalom_pos_err_m": 0.04664587924112886,
+   "slalom_heading_err_deg": 0.4348315674948499,
+   "exit_pos_err_m": 0.04865795740927516,
+   "exit_heading_err_deg": 0.7226941813468633,
+   "exit_speed_err": 0.021361977478591143,
+   "exit_body_slip_deg": -80.82740802900258,
+   "ref_body_slip_deg": -81.54361456980165
+  },
+  {
+   "car": "shirogane",
+   "substeps": 2,
+   "slalom_pos_err_m": 0.024197222927539633,
+   "slalom_heading_err_deg": 0.19451667379974114,
+   "exit_pos_err_m": 0.014816181074349632,
+   "exit_heading_err_deg": 0.2912756474490361,
+   "exit_speed_err": 0.012805617323268237,
+   "exit_body_slip_deg": -81.36243671603314,
+   "ref_body_slip_deg": -81.54361456980165
+  },
+  {
+   "car": "shirogane",
+   "substeps": 4,
+   "slalom_pos_err_m": 0.01080924810580973,
+   "slalom_heading_err_deg": 0.08796442013147486,
+   "exit_pos_err_m": 0.0033380604932672863,
+   "exit_heading_err_deg": 0.07608359380062453,
+   "exit_speed_err": 0.008442909320532266,
+   "exit_body_slip_deg": -81.62341152147233,
+   "ref_body_slip_deg": -81.54361456980165
+  },
+  {
+   "car": "shirogane",
+   "substeps": 8,
+   "slalom_pos_err_m": 0.003666657807146028,
+   "slalom_heading_err_deg": 0.029400229133028984,
+   "exit_pos_err_m": 0.004219576562636737,
+   "exit_heading_err_deg": 0.05349923947735818,
+   "exit_speed_err": 0.0010686726087385523,
+   "exit_body_slip_deg": -81.4758233614736,
+   "ref_body_slip_deg": -81.54361456980165
+  },
+  {
+   "car": "arashi",
+   "substeps": 1,
+   "slalom_pos_err_m": 0.08142744031141998,
+   "slalom_heading_err_deg": 0.09463936698719304,
+   "exit_pos_err_m": 0.16868676394205928,
+   "exit_heading_err_deg": 0.2654303006200789,
+   "exit_speed_err": 0.04023050431514008,
+   "exit_body_slip_deg": -1.1215325607116418,
+   "ref_body_slip_deg": -1.1260437382579047
+  },
+  {
+   "car": "arashi",
+   "substeps": 2,
+   "slalom_pos_err_m": 0.038545695069884665,
+   "slalom_heading_err_deg": 0.035467300175973264,
+   "exit_pos_err_m": 0.07852658259964952,
+   "exit_heading_err_deg": 0.12328084762512288,
+   "exit_speed_err": 0.0188312304100684,
+   "exit_body_slip_deg": -1.124216496429688,
+   "ref_body_slip_deg": -1.1260437382579047
+  },
+  {
+   "car": "arashi",
+   "substeps": 4,
+   "slalom_pos_err_m": 0.015603564089754789,
+   "slalom_heading_err_deg": 0.01419867094423337,
+   "exit_pos_err_m": 0.033595376473226815,
+   "exit_heading_err_deg": 0.052759436892329585,
+   "exit_speed_err": 0.008071575320613533,
+   "exit_body_slip_deg": -1.1253812703139796,
+   "ref_body_slip_deg": -1.1260437382579047
+  },
+  {
+   "car": "arashi",
+   "substeps": 8,
+   "slalom_pos_err_m": 0.0049762840479310655,
+   "slalom_heading_err_deg": 0.0047465390707694165,
+   "exit_pos_err_m": 0.011181840776158242,
+   "exit_heading_err_deg": 0.01748401340322563,
+   "exit_speed_err": 0.0026912319936052143,
+   "exit_body_slip_deg": -1.1259585520082198,
+   "ref_body_slip_deg": -1.1260437382579047
+  }
+ ]
+}

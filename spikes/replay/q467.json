@@ -1,0 +1,210 @@
+{
+ "seek_plus_2x6_poses_us": 26.591596000002937,
+ "frames_x1": 8999,
+ "frame_counts": {
+  "x1/2": 17998,
+  "x1/4": 35995,
+  "x2": 4500,
+  "x4": 2250
+ },
+ "max_step_per_frame_m": {
+  "x1/2": 0.8379947095298598,
+  "x1/4": 0.41899735476495814,
+  "x2": 3.3472585712905203,
+  "x4": 6.682894331679979
+ },
+ "n_events": 108,
+ "event_types": {
+  "1": 1,
+  "2": 24,
+  "4": 52,
+  "5": 20,
+  "6": 11
+ },
+ "pose_6cars_us_per_frame_lerp": 10.506562347188707,
+ "pose_6cars_us_per_frame_hermite": 14.600962436103796,
+ "ring": {
+  "laps_done": 10,
+  "kept": [
+   6,
+   7,
+   8,
+   9,
+   10
+  ],
+  "max_buf_bytes": 104356,
+  "final_buf_bytes": 90930,
+  "ring_file_bytes": 29111,
+  "lap_ms": [
+   61567,
+   61533,
+   61600,
+   61533,
+   63283
+  ]
+ },
+ "ghost": {
+  "lap_ms": 61533,
+  "n_samples": 1233,
+  "raw_bytes": 17262,
+  "file_bytes": 6549,
+  "base64_chars": 8732,
+  "t0_tick": 1,
+  "worst_mm": 14.920241176736212
+ },
+ "locate": {
+  "max_err_m": 0.8477186869904472,
+  "hinted_pose_plus_locate_us": 11.908680853424187,
+  "global_locate_us": 138.48524000081852
+ },
+ "tv": {
+  "n_cams": 10,
+  "cuts": 48,
+  "expected": 46.85485018342723,
+  "shortest_shot_s": 4.2,
+  "median_shot_s": 6.7,
+  "fov_deg": {
+   "min": 6.630305926034818,
+   "p50": 14.84779127382643,
+   "max": 45.569099890006015
+  },
+  "dist_m": {
+   "min": 12.457855811567496,
+   "p50": 47.75951495346904,
+   "max": 108.50912910936357
+  },
+  "fov_clamped_frac": 0.0,
+  "flicker": {
+   "wobble_no_guard": 29,
+   "wobble_hyst10": 0,
+   "wobble_hold_only": 9,
+   "wobble_both": 0,
+   "creep_no_guard": 3,
+   "creep_hyst10": 1,
+   "creep_both": 1
+  },
+  "cuts_rewind": 47
+ },
+ "checks": [
+  {
+   "name": "random seek is pure index arithmetic (2000 random positions equal a fresh player)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "rewind reproduces forward playback exactly",
+   "ok": true,
+   "detail": "8999 frames compared"
+  },
+  {
+   "name": "slow 1/2 shows 2x frames, 1/4 shows 4x, x2 half, x4 quarter",
+   "ok": true,
+   "detail": "{'x1/2': 17998, 'x1/4': 35995, 'x2': 4500, 'x4': 2250}"
+  },
+  {
+   "name": "lap cue: seek_lap lands on the tick the car crossed the line",
+   "ok": true,
+   "detail": "24 lap starts, worst distance from line 0.53 m"
+  },
+  {
+   "name": "previous-lap goes to this lap's start, again goes one lap back, next-lap goes forward",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "lap number at any time by bisect on the lap table (3000 random ticks x 6 cars)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "race position at any time by bisect on position events",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "events fire exactly once in order at x1",
+   "ok": true,
+   "detail": "108 events"
+  },
+  {
+   "name": "events fire exactly once in order at x1/4",
+   "ok": true,
+   "detail": "108 events"
+  },
+  {
+   "name": "events fire exactly once in order at x4",
+   "ok": true,
+   "detail": "108 events"
+  },
+  {
+   "name": "ring keeps exactly the last 5 completed laps",
+   "ok": true,
+   "detail": "completed 10 laps, kept [6, 7, 8, 9, 10]"
+  },
+  {
+   "name": "ring replay survives the file round trip",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "ring replay lap table lists the 5 kept laps",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "ring replay poses match the drive after re-basing the time axis",
+   "ok": true,
+   "detail": "worst 13.6 mm"
+  },
+  {
+   "name": "ghost is the fastest lap (even if it fell out of the 5-lap ring)",
+   "ok": true,
+   "detail": "best lap no 7 of 10, 61533 ms, kept laps [6, 7, 8, 9, 10]"
+  },
+  {
+   "name": "ghost pose at 'ticks since the line' matches that lap of the drive",
+   "ok": true,
+   "detail": "worst 14.9 mm over 3693 ticks"
+  },
+  {
+   "name": "ghost hides itself after its lap ends",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "best lap ghost is kept after that lap has left the ring (2-lap ring, best lap 7, kept [9, 10])",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "ghost cut from a 6-car race replay (car 1, lap 2) matches the drive",
+   "ok": true,
+   "detail": "worst 37.3 mm"
+  },
+  {
+   "name": "lap distance recovered from the recorded position (hinted search)",
+   "ok": true,
+   "detail": "max 0.85 m"
+  },
+  {
+   "name": "TV: one cut per camera stretch for a normally driven car",
+   "ok": true,
+   "detail": "48 cuts over 8434 m (46.9 stretches), shortest shot 4.20 s"
+  },
+  {
+   "name": "TV: hysteresis removes boundary flicker (wobble +-3 m: 29 cuts unguarded -> 0)",
+   "ok": true,
+   "detail": "{'wobble_no_guard': 29, 'wobble_hyst10': 0, 'wobble_hold_only': 9, 'wobble_both': 0, 'creep_no_guard': 3, 'creep_hyst10': 1, 'creep_both': 1}"
+  },
+  {
+   "name": "TV: director also works in rewind",
+   "ok": true,
+   "detail": "47 cuts backwards vs 48 forwards"
+  },
+  {
+   "name": "chase / on-board / heli cameras are functions of the interpolated pose only",
+   "ok": true,
+   "detail": ""
+  }
+ ]
+}

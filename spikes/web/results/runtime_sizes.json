@@ -1,0 +1,66 @@
+{
+ "files": [
+  {
+   "file": "3.0.1/pyxel.js",
+   "bytes": 32452,
+   "gzip6_bytes": 9850
+  },
+  {
+   "file": "3.0.1/pyxel.css",
+   "bytes": 2326,
+   "gzip6_bytes": 765
+  },
+  {
+   "file": "3.0.1/import_hook.py",
+   "bytes": 1927,
+   "gzip6_bytes": 754
+  },
+  {
+   "file": "3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl",
+   "bytes": 5881753,
+   "gzip6_bytes": 5839689
+  },
+  {
+   "file": "3.0.1/images/pyxel_logo_76x32.png",
+   "bytes": 692,
+   "gzip6_bytes": 715
+  },
+  {
+   "file": "3.0.1/images/click_to_start_114x14.png",
+   "bytes": 641,
+   "gzip6_bytes": 664
+  },
+  {
+   "file": "3.0.1/images/pyxel_icon_64x64.ico",
+   "bytes": 2686,
+   "gzip6_bytes": 241
+  },
+  {
+   "file": "pyodide/v314.0.7/pyodide.js",
+   "bytes": 18912,
+   "gzip6_bytes": 7466
+  },
+  {
+   "file": "pyodide/v314.0.7/pyodide.asm.mjs",
+   "bytes": 1250344,
+   "gzip6_bytes": 260107
+  },
+  {
+   "file": "pyodide/v314.0.7/pyodide.asm.wasm",
+   "bytes": 9598218,
+   "gzip6_bytes": 3546122
+  },
+  {
+   "file": "pyodide/v314.0.7/python_stdlib.zip",
+   "bytes": 2545637,
+   "gzip6_bytes": 2503167
+  },
+  {
+   "file": "pyodide/v314.0.7/pyodide-lock.json",
+   "bytes": 119077,
+   "gzip6_bytes": 26595
+  }
+ ],
+ "total_bytes": 19454665,
+ "total_gzip6_bytes": 12196135
+}

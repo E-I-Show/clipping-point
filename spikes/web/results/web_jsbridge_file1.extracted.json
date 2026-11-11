@@ -1,0 +1,264 @@
+{
+ "env": {
+  "sys.platform": "emscripten",
+  "python": "3.14.2",
+  "import_js": true,
+  "location.protocol": "file:",
+  "location.origin": "file://",
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+  "has_localStorage": true,
+  "has_indexedDB": true,
+  "crossOriginIsolated": false,
+  "has_savePyxelFile": true,
+  "userActivation": {
+   "isActive": true,
+   "hasBeenActive": true
+  },
+  "pyodide.__version__": "314.0.7",
+  "ffi_names": [
+   "ConversionError",
+   "IN_PYODIDE",
+   "InternalError",
+   "JsArray",
+   "JsAsyncGenerator",
+   "JsAsyncIterable",
+   "JsAsyncIterator",
+   "JsBigInt",
+   "JsBuffer",
+   "JsCallable",
+   "JsCallableDoubleProxy",
+   "JsDomElement",
+   "JsDoubleProxy",
+   "JsException",
+   "JsFetchResponse",
+   "JsGenerator",
+   "JsIterable",
+   "JsIterator",
+   "JsMap",
+   "JsMutableMap",
+   "JsNull",
+   "JsOnceCallable",
+   "JsPromise",
+   "JsProxy",
+   "JsTypedArray",
+   "JsWeakRef",
+   "ToJsConverter",
+   "can_run_sync",
+   "create_once_callable",
+   "create_proxy",
+   "destroy_proxies",
+   "jsnull",
+   "register_js_module",
+   "run_sync",
+   "sys",
+   "t",
+   "to_js",
+   "unregister_js_module"
+  ]
+ },
+ "localstorage_basic": {
+  "keys_before": [],
+  "persist_marker_before": null,
+  "roundtrip": true,
+  "missing_is_None": false,
+  "missing_repr": "jsnull",
+  "missing_type": "JsNull",
+  "missing_is_falsy": true,
+  "missing_is_jsnull": true,
+  "undefined_attr_is_None": "hasattr False",
+  "type_of_value": "str",
+  "removed": true
+ },
+ "localstorage_binary": {
+  "bytes": 512000,
+  "base64": {
+   "chars": 682668,
+   "roundtrip_ok": true,
+   "encode_ms": 3.6,
+   "setItem_ms": 3.4,
+   "getItem_ms": 9.4,
+   "decode_ms": 2.8
+  },
+  "latin1": {
+   "chars": 512000,
+   "roundtrip_ok": true,
+   "setItem_ms": 21.3,
+   "getItem_ms": 8.1
+  }
+ },
+ "localstorage_quota": {
+  "steps": [
+   {
+    "chars": 100000,
+    "ok": true,
+    "ms": 0.5,
+    "stored_chars": 100000,
+    "error": null
+   },
+   {
+    "chars": 500000,
+    "ok": true,
+    "ms": 1.3,
+    "stored_chars": 500000,
+    "error": null
+   },
+   {
+    "chars": 1000000,
+    "ok": true,
+    "ms": 4.1,
+    "stored_chars": 1000000,
+    "error": null
+   },
+   {
+    "chars": 2000000,
+    "ok": true,
+    "ms": 7.9,
+    "stored_chars": 2000000,
+    "error": null
+   },
+   {
+    "chars": 3000000,
+    "ok": true,
+    "ms": 12.0,
+    "stored_chars": 3000000,
+    "error": null
+   },
+   {
+    "chars": 4000000,
+    "ok": true,
+    "ms": 15.2,
+    "stored_chars": 4000000,
+    "error": null
+   },
+   {
+    "chars": 5000000,
+    "ok": true,
+    "ms": 19.2,
+    "stored_chars": 5000000,
+    "error": null
+   },
+   {
+    "chars": 5500000,
+    "ok": false,
+    "ms": 4.7,
+    "stored_chars": null,
+    "error": {
+     "type": "JsException",
+     "str": "QuotaExceededError: Failed to execute 'setItem' on 'Storage': Setting the value of 'cp_spike_big' exceeded the quota.",
+     "js_name": "QuotaExceededError",
+     "js_message": "Failed to execute 'setItem' on 'Storage': Setting the value of 'cp_spike_big' exceeded the quota."
+    }
+   },
+   {
+    "chars": 8000000,
+    "ok": false,
+    "ms": 5.7,
+    "stored_chars": null,
+    "error": {
+     "type": "JsException",
+     "str": "QuotaExceededError: Failed to execute 'setItem' on 'Storage': Setting the value of 'cp_spike_big' exceeded the quota.",
+     "js_name": "QuotaExceededError",
+     "js_message": "Failed to execute 'setItem' on 'Storage': Setting the value of 'cp_spike_big' exceeded the quota."
+    }
+   }
+  ],
+  "max_single_value_chars_ascii": 5242491,
+  "max_single_value_chars_nonlatin": 5242333,
+  "twelve_slots_of_334k_chars": {
+   "stored": 12,
+   "error": null
+  },
+  "overflow_exception": {
+   "type": "JsException",
+   "str": "QuotaExceededError: Failed to execute 'setItem' on 'Storage': Setting the value of 'cp_spike_big' exceeded the quota.",
+   "js_name": "QuotaExceededError",
+   "js_message": "Failed to execute 'setItem' on 'Storage': Setting the value of 'cp_spike_big' exceeded the quota.",
+   "mro": [
+    "JsException",
+    "JsProxy",
+    "Exception",
+    "BaseException",
+    "object"
+   ]
+  }
+ },
+ "localstorage_persist_write": {
+  "written": true,
+  "keys": [
+   "cp_spike_persist"
+  ]
+ },
+ "download_blob": {
+  "to_js_type": "[object Uint8Array]",
+  "len": 200000,
+  "blob_size": 200000,
+  "sha256": "ec0ebf98b6f2954bf0f7b839402b1ba245996c39d18e155414e91a2b4353c157"
+ },
+ "download_savePyxelFile": {
+  "path": "/tmp/spike_runtime.cpr",
+  "sha256": "ec0ebf98b6f2954bf0f7b839402b1ba245996c39d18e155414e91a2b4353c157"
+ },
+ "filedialog_without_gesture": {
+  "clicked": true,
+  "userActivation.isActive": false,
+  "userActivation.hasBeenActive": true
+ },
+ "file_nogesture": {
+  "tag": "nogesture",
+  "name": "sample upload (1).cpr",
+  "how": "then+create_proxy",
+  "size": 150000,
+  "sha256": "5be63d443550bc3e9a269f47d3cdbf5a520b37a76d01422e8d380099b78d3df1",
+  "type": "bytes"
+ },
+ "filedialog_without_gesture_result": {
+  "delivered": true,
+  "item": {
+   "tag": "nogesture",
+   "name": "sample upload (1).cpr",
+   "how": "then+create_proxy",
+   "size": 150000,
+   "sha256": "5be63d443550bc3e9a269f47d3cdbf5a520b37a76d01422e8d380099b78d3df1",
+   "type": "bytes"
+  }
+ },
+ "filedialog_after_keypress": {
+  "clicked": true,
+  "userActivation.isActive": false,
+  "userActivation.hasBeenActive": true
+ },
+ "file_then": {
+  "tag": "then",
+  "name": "sample upload (1).cpr",
+  "how": "then+create_proxy",
+  "size": 150000,
+  "sha256": "5be63d443550bc3e9a269f47d3cdbf5a520b37a76d01422e8d380099b78d3df1",
+  "type": "bytes"
+ },
+ "filedialog_after_keypress_asyncio": {
+  "clicked": true,
+  "userActivation.isActive": false,
+  "userActivation.hasBeenActive": true
+ },
+ "file_asyncio": {
+  "tag": "asyncio",
+  "name": "sample upload (1).cpr",
+  "how": "asyncio+await",
+  "size": 150000,
+  "sha256": "5be63d443550bc3e9a269f47d3cdbf5a520b37a76d01422e8d380099b78d3df1",
+  "type": "bytes"
+ },
+ "drop": {
+  "pyxel._dropped_files": [
+   "/tmp/drop_me.cpr"
+  ],
+  "pyxel.dropped_files": [],
+  "files": [
+   {
+    "path": "/tmp/drop_me.cpr",
+    "size": 90000,
+    "sha256": "55acdd8414e87db18a297822f21455b108d92975791f73049f41d06253e7d001"
+   }
+  ]
+ }
+}

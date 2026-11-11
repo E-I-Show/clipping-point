@@ -1,0 +1,56 @@
+--- shirogane: R30 0.75 g, full throttle (no drive limiter), driver reacts 0.15 s after 4 deg ---
+shirogane no reaction (keys untouched)       digital | slide  85.4 other  18.1 spin True  rec None  cs_steer   0.0 lim   0.0 end  15.4 km/h beta   2.1
+shirogane raw (no compensation)              digital | slide  11.5 other  29.4 spin False rec 3.1   cs_steer  31.5 lim  31.5 end  36.4 km/h beta   0.0
+shirogane counter stage 1                    digital | slide  13.2 other   0.4 spin False rec 1.73  cs_steer   4.9 lim  11.4 end  42.3 km/h beta   0.0
+shirogane counter stage 2                    digital | slide  11.8 other   0.4 spin False rec 1.33  cs_steer   4.6 lim  10.5 end  44.3 km/h beta   0.0
+shirogane counter stage 3                    digital | slide  11.7 other   0.6 spin False rec 1.28  cs_steer   4.5 lim  13.0 end  44.8 km/h beta   0.0
+shirogane counter stage 4                    digital | slide  11.6 other   1.2 spin False rec 1.32  cs_steer   4.5 lim  14.5 end  44.8 km/h beta  -0.0
+shirogane counter stage 5                    digital | slide  11.5 other   2.3 spin False rec 1.38  cs_steer   4.5 lim  16.2 end  44.5 km/h beta   0.0
+shirogane stage3 gain1 cs_km=0.80            digital | slide  11.5 other   4.4 spin False rec 1.7   cs_steer   4.5 lim  18.4 end  43.8 km/h beta   0.0
+shirogane stage3 gain1 cs_km=1.30            digital | slide  22.7 other  15.9 spin False rec 4.47  cs_steer  25.9 lim  31.5 end  31.6 km/h beta  -0.0
+shirogane stage3 cs_rate=1.0                 digital | slide  13.8 other   0.6 spin False rec 1.52  cs_steer   4.9 lim  15.1 end  43.7 km/h beta  -0.0
+shirogane stage3 cs_rate=2.0                 digital | slide  11.7 other   0.6 spin False rec 1.28  cs_steer   4.5 lim  13.0 end  44.8 km/h beta   0.0
+shirogane stage3 cs_rate=3.0                 digital | slide  11.4 other   0.6 spin False rec 1.25  cs_steer   4.5 lim  12.7 end  44.9 km/h beta   0.0
+shirogane stage3, car steering setup -1      digital | slide  12.4 other   0.7 spin False rec 1.42  cs_steer   4.7 lim  13.8 end  44.3 km/h beta  -0.0
+shirogane stage1(off), car steering setup -1 digital | slide  13.2 other   0.4 spin False rec 1.73  cs_steer   4.9 lim  11.4 end  42.3 km/h beta   0.0
+shirogane stage3, car steering setup +1      digital | slide  11.4 other   0.6 spin False rec 1.25  cs_steer   4.4 lim  12.7 end  44.9 km/h beta   0.0
+shirogane stage1(off), car steering setup +1 digital | slide  13.2 other   0.4 spin False rec 1.73  cs_steer   4.9 lim  11.4 end  42.2 km/h beta   0.0
+shirogane stage3, reaction 0.10 s            digital | slide   9.2 other   0.4 spin False rec 1.08  cs_steer   4.5 lim  10.2 end  44.9 km/h beta  -0.0
+shirogane stage1(off), reaction 0.10 s       digital | slide   9.8 other   0.4 spin False rec 1.27  cs_steer   4.9 lim  10.5 end  44.1 km/h beta   0.0
+shirogane stage3, reaction 0.25 s            digital | slide  18.1 other   1.7 spin False rec 1.67  cs_steer   4.5 lim  19.5 end  43.9 km/h beta  -0.0
+shirogane stage1(off), reaction 0.25 s       digital | slide  77.5 other   0.4 spin True  rec 3.88  cs_steer   4.9 lim  31.5 end   0.5 km/h beta   0.0
+shirogane stage3, reaction 0.40 s            digital | slide  35.0 other   3.9 spin False rec 2.7   cs_steer   4.5 lim  31.5 end  38.2 km/h beta  -0.0
+shirogane stage1(off), reaction 0.40 s       digital | slide  81.1 other   0.4 spin True  rec 3.65  cs_steer   4.9 lim  31.5 end   0.6 km/h beta   0.0
+shirogane analog stage3 (preset)             analog  | slide  11.5 other   0.5 spin False rec 1.37  cs_steer   4.5 lim  12.5 end  44.4 km/h beta   0.0
+shirogane analog stage1 (off)                analog  | slide  11.2 other   0.4 spin False rec 1.38  cs_steer   4.5 lim  12.0 end  44.1 km/h beta  -0.0
+shirogane analog raw                         analog  | slide  11.5 other  29.4 spin False rec 3.1   cs_steer  31.5 lim  31.5 end  36.4 km/h beta   0.0
+shirogane stage3, throttle kept on           digital | slide  21.2 other  21.0 spin False rec 1.55  cs_steer  22.1 lim  22.3 end 104.4 km/h beta   0.4
+shirogane assist ON (drive limiter), no reaction digital | slide   2.5 other   0.5 spin False rec None  cs_steer   0.0 lim   0.0 end  70.3 km/h beta  -2.5
+--- kazane: R30 0.75 g, full throttle (no drive limiter), driver reacts 0.15 s after 4 deg ---
+kazane    no reaction (keys untouched)       digital | slide  85.4 other  10.7 spin True  rec None  cs_steer   0.0 lim   0.0 end  19.9 km/h beta   1.3
+kazane    raw (no compensation)              digital | slide  13.3 other  83.7 spin True  rec 3.18  cs_steer  24.9 lim  31.5 end  19.5 km/h beta   0.0
+kazane    counter stage 1                    digital | slide  77.9 other   0.0 spin True  rec 3.73  cs_steer  31.5 lim  31.5 end   0.0 km/h beta   0.0
+kazane    counter stage 2                    digital | slide  15.1 other   0.0 spin False rec 1.6   cs_steer  10.5 lim  10.5 end  42.1 km/h beta   0.0
+kazane    counter stage 3                    digital | slide  13.6 other   1.5 spin False rec 1.28  cs_steer  14.9 lim  14.9 end  44.3 km/h beta   0.0
+kazane    counter stage 4                    digital | slide  13.4 other   3.4 spin False rec 1.47  cs_steer  16.4 lim  16.4 end  43.9 km/h beta   0.0
+kazane    counter stage 5                    digital | slide  13.3 other  11.9 spin False rec 2.22  cs_steer  18.1 lim  18.1 end  41.7 km/h beta   0.0
+kazane    stage3 gain1 cs_km=0.80            digital | slide  13.3 other  37.8 spin False rec 3.4   cs_steer  20.1 lim  31.5 end  25.5 km/h beta   0.0
+kazane    stage3 gain1 cs_km=1.30            digital | slide  13.3 other  83.8 spin True  rec 3.18  cs_steer  22.0 lim  31.5 end  20.1 km/h beta   0.0
+kazane    stage3 cs_rate=1.0                 digital | slide  16.7 other   2.7 spin False rec 1.57  cs_steer  18.0 lim  18.0 end  42.8 km/h beta   0.0
+kazane    stage3 cs_rate=2.0                 digital | slide  13.6 other   1.5 spin False rec 1.28  cs_steer  14.9 lim  14.9 end  44.3 km/h beta   0.0
+kazane    stage3 cs_rate=3.0                 digital | slide  13.3 other   1.5 spin False rec 1.25  cs_steer  14.6 lim  14.6 end  44.4 km/h beta  -0.0
+kazane    stage3, car steering setup -1      digital | slide  15.3 other   4.0 spin False rec 1.75  cs_steer  16.6 lim  16.6 end  42.8 km/h beta   0.0
+kazane    stage1(off), car steering setup -1 digital | slide  77.9 other   0.0 spin True  rec 3.73  cs_steer  31.5 lim  31.5 end   0.0 km/h beta   0.0
+kazane    stage3, car steering setup +1      digital | slide  13.6 other   1.6 spin False rec 1.27  cs_steer  14.9 lim  14.9 end  44.3 km/h beta   0.0
+kazane    stage1(off), car steering setup +1 digital | slide  77.9 other   0.0 spin True  rec 3.73  cs_steer  31.5 lim  31.5 end   0.0 km/h beta   0.0
+kazane    stage3, reaction 0.10 s            digital | slide  10.8 other   0.8 spin False rec 1.08  cs_steer  12.0 lim  12.0 end  44.6 km/h beta  -0.0
+kazane    stage1(off), reaction 0.10 s       digital | slide  14.1 other   0.0 spin False rec 2.13  cs_steer   8.1 lim  10.9 end  39.1 km/h beta  -0.0
+kazane    stage3, reaction 0.25 s            digital | slide  21.6 other  28.1 spin False rec 3.37  cs_steer  23.0 lim  29.6 end  35.5 km/h beta   0.0
+kazane    stage1(off), reaction 0.25 s       digital | slide  80.8 other   0.0 spin True  rec 3.55  cs_steer  31.5 lim  31.5 end   1.6 km/h beta   0.0
+kazane    stage3, reaction 0.40 s            digital | slide  80.4 other   0.0 spin True  rec 3.62  cs_steer  31.5 lim  31.5 end   0.2 km/h beta   0.0
+kazane    stage1(off), reaction 0.40 s       digital | slide  82.2 other   0.4 spin True  rec 3.4   cs_steer  31.5 lim  31.5 end   3.2 km/h beta   0.0
+kazane    analog stage3 (preset)             analog  | slide  14.4 other   1.3 spin False rec 1.3   cs_steer  15.7 lim  15.7 end  44.0 km/h beta   0.0
+kazane    analog stage1 (off)                analog  | slide  65.3 other   0.0 spin True  rec 4.23  cs_steer  31.5 lim  31.5 end   3.4 km/h beta  -0.0
+kazane    analog raw                         analog  | slide  13.3 other  83.7 spin True  rec 3.18  cs_steer  24.9 lim  31.5 end  19.5 km/h beta   0.0
+kazane    stage3, throttle kept on           digital | slide  87.1 other  24.1 spin True  rec None  cs_steer  31.5 lim  31.5 end  49.3 km/h beta  24.1
+kazane    assist ON (drive limiter), no reaction digital | slide   3.1 other   0.0 spin False rec None  cs_steer   0.0 lim   0.0 end  70.7 km/h beta  -3.1

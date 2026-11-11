@@ -1,0 +1,833 @@
+{
+ "abs": [
+  {
+   "car": "tsubame",
+   "mu": 1.0,
+   "dist_full_m": 44.1,
+   "dist_abs_m": 43.3,
+   "steer_while_braking_lateral_m_full": 0.22,
+   "front_lock_ticks_full": 90,
+   "steer_while_braking_lateral_m_abs": 3.57,
+   "front_lock_ticks_abs": 9
+  },
+  {
+   "car": "tsubame",
+   "mu": 0.5,
+   "dist_full_m": 85.3,
+   "dist_abs_m": 92.5,
+   "steer_while_braking_lateral_m_full": -0.1,
+   "front_lock_ticks_full": 90,
+   "steer_while_braking_lateral_m_abs": 1.14,
+   "front_lock_ticks_abs": 24
+  },
+  {
+   "car": "kazane",
+   "mu": 1.0,
+   "dist_full_m": 42.5,
+   "dist_abs_m": 42.1,
+   "steer_while_braking_lateral_m_full": 0.2,
+   "front_lock_ticks_full": 90,
+   "steer_while_braking_lateral_m_abs": 3.67,
+   "front_lock_ticks_abs": 15
+  },
+  {
+   "car": "kazane",
+   "mu": 0.5,
+   "dist_full_m": 86.4,
+   "dist_abs_m": 86.1,
+   "steer_while_braking_lateral_m_full": -0.07,
+   "front_lock_ticks_full": 90,
+   "steer_while_braking_lateral_m_abs": 1.39,
+   "front_lock_ticks_abs": 15
+  },
+  {
+   "car": "shirogane",
+   "mu": 1.0,
+   "dist_full_m": 40.2,
+   "dist_abs_m": 39.3,
+   "steer_while_braking_lateral_m_full": 0.24,
+   "front_lock_ticks_full": 90,
+   "steer_while_braking_lateral_m_abs": 4.14,
+   "front_lock_ticks_abs": 11
+  },
+  {
+   "car": "shirogane",
+   "mu": 0.5,
+   "dist_full_m": 82.4,
+   "dist_abs_m": 79.6,
+   "steer_while_braking_lateral_m_full": -0.08,
+   "front_lock_ticks_full": 90,
+   "steer_while_braking_lateral_m_abs": 1.57,
+   "front_lock_ticks_abs": 10
+  },
+  {
+   "car": "arashi",
+   "mu": 1.0,
+   "dist_full_m": 41.4,
+   "dist_abs_m": 40.2,
+   "steer_while_braking_lateral_m_full": 0.24,
+   "front_lock_ticks_full": 90,
+   "steer_while_braking_lateral_m_abs": 4.03,
+   "front_lock_ticks_abs": 19
+  },
+  {
+   "car": "arashi",
+   "mu": 0.5,
+   "dist_full_m": 82.7,
+   "dist_abs_m": 83.3,
+   "steer_while_braking_lateral_m_full": -0.09,
+   "front_lock_ticks_full": 90,
+   "steer_while_braking_lateral_m_abs": 1.28,
+   "front_lock_ticks_abs": 24
+  }
+ ],
+ "tcs": [
+  {
+   "car": "tsubame",
+   "mu": 1.0,
+   "t0_80_full_s": 5.016666666666667,
+   "wheelspin_ticks_full": 211,
+   "t0_80_tcs_s": 5.0,
+   "wheelspin_ticks_tcs": 63
+  },
+  {
+   "car": "tsubame",
+   "mu": 0.5,
+   "t0_80_full_s": 10.05,
+   "wheelspin_ticks_full": 589,
+   "t0_80_tcs_s": 8.916666666666666,
+   "wheelspin_ticks_tcs": 208
+  },
+  {
+   "car": "kazane",
+   "mu": 1.0,
+   "t0_80_full_s": 4.9,
+   "wheelspin_ticks_full": 187,
+   "t0_80_tcs_s": 4.716666666666667,
+   "wheelspin_ticks_tcs": 81
+  },
+  {
+   "car": "kazane",
+   "mu": 0.5,
+   "t0_80_full_s": 11.416666666666666,
+   "wheelspin_ticks_full": 671,
+   "t0_80_tcs_s": 9.816666666666666,
+   "wheelspin_ticks_tcs": 286
+  },
+  {
+   "car": "shirogane",
+   "mu": 1.0,
+   "t0_80_full_s": 4.883333333333333,
+   "wheelspin_ticks_full": 219,
+   "t0_80_tcs_s": 4.483333333333333,
+   "wheelspin_ticks_tcs": 48
+  },
+  {
+   "car": "shirogane",
+   "mu": 0.5,
+   "t0_80_full_s": 11.3,
+   "wheelspin_ticks_full": 664,
+   "t0_80_tcs_s": 9.766666666666666,
+   "wheelspin_ticks_tcs": 285
+  },
+  {
+   "car": "arashi",
+   "mu": 1.0,
+   "t0_80_full_s": 3.683333333333333,
+   "wheelspin_ticks_full": 0,
+   "t0_80_tcs_s": 3.683333333333333,
+   "wheelspin_ticks_tcs": 0
+  },
+  {
+   "car": "arashi",
+   "mu": 0.5,
+   "t0_80_full_s": 5.333333333333333,
+   "wheelspin_ticks_full": 306,
+   "t0_80_tcs_s": 6.133333333333333,
+   "wheelspin_ticks_tcs": 85
+  }
+ ],
+ "spin_onset": [
+  {
+   "car": "kazane",
+   "first_time_s": {
+    "drive_util>1": 0.017,
+    "drive_util_axle>0.7": 0.017,
+    "|yaw_err - yaw_err0|>0.10 rad/s": 0.1,
+    "|beta_rate|>0.15 rad/s": 0.1,
+    "rear sy>1 (past peak)": 0.333,
+    "|beta-beta0|>4deg": 0.35,
+    "|beta|>25deg (spin)": 0.95
+   }
+  },
+  {
+   "car": "shirogane",
+   "first_time_s": {
+    "drive_util>1": 0.017,
+    "drive_util_axle>0.7": 0.017,
+    "|yaw_err - yaw_err0|>0.10 rad/s": 0.167,
+    "|beta_rate|>0.15 rad/s": 0.217,
+    "rear sy>1 (past peak)": 0.433,
+    "|beta-beta0|>4deg": 0.45,
+    "|beta|>25deg (spin)": 1.1
+   }
+  },
+  {
+   "car": "mikazuki",
+   "first_time_s": {
+    "drive_util>1": 0.017,
+    "drive_util_axle>0.7": 0.017,
+    "|yaw_err - yaw_err0|>0.10 rad/s": 0.217,
+    "|beta_rate|>0.15 rad/s": 0.367,
+    "|beta-beta0|>4deg": 0.5,
+    "rear sy>1 (past peak)": 0.567,
+    "|beta|>25deg (spin)": 1.75
+   }
+  }
+ ],
+ "save": [
+  {
+   "car": "kazane",
+   "assist": "none",
+   "peak_beta_deg": 85.4,
+   "dv_kmh_3s": -35.2,
+   "end_beta_deg": 8.0
+  },
+  {
+   "car": "kazane",
+   "assist": "throttle_only",
+   "peak_beta_deg": 7.4,
+   "dv_kmh_3s": 1.8,
+   "end_beta_deg": -6.0
+  },
+  {
+   "car": "kazane",
+   "assist": "throttle+countersteer",
+   "peak_beta_deg": 3.0,
+   "dv_kmh_3s": 32.3,
+   "end_beta_deg": -2.8
+  },
+  {
+   "car": "shirogane",
+   "assist": "none",
+   "peak_beta_deg": 85.4,
+   "dv_kmh_3s": -31.6,
+   "end_beta_deg": 16.1
+  },
+  {
+   "car": "shirogane",
+   "assist": "throttle_only",
+   "peak_beta_deg": 6.1,
+   "dv_kmh_3s": 4.8,
+   "end_beta_deg": -5.6
+  },
+  {
+   "car": "shirogane",
+   "assist": "throttle+countersteer",
+   "peak_beta_deg": 3.1,
+   "dv_kmh_3s": 32.9,
+   "end_beta_deg": 0.2
+  },
+  {
+   "car": "mikazuki",
+   "assist": "none",
+   "peak_beta_deg": 56.5,
+   "dv_kmh_3s": 1.4,
+   "end_beta_deg": -56.5
+  },
+  {
+   "car": "mikazuki",
+   "assist": "throttle_only",
+   "peak_beta_deg": 6.0,
+   "dv_kmh_3s": 24.3,
+   "end_beta_deg": -6.0
+  },
+  {
+   "car": "mikazuki",
+   "assist": "throttle+countersteer",
+   "peak_beta_deg": 2.5,
+   "dv_kmh_3s": 42.0,
+   "end_beta_deg": -0.7
+  }
+ ],
+ "knob": [
+  {
+   "CU2": 0.94,
+   "K_SPIN": 4.0,
+   "car": "kazane",
+   "throttle": 1.0,
+   "peak_beta_deg": 85.4,
+   "dv_1.5s": -2.2,
+   "verdict": "oversteer / spin"
+  },
+  {
+   "CU2": 0.94,
+   "K_SPIN": 4.0,
+   "car": "kazane",
+   "throttle": 0.7,
+   "peak_beta_deg": 43.6,
+   "dv_1.5s": 3.5,
+   "verdict": "oversteer / spin"
+  },
+  {
+   "CU2": 0.94,
+   "K_SPIN": 4.0,
+   "car": "shirogane",
+   "throttle": 1.0,
+   "peak_beta_deg": 85.4,
+   "dv_1.5s": 1.9,
+   "verdict": "oversteer / spin"
+  },
+  {
+   "CU2": 0.94,
+   "K_SPIN": 4.0,
+   "car": "shirogane",
+   "throttle": 0.7,
+   "peak_beta_deg": 33.4,
+   "dv_1.5s": 5.5,
+   "verdict": "oversteer / spin"
+  },
+  {
+   "CU2": 0.8,
+   "K_SPIN": 4.0,
+   "car": "kazane",
+   "throttle": 1.0,
+   "peak_beta_deg": 85.3,
+   "dv_1.5s": 0.2,
+   "verdict": "oversteer / spin"
+  },
+  {
+   "CU2": 0.8,
+   "K_SPIN": 4.0,
+   "car": "kazane",
+   "throttle": 0.7,
+   "peak_beta_deg": 23.8,
+   "dv_1.5s": 5.8,
+   "verdict": "neutral / mild"
+  },
+  {
+   "CU2": 0.8,
+   "K_SPIN": 4.0,
+   "car": "shirogane",
+   "throttle": 1.0,
+   "peak_beta_deg": 78.0,
+   "dv_1.5s": 3.5,
+   "verdict": "oversteer / spin"
+  },
+  {
+   "CU2": 0.8,
+   "K_SPIN": 4.0,
+   "car": "shirogane",
+   "throttle": 0.7,
+   "peak_beta_deg": 18.5,
+   "dv_1.5s": 7.3,
+   "verdict": "neutral / mild"
+  },
+  {
+   "CU2": 0.6,
+   "K_SPIN": 4.0,
+   "car": "kazane",
+   "throttle": 1.0,
+   "peak_beta_deg": 71.6,
+   "dv_1.5s": 2.0,
+   "verdict": "oversteer / spin"
+  },
+  {
+   "CU2": 0.6,
+   "K_SPIN": 4.0,
+   "car": "kazane",
+   "throttle": 0.7,
+   "peak_beta_deg": 9.1,
+   "dv_1.5s": 7.6,
+   "verdict": "understeer / runs wide"
+  },
+  {
+   "CU2": 0.6,
+   "K_SPIN": 4.0,
+   "car": "shirogane",
+   "throttle": 1.0,
+   "peak_beta_deg": 63.1,
+   "dv_1.5s": 5.1,
+   "verdict": "oversteer / spin"
+  },
+  {
+   "CU2": 0.6,
+   "K_SPIN": 4.0,
+   "car": "shirogane",
+   "throttle": 0.7,
+   "peak_beta_deg": 9.2,
+   "dv_1.5s": 8.5,
+   "verdict": "understeer / runs wide"
+  },
+  {
+   "CU2": 0.94,
+   "K_SPIN": 1.5,
+   "car": "kazane",
+   "throttle": 1.0,
+   "peak_beta_deg": 85.3,
+   "dv_1.5s": -0.4,
+   "verdict": "oversteer / spin"
+  },
+  {
+   "CU2": 0.94,
+   "K_SPIN": 1.5,
+   "car": "kazane",
+   "throttle": 0.7,
+   "peak_beta_deg": 36.2,
+   "dv_1.5s": 4.3,
+   "verdict": "oversteer / spin"
+  },
+  {
+   "CU2": 0.94,
+   "K_SPIN": 1.5,
+   "car": "shirogane",
+   "throttle": 1.0,
+   "peak_beta_deg": 83.7,
+   "dv_1.5s": 2.8,
+   "verdict": "oversteer / spin"
+  },
+  {
+   "CU2": 0.94,
+   "K_SPIN": 1.5,
+   "car": "shirogane",
+   "throttle": 0.7,
+   "peak_beta_deg": 27.1,
+   "dv_1.5s": 6.1,
+   "verdict": "oversteer / spin"
+  },
+  {
+   "CU2": 0.7,
+   "K_SPIN": 1.5,
+   "car": "kazane",
+   "throttle": 1.0,
+   "peak_beta_deg": 57.7,
+   "dv_1.5s": 3.4,
+   "verdict": "oversteer / spin"
+  },
+  {
+   "CU2": 0.7,
+   "K_SPIN": 1.5,
+   "car": "kazane",
+   "throttle": 0.7,
+   "peak_beta_deg": 5.2,
+   "dv_1.5s": 8.2,
+   "verdict": "understeer / runs wide"
+  },
+  {
+   "CU2": 0.7,
+   "K_SPIN": 1.5,
+   "car": "shirogane",
+   "throttle": 1.0,
+   "peak_beta_deg": 52.1,
+   "dv_1.5s": 6.3,
+   "verdict": "oversteer / spin"
+  },
+  {
+   "CU2": 0.7,
+   "K_SPIN": 1.5,
+   "car": "shirogane",
+   "throttle": 0.7,
+   "peak_beta_deg": 5.8,
+   "dv_1.5s": 8.8,
+   "verdict": "understeer / runs wide"
+  }
+ ],
+ "gear_rollon": [
+  {
+   "car": "tsubame",
+   "gear_stage": -2,
+   "40-80_s": 2.63,
+   "gear_at_40": 2,
+   "force_N_0.5s_from_40": 4432,
+   "60-110_s": 4.25,
+   "gear_at_60": 2,
+   "force_N_0.5s_from_60": 4861,
+   "100-160_s": 9.22,
+   "gear_at_100": 4,
+   "force_N_0.5s_from_100": 2331
+  },
+  {
+   "car": "tsubame",
+   "gear_stage": 0,
+   "40-80_s": 3.02,
+   "gear_at_40": 2,
+   "force_N_0.5s_from_40": 3958,
+   "60-110_s": 4.47,
+   "gear_at_60": 2,
+   "force_N_0.5s_from_60": 4155,
+   "100-160_s": 8.88,
+   "gear_at_100": 3,
+   "force_N_0.5s_from_100": 2992
+  },
+  {
+   "car": "tsubame",
+   "gear_stage": 2,
+   "40-80_s": 3.53,
+   "gear_at_40": 2,
+   "force_N_0.5s_from_40": 3483,
+   "60-110_s": 4.32,
+   "gear_at_60": 2,
+   "force_N_0.5s_from_60": 3483,
+   "100-160_s": 9.28,
+   "gear_at_100": 3,
+   "force_N_0.5s_from_100": 2459
+  },
+  {
+   "car": "kazane",
+   "gear_stage": -2,
+   "40-80_s": 2.37,
+   "gear_at_40": 2,
+   "force_N_0.5s_from_40": 4912,
+   "60-110_s": 4.13,
+   "gear_at_60": 2,
+   "force_N_0.5s_from_60": 4745,
+   "100-160_s": 9.35,
+   "gear_at_100": 4,
+   "force_N_0.5s_from_100": 2598
+  },
+  {
+   "car": "kazane",
+   "gear_stage": 0,
+   "40-80_s": 2.6,
+   "gear_at_40": 2,
+   "force_N_0.5s_from_40": 4386,
+   "60-110_s": 4.28,
+   "gear_at_60": 2,
+   "force_N_0.5s_from_60": 4342,
+   "100-160_s": 9.02,
+   "gear_at_100": 3,
+   "force_N_0.5s_from_100": 3030
+  },
+  {
+   "car": "kazane",
+   "gear_stage": 2,
+   "40-80_s": 2.97,
+   "gear_at_40": 2,
+   "force_N_0.5s_from_40": 3860,
+   "60-110_s": 4.42,
+   "gear_at_60": 2,
+   "force_N_0.5s_from_60": 3860,
+   "100-160_s": 9.37,
+   "gear_at_100": 3,
+   "force_N_0.5s_from_100": 2704
+  },
+  {
+   "car": "shirogane",
+   "gear_stage": -2,
+   "40-80_s": 2.13,
+   "gear_at_40": 2,
+   "force_N_0.5s_from_40": 7399,
+   "60-110_s": 3.37,
+   "gear_at_60": 2,
+   "force_N_0.5s_from_60": 7412,
+   "100-160_s": 6.1,
+   "gear_at_100": 3,
+   "force_N_0.5s_from_100": 4985
+  },
+  {
+   "car": "shirogane",
+   "gear_stage": 0,
+   "40-80_s": 2.22,
+   "gear_at_40": 2,
+   "force_N_0.5s_from_40": 6617,
+   "60-110_s": 3.37,
+   "gear_at_60": 2,
+   "force_N_0.5s_from_60": 6865,
+   "100-160_s": 6.23,
+   "gear_at_100": 3,
+   "force_N_0.5s_from_100": 4643
+  },
+  {
+   "car": "shirogane",
+   "gear_stage": 2,
+   "40-80_s": 2.48,
+   "gear_at_40": 2,
+   "force_N_0.5s_from_40": 5762,
+   "60-110_s": 3.17,
+   "gear_at_60": 2,
+   "force_N_0.5s_from_60": 5984,
+   "100-160_s": 6.13,
+   "gear_at_100": 3,
+   "force_N_0.5s_from_100": 4086
+  },
+  {
+   "car": "arashi",
+   "gear_stage": -2,
+   "40-80_s": 2.07,
+   "gear_at_40": 2,
+   "force_N_0.5s_from_40": 7343,
+   "60-110_s": 3.53,
+   "gear_at_60": 2,
+   "force_N_0.5s_from_60": 7443,
+   "100-160_s": 7.02,
+   "gear_at_100": 4,
+   "force_N_0.5s_from_100": 4001
+  },
+  {
+   "car": "arashi",
+   "gear_stage": 0,
+   "40-80_s": 2.27,
+   "gear_at_40": 2,
+   "force_N_0.5s_from_40": 6450,
+   "60-110_s": 3.65,
+   "gear_at_60": 2,
+   "force_N_0.5s_from_60": 6756,
+   "100-160_s": 6.97,
+   "gear_at_100": 4,
+   "force_N_0.5s_from_100": 3561
+  },
+  {
+   "car": "arashi",
+   "gear_stage": 2,
+   "40-80_s": 2.3,
+   "gear_at_40": 1,
+   "force_N_0.5s_from_40": 8394,
+   "60-110_s": 3.72,
+   "gear_at_60": 2,
+   "force_N_0.5s_from_60": 5926,
+   "100-160_s": 6.98,
+   "gear_at_100": 3,
+   "force_N_0.5s_from_100": 4290
+  }
+ ],
+ "traction_mild": [
+  {
+   "car": "tsubame",
+   "traction": -2,
+   "dv_1.5s": 17.1,
+   "peak_beta_deg": 0.8,
+   "wide_m": 4.7,
+   "verdict": "understeer / runs wide",
+   "util_0.5s": [
+    1.05,
+    0.48,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "car": "tsubame",
+   "traction": 0,
+   "dv_1.5s": 15.3,
+   "peak_beta_deg": 0.9,
+   "wide_m": 4.42,
+   "verdict": "understeer / runs wide",
+   "util_0.5s": [
+    1.13,
+    0.37,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "car": "tsubame",
+   "traction": 2,
+   "dv_1.5s": 16.2,
+   "peak_beta_deg": 1.0,
+   "wide_m": 4.19,
+   "verdict": "understeer / runs wide",
+   "util_0.5s": [
+    1.1,
+    0.41,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "car": "kazane",
+   "traction": -2,
+   "dv_1.5s": 8.3,
+   "peak_beta_deg": 68.2,
+   "wide_m": -1.2,
+   "verdict": "oversteer / spin",
+   "util_0.5s": [
+    0.0,
+    0.0,
+    1.3,
+    0.49
+   ]
+  },
+  {
+   "car": "kazane",
+   "traction": 0,
+   "dv_1.5s": 8.4,
+   "peak_beta_deg": 60.7,
+   "wide_m": -1.34,
+   "verdict": "oversteer / spin",
+   "util_0.5s": [
+    0.0,
+    0.0,
+    1.35,
+    0.44
+   ]
+  },
+  {
+   "car": "kazane",
+   "traction": 2,
+   "dv_1.5s": 7.4,
+   "peak_beta_deg": 85.9,
+   "wide_m": -0.73,
+   "verdict": "oversteer / spin",
+   "util_0.5s": [
+    0.0,
+    0.0,
+    1.18,
+    0.61
+   ]
+  },
+  {
+   "car": "shirogane",
+   "traction": -2,
+   "dv_1.5s": 10.4,
+   "peak_beta_deg": 46.2,
+   "wide_m": -1.3,
+   "verdict": "oversteer / spin",
+   "util_0.5s": [
+    0.0,
+    0.0,
+    1.39,
+    0.51
+   ]
+  },
+  {
+   "car": "shirogane",
+   "traction": 0,
+   "dv_1.5s": 10.9,
+   "peak_beta_deg": 52.7,
+   "wide_m": -1.13,
+   "verdict": "oversteer / spin",
+   "util_0.5s": [
+    0.0,
+    0.0,
+    1.4,
+    0.5
+   ]
+  },
+  {
+   "car": "shirogane",
+   "traction": 2,
+   "dv_1.5s": 11.6,
+   "peak_beta_deg": 86.2,
+   "wide_m": -0.1,
+   "verdict": "oversteer / spin",
+   "util_0.5s": [
+    0.0,
+    0.0,
+    1.19,
+    0.7
+   ]
+  },
+  {
+   "car": "arashi",
+   "traction": -2,
+   "dv_1.5s": 24.4,
+   "peak_beta_deg": 1.1,
+   "wide_m": 3.74,
+   "verdict": "understeer / runs wide",
+   "util_0.5s": [
+    0.65,
+    0.24,
+    0.81,
+    0.45
+   ]
+  },
+  {
+   "car": "arashi",
+   "traction": 0,
+   "dv_1.5s": 24.2,
+   "peak_beta_deg": 0.8,
+   "wide_m": 4.69,
+   "verdict": "understeer / runs wide",
+   "util_0.5s": [
+    0.75,
+    0.19,
+    0.94,
+    0.36
+   ]
+  },
+  {
+   "car": "arashi",
+   "traction": 2,
+   "dv_1.5s": 23.8,
+   "peak_beta_deg": 0.9,
+   "wide_m": 5.61,
+   "verdict": "understeer / runs wide",
+   "util_0.5s": [
+    0.87,
+    0.11,
+    1.02,
+    0.28
+   ]
+  }
+ ],
+ "lite": [
+  {
+   "car": "tsubame",
+   "full": {
+    "t0_100": 6.85,
+    "dist100_abs": 43.3,
+    "max_lat_g_R30": 0.892,
+    "exit_peak_beta_deg": 0.6,
+    "exit_dv_2s": 15.7
+   },
+   "lite": {
+    "t0_100": 6.85,
+    "dist100_abs": 43.3,
+    "max_lat_g_R30": 1.019,
+    "exit_peak_beta_deg": 0.5,
+    "exit_dv_2s": 24.7
+   }
+  },
+  {
+   "car": "kazane",
+   "full": {
+    "t0_100": 6.63,
+    "dist100_abs": 42.1,
+    "max_lat_g_R30": 0.91,
+    "exit_peak_beta_deg": 85.4,
+    "exit_dv_2s": -13.3
+   },
+   "lite": {
+    "t0_100": 6.63,
+    "dist100_abs": 42.1,
+    "max_lat_g_R30": 1.0,
+    "exit_peak_beta_deg": 86.1,
+    "exit_dv_2s": -6.1
+   }
+  },
+  {
+   "car": "shirogane",
+   "full": {
+    "t0_100": 5.62,
+    "dist100_abs": 39.3,
+    "max_lat_g_R30": 0.956,
+    "exit_peak_beta_deg": 85.4,
+    "exit_dv_2s": -9.6
+   },
+   "lite": {
+    "t0_100": 5.63,
+    "dist100_abs": 39.3,
+    "max_lat_g_R30": 1.084,
+    "exit_peak_beta_deg": 86.5,
+    "exit_dv_2s": -5.0
+   }
+  },
+  {
+   "car": "arashi",
+   "full": {
+    "t0_100": 5.33,
+    "dist100_abs": 40.2,
+    "max_lat_g_R30": 0.944,
+    "exit_peak_beta_deg": 1.1,
+    "exit_dv_2s": 29.5
+   },
+   "lite": {
+    "t0_100": 5.33,
+    "dist100_abs": 40.2,
+    "max_lat_g_R30": 1.073,
+    "exit_peak_beta_deg": 1.9,
+    "exit_dv_2s": 31.5
+   }
+  }
+ ]
+}

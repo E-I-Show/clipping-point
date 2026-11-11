@@ -1,0 +1,24 @@
+{
+ "platform": "linux",
+ "python": "3.13.18",
+ "load_validate_ms_first_best": [
+  26.3,
+  20.3
+ ],
+ "load_light_ms_best": 17.4,
+ "query_hint_us_first_best": [
+  1.559,
+  1.526
+ ],
+ "query_hint_calls": 18000,
+ "query_global_us_best": 56.6,
+ "pose_at_us_best": 0.632,
+ "ideal_us_best": 0.226,
+ "surface_at_us_best": 0.297,
+ "speed_profile_ms_best": 1.85,
+ "build_mesh_adaptive_ms_best": 8.3,
+ "obb_us_best": 1.118,
+ "relax_racing_line_s": 0.57,
+ "query_sum": "1511.9703245496305",
+ "length": "1799.994077014239"
+}

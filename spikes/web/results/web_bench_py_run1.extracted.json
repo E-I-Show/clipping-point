@@ -1,0 +1,146 @@
+{
+ "speed": {
+  "python": "3.14.2",
+  "platform": "emscripten",
+  "implementation": "cpython",
+  "timer_resolution_us": 99.99999999976694,
+  "repeats": 5,
+  "float_loop": {
+   "units": 300000,
+   "unit": "iteration",
+   "runs_ms": [
+    169.8,
+    175.1,
+    148.7,
+    152.3,
+    179.8
+   ],
+   "best_ns_per_unit": 495.7,
+   "median_ns_per_unit": 566.0,
+   "first_ns_per_unit": 566.0
+  },
+  "attr_loop_slots": {
+   "units": 300000,
+   "unit": "iteration",
+   "runs_ms": [
+    240.5,
+    238.7,
+    213.9,
+    191.9,
+    189.7
+   ],
+   "best_ns_per_unit": 632.3,
+   "median_ns_per_unit": 713.0,
+   "first_ns_per_unit": 801.7
+  },
+  "attr_loop_dict": {
+   "units": 300000,
+   "unit": "iteration",
+   "runs_ms": [
+    196.5,
+    254.9,
+    251.0,
+    242.7,
+    237.6
+   ],
+   "best_ns_per_unit": 655.0,
+   "median_ns_per_unit": 809.0,
+   "first_ns_per_unit": 655.0
+  },
+  "call_loop": {
+   "units": 300000,
+   "unit": "iteration",
+   "runs_ms": [
+    115.1,
+    121.8,
+    133.5,
+    115.2,
+    114.5
+   ],
+   "best_ns_per_unit": 381.7,
+   "median_ns_per_unit": 384.0,
+   "first_ns_per_unit": 383.7
+  },
+  "vehicle_6cars": {
+   "units": 21600,
+   "unit": "car-tick",
+   "runs_ms": [
+    294.7,
+    298.7,
+    278.9,
+    222.6,
+    225.8
+   ],
+   "best_ns_per_unit": 10305.6,
+   "median_ns_per_unit": 12912.0,
+   "first_ns_per_unit": 13643.5
+  }
+ },
+ "speed_second_pass": {
+  "python": "3.14.2",
+  "platform": "emscripten",
+  "implementation": "cpython",
+  "timer_resolution_us": 99.99999999976694,
+  "repeats": 3,
+  "float_loop": {
+   "units": 300000,
+   "unit": "iteration",
+   "runs_ms": [
+    294.1,
+    279.7,
+    271.4
+   ],
+   "best_ns_per_unit": 904.7,
+   "median_ns_per_unit": 932.3,
+   "first_ns_per_unit": 980.3
+  },
+  "attr_loop_slots": {
+   "units": 300000,
+   "unit": "iteration",
+   "runs_ms": [
+    244.7,
+    264.8,
+    243.0
+   ],
+   "best_ns_per_unit": 810.0,
+   "median_ns_per_unit": 815.7,
+   "first_ns_per_unit": 815.7
+  },
+  "attr_loop_dict": {
+   "units": 300000,
+   "unit": "iteration",
+   "runs_ms": [
+    236.6,
+    229.0,
+    180.4
+   ],
+   "best_ns_per_unit": 601.3,
+   "median_ns_per_unit": 763.3,
+   "first_ns_per_unit": 788.7
+  },
+  "call_loop": {
+   "units": 300000,
+   "unit": "iteration",
+   "runs_ms": [
+    94.3,
+    105.1,
+    113.0
+   ],
+   "best_ns_per_unit": 314.3,
+   "median_ns_per_unit": 350.3,
+   "first_ns_per_unit": 314.3
+  },
+  "vehicle_6cars": {
+   "units": 21600,
+   "unit": "car-tick",
+   "runs_ms": [
+    281.6,
+    277.2,
+    229.9
+   ],
+   "best_ns_per_unit": 10643.5,
+   "median_ns_per_unit": 12833.3,
+   "first_ns_per_unit": 13037.0
+  }
+ }
+}

@@ -1,0 +1,153 @@
+{
+ "checks": {
+  "browser is Pyodide (emscripten)": true,
+  "browser reads native files: content CRC and header equal": true,
+  "interpolated poses (lerp + cubic, 20550 floats) bit-identical native vs browser": true,
+  "browser write -> browser read exact (6 cars 5 min)": true,
+  "browser rejects damaged / cut / empty / padded files": true,
+  "native reads the file written in the browser (load_cpr passes its CRC check, content CRC as reported)": true,
+  "localStorage round trip of the base64 text": true
+ },
+ "info": {
+  "file bytes rewritten in browser identical to native file (6 cars)": true,
+  "file bytes rewritten in browser identical to native file (1 car)": true,
+  "recording of the same synthetic drive identical native vs browser": true,
+  "differing sample bytes (browser drive vs native drive)": "0 of 5600"
+ },
+ "browser": {
+  "python": "3.14.2",
+  "platform": "emscripten",
+  "byteorder": "little",
+  "zlib": "1.3.1",
+  "read_native_small_content_crc": 1982588776,
+  "read_native_big_content_crc": 1190822823,
+  "read_native_ok": true,
+  "pose_crc_small": 2918819481,
+  "pose_values": 20550,
+  "pose_crc_equal_native": true,
+  "pose_crc_big_equal_native": true,
+  "write_read_exact": true,
+  "rewritten_big_bytes_identical_to_native_file": true,
+  "rewritten_big_len": 150336,
+  "rewritten_small_bytes_identical_to_native_file": true,
+  "reject_codes": [
+   "E_CORRUPT",
+   "E_TRUNCATED",
+   "E_NOT_CPR",
+   "E_CORRUPT"
+  ],
+  "browser_recorded_content_crc": 1982588776,
+  "browser_recorded_equals_native_recording": true,
+  "browser_recorded_differing_bytes": 0,
+  "browser_recorded_total_bytes": 5600,
+  "browser_file_crc32": 558161692,
+  "t_load_big_ms": 73.30000000000014,
+  "t_dump_big_ms": 253.19999999999965,
+  "t_dump_big_level6_ms": 145.99999999999991,
+  "t_peek_big_ms": 0.39999999999995595,
+  "t_b64_big_ms": 0.6999999999992568,
+  "t_unb64_big_ms": 0.700000000000145,
+  "recorder_tick_us_avg_6cars": 6.99999999999997,
+  "recorder_sample_tick_us_6cars": 16.999999999999606,
+  "pose_6cars_us_lerp": 29.433333333333422,
+  "pose_6cars_us_hermite": 40.4666666666668,
+  "localstorage_roundtrip": true,
+  "localstorage_len": 200448,
+  "localstorage_reload_exact": true,
+  "localstorage_quota_chars_at_least": 5000000,
+  "localstorage_quota_error": "JsException: QuotaExceededError: Failed to execute 'setItem' on 'Storage': Setting the value of 'cpr_quota_10' exceeded the quota.",
+  "location": "file:"
+ },
+ "webrun": {
+  "url": "file://<scratchpad>/spikes/replay/web_build/cpr_spike.html",
+  "mirror": "<scratchpad>/spikes/web/mirror",
+  "failures": [],
+  "requests": [
+   {
+    "t": 147,
+    "status": 200,
+    "url": "file://<scratchpad>/spikes/replay/web_build/cpr_spike.html"
+   },
+   {
+    "t": 180,
+    "status": 200,
+    "url": "https://kitao.dev/pyxel/3.0.1/pyxel.js"
+   },
+   {
+    "t": 191,
+    "status": 200,
+    "url": "https://kitao.dev/pyxel/3.0.1/pyxel.css"
+   },
+   {
+    "t": 204,
+    "status": 200,
+    "url": "https://kitao.dev/pyxel/3.0.1/images/pyxel_logo_76x32.png"
+   },
+   {
+    "t": 394,
+    "status": 200,
+    "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+   },
+   {
+    "t": 416,
+    "status": 200,
+    "url": "https://kitao.dev/pyxel/3.0.1/import_hook.py"
+   },
+   {
+    "t": 416,
+    "status": 200,
+    "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js"
+   },
+   {
+    "t": 526,
+    "status": 200,
+    "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+   },
+   {
+    "t": 580,
+    "status": 200,
+    "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+   },
+   {
+    "t": 710,
+    "status": 200,
+    "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+   },
+   {
+    "t": 739,
+    "status": 200,
+    "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+   },
+   {
+    "t": 2810,
+    "status": 200,
+    "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+   },
+   {
+    "t": 3184,
+    "status": 200,
+    "url": "https://kitao.dev/pyxel/3.0.1/images/click_to_start_114x14.png"
+   }
+  ],
+  "downloads": [],
+  "allowed": [],
+  "actions": [],
+  "filechoosers": [],
+  "passed": true,
+  "promptAt": 3240,
+  "clickedAt": 3244,
+  "state": {
+   "overlayText": null,
+   "hasFatalError": false,
+   "initialized": true,
+   "canvas": {
+    "width": 960,
+    "height": 720,
+    "cssW": 960,
+    "cssH": 720
+   }
+  },
+  "untilAt": 5793,
+  "elapsedMs": 6269
+ }
+}

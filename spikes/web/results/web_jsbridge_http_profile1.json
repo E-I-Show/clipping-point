@@ -1,0 +1,304 @@
+{
+ "url": "http://127.0.0.1:8765/apps/jsbridge.html",
+ "mirror": null,
+ "console": [
+  {
+   "t": 162,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 162,
+   "type": "log",
+   "text": "{command: play, name: jsbridge.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIALIOa10sYEvPCQAAAAcAAAAfAAAAanNicmlkZ2…yaWRnZS9tYWluLnB5UEsFBgAAAAAEAAQAEwEAAKUrAAAAAA==}"
+  },
+  {
+   "t": 2002,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 2315,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 3094,
+   "type": "warning",
+   "text": "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)"
+  },
+  {
+   "t": 3126,
+   "type": "warning",
+   "text": "[.WebGL-0x15c01409400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3142,
+   "type": "warning",
+   "text": "[.WebGL-0x15c01409400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3164,
+   "type": "warning",
+   "text": "[.WebGL-0x15c01409400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3195,
+   "type": "warning",
+   "text": "[.WebGL-0x15c01409400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  },
+  {
+   "t": 3217,
+   "type": "log",
+   "text": "RESULT_JSON env {\"sys.platform\": \"emscripten\", \"python\": \"3.14.2\", \"import_js\": true, \"location.protocol\": \"http:\", \"location.origin\": \"http://127.0.0.1:8765\", \"userAgent\": \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\", \"has_localStorage\": true, \"has_indexedDB\": true, \"crossOriginIsolated\": false, \"has_savePyxelFile\": true, \"userActivation\": {\"isActive\": true, \"hasBeenActive\": true}, \"pyodide.__version__\": \"314.0.7\", \"ffi_names\": [\"ConversionError\", \"IN_PYODIDE\", \"InternalError\", \"JsArray\", \"JsAsyncGenerator\", \"JsAsyncIterable\", \"JsAsyncIterator\", \"JsBigInt\", \"JsBuffer\", \"JsCallable\", \"JsCallableDoubleProxy\", \"JsDomElement\", \"JsDoubleProxy\", \"JsException\", \"JsFetchResponse\", \"JsGenerator\", \"JsIterable\", \"JsIterator\", \"JsMap\", \"JsMutableMap\", \"JsNull\", \"JsOnceCallable\", \"JsPromise\", \"JsProxy\", \"JsTypedArray\", \"JsWeakRef\", \"ToJsConverter\", \"can_run_sync\", \"create_once_callable\", \"create_proxy\", \"destroy_proxies\", \"jsnull\", \"register_js_module\", \"run_sync\", \"sys\", \"t\", \"to_js\", \"unregister_js_module\"]}"
+  },
+  {
+   "t": 3218,
+   "type": "log",
+   "text": "RESULT_JSON localstorage_basic {\"keys_before\": [], \"persist_marker_before\": null, \"roundtrip\": true, \"missing_is_None\": false, \"missing_repr\": \"jsnull\", \"missing_type\": \"JsNull\", \"missing_is_falsy\": true, \"missing_is_jsnull\": true, \"undefined_attr_is_None\": \"hasattr False\", \"type_of_value\": \"str\", \"removed\": true}"
+  },
+  {
+   "t": 3272,
+   "type": "log",
+   "text": "RESULT_JSON localstorage_binary {\"bytes\": 512000, \"base64\": {\"chars\": 682668, \"roundtrip_ok\": true, \"encode_ms\": 3.8, \"setItem_ms\": 2.3, \"getItem_ms\": 9.6, \"decode_ms\": 3.1}, \"latin1\": {\"chars\": 512000, \"roundtrip_ok\": true, \"setItem_ms\": 24.2, \"getItem_ms\": 7.9}}"
+  },
+  {
+   "t": 9795,
+   "type": "log",
+   "text": "RESULT_JSON localstorage_quota {\"steps\": [{\"chars\": 100000, \"ok\": true, \"ms\": 0.5, \"stored_chars\": 100000, \"error\": null}, {\"chars\": 500000, \"ok\": true, \"ms\": 1.5, \"stored_chars\": 500000, \"error\": null}, {\"chars\": 1000000, \"ok\": true, \"ms\": 4.2, \"stored_chars\": 1000000, \"error\": null}, {\"chars\": 2000000, \"ok\": true, \"ms\": 9.7, \"stored_chars\": 2000000, \"error\": null}, {\"chars\": 3000000, \"ok\": true, \"ms\": 13.5, \"stored_chars\": 3000000, \"error\": null}, {\"chars\": 4000000, \"ok\": true, \"ms\": 16.6, \"stored_chars\": 4000000, \"error\": null}, {\"chars\": 5000000, \"ok\": true, \"ms\": 28.8, \"stored_chars\": 5000000, \"error\": null}, {\"chars\": 5500000, \"ok\": false, \"ms\": 4.5, \"stored_chars\": null, \"error\": {\"type\": \"JsException\", \"str\": \"QuotaExceededError: Failed to execute 'setItem' on 'Storage': Setting the value of 'cp_spike_big' exceeded the quota.\", \"js_name\": \"QuotaExceededError\", \"js_message\": \"Failed to execute 'setItem' on 'Storage': Setting the value of 'cp_spike_big' exceeded the quota.\"}}, {\"chars\": 8000000, \"ok\": false, \"ms\": 5.0, \"stored_chars\": null, \"error\": {\"type\": \"JsException\", \"str\": \"QuotaExceededError: Failed to execute 'setItem' on 'Storage': Setting the value of 'cp_spike_big' exceeded the quota.\", \"js_name\": \"QuotaExceededError\", \"js_message\": \"Failed to execute 'setItem' on 'Storage': Setting the value of 'cp_spike_big' exceeded the quota.\"}}], \"max_single_value_chars_ascii\": 5242491, \"max_single_value_chars_nonlatin\": 5242333, \"twelve_slots_of_334k_chars\": {\"stored\": 12, \"error\": null}, \"overflow_exception\": {\"type\": \"JsException\", \"str\": \"QuotaExceededError: Failed to execute 'setItem' on 'Storage': Setting the value of 'cp_spike_big' exceeded the quota.\", \"js_name\": \"QuotaExceededError\", \"js_message\": \"Failed to execute 'setItem' on 'Storage': Setting the value of 'cp_spike_big' exceeded the quota.\", \"mro\": [\"JsException\", \"JsProxy\", \"Exception\", \"BaseException\", \"object\"]}}"
+  },
+  {
+   "t": 9795,
+   "type": "log",
+   "text": "RESULT_JSON localstorage_persist_write {\"written\": true, \"keys\": [\"cp_spike_persist\"]}"
+  },
+  {
+   "t": 9796,
+   "type": "log",
+   "text": "STAGE download1"
+  },
+  {
+   "t": 10208,
+   "type": "log",
+   "text": "RESULT_JSON download_blob {\"to_js_type\": \"[object Uint8Array]\", \"len\": 200000, \"blob_size\": 200000, \"sha256\": \"ec0ebf98b6f2954bf0f7b839402b1ba245996c39d18e155414e91a2b4353c157\"}"
+  },
+  {
+   "t": 10208,
+   "type": "log",
+   "text": "STAGE download2"
+  },
+  {
+   "t": 11220,
+   "type": "log",
+   "text": "RESULT_JSON download_savePyxelFile {\"path\": \"/tmp/spike_runtime.cpr\", \"sha256\": \"ec0ebf98b6f2954bf0f7b839402b1ba245996c39d18e155414e91a2b4353c157\"}"
+  },
+  {
+   "t": 11224,
+   "type": "log",
+   "text": "STAGE wait_activation_expiry"
+  },
+  {
+   "t": 11250,
+   "type": "log",
+   "text": "RESULT_JSON filedialog_without_gesture {\"clicked\": true, \"userActivation.isActive\": false, \"userActivation.hasBeenActive\": true}"
+  },
+  {
+   "t": 11250,
+   "type": "log",
+   "text": "STAGE after_nogesture"
+  },
+  {
+   "t": 11282,
+   "type": "log",
+   "text": "RESULT_JSON file_nogesture {\"tag\": \"nogesture\", \"name\": \"sample upload (1).cpr\", \"how\": \"then+create_proxy\", \"size\": 150000, \"sha256\": \"5be63d443550bc3e9a269f47d3cdbf5a520b37a76d01422e8d380099b78d3df1\", \"type\": \"bytes\"}"
+  },
+  {
+   "t": 12782,
+   "type": "log",
+   "text": "RESULT_JSON filedialog_without_gesture_result {\"delivered\": true, \"item\": {\"tag\": \"nogesture\", \"name\": \"sample upload (1).cpr\", \"how\": \"then+create_proxy\", \"size\": 150000, \"sha256\": \"5be63d443550bc3e9a269f47d3cdbf5a520b37a76d01422e8d380099b78d3df1\", \"type\": \"bytes\"}}"
+  },
+  {
+   "t": 12783,
+   "type": "log",
+   "text": "STAGE press_o"
+  },
+  {
+   "t": 12817,
+   "type": "log",
+   "text": "RESULT_JSON filedialog_after_keypress {\"clicked\": true, \"userActivation.isActive\": false, \"userActivation.hasBeenActive\": true}"
+  },
+  {
+   "t": 12817,
+   "type": "log",
+   "text": "STAGE wait_file_then"
+  },
+  {
+   "t": 12849,
+   "type": "log",
+   "text": "RESULT_JSON file_then {\"tag\": \"then\", \"name\": \"sample upload (1).cpr\", \"how\": \"then+create_proxy\", \"size\": 150000, \"sha256\": \"5be63d443550bc3e9a269f47d3cdbf5a520b37a76d01422e8d380099b78d3df1\", \"type\": \"bytes\"}"
+  },
+  {
+   "t": 12849,
+   "type": "log",
+   "text": "STAGE press_p"
+  },
+  {
+   "t": 12949,
+   "type": "log",
+   "text": "RESULT_JSON filedialog_after_keypress_asyncio {\"clicked\": true, \"userActivation.isActive\": false, \"userActivation.hasBeenActive\": true}"
+  },
+  {
+   "t": 12950,
+   "type": "log",
+   "text": "STAGE wait_file_asyncio"
+  },
+  {
+   "t": 12983,
+   "type": "log",
+   "text": "RESULT_JSON file_asyncio {\"tag\": \"asyncio\", \"name\": \"sample upload (1).cpr\", \"how\": \"asyncio+await\", \"size\": 150000, \"sha256\": \"5be63d443550bc3e9a269f47d3cdbf5a520b37a76d01422e8d380099b78d3df1\", \"type\": \"bytes\"}"
+  },
+  {
+   "t": 12983,
+   "type": "log",
+   "text": "STAGE drop"
+  },
+  {
+   "t": 13483,
+   "type": "log",
+   "text": "RESULT_JSON drop {\"pyxel._dropped_files\": [\"/tmp/drop_me.cpr\"], \"pyxel.dropped_files\": [], \"files\": [{\"path\": \"/tmp/drop_me.cpr\", \"size\": 90000, \"sha256\": \"55acdd8414e87db18a297822f21455b108d92975791f73049f41d06253e7d001\"}]}"
+  },
+  {
+   "t": 13483,
+   "type": "log",
+   "text": "STAGE end"
+  },
+  {
+   "t": 13483,
+   "type": "log",
+   "text": "SPIKE_DONE run=1"
+  }
+ ],
+ "failures": [],
+ "requests": [
+  {
+   "t": 146,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/apps/jsbridge.html"
+  },
+  {
+   "t": 159,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.js"
+  },
+  {
+   "t": 165,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.css"
+  },
+  {
+   "t": 166,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 221,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 221,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/import_hook.py"
+  },
+  {
+   "t": 225,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 236,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 240,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 240,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 276,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 2009,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 2356,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/click_to_start_114x14.png"
+  }
+ ],
+ "downloads": [
+  {
+   "t": 10205,
+   "name": "spike_blob.cpr"
+  },
+  {
+   "t": 11220,
+   "name": "spike_runtime.cpr"
+  }
+ ],
+ "allowed": [],
+ "actions": [
+  {
+   "t": 12811,
+   "action": "key:o"
+  },
+  {
+   "t": 12936,
+   "action": "key:p"
+  },
+  {
+   "t": 13058,
+   "action": "drop:fixtures/drop me.cpr"
+  }
+ ],
+ "filechoosers": [
+  {
+   "t": 11258,
+   "answeredWith": "fixtures/sample upload (1).cpr"
+  },
+  {
+   "t": 12826,
+   "answeredWith": "fixtures/sample upload (1).cpr"
+  },
+  {
+   "t": 12957,
+   "answeredWith": "fixtures/sample upload (1).cpr"
+  }
+ ],
+ "passed": true,
+ "promptAt": 2808,
+ "clickedAt": 2813,
+ "state": {
+  "overlayText": null,
+  "hasFatalError": false,
+  "initialized": true,
+  "canvas": {
+   "width": 960,
+   "height": 720,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": 13483,
+ "elapsedMs": 13866
+}

@@ -1,0 +1,12 @@
+{
+ "ticks_per_run": 7200,
+ "cars": 6,
+ "hash_run1": "43439ede36110fe78a2522b0d2457b277dd6be45a178f8189a406cb6ba119283",
+ "hash_run2": "43439ede36110fe78a2522b0d2457b277dd6be45a178f8189a406cb6ba119283",
+ "hash_fresh_process": "43439ede36110fe78a2522b0d2457b277dd6be45a178f8189a406cb6ba119283",
+ "identical_in_process": true,
+ "identical_across_process": true,
+ "different_seed_hash_differs": true,
+ "mean_speed_ms": 9.371754908183076,
+ "share_of_ticks_on_limit": 0.7224537037037037
+}

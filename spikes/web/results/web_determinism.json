@@ -1,0 +1,161 @@
+{
+ "url": "http://127.0.0.1:8765/apps/determinism.html",
+ "mirror": null,
+ "console": [
+  {
+   "t": 117,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 118,
+   "type": "log",
+   "text": "{command: play, name: determinism.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIAFoNa10sYEvPCQAAAAcAAAAiAAAAZGV0ZXJtaW…pbmlzbS9tYWluLnB5UEsFBgAAAAADAAMA2AAAAJ4TAAAAAA==}"
+  },
+  {
+   "t": 2118,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 2441,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 3176,
+   "type": "warning",
+   "text": "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)"
+  },
+  {
+   "t": 3209,
+   "type": "warning",
+   "text": "[.WebGL-0x2c3400e33200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3225,
+   "type": "warning",
+   "text": "[.WebGL-0x2c3400e33200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3243,
+   "type": "warning",
+   "text": "[.WebGL-0x2c3400e33200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3277,
+   "type": "warning",
+   "text": "[.WebGL-0x2c3400e33200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  },
+  {
+   "t": 3432,
+   "type": "log",
+   "text": "RESULT_JSON libm {\"sqrt\": \"febfbc48001a96f8\", \"sin\": \"219626faf11eb44f\", \"cos\": \"37f09ed1a921fc21\", \"tan\": \"a3daa4eb3f0dffaa\", \"atan\": \"cb212529f668cf43\", \"asin\": \"b0e84c8833d89f96\", \"acos\": \"023313194c3d8da7\", \"exp\": \"a7f38f136b877a7d\", \"log\": \"8931eeb0a899df18\", \"tanh\": \"afc4f385b0be0033\", \"floor\": \"c6311152e5f3a4ed\", \"atan2\": \"ca27be7cb4f43be6\", \"hypot\": \"0fc78b82d12fa385\", \"pow\": \"ad1942a052fc49c8\", \"**0.5\": \"83614c93d77a0e4d\", \"fmod\": \"4a6831a120397aa4\", \"%\": \"53a32086cc85c70b\", \"radians/degrees\": \"7e3772acfd3898ab\", \"arith(+-*/)\": \"3175cea7b9389a1f\"}"
+  },
+  {
+   "t": 3432,
+   "type": "log",
+   "text": "RESULT_JSON libm_first {\"sin\": [\"c8dffce5bfcad03f\", \"e08ccadcbe19d13f\", \"e37a1ccfa168d13f\", \"e955b33b68b7d13f\", \"ba837ea11106d23f\", \"b5f89c7f9d54d23f\", \"6a0c5e550ba3d23f\", \"134942a25af1d23f\"], \"cos\": [\"fafcc36f00e1ee3f\", \"d122cdf327d6ee3f\", \"862514f21ccbee3f\", \"0cc7b07cdfbfee3f\", \"8a720da66fb4ee3f\", \"f31de780cda8ee3f\", \"222b4d20f99cee3f\", \"1c49a197f290ee3f\"]}"
+  },
+  {
+   "t": 4919,
+   "type": "log",
+   "text": "RESULT_JSON determinism {\"ticks\": 36000, \"cars\": 6, \"checkpoint\": 600, \"final_hash\": \"4eb47a5bd348c0dc\", \"final_car0\": [\"-5407.324823950593\", \"6575.7070219549005\", \"-2.6481448194896307\", \"40.287697079510316\", \"-2.6017389185577655\", \"0.26182470008240694\"], \"checkpoints\": [\"13e6ce628d17e7a9\", \"5426d2bf4d118873\", \"c2574523ff8e59c6\", \"999a088d50229f90\", \"80f8cc0328334464\", \"b9d423a0ec34848b\", \"edf5543acf17ceb8\", \"e343830711b9ec20\", \"e5b5f8f2860cacfd\", \"30cf2ac8e1ebaa2e\", \"0b1a8f6f612c6c9a\", \"3571894310a0ec6e\", \"3fbc021ed130ff21\", \"6b1f39fa9b51882e\", \"07cb3d899ff46f83\", \"fe257a21a1759126\", \"3b495ba9a6c4bb83\", \"bba23e9aed9d9f0e\", \"f0e7eaa2539479ba\", \"570f0d95c8f28fc9\", \"0e00508b6ccbe33d\", \"63ec96daf80909ed\", \"796f9550c14c4e11\", \"0b445234581af513\", \"04ead91a10661443\", \"5809a8dcb25f3266\", \"b1092d6e72f529a1\", \"534c1853f03e0461\", \"c4fcfbe5dfe5be98\", \"0dc903bc5b2fb473\", \"9a4eb217c498ce37\", \"0ab382038ac436aa\", \"264f05b17e748191\", \"f23274124b042866\", \"92e7c046ca3eab24\", \"253715ebf119c75d\", \"837a58b03c7840d7\", \"494e14f4c76d3667\", \"3b4a4fbb8d11d52e\", \"53e28872ec29ffc4\", \"588246632a9e8e7f\", \"62179c2f6193d797\", \"9b5cf99a4ce6e06d\", \"c94b251418ef2dfe\", \"1de552526b0efadc\", \"692ef01cd0c579f2\", \"42a7ca81f05e4db6\", \"bab9c55c0398164f\", \"0ca32cd06ca6c028\", \"bcd6c659a65929a0\", \"629a672aee495ed3\", \"9463c5dca230685b\", \"cdbffe5d092c62b2\", \"cb0868769b7e46da\", \"9d177c55ff3f1834\", \"c8f6406d93cd47b8\", \"13192d5a09f39b39\", \"239f7256529eb647\", \"230a816f5f7f5898\", \"4eb47a5bd348c0dc\"]}"
+  },
+  {
+   "t": 4938,
+   "type": "log",
+   "text": "RESULT_JSON determinism_nolibm {\"final_hash\": \"ee13da0624dd548b\", \"final\": [\"76.07783921252137\", \"30.657134960913623\", \"0.010100376132867328\", \"0.004081552880784805\"]}"
+  },
+  {
+   "t": 4966,
+   "type": "log",
+   "text": "SPIKE_DONE frame=7"
+  }
+ ],
+ "failures": [],
+ "requests": [
+  {
+   "t": 104,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/apps/determinism.html"
+  },
+  {
+   "t": 114,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.js"
+  },
+  {
+   "t": 120,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.css"
+  },
+  {
+   "t": 121,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 175,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 176,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/import_hook.py"
+  },
+  {
+   "t": 181,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 187,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 188,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 189,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 210,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 2123,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 2482,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/click_to_start_114x14.png"
+  }
+ ],
+ "downloads": [],
+ "passed": true,
+ "promptAt": 2931,
+ "clickedAt": 2937,
+ "state": {
+  "overlayText": null,
+  "hasFatalError": false,
+  "initialized": true,
+  "canvas": {
+   "width": 960,
+   "height": 720,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": 4966,
+ "elapsedMs": 5392
+}

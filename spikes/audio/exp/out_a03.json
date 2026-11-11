@@ -1,0 +1,408 @@
+{
+ "samples": 436736,
+ "seconds": 19.807,
+ "peak": 10859.0,
+ "marker_onset_audio_s": 0.4882,
+ "audio_minus_python_offset_s": 0.0045,
+ "marker_f0_hz": 2090.9,
+ "S1_sustained_note_detune_0_to_1200": {
+  "periods": 176,
+  "f_min": 130.6,
+  "f_max": 130.84,
+  "f_median": 130.65,
+  "spread_cents": 3.1,
+  "expected_if_ignored_hz": 130.81,
+  "commanded_detune_at_end": 1200
+ },
+ "S2_loop_1over60s_note": {
+  "best_lag_ms": 21,
+  "rmse_cents": 10.7,
+  "n": 483,
+  "max_abs_err_cents": 25.9,
+  "hold_f_hz": 522.71,
+  "hold_expected_hz": 523.24,
+  "hold_err_cents": -1.7,
+  "pitch_step_interval_ms_median": 14.2,
+  "pitch_step_interval_ms_minmax": [
+   2.3,
+   34.2
+  ],
+  "pitch_steps_in_1.5s": 99,
+  "peak": 9905.0,
+  "max_adjacent_jump_over_peak": 0.102,
+  "rms4ms_min_over_median": 0.871
+ },
+ "S3_replay_each_tick": {
+  "best_lag_ms": 6,
+  "rmse_cents": 11.5,
+  "n": 486,
+  "max_abs_err_cents": 26.4,
+  "hold_f_hz": 522.71,
+  "hold_expected_hz": 523.24,
+  "hold_err_cents": -1.7,
+  "pitch_step_interval_ms_median": 20.3,
+  "pitch_step_interval_ms_minmax": [
+   2.2,
+   25.9
+  ],
+  "pitch_steps_in_1.5s": 96,
+  "peak": 9903.0,
+  "max_adjacent_jump_over_peak": 0.102,
+  "rms4ms_min_over_median": 0.873
+ },
+ "S1_reference_continuity": {
+  "max_adjacent_jump_over_peak": 0.089,
+  "rms4ms_min_over_median": 0.984
+ },
+ "S4_staircase_base_261.63Hz": [
+  {
+   "detune": -3600,
+   "expected_hz": 32.7,
+   "measured_hz": 32.71,
+   "err_cents": 0.2,
+   "rms": 5924.0
+  },
+  {
+   "detune": -2400,
+   "expected_hz": 65.41,
+   "measured_hz": 65.42,
+   "err_cents": 0.3,
+   "rms": 5998.0
+  },
+  {
+   "detune": -1200,
+   "expected_hz": 130.81,
+   "measured_hz": 130.68,
+   "err_cents": -1.8,
+   "rms": 6027.0
+  },
+  {
+   "detune": 0,
+   "expected_hz": 261.63,
+   "measured_hz": 261.35,
+   "err_cents": -1.8,
+   "rms": 6027.0
+  },
+  {
+   "detune": 1200,
+   "expected_hz": 523.26,
+   "measured_hz": 522.71,
+   "err_cents": -1.8,
+   "rms": 5991.0
+  },
+  {
+   "detune": 2400,
+   "expected_hz": 1046.52,
+   "measured_hz": 1055.29,
+   "err_cents": 14.4,
+   "rms": 5876.0
+  },
+  {
+   "detune": 3600,
+   "expected_hz": 2093.04,
+   "measured_hz": 2071.5,
+   "err_cents": -17.9,
+   "rms": 5549.0
+  },
+  {
+   "detune": 4800,
+   "expected_hz": 4186.08,
+   "measured_hz": 4302.37,
+   "err_cents": 47.4,
+   "rms": 4831.0
+  }
+ ],
+ "S5_sustained_noise__channel_gain_0.3_to_0 (t, rms, commanded)": [
+  [
+   0.0,
+   4942,
+   0.295
+  ],
+  [
+   0.1,
+   5648,
+   0.264
+  ],
+  [
+   0.2,
+   4932,
+   0.234
+  ],
+  [
+   0.3,
+   5711,
+   0.203
+  ],
+  [
+   0.4,
+   5638,
+   0.173
+  ],
+  [
+   0.5,
+   5733,
+   0.142
+  ],
+  [
+   0.6,
+   5871,
+   0.112
+  ],
+  [
+   0.7,
+   5769,
+   0.081
+  ],
+  [
+   0.8,
+   5760,
+   0.051
+  ],
+  [
+   0.9,
+   5737,
+   0.02
+  ],
+  [
+   1.0,
+   5901,
+   0.0
+  ],
+  [
+   1.1,
+   5769,
+   0.0
+  ],
+  [
+   1.2,
+   5716,
+   0.0
+  ]
+ ],
+ "S6_loop_noise__channel_gain_0_0.4_0 (t, rms, commanded)": [
+  [
+   0.0,
+   64,
+   0.007
+  ],
+  [
+   0.1,
+   792,
+   0.047
+  ],
+  [
+   0.2,
+   1530,
+   0.087
+  ],
+  [
+   0.3,
+   2254,
+   0.127
+  ],
+  [
+   0.4,
+   3005,
+   0.167
+  ],
+  [
+   0.5,
+   3763,
+   0.207
+  ],
+  [
+   0.6,
+   4551,
+   0.247
+  ],
+  [
+   0.7,
+   5358,
+   0.287
+  ],
+  [
+   0.8,
+   6173,
+   0.327
+  ],
+  [
+   0.9,
+   6905,
+   0.367
+  ],
+  [
+   1.0,
+   7553,
+   0.393
+  ],
+  [
+   1.1,
+   6869,
+   0.353
+  ],
+  [
+   1.2,
+   6157,
+   0.313
+  ],
+  [
+   1.3,
+   5442,
+   0.273
+  ],
+  [
+   1.4,
+   4590,
+   0.233
+  ],
+  [
+   1.5,
+   3891,
+   0.193
+  ],
+  [
+   1.6,
+   3200,
+   0.153
+  ],
+  [
+   1.7,
+   2387,
+   0.113
+  ],
+  [
+   1.8,
+   1605,
+   0.073
+  ],
+  [
+   1.9,
+   871,
+   0.033
+  ],
+  [
+   2.0,
+   77,
+   0.0
+  ]
+ ],
+ "S7_sustained_noise__TONE_gain_0_0.6_0 (t, rms, commanded)": [
+  [
+   0.0,
+   86,
+   0.01
+  ],
+  [
+   0.1,
+   574,
+   0.07
+  ],
+  [
+   0.2,
+   1174,
+   0.13
+  ],
+  [
+   0.3,
+   1638,
+   0.19
+  ],
+  [
+   0.4,
+   2284,
+   0.25
+  ],
+  [
+   0.5,
+   2834,
+   0.31
+  ],
+  [
+   0.6,
+   3439,
+   0.37
+  ],
+  [
+   0.7,
+   4024,
+   0.43
+  ],
+  [
+   0.8,
+   4678,
+   0.49
+  ],
+  [
+   0.9,
+   5209,
+   0.55
+  ],
+  [
+   1.0,
+   5741,
+   0.59
+  ],
+  [
+   1.1,
+   5162,
+   0.53
+  ],
+  [
+   1.2,
+   4585,
+   0.47
+  ],
+  [
+   1.3,
+   4026,
+   0.41
+  ],
+  [
+   1.4,
+   3325,
+   0.35
+  ],
+  [
+   1.5,
+   2845,
+   0.29
+  ],
+  [
+   1.6,
+   2271,
+   0.23
+  ],
+  [
+   1.7,
+   1763,
+   0.17
+  ],
+  [
+   1.8,
+   1161,
+   0.11
+  ],
+  [
+   1.9,
+   613,
+   0.05
+  ],
+  [
+   2.0,
+   48,
+   0.0
+  ]
+ ],
+ "S8_fifth_channel": {
+  "info": {
+   "name": "S8_fifth_channel",
+   "t0": 18.6666,
+   "num_channels_after_append": 5,
+   "play_ok": true,
+   "t1": 19.267,
+   "play_pos_end": "None"
+  },
+  "rms": 2782,
+  "f0_hz": 879.9
+ }
+}

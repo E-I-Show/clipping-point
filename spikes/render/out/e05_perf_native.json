@@ -1,0 +1,285 @@
+{
+ "N": 200,
+ "sections": {
+  "tris": {
+   "ground": 1568,
+   "track": 3520,
+   "props": 82,
+   "sprites_total": 168,
+   "cars": 1620
+  },
+  "chase_cull1": {
+   "median_ms": 2.259,
+   "p95_ms": 2.527,
+   "max_ms": 3.831,
+   "visible_sections": 9
+  },
+  "bumper_cull1": {
+   "median_ms": 2.25,
+   "p95_ms": 2.521,
+   "max_ms": 3.547,
+   "visible_sections": 9
+  },
+  "tv_tele_cull1": {
+   "median_ms": 2.549,
+   "p95_ms": 3.444,
+   "max_ms": 10.71,
+   "visible_sections": 10
+  },
+  "tv_wide_cull1": {
+   "median_ms": 3.003,
+   "p95_ms": 4.746,
+   "max_ms": 5.58,
+   "visible_sections": 14
+  },
+  "look_away_up_cull1": {
+   "median_ms": 0.963,
+   "p95_ms": 1.041,
+   "max_ms": 1.619,
+   "visible_sections": 8
+  },
+  "chase_cull0": {
+   "median_ms": 2.515,
+   "p95_ms": 3.745,
+   "max_ms": 4.011,
+   "visible_sections": 22
+  },
+  "bumper_cull0": {
+   "median_ms": 2.627,
+   "p95_ms": 3.625,
+   "max_ms": 4.849,
+   "visible_sections": 22
+  },
+  "tv_tele_cull0": {
+   "median_ms": 2.966,
+   "p95_ms": 3.859,
+   "max_ms": 13.189,
+   "visible_sections": 22
+  },
+  "tv_wide_cull0": {
+   "median_ms": 3.345,
+   "p95_ms": 4.885,
+   "max_ms": 6.741,
+   "visible_sections": 22
+  },
+  "look_away_up_cull0": {
+   "median_ms": 1.19,
+   "p95_ms": 1.773,
+   "max_ms": 1.998,
+   "visible_sections": 22
+  }
+ },
+ "breakdown_chase_sections_cull1": {
+  "ground_only": {
+   "median_ms": 0.798,
+   "p95_ms": 0.961,
+   "max_ms": 1.849
+  },
+  "props_only": {
+   "median_ms": 0.035,
+   "p95_ms": 0.26,
+   "max_ms": 1.714
+  },
+  "sprites_only": {
+   "median_ms": 0.041,
+   "p95_ms": 0.059,
+   "max_ms": 0.082
+  },
+  "cars_only": {
+   "median_ms": 0.522,
+   "p95_ms": 0.746,
+   "max_ms": 3.179
+  },
+  "track_only": {
+   "median_ms": 0.82,
+   "p95_ms": 1.164,
+   "max_ms": 5.003
+  },
+  "nothing_visible": {
+   "median_ms": 0.013,
+   "p95_ms": 0.015,
+   "max_ms": 0.036
+  }
+ },
+ "full_frame_chase": {
+  "background_2d": {
+   "median_ms": 0.006,
+   "p95_ms": 0.008,
+   "max_ms": 0.04
+  },
+  "scene(bg+3d)": {
+   "median_ms": 2.357,
+   "p95_ms": 2.994,
+   "max_ms": 5.323
+  },
+  "hud": {
+   "median_ms": 0.002,
+   "p95_ms": 0.003,
+   "max_ms": 0.037
+  },
+  "blt_to_screen": {
+   "median_ms": 0.003,
+   "p95_ms": 0.004,
+   "max_ms": 0.038
+  },
+  "set_pose_6cars+visibility": {
+   "median_ms": 0.045,
+   "p95_ms": 0.087,
+   "max_ms": 0.31
+  }
+ },
+ "mesh_build_ms": {
+  "track_builder_python(3520 tris)": 7.76,
+  "Primitive()+compute_normals": 0.58,
+  "car_prims(body+wheel)": 0.59,
+  "make_atlas_256x256_pset": 2.43,
+  "make_background_640x240_pset": 39.64
+ },
+ "merged": {
+  "tris": {
+   "ground": 1568,
+   "track": 3520,
+   "props": 82,
+   "sprites_total": 168,
+   "cars": 1620
+  },
+  "chase_cull0": {
+   "median_ms": 2.723,
+   "p95_ms": 3.557,
+   "max_ms": 4.457,
+   "visible_sections": 22
+  },
+  "bumper_cull0": {
+   "median_ms": 3.69,
+   "p95_ms": 3.924,
+   "max_ms": 4.577,
+   "visible_sections": 22
+  },
+  "tv_tele_cull0": {
+   "median_ms": 2.864,
+   "p95_ms": 4.116,
+   "max_ms": 5.345,
+   "visible_sections": 22
+  },
+  "tv_wide_cull0": {
+   "median_ms": 3.491,
+   "p95_ms": 4.399,
+   "max_ms": 5.993,
+   "visible_sections": 22
+  },
+  "look_away_up_cull0": {
+   "median_ms": 1.2,
+   "p95_ms": 1.457,
+   "max_ms": 3.459,
+   "visible_sections": 22
+  }
+ },
+ "immediate": {
+  "tris": {
+   "ground": 1568,
+   "track": 3520,
+   "props": 82,
+   "sprites_total": 168,
+   "cars": 1620
+  },
+  "chase_cull1": {
+   "median_ms": 2.335,
+   "p95_ms": 3.524,
+   "max_ms": 4.22,
+   "visible_sections": 9
+  },
+  "bumper_cull1": {
+   "median_ms": 2.333,
+   "p95_ms": 2.592,
+   "max_ms": 2.891,
+   "visible_sections": 9
+  },
+  "tv_tele_cull1": {
+   "median_ms": 2.71,
+   "p95_ms": 3.18,
+   "max_ms": 5.283,
+   "visible_sections": 10
+  },
+  "tv_wide_cull1": {
+   "median_ms": 3.297,
+   "p95_ms": 4.442,
+   "max_ms": 9.517,
+   "visible_sections": 14
+  },
+  "look_away_up_cull1": {
+   "median_ms": 1.026,
+   "p95_ms": 1.685,
+   "max_ms": 1.806,
+   "visible_sections": 8
+  },
+  "chase_cull0": {
+   "median_ms": 2.679,
+   "p95_ms": 3.779,
+   "max_ms": 4.448,
+   "visible_sections": 22
+  },
+  "bumper_cull0": {
+   "median_ms": 2.603,
+   "p95_ms": 2.883,
+   "max_ms": 4.036,
+   "visible_sections": 22
+  },
+  "tv_tele_cull0": {
+   "median_ms": 2.806,
+   "p95_ms": 2.976,
+   "max_ms": 8.457,
+   "visible_sections": 22
+  },
+  "tv_wide_cull0": {
+   "median_ms": 3.374,
+   "p95_ms": 4.775,
+   "max_ms": 6.489,
+   "visible_sections": 22
+  },
+  "look_away_up_cull0": {
+   "median_ms": 1.127,
+   "p95_ms": 1.316,
+   "max_ms": 3.68,
+   "visible_sections": 22
+  }
+ },
+ "sections_across4_ground25": {
+  "tris": {
+   "ground": 6272,
+   "track": 4400,
+   "props": 82,
+   "sprites_total": 168,
+   "cars": 1620
+  },
+  "chase_cull1": {
+   "median_ms": 3.283,
+   "p95_ms": 3.552,
+   "max_ms": 3.802
+  },
+  "bumper_cull1": {
+   "median_ms": 3.135,
+   "p95_ms": 3.701,
+   "max_ms": 4.616
+  },
+  "tv_wide_cull1": {
+   "median_ms": 3.862,
+   "p95_ms": 4.308,
+   "max_ms": 4.883
+  },
+  "chase_cull0": {
+   "median_ms": 3.377,
+   "p95_ms": 5.239,
+   "max_ms": 5.336
+  },
+  "bumper_cull0": {
+   "median_ms": 3.384,
+   "p95_ms": 4.705,
+   "max_ms": 5.141
+  },
+  "tv_wide_cull0": {
+   "median_ms": 4.277,
+   "p95_ms": 6.07,
+   "max_ms": 7.024
+  }
+ }
+}

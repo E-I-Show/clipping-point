@@ -1,0 +1,26 @@
+PASS random seek is pure index arithmetic (2000 random positions equal a fresh player)
+PASS rewind reproduces forward playback exactly -- 8999 frames compared
+PASS slow 1/2 shows 2x frames, 1/4 shows 4x, x2 half, x4 quarter -- {'x1/2': 17998, 'x1/4': 35995, 'x2': 4500, 'x4': 2250}
+PASS lap cue: seek_lap lands on the tick the car crossed the line -- 24 lap starts, worst distance from line 0.53 m
+PASS previous-lap goes to this lap's start, again goes one lap back, next-lap goes forward
+PASS lap number at any time by bisect on the lap table (3000 random ticks x 6 cars)
+PASS race position at any time by bisect on position events
+PASS events fire exactly once in order at x1 -- 108 events
+PASS events fire exactly once in order at x1/4 -- 108 events
+PASS events fire exactly once in order at x4 -- 108 events
+pose cost per frame (6 cars) us: 10.506562347188707 14.600962436103796
+PASS ring keeps exactly the last 5 completed laps -- completed 10 laps, kept [6, 7, 8, 9, 10]
+PASS ring replay survives the file round trip
+PASS ring replay lap table lists the 5 kept laps
+PASS ring replay poses match the drive after re-basing the time axis -- worst 13.6 mm
+PASS ghost is the fastest lap (even if it fell out of the 5-lap ring) -- best lap no 7 of 10, 61533 ms, kept laps [6, 7, 8, 9, 10]
+PASS ghost pose at 'ticks since the line' matches that lap of the drive -- worst 14.9 mm over 3693 ticks
+PASS ghost hides itself after its lap ends
+PASS best lap ghost is kept after that lap has left the ring (2-lap ring, best lap 7, kept [9, 10])
+PASS ghost cut from a 6-car race replay (car 1, lap 2) matches the drive -- worst 37.3 mm
+PASS lap distance recovered from the recorded position (hinted search) -- max 0.85 m
+PASS TV: one cut per camera stretch for a normally driven car -- 48 cuts over 8434 m (46.9 stretches), shortest shot 4.20 s
+PASS TV: hysteresis removes boundary flicker (wobble +-3 m: 29 cuts unguarded -> 0) -- {'wobble_no_guard': 29, 'wobble_hyst10': 0, 'wobble_hold_only': 9, 'wobble_both': 0, 'creep_no_guard': 3, 'creep_hyst10': 1, 'creep_both': 1}
+PASS TV: director also works in rewind -- 47 cuts backwards vs 48 forwards
+PASS chase / on-board / heli cameras are functions of the interpolated pose only
+24 checks, 0 failed

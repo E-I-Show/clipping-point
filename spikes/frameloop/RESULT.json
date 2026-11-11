@@ -1,0 +1,260 @@
+{
+ "summary": "1) 60Hz更新/30fps描画は「pyxel.init(fps=60)、update 1回 = 1 tick、draw の中で実描画を間引く」方式（案a）が正しい。Pyxel は遅れたフレームで update だけ複数回呼んで draw を飛ばし、描かないフレームでも画面は残る。案b（fps=30 で 2 tick）は入力の取り込みが 30Hz になり、2 つの tick が同じ btnp を見る。\n2) 間引きの判定に frame_count の偶奇は使えない（追い付き中は偶奇が固定され、描画が 0 回になり得る。実測）。「前回の実描画から 2 tick 以上、または 30ms 以上経過」で判定する。30ms 条件はブラウザ版のソースと机上モデルに基づく保険で、実ブラウザでは未確認。\n3) ヘッドレスでも pyxel.run / pyxel.flip は実時間待ちをする（自前ループ + flip + fps=1000 で約 900 フレーム/秒が上限）。pyxel.quit() と SIGINT は常に終了コード 0 で、pytest の中で quit を呼ぶと失敗が消える。合否は「終了コード + 結果ファイル + 指紋 + 描画回数」で判定する。\n4) set_btn / set_btnv は同じフレームの btn / btnp / btnr / btnv に反映される。軸は SDL の値そのまま（スティック -32768..32767、トリガー 0..32767、デッドゾーン無し）。ブラウザ版ではトリガーが 0 / 32767 の 2 値になる見込み（SDL2 のソースで確認、実機未確認）で、アナログ操作の本命要件に直結する。\n5) 階層つきの試作アプリで pyxel package → pyxel play（ヘッドレス）→ pyxel app2html が通った。main.py はアプリ直下に置き、ファイルは __file__ 基準で読む（pyxel.init が作業ディレクトリを変える）。\n6) REPORT.md は作成できなかった（サブエージェントの書き込み規則で Write が拒否された）。報告の内容はすべてこの構造化出力に入れてある。report_path の場所にファイルは無い。",
+ "confirmed": [
+  {
+   "claim": "Pyxel::run は 1 回のループで「遅れた分の update を先に回す → update 1 回 → draw 1 回」。追い付き中の draw は呼ばれない。追い付き回数は delta_ms / frame_ms の切り捨てで、delta が 100ms（MAX_FRAME_DELAY_MS）を超えると 1 回だけになりゲームが遅くなる",
+   "evidence": "ソース v3.0.1 crates/pyxel-core/src/system.rs 79-107 行と settings.rs を読んだ。実測 experiments/e03_persist_catchup.py（fps=60 で描画 +20/+30ms → update 2 回ごとに draw 1 回、+40ms → 3 回、+70ms → 5 回、+120ms → 1 回で 7.5 update/秒に低下）"
+  },
+  {
+   "claim": "update のたびにイベントを取り込み直す（追い付き分も含む）。frame_count は update ごとに 1 進む。ウィンドウが隠れている間は update も draw も呼ばれない",
+   "evidence": "ソース system.rs の run_update_frame → begin_update_frame → process_events、および paused の扱いを読んだ"
+  },
+  {
+   "claim": "draw() が何も描かなければ前の画面がそのまま残る（Pyxel は画面を消さない）",
+   "evidence": "実測 e03: 1 回おきに描かない draw で pget を確認し 119/119 回で前の絵が残った。ソース finish_draw_frame に消去処理なし"
+  },
+  {
+   "claim": "追い付き中は draw から見える frame_count の偶奇が固定される。frame_count % 2 で間引くと描画が 0 回（または毎回）になる",
+   "evidence": "実測 e03: 描画 20〜30ms のとき draw 時の frame_count は偶数 120 回・奇数 0 回"
+  },
+  {
+   "claim": "draw() の後で Pyxel 自身が性能表示とマウスカーソルを pyxel.screen に描き込むため、描かないフレームでは前の絵に重なる。裏画面（pyxel.Image）に描いて毎フレーム blt すれば重ならない",
+   "evidence": "ソース system.rs finish_draw_frame。実測 e09_overlay_smear.py（カーソル帯の非背景ピクセルが描かないフレームで 19 → 37、裏画面方式では常に 19）"
+  },
+  {
+   "claim": "Pyxel Cube の Node.draw(x, y, w, h, target) は裏画面の Image に描ける。描画中に画面は変わらず、blt 後は一致する",
+   "evidence": "型定義 pyxel/cube/__init__.pyi を確認し、実測 e13_cube_backbuffer.py（箱 6 個のシーン）"
+  },
+  {
+   "claim": "案b（1 回の update の中で 2 tick）では、2 つの tick が同じ btn / btnp / btnv を見る（btnp が 2 回真になる）",
+   "evidence": "実測 e10_approach_b.py。ソース input.rs（btnp は押下時の frame_count と現在値の一致で判定）"
+  },
+  {
+   "claim": "ブラウザ版は requestAnimationFrame 駆動で、遅れは次のコールバックの delta に入る（ネイティブより 1 回遅れて追い付く）",
+   "evidence": "ソース platform_sdl2.rs の advance_frame_schedule と、同ファイルの単体テスト test_advance_frame_schedule_reports_missed_frames_in_delta を読んだ（ブラウザでの実行は未確認）"
+  },
+  {
+   "claim": "試作のループ骨組み（fps=60、RenderGate、裏画面）は、実描画に 0/10/14/25ms かかっても 60 tick/秒・30 描画/秒を保ち、45ms では 60 tick/秒・20 描画/秒になる。状態の指紋は全条件で同じ",
+   "evidence": "実測: proto/cp_proto を CP_SMOKE_DRIVER=run、600 tick、CP_SMOKE_DRAW_SLEEP_MS=0/10/14/25/45 で実行（proto/out/long_*.json）"
+  },
+  {
+   "claim": "headless=True でも pyxel.run は使え、fps どおりの実時間待ちが入る。pyxel.flip() の自前ループも動き、こちらも実時間待ちあり。fps を上げても 1 フレーム最低 1ms",
+   "evidence": "実測 e01（fps=60 で 60.0 回/秒）、e05（flip: fps=60 で 60 フレーム/秒、fps=1000 と 100000 で約 906 フレーム/秒）。ソース platform_sdl2.rs の run_frame_loop / step_frame（SDL_Delay の最小 1ms）"
+  },
+  {
+   "claim": "pyxel.run で fps だけ上げると update が連続し draw が飛ぶ（本番と違う並びになる）",
+   "evidence": "実測 e01: fps=1000 で update 1001 回に draw 858 回、fps=100000 で update 2001 回に draw 17 回"
+  },
+  {
+   "claim": "flip を呼ばずに update / draw を直接呼ぶと frame_count が進まず、btnp が真のまま、離しても btn が真のままになる",
+   "evidence": "実測 e05_manual_loop.py の noflip モード"
+  },
+  {
+   "claim": "pyxel.flip はブラウザ版では使えない",
+   "evidence": "型定義の説明文、ソース platform_sdl2.rs の emscripten 版 step_frame（panic）"
+  },
+  {
+   "claim": "pyxel.quit() はどこから呼んでも終了コード 0 で即終了する。finally は走らず、閉じていないファイルの中身は失われる。atexit は走る。run の後ろのコードには戻らない",
+   "evidence": "ソース platform_sdl2.rs（std::process::exit(0)）と pyxel-binding/src/system_wrapper.rs。実測 e02_flush.py、e01"
+  },
+  {
+   "claim": "PYTHONUNBUFFERED 無しで標準出力がパイプのとき、pyxel.quit() やコールバック内例外の前の print は失われる。コールバック内の sys.exit(n) は終了コード n で終わり出力も残る",
+   "evidence": "実測 e01 / e02 を env -u PYTHONUNBUFFERED で実行（このコンテナは PYTHONUNBUFFERED=1 が既定）。sysexit3 モードで終了コード 3"
+  },
+  {
+   "claim": "update / draw 内の例外は、標準エラーにトレースバックを出して終了コード 1。自前ループ（flip）でも終了コード 1",
+   "evidence": "実測 e01（raise_update / raise_draw）、proto/tools/run_smoke.py の故障注入 3 件。ソース system_wrapper.rs（err.print → exit(1)）"
+  },
+  {
+   "claim": "pyxel.run 中の SIGINT は終了コード 0。pytest の中で pyxel.quit() を呼ぶと、後ろに失敗するテストがあっても要約なしで終了コード 0 になる",
+   "evidence": "実測: timeout --preserve-status -s INT で 0。experiments/pytest_hazard/test_quit_hazard.py が終了コード 0（対照の test_only_fail.py は 1）"
+  },
+  {
+   "claim": "pyxel.init は 1 プロセス 1 回（2 回目は PanicException）で、呼び出したファイルのディレクトリへ chdir する",
+   "evidence": "実測 e11_init_twice.py、e08、試作（cp_app/app.py から init すると作業ディレクトリが …/cp_proto/cp_app になる）。ソース system_wrapper.rs"
+  },
+  {
+   "claim": "pyxel.screen.save(filename, scale)（Image.save）で PNG を保存できる。パレット適用済み RGB、.png は自動で付く、scale=2 で 640x480、32 色パレットでも正しい色。pyxel.screenshot(filename, scale) も同じで、scale 省略時は capture_scale（既定 2）。存在しないディレクトリは Exception",
+   "evidence": "型定義を確認し、実測 e08_screenshot.py（PIL で寸法と画素を確認、PNG を目視）"
+  },
+  {
+   "claim": "pyxel.set_btn は同じフレームの btn / btnp / btnr に反映され、btnp は押したフレームだけ真（同フレームの draw 内でも真）。同一フレーム内の押して離すも取りこぼさない。pyxel.set_btnv は btnv にそのまま入り、変えるまで保持され、値は丸められない",
+   "evidence": "実測 e04_input_inject.py（100000 や -5 もそのまま返った）"
+  },
+  {
+   "claim": "軸キーに btn()、ボタンキーに btnv() を呼ぶと PanicException（BaseException 派生）。set_btn(軸) と set_btnv(ボタン) はエラーにならず効きもしない",
+   "evidence": "実測 e04b_wrong_key_kind.py。ソース input.rs の assert"
+  },
+  {
+   "claim": "ネイティブの値域: Pyxel は SDL の軸の値をそのまま渡す。スティック -32768..32767、トリガー 0..32767。Pyxel にデッドゾーン処理は無い。ヘッドレスでは実デバイスは読まれない",
+   "evidence": "ソース poll_events.rs（caxis.value as i32）、facade.rs の poll_events、SDL2 の SDL_gamecontroller.h（SDL2 ブランチ）を読んだ"
+  },
+  {
+   "claim": "ブラウザの値域: SDL2 の emscripten 実装はスティックを (Sint16)(32767 × 値) で渡し、既定の割り当てはトリガーをボタン b6 / b7 から作るので 0 か 32767 しか取らない。Pyxel 側に割り当ての上書きやアナログ値を読むコードは無い",
+   "evidence": "SDL2（SDL2 ブランチ）の SDL_gamecontrollerdb.h、emscripten/SDL_sysjoystick.c、SDL_gamecontroller.c と、Pyxel の poll_events.rs / platform_sdl2.rs / pyxel.js / Makefile（emscripten の SDL2 をリンク）を読んだ。実ブラウザ・実パッドでは未確認"
+  },
+  {
+   "claim": "同じ入力台本を Pyxel 経由の注入と Pyxel 無しの純 Python の両方で流すと状態の指紋が一致する（flip 駆動、run 駆動、描画を遅くした追い付き状態、パッケージ後の flip / run の 5 通り）",
+   "evidence": "実測 proto/tools/run_smoke.py --packaged（5 件 PASS、指紋 bfa090eb7cbb65b6-120-0）"
+  },
+  {
+   "claim": "階層つきの試作アプリ（main.py、cp_core/、cp_app/、data/ の JSON とバイナリ、assets/ の .pyxres と PNG）を pyxel package → pyxel play でヘッドレス起動し、120 tick で終了できる。データは __file__ 基準で読め、直接起動とスクリーンショットがバイト一致",
+   "evidence": "実測 proto/tools/build.py と run_smoke.py --packaged、cmp で s_play.png と s_flip.png が一致"
+  },
+  {
+   "claim": "pyxel package の除外規則: 名前が . で始まるファイルとディレクトリ、__pycache__、拡張子 .gif と .zip。それ以外は APP_DIR の中身が全部入る。出力は実行時のカレントディレクトリ",
+   "evidence": "pyxel/cli.py を読み、実測 build.py（除外確認用の .gif / .zip / ドットファイル / ドットディレクトリが入らないことを検査）"
+  },
+  {
+   "claim": "起動スクリプトは APP_DIR の下に必要で、. 始まりのディレクトリや __pycache__ の中は不可。サブディレクトリには置けるが、pyxel play は起動スクリプトのディレクトリだけを sys.path に足すので、アプリ直下のパッケージが import できなくなる",
+   "evidence": "cli.py を読み、実測 experiments/pkg_rules（launch/start.py 起動で ModuleNotFoundError、ドットディレクトリと APP_DIR 外は終了コード 1 とエラー文）"
+  },
+  {
+   "claim": "pyxel app2html の HTML は kitao.dev/pyxel/3.0.1/pyxel.js の読み込みと launchPyxel({command:\"play\", name, gamepad:\"enabled\", base64}) だけで、base64 を復号すると .pyxapp と一致する。ブラウザ版の起動はネイティブの pyxel play と同じ pyxel.cli.play_pyxel_app を呼ぶ",
+   "evidence": "実測 build.py（sha256 一致）、pyxel_probe/web/pyxel.js を読んだ"
+  },
+  {
+   "claim": "内蔵の録画は draw ごとに画面を 1 枚丸ごと保存し、fps × capture_sec 枚を保持する。GIF の 1 枚の表示時間は 100/fps を 1/100 秒単位に丸めた値",
+   "evidence": "ソース screencast.rs / resource.rs。実測 e06_capture_mem.py、e07_gif.py"
+  },
+  {
+   "claim": "試作のテストは壊れを検出する: 描画判定の 1 ずれ、btnp を btn に替える、データを相対パスで読む、の 3 つの改変でそれぞれテストが落ちる。故障注入（update 例外 / draw 例外 / 早すぎる quit / 描画ゼロ）も全部検出される",
+   "evidence": "実測: proto/out/mutants_final の 3 改変で pytest が 4 件 / 1 件 / 2 件失敗（無改変は 21 件合格）。run_smoke.py の故障 5 件がすべて不合格判定"
+  },
+  {
+   "claim": "入力の注入で画面を進めてスクリーンショットを保存する画面巡回が組める（START の注入でポーズ画面に入り、PNG を 3 枚保存。回り切れなければ終了コード 2）",
+   "evidence": "実測 proto/tools/tour.py（TOUR_OK screens=3、--only nosuch で終了コード 2）、pause.png を目視"
+  }
+ ],
+ "recommendations": [
+  "ループは案a: pyxel.init(320, 240, fps=60, quit_key=pyxel.KEY_NONE, …)。update() 1 回で入力を 1 度読み 1 tick（1/60 秒）進める。ゲームの規則は fps も pyxel.frame_count も読まない。",
+  "描画の間引きは RenderGate 方式: draw() のたびに「前回の実描画から 2 tick 以上」または「1 tick 以上進んでいて 30ms 以上経過」なら実描画する。frame_count の偶奇は使わない。実描画は見た目だけなので実時間を使っても決定性に影響しない（実装は proto/cp_proto/cp_core/fixed_loop.py）。",
+  "3D と HUD は裏画面（pyxel.Image(320, 240)。Cube は Node.draw の target 引数）に描き、draw() では毎回 pyxel.blt で画面へ写す。性能表示（Alt+0）やカーソルが古い絵に重ならず、コストはネイティブで約 3〜4µs。",
+  "時間の予算を「2 tick + 実描画 1 回 < 33.3ms、tick 単体は常に 16.7ms 未満」と決めて、ブラウザで早期に測る。超えると Pyxel が描画を 30 → 20 → 15fps と落として実時間を保ち、1 フレーム 100ms を超えるとゲームが遅くなる。",
+  "入力アダプタは update の中でだけ読む。軸は btnv、ボタンは btn / btnp とキー種別で分ける（取り違えると PanicException）。正規化は value / 32767 を [-1, 1]（トリガーは [0, 1]）に丸め、デッドゾーンは自前で持つ。メニューの長押しリピートは 60Hz のフレーム数で指定する。",
+  "ブラウザでのアナログのアクセル / ブレーキを設計の最初の段で実ブラウザ + 実パッドで確かめる。トリガーが 2 値になる見込みなので、右スティック上下をアクセル / ブレーキにする割り当てを最初から用意し、Pyodide の js モジュールで Gamepad API を直接読む案も試す。",
+  "Esc で終了させない（ブラウザ版の終了はメインループ停止）。quit_key=pyxel.KEY_NONE にして Esc はポーズ等に使う。Alt+数字と、A+B+X+Y 同時押し + 十字 / BACK は Pyxel の特殊操作に予約されている前提で操作を割り当てる。",
+  "テストは 2 層にする。純 Python（cp_core、pyxel を import しない）は pytest で直接。Pyxel を通す煙テストと画面巡回は必ず別プロセスで動かし、pytest の中で pyxel.run / pyxel.quit を呼ばない。",
+  "煙テストの合格条件は「終了コード 0」かつ「全 tick 走った後にだけ書く結果ファイル」かつ「指紋が純 Python の参照値と一致」かつ「実描画の回数が範囲内」かつ「画面が空でない」。終了は sys.exit(code)、出力は明示的に flush。故障注入（例外 / 早すぎる quit / 描画ゼロ）を常設する。",
+  "煙テストの駆動は 2 通り持つ。速い方は自前ループ + pyxel.flip + fps=1000 + capture_sec=0（120 tick が 0.13 秒）。本番と同じ pyxel.run 経路も実時間で 1 本回す。切り替えは環境変数にする（ブラウザには無いので本番に影響しない）。",
+  "ファイルは必ず Path(__file__) から組んで読む。作業ディレクトリに頼らない（pyxel.init が chdir する）。テストの出力先は絶対パスにする。",
+  "リポジトリは、出荷物だけを入れるアプリ用ディレクトリ（直下に main.py、cp_core/、cp_app/、data/、assets/）と、その外の tests/、tools/、docs/、dist/ に分ける。アセットに .gif / .zip は使わない。ビルドは dist/ をカレントにして pyxel package → pyxel app2html を実行し、中身の一覧と HTML の中身を検査する（proto/tools/build.py）。",
+  "直近 10 秒 GIF は方式を設計で決める。内蔵の録画を fps=60・capture_sec=10 で使うと約 44MB を常時保持し、10 秒の録画が 12 秒で再生される GIF になる。受け入れるか別の作り方にするかを決め、使わない間は capture_sec=0 にする。"
+ ],
+ "numbers": [
+  {
+   "what": "pyxel.run の更新レート（ヘッドレス）",
+   "value": "fps=60 で 60.0 回/秒、fps=30 で 30.0 回/秒",
+   "conditions": "120 / 60 フレーム、experiments/e01、Linux コンテナ 4 コア、Python 3.13.18、Pyxel 3.0.1 ネイティブ"
+  },
+  {
+   "what": "pyxel.flip 自前ループの上限",
+   "value": "約 906〜912 フレーム/秒",
+   "conditions": "fps=1000 と 100000、1000〜3000 フレーム、320x240、e05 / e06、同環境"
+  },
+  {
+   "what": "煙テスト 120 tick の所要時間",
+   "value": "flip 駆動 0.13 秒（プロセス全体 0.29 秒）、run 駆動 1.98 秒（同 2.15 秒）",
+   "conditions": "試作 cp_proto、tools/run_smoke.py、同環境"
+  },
+  {
+   "what": "追い付きの形（fps=60）",
+   "value": "描画 +20/+30ms → update 2 回ごとに draw 1 回（29.2 draw/秒）、+40ms → 3 回、+70ms → 5 回、+120ms → 1 回（7.5 update/秒に低下）",
+   "conditions": "240 / 120 / 30 フレーム、draw 内で sleep、e03（レートは init の約 0.1 秒を含む）"
+  },
+  {
+   "what": "試作ループのレート",
+   "value": "60.0〜60.1 tick/秒・30.0〜30.1 描画/秒（実描画 +0/10/14/25ms）、60.0 tick/秒・20.0 描画/秒（+45ms）",
+   "conditions": "600 tick（約 10 秒）、pyxel.run、ヘッドレス、実描画に sleep を足して測定"
+  },
+  {
+   "what": "内蔵録画のメモリ増分",
+   "value": "+44MB（fps=60、capture_sec=10）、+22MB（fps=30、10 秒）、+221MB（fps=100000 で 3000 フレーム）、0（capture_sec=0）",
+   "conditions": "320x240、最大常駐メモリの増分、e06、ネイティブ"
+  },
+  {
+   "what": "内蔵 GIF の再生時間",
+   "value": "3.0 秒の録画が fps=60 で 180 枚 × 20ms = 3.60 秒、fps=30 で 90 枚 × 30ms = 2.70 秒",
+   "conditions": "e07、PIL で各フレームの表示時間を読んだ"
+  },
+  {
+   "what": "pyxel.blt 320x240（Image → 画面）",
+   "value": "3.0〜3.9µs/回",
+   "conditions": "2000 回の平均、e09、ネイティブ"
+  },
+  {
+   "what": "Pyxel Cube の scene.draw（箱 6 個）",
+   "value": "裏画面へ 92µs、画面へ 91µs",
+   "conditions": "各 300 回の平均、320x240、e13、ネイティブ"
+  },
+  {
+   "what": "pyxel.screen.save 320x240 等倍",
+   "value": "1.82ms",
+   "conditions": "1 回、e08、ネイティブ"
+  },
+  {
+   "what": "パッケージの大きさ",
+   "value": "アプリ 26,814 B → .pyxapp 13,577 B → .html 18,293 B（.pyxapp の 1.347 倍）",
+   "conditions": "試作 cp_proto（Python 13 本 + JSON + バイナリ + .pyxres + PNG）、tools/build.py"
+  },
+  {
+   "what": "試作の pytest 全体",
+   "value": "21 件 約 9.0 秒",
+   "conditions": "純 Python 19 件 + 別プロセス 2 件（ビルド、煙テスト 10 通り、画面巡回を含む）"
+  },
+  {
+   "what": "机上モデルでの描画レート（測定ではない）",
+   "value": "tick 4ms・実描画 20ms・60Hz 画面で、tick 数だけの判定は 20 描画/秒、30ms 条件つきは 30 描画/秒。どちらも 60 tick/秒",
+   "conditions": "e12: Pyxel のソース 2 か所を Python に写し、理想化した requestAnimationFrame で 20 秒分回した。コストは仮定値"
+  }
+ ],
+ "unverified": [
+  "REPORT.md は作成できなかった。Write がサブエージェントの規則（報告ファイルを書かない）で拒否されたため、回避せず、内容をこの構造化出力に入れた。report_path の場所にファイルは無い。",
+  "実ブラウザ（Pyodide / WebAssembly）では何も動かしていない。kitao.dev が遮断されており、作った HTML も開いていない。案a のブラウザでの実際のレート、1 コールバックあたりのコスト、「遅れが 1 回あとに届く」挙動、30ms 条件の効果は、ソースと机上モデルからの推測。",
+  "実物のゲームパッドは使っていない。値域は SDL2 と Pyxel のソースから。ブラウザでトリガーが 2 値になる件は SDL2 の SDL2 ブランチ最新で確認したもので、Pyxel Web が実際にリンクしている emscripten 版 SDL2 との一致と実ブラウザでの挙動は未確認。js モジュール経由で Gamepad API を読む案も未実行。",
+  "ウィンドウあり（headless=False）の動作は未確認（ディスプレイ無し）。垂直同期、実際の表示、性能表示の見え方など。",
+  "ブラウザでコールバックが例外を出したときにユーザーに何が見えるかは未確認。",
+  "音は未確認（音デバイス無しで Failed to initialize audio device が出る）。",
+  "ブラウザでの内蔵録画（約 44MB の保持、GIF の書き出し時間）は未確認。",
+  "time.perf_counter() のブラウザでの分解能（30ms 条件に使う）は未確認。",
+  "10 秒を超える長時間の安定性、pyxel.reset()、pyxel app2exe、Windows / macOS での pyxel package は未確認。",
+  "ネイティブとブラウザで浮動小数の計算結果が一致するかは未確認（このスパイクの対象外）。",
+  "物理 6 台分の tick がブラウザで 16.7ms に収まるかは未確認（試作のシミュレーションは仮のもの）。",
+  "後始末: 最初の pyxel play を TMPDIR 指定なしで実行したため、/tmp/.pyxel/play/3007_fefae87e-b732-402f-8d6c-e0440d2b7475/ が自分のディレクトリの外に残っている（以後は TMPDIR を自分のディレクトリに向けた）。",
+  "自分の proto/out を空にする rm -f out/* が安全検査で止められた。何も消しておらず、作業にも不要だった。",
+  "追加で入れたパッケージ: pytest 9.2.0（依存の iniconfig、pluggy を含む）。"
+ ],
+ "report_path": "<scratchpad>/spikes/frameloop/REPORT.md",
+ "artifacts": [
+  "<scratchpad>/spikes/frameloop/proto/cp_proto/main.py",
+  "<scratchpad>/spikes/frameloop/proto/cp_proto/cp_core/fixed_loop.py",
+  "<scratchpad>/spikes/frameloop/proto/cp_proto/cp_core/controls.py",
+  "<scratchpad>/spikes/frameloop/proto/cp_proto/cp_core/input_script.py",
+  "<scratchpad>/spikes/frameloop/proto/cp_proto/cp_core/game.py",
+  "<scratchpad>/spikes/frameloop/proto/cp_proto/cp_core/datafiles.py",
+  "<scratchpad>/spikes/frameloop/proto/cp_proto/cp_app/app.py",
+  "<scratchpad>/spikes/frameloop/proto/cp_proto/cp_app/input_pyxel.py",
+  "<scratchpad>/spikes/frameloop/proto/cp_proto/cp_app/smoke.py",
+  "<scratchpad>/spikes/frameloop/proto/tools/build.py",
+  "<scratchpad>/spikes/frameloop/proto/tools/run_smoke.py",
+  "<scratchpad>/spikes/frameloop/proto/tools/tour.py",
+  "<scratchpad>/spikes/frameloop/proto/tools/make_assets.py",
+  "<scratchpad>/spikes/frameloop/proto/tests/test_core.py",
+  "<scratchpad>/spikes/frameloop/proto/tests/test_smoke.py",
+  "<scratchpad>/spikes/frameloop/proto/dist/cp_proto.pyxapp",
+  "<scratchpad>/spikes/frameloop/proto/dist/cp_proto.html",
+  "<scratchpad>/spikes/frameloop/proto/out/tour/pause.png",
+  "<scratchpad>/spikes/frameloop/experiments/e01_run_headless.py",
+  "<scratchpad>/spikes/frameloop/experiments/e03_persist_catchup.py",
+  "<scratchpad>/spikes/frameloop/experiments/e04_input_inject.py",
+  "<scratchpad>/spikes/frameloop/experiments/e05_manual_loop.py",
+  "<scratchpad>/spikes/frameloop/experiments/e09_overlay_smear.py",
+  "<scratchpad>/spikes/frameloop/experiments/e12_web_schedule_model.py",
+  "<scratchpad>/spikes/frameloop/experiments/e13_cube_backbuffer.py",
+  "<scratchpad>/spikes/frameloop/experiments/pytest_hazard/test_quit_hazard.py",
+  "<scratchpad>/spikes/frameloop/experiments/pkg_rules/sub_app/launch/start.py",
+  "<scratchpad>/spikes/frameloop/pyxel_src/crates/pyxel-core/src/system.rs",
+  "<scratchpad>/spikes/frameloop/pyxel_src/crates/pyxel-core/src/platform/sdl2/platform_sdl2.rs",
+  "<scratchpad>/spikes/frameloop/pyxel_src/sdl2_ref/SDL_gamecontrollerdb.h"
+ ]
+}

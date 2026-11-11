@@ -1,0 +1,480 @@
+{
+ "imports": [
+  {
+   "module": "math",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "random",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "struct",
+   "ok": true,
+   "error": null,
+   "ms": 0.2,
+   "already_loaded": true
+  },
+  {
+   "module": "zlib",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "json",
+   "ok": true,
+   "error": null,
+   "ms": 0.1,
+   "already_loaded": true
+  },
+  {
+   "module": "base64",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "binascii",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "hashlib",
+   "ok": true,
+   "error": null,
+   "ms": 7.7,
+   "already_loaded": false
+  },
+  {
+   "module": "array",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "time",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "dataclasses",
+   "ok": true,
+   "error": null,
+   "ms": 0.1,
+   "already_loaded": true
+  },
+  {
+   "module": "enum",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "typing",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "collections",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "itertools",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "functools",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "bisect",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "heapq",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "io",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "os",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "re",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "copy",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "pickle",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "gzip",
+   "ok": true,
+   "error": null,
+   "ms": 19.6,
+   "already_loaded": false
+  },
+  {
+   "module": "zipfile",
+   "ok": true,
+   "error": null,
+   "ms": 0.1,
+   "already_loaded": true
+  },
+  {
+   "module": "datetime",
+   "ok": true,
+   "error": null,
+   "ms": 2.7,
+   "already_loaded": false
+  },
+  {
+   "module": "statistics",
+   "ok": true,
+   "error": null,
+   "ms": 81.1,
+   "already_loaded": false
+  },
+  {
+   "module": "fractions",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "decimal",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "operator",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "abc",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "contextlib",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "weakref",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "types",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "numbers",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "cmath",
+   "ok": true,
+   "error": null,
+   "ms": 0.3,
+   "already_loaded": false
+  },
+  {
+   "module": "string",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "textwrap",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "traceback",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "logging",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "warnings",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "platform",
+   "ok": true,
+   "error": null,
+   "ms": 37.9,
+   "already_loaded": false
+  },
+  {
+   "module": "uuid",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "tempfile",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "pathlib",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "csv",
+   "ok": true,
+   "error": null,
+   "ms": 10.6,
+   "already_loaded": false
+  },
+  {
+   "module": "tomllib",
+   "ok": true,
+   "error": null,
+   "ms": 24.3,
+   "already_loaded": false
+  },
+  {
+   "module": "asyncio",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "unittest",
+   "ok": true,
+   "error": null,
+   "ms": 205.5,
+   "already_loaded": false
+  },
+  {
+   "module": "ctypes",
+   "ok": true,
+   "error": null,
+   "ms": 33.1,
+   "already_loaded": false
+  },
+  {
+   "module": "sqlite3",
+   "ok": true,
+   "error": null,
+   "ms": 4.0,
+   "already_loaded": false
+  },
+  {
+   "module": "ssl",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "lzma",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "bz2",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "multiprocessing",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "threading",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "socket",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "urllib.request",
+   "ok": true,
+   "error": null,
+   "ms": 245.0,
+   "already_loaded": false
+  },
+  {
+   "module": "tkinter",
+   "ok": false,
+   "error": "ModuleNotFoundError: No module named 'tkinter'",
+   "ms": 6.4,
+   "already_loaded": false
+  },
+  {
+   "module": "js",
+   "ok": true,
+   "error": null,
+   "ms": 0.2,
+   "already_loaded": false
+  },
+  {
+   "module": "pyodide",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "pyodide.ffi",
+   "ok": true,
+   "error": null,
+   "ms": 0.0,
+   "already_loaded": true
+  },
+  {
+   "module": "pyodide.http",
+   "ok": true,
+   "error": null,
+   "ms": 18.3,
+   "already_loaded": false
+  },
+  {
+   "module": "micropip",
+   "ok": false,
+   "error": "ModuleNotFoundError: No module named 'micropip'",
+   "ms": 6.2,
+   "already_loaded": false
+  },
+  {
+   "module": "numpy",
+   "ok": false,
+   "error": "ModuleNotFoundError: No module named 'numpy'",
+   "ms": 5.6,
+   "already_loaded": false
+  },
+  {
+   "module": "pkg_inside",
+   "ok": true,
+   "error": null,
+   "ms": 0.5,
+   "already_loaded": false
+  },
+  {
+   "module": "pkg_inside.sub",
+   "ok": true,
+   "error": null,
+   "ms": 0.5,
+   "already_loaded": false
+  }
+ ],
+ "zlib": {
+  "in": 500000,
+  "out": 3681,
+  "compress_ms": 4.0,
+  "decompress_ms": 0.7,
+  "ok": true
+ }
+}

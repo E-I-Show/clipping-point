@@ -1,0 +1,179 @@
+{
+ "url": "file://<scratchpad>/spikes/harness/repo/out/web/build/clipping_point.html",
+ "mirror": "<scratchpad>/spikes/web/mirror",
+ "console": [
+  {
+   "t": 150,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 150,
+   "type": "log",
+   "text": "{command: play, name: clipping_point.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIAAsUa10sYEvPCQAAAAcAAAAlAAAAY2xpcHBpbm…tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0=}"
+  },
+  {
+   "t": 2849,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 3309,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 3578,
+   "type": "log",
+   "text": "------------------------------------------"
+  },
+  {
+   "t": 3578,
+   "type": "log",
+   "text": "title   : CLIPPING POINT harness prototype"
+  },
+  {
+   "t": 3578,
+   "type": "log",
+   "text": "author  : spike"
+  },
+  {
+   "t": 3578,
+   "type": "log",
+   "text": "desc    : verification harness prototype"
+  },
+  {
+   "t": 3578,
+   "type": "log",
+   "text": "version : 0.0.1"
+  },
+  {
+   "t": 3579,
+   "type": "log",
+   "text": "------------------------------------------"
+  },
+  {
+   "t": 3775,
+   "type": "warning",
+   "text": "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)"
+  },
+  {
+   "t": 3827,
+   "type": "warning",
+   "text": "[.WebGL-0x3a2c06c88a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3845,
+   "type": "warning",
+   "text": "[.WebGL-0x3a2c06c88a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3865,
+   "type": "warning",
+   "text": "[.WebGL-0x3a2c06c88a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3882,
+   "type": "warning",
+   "text": "[.WebGL-0x3a2c06c88a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  },
+  {
+   "t": 5766,
+   "type": "log",
+   "text": "RESULT_JSON smoke {\"fingerprint\": \"7fff92978ca507e3-120-menu\", \"mode\": \"run\", \"platform\": \"emscripten\", \"portable\": {\"cars\": {\"arashi_4t\": {\"lap\": 0, \"s\": 7.874, \"v\": 41.333}, \"kazane_rs\": {\"lap\": 0, \"s\": 33.0, \"v\": 42.053}, \"shirogane_gtt\": {\"lap\": 0, \"s\": 25.831, \"v\": 43.111}, \"tsubame_1600\": {\"lap\": 0, \"s\": 17.338, \"v\": 42.483}}, \"grid\": [\"kazane_rs\", \"shirogane_gtt\", \"tsubame_1600\", \"arashi_4t\"], \"rng\": {\"ai\": \"f67ed2c2b09df547\", \"grid\": \"13759d7a2250d35d\"}, \"tick\": 70}, \"python\": \"3.14.2\", \"pyxel\": \"3.0.1\", \"renders\": 59, \"screen_colors\": [0, 1, 5, 7, 10, 13], \"storage\": {\"backend\": \"WebStorageBackend\", \"keys\": [\"blob\", \"profile\"], \"ok\": true, \"used_bytes\": 1682}, \"ticks\": 120, \"visited\": [\"menu\", \"hud\", \"settings\", \"theater\", \"menu\"], \"wall_s\": 1.986}"
+  },
+  {
+   "t": 5766,
+   "type": "log",
+   "text": "CP_SMOKE_DONE"
+  }
+ ],
+ "failures": [],
+ "requests": [
+  {
+   "t": 131,
+   "status": 200,
+   "url": "file://<scratchpad>/spikes/harness/repo/out/web/build/clipping_point.html"
+  },
+  {
+   "t": 145,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel.js"
+  },
+  {
+   "t": 160,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel.css"
+  },
+  {
+   "t": 163,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 381,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 409,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/import_hook.py"
+  },
+  {
+   "t": 410,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 517,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 556,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 714,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 737,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 2977,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 3368,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/images/click_to_start_114x14.png"
+  }
+ ],
+ "downloads": [],
+ "allowed": [],
+ "actions": [],
+ "filechoosers": [],
+ "passed": true,
+ "promptAt": 3407,
+ "clickedAt": 3412,
+ "state": {
+  "overlayText": null,
+  "hasFatalError": false,
+  "initialized": true,
+  "canvas": {
+   "width": 960,
+   "height": 720,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": 5766,
+ "elapsedMs": 6221
+}

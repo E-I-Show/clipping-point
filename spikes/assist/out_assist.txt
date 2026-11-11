@@ -1,0 +1,81 @@
+--- a. stop from 100 km/h, brake key held ---
+{'car': 'tsubame', 'mu': 1.0, 'dist_off_m': 45.1, 'lock_ticks_off': 186, 'ticks_off': 193, 'steer+brake_lateral_m_off': 0.23, 'steer+brake_beta_deg_off': -0.1, 'dist_on_m': 44.4, 'lock_ticks_on': 68, 'ticks_on': 190, 'steer+brake_lateral_m_on': 4.09, 'steer+brake_beta_deg_on': -13.2}
+{'car': 'tsubame', 'mu': 0.5, 'dist_off_m': 86.1, 'lock_ticks_off': 373, 'ticks_off': 375, 'steer+brake_lateral_m_off': -0.03, 'steer+brake_beta_deg_off': 0.5, 'dist_on_m': 93.0, 'lock_ticks_on': 120, 'ticks_on': 405, 'steer+brake_lateral_m_on': 0.95, 'steer+brake_beta_deg_on': -0.5}
+{'car': 'kazane', 'mu': 1.0, 'dist_off_m': 43.8, 'lock_ticks_off': 182, 'ticks_off': 188, 'steer+brake_lateral_m_off': 0.21, 'steer+brake_beta_deg_off': 0.1, 'dist_on_m': 43.2, 'lock_ticks_on': 43, 'ticks_on': 186, 'steer+brake_lateral_m_on': 4.3, 'steer+brake_beta_deg_on': -23.9}
+{'car': 'kazane', 'mu': 0.5, 'dist_off_m': 86.8, 'lock_ticks_off': 376, 'ticks_off': 379, 'steer+brake_lateral_m_off': -0.02, 'steer+brake_beta_deg_off': 0.8, 'dist_on_m': 86.5, 'lock_ticks_on': 45, 'ticks_on': 381, 'steer+brake_lateral_m_on': 1.24, 'steer+brake_beta_deg_on': -2.2}
+{'car': 'shirogane', 'mu': 1.0, 'dist_off_m': 41.5, 'lock_ticks_off': 171, 'ticks_off': 178, 'steer+brake_lateral_m_off': 0.22, 'steer+brake_beta_deg_off': -0.1, 'dist_on_m': 40.6, 'lock_ticks_on': 36, 'ticks_on': 174, 'steer+brake_lateral_m_on': 4.77, 'steer+brake_beta_deg_on': -18.2}
+{'car': 'shirogane', 'mu': 0.5, 'dist_off_m': 82.8, 'lock_ticks_off': 358, 'ticks_off': 361, 'steer+brake_lateral_m_off': -0.03, 'steer+brake_beta_deg_off': 0.7, 'dist_on_m': 80.0, 'lock_ticks_on': 46, 'ticks_on': 351, 'steer+brake_lateral_m_on': 1.42, 'steer+brake_beta_deg_on': -2.4}
+{'car': 'arashi', 'mu': 1.0, 'dist_off_m': 42.5, 'lock_ticks_off': 175, 'ticks_off': 182, 'steer+brake_lateral_m_off': 0.24, 'steer+brake_beta_deg_off': -0.0, 'dist_on_m': 41.4, 'lock_ticks_on': 48, 'ticks_on': 177, 'steer+brake_lateral_m_on': 4.76, 'steer+brake_beta_deg_on': -21.7}
+{'car': 'arashi', 'mu': 0.5, 'dist_off_m': 83.3, 'lock_ticks_off': 360, 'ticks_off': 363, 'steer+brake_lateral_m_off': -0.03, 'steer+brake_beta_deg_off': 0.7, 'dist_on_m': 83.9, 'lock_ticks_on': 91, 'ticks_on': 367, 'steer+brake_lateral_m_on': 1.12, 'steer+brake_beta_deg_on': -1.0}
+--- b. corner exit: R30 0.75 g, throttle key down for 3 s, steering held ---
+{'car': 'tsubame', 'assist': 'off', 'peak_beta_deg': 0.6, 'spin_at_s': None, 'dv_1.5s_kmh': 11.5, 'dv_3s_kmh': 22.6, 'min_throttle_out': 1.0, 'ran_wide_m': 13.5}
+{'car': 'tsubame', 'assist': 'on', 'peak_beta_deg': 0.8, 'spin_at_s': None, 'dv_1.5s_kmh': 9.8, 'dv_3s_kmh': 18.0, 'min_throttle_out': 0.54, 'ran_wide_m': 11.0}
+{'car': 'tsubame', 'assist': 'on, no lateral term (u<=0.97 only)', 'peak_beta_deg': 0.8, 'spin_at_s': None, 'dv_1.5s_kmh': 9.8, 'dv_3s_kmh': 18.4, 'min_throttle_out': 0.59, 'ran_wide_m': 11.0}
+{'car': 'kazane', 'assist': 'off', 'peak_beta_deg': 85.4, 'spin_at_s': 1.05, 'dv_1.5s_kmh': 0.6, 'dv_3s_kmh': -32.4, 'min_throttle_out': 1.0, 'ran_wide_m': 3.7}
+{'car': 'kazane', 'assist': 'on', 'peak_beta_deg': 2.8, 'spin_at_s': None, 'dv_1.5s_kmh': 6.9, 'dv_3s_kmh': 11.9, 'min_throttle_out': 0.46, 'ran_wide_m': 3.1}
+{'car': 'kazane', 'assist': 'on, no lateral term (u<=0.97 only)', 'peak_beta_deg': 4.7, 'spin_at_s': None, 'dv_1.5s_kmh': 6.9, 'dv_3s_kmh': 11.3, 'min_throttle_out': 0.5, 'ran_wide_m': 2.9}
+{'car': 'shirogane', 'assist': 'off', 'peak_beta_deg': 85.5, 'spin_at_s': 1.2, 'dv_1.5s_kmh': 3.5, 'dv_3s_kmh': -28.9, 'min_throttle_out': 1.0, 'ran_wide_m': 3.2}
+{'car': 'shirogane', 'assist': 'on', 'peak_beta_deg': 2.1, 'spin_at_s': None, 'dv_1.5s_kmh': 7.2, 'dv_3s_kmh': 12.0, 'min_throttle_out': 0.47, 'ran_wide_m': 2.4}
+{'car': 'shirogane', 'assist': 'on, no lateral term (u<=0.97 only)', 'peak_beta_deg': 3.4, 'spin_at_s': None, 'dv_1.5s_kmh': 7.3, 'dv_3s_kmh': 11.7, 'min_throttle_out': 0.49, 'ran_wide_m': 2.3}
+{'car': 'arashi', 'assist': 'off', 'peak_beta_deg': 1.4, 'spin_at_s': None, 'dv_1.5s_kmh': 20.8, 'dv_3s_kmh': 38.7, 'min_throttle_out': 1.0, 'ran_wide_m': 19.7}
+{'car': 'arashi', 'assist': 'on', 'peak_beta_deg': 1.3, 'spin_at_s': None, 'dv_1.5s_kmh': 17.7, 'dv_3s_kmh': 34.3, 'min_throttle_out': 0.78, 'ran_wide_m': 15.5}
+{'car': 'arashi', 'assist': 'on, no lateral term (u<=0.97 only)', 'peak_beta_deg': 1.3, 'spin_at_s': None, 'dv_1.5s_kmh': 17.7, 'dv_3s_kmh': 35.7, 'min_throttle_out': 0.81, 'ran_wide_m': 15.7}
+--- c. corner entry: R60 0.85 g steady, then lift / brake key, steering held 2 s ---
+{'car': 'tsubame', 'pedal': 'lift', 'assist': 'off', 'peak_beta_deg': 4.0, 'spin_at_s': None, 'speed_lost_kmh': 11.6}
+{'car': 'tsubame', 'pedal': 'lift', 'assist': 'on', 'peak_beta_deg': 3.9, 'spin_at_s': None, 'speed_lost_kmh': 10.8}
+{'car': 'tsubame', 'pedal': 'lift', 'assist': 'on, no engine-drag control', 'peak_beta_deg': 4.0, 'spin_at_s': None, 'speed_lost_kmh': 11.6}
+{'car': 'tsubame', 'pedal': 'lift', 'assist': 'on, no rear-slide brake limit', 'peak_beta_deg': 3.9, 'spin_at_s': None, 'speed_lost_kmh': 10.8}
+{'car': 'tsubame', 'pedal': 'brake', 'assist': 'off', 'peak_beta_deg': 2.1, 'spin_at_s': None, 'speed_lost_kmh': 61.4}
+{'car': 'tsubame', 'pedal': 'brake', 'assist': 'on', 'peak_beta_deg': 12.6, 'spin_at_s': None, 'speed_lost_kmh': 31.9}
+{'car': 'tsubame', 'pedal': 'brake', 'assist': 'on, no engine-drag control', 'peak_beta_deg': 12.6, 'spin_at_s': None, 'speed_lost_kmh': 31.9}
+{'car': 'tsubame', 'pedal': 'brake', 'assist': 'on, no rear-slide brake limit', 'peak_beta_deg': 11.2, 'spin_at_s': None, 'speed_lost_kmh': 39.3}
+{'car': 'kazane', 'pedal': 'lift', 'assist': 'off', 'peak_beta_deg': 3.3, 'spin_at_s': None, 'speed_lost_kmh': 9.1}
+{'car': 'kazane', 'pedal': 'lift', 'assist': 'on', 'peak_beta_deg': 3.3, 'spin_at_s': None, 'speed_lost_kmh': 9.0}
+{'car': 'kazane', 'pedal': 'lift', 'assist': 'on, no engine-drag control', 'peak_beta_deg': 3.3, 'spin_at_s': None, 'speed_lost_kmh': 9.1}
+{'car': 'kazane', 'pedal': 'lift', 'assist': 'on, no rear-slide brake limit', 'peak_beta_deg': 3.3, 'spin_at_s': None, 'speed_lost_kmh': 9.0}
+{'car': 'kazane', 'pedal': 'brake', 'assist': 'off', 'peak_beta_deg': 3.5, 'spin_at_s': None, 'speed_lost_kmh': 62.2}
+{'car': 'kazane', 'pedal': 'brake', 'assist': 'on', 'peak_beta_deg': 22.2, 'spin_at_s': None, 'speed_lost_kmh': 31.6}
+{'car': 'kazane', 'pedal': 'brake', 'assist': 'on, no engine-drag control', 'peak_beta_deg': 22.2, 'spin_at_s': None, 'speed_lost_kmh': 31.6}
+{'car': 'kazane', 'pedal': 'brake', 'assist': 'on, no rear-slide brake limit', 'peak_beta_deg': 33.1, 'spin_at_s': 1.83, 'speed_lost_kmh': 44.0}
+{'car': 'shirogane', 'pedal': 'lift', 'assist': 'off', 'peak_beta_deg': 2.2, 'spin_at_s': None, 'speed_lost_kmh': 9.7}
+{'car': 'shirogane', 'pedal': 'lift', 'assist': 'on', 'peak_beta_deg': 2.2, 'spin_at_s': None, 'speed_lost_kmh': 9.7}
+{'car': 'shirogane', 'pedal': 'lift', 'assist': 'on, no engine-drag control', 'peak_beta_deg': 2.2, 'spin_at_s': None, 'speed_lost_kmh': 9.7}
+{'car': 'shirogane', 'pedal': 'lift', 'assist': 'on, no rear-slide brake limit', 'peak_beta_deg': 2.2, 'spin_at_s': None, 'speed_lost_kmh': 9.7}
+{'car': 'shirogane', 'pedal': 'brake', 'assist': 'off', 'peak_beta_deg': 4.1, 'spin_at_s': None, 'speed_lost_kmh': 65.7}
+{'car': 'shirogane', 'pedal': 'brake', 'assist': 'on', 'peak_beta_deg': 15.4, 'spin_at_s': None, 'speed_lost_kmh': 29.4}
+{'car': 'shirogane', 'pedal': 'brake', 'assist': 'on, no engine-drag control', 'peak_beta_deg': 15.4, 'spin_at_s': None, 'speed_lost_kmh': 29.4}
+{'car': 'shirogane', 'pedal': 'brake', 'assist': 'on, no rear-slide brake limit', 'peak_beta_deg': 35.5, 'spin_at_s': 1.77, 'speed_lost_kmh': 45.7}
+{'car': 'arashi', 'pedal': 'lift', 'assist': 'off', 'peak_beta_deg': 2.1, 'spin_at_s': None, 'speed_lost_kmh': 9.2}
+{'car': 'arashi', 'pedal': 'lift', 'assist': 'on', 'peak_beta_deg': 2.1, 'spin_at_s': None, 'speed_lost_kmh': 9.2}
+{'car': 'arashi', 'pedal': 'lift', 'assist': 'on, no engine-drag control', 'peak_beta_deg': 2.1, 'spin_at_s': None, 'speed_lost_kmh': 9.2}
+{'car': 'arashi', 'pedal': 'lift', 'assist': 'on, no rear-slide brake limit', 'peak_beta_deg': 2.1, 'spin_at_s': None, 'speed_lost_kmh': 9.2}
+{'car': 'arashi', 'pedal': 'brake', 'assist': 'off', 'peak_beta_deg': 1.9, 'spin_at_s': None, 'speed_lost_kmh': 64.9}
+{'car': 'arashi', 'pedal': 'brake', 'assist': 'on', 'peak_beta_deg': 17.0, 'spin_at_s': None, 'speed_lost_kmh': 31.1}
+{'car': 'arashi', 'pedal': 'brake', 'assist': 'on, no engine-drag control', 'peak_beta_deg': 17.0, 'spin_at_s': None, 'speed_lost_kmh': 31.1}
+{'car': 'arashi', 'pedal': 'brake', 'assist': 'on, no rear-slide brake limit', 'peak_beta_deg': 31.1, 'spin_at_s': 1.85, 'speed_lost_kmh': 44.8}
+--- d. standing start, throttle key down (mu 1.0 / 0.5) ---
+{'car': 'tsubame', 'mu': 1.0, 't0_80_off': 5.15, 'wheelspin_ticks_off': 206, 't0_80_on': 5.13, 'wheelspin_ticks_on': 22}
+{'car': 'tsubame', 'mu': 0.5, 't0_80_off': 10.1, 'wheelspin_ticks_off': 583, 't0_80_on': 8.97, 'wheelspin_ticks_on': 210}
+{'car': 'kazane', 'mu': 1.0, 't0_80_off': 4.98, 'wheelspin_ticks_off': 180, 't0_80_on': 4.82, 'wheelspin_ticks_on': 50}
+{'car': 'kazane', 'mu': 0.5, 't0_80_off': None, 'wheelspin_ticks_off': 2394, 't0_80_on': 9.82, 'wheelspin_ticks_on': 283}
+{'car': 'shirogane', 'mu': 1.0, 't0_80_off': 5.0, 'wheelspin_ticks_off': 213, 't0_80_on': 4.62, 'wheelspin_ticks_on': 16}
+{'car': 'shirogane', 'mu': 0.5, 't0_80_off': None, 'wheelspin_ticks_off': 2392, 't0_80_on': 9.78, 'wheelspin_ticks_on': 280}
+{'car': 'arashi', 'mu': 1.0, 't0_80_off': 3.83, 'wheelspin_ticks_off': 0, 't0_80_on': 3.83, 'wheelspin_ticks_on': 0}
+{'car': 'arashi', 'mu': 0.5, 't0_80_off': 5.47, 'wheelspin_ticks_off': 301, 't0_80_on': 6.25, 'wheelspin_ticks_on': 81}
+--- e. slalom without sliding: is 'countersteer' ever detected? (analog sine, 70 / 95 % of full stick) ---
+{'car': 'tsubame', 'kmh': 80, 'stick_amp': 0.7, 'counter_ticks': 0, 'slide_ticks': 0, 'of_ticks': 600, 'peak_beta_deg': 0.8, 'peak_rear_sy': 0.25}
+{'car': 'tsubame', 'kmh': 80, 'stick_amp': 0.95, 'counter_ticks': 0, 'slide_ticks': 0, 'of_ticks': 600, 'peak_beta_deg': 2.5, 'peak_rear_sy': 0.54}
+{'car': 'tsubame', 'kmh': 140, 'stick_amp': 0.7, 'counter_ticks': 0, 'slide_ticks': 0, 'of_ticks': 600, 'peak_beta_deg': 2.1, 'peak_rear_sy': 0.34}
+{'car': 'tsubame', 'kmh': 140, 'stick_amp': 0.95, 'counter_ticks': 0, 'slide_ticks': 0, 'of_ticks': 600, 'peak_beta_deg': 4.1, 'peak_rear_sy': 0.62}
+{'car': 'kazane', 'kmh': 80, 'stick_amp': 0.7, 'counter_ticks': 0, 'slide_ticks': 0, 'of_ticks': 600, 'peak_beta_deg': 1.1, 'peak_rear_sy': 0.26}
+{'car': 'kazane', 'kmh': 80, 'stick_amp': 0.95, 'counter_ticks': 0, 'slide_ticks': 0, 'of_ticks': 600, 'peak_beta_deg': 3.6, 'peak_rear_sy': 0.64}
+{'car': 'kazane', 'kmh': 140, 'stick_amp': 0.7, 'counter_ticks': 0, 'slide_ticks': 0, 'of_ticks': 600, 'peak_beta_deg': 2.7, 'peak_rear_sy': 0.4}
+{'car': 'kazane', 'kmh': 140, 'stick_amp': 0.95, 'counter_ticks': 154, 'slide_ticks': 296, 'of_ticks': 600, 'peak_beta_deg': 8.0, 'peak_rear_sy': 1.13}
+{'car': 'shirogane', 'kmh': 80, 'stick_amp': 0.7, 'counter_ticks': 0, 'slide_ticks': 0, 'of_ticks': 600, 'peak_beta_deg': 0.9, 'peak_rear_sy': 0.25}
+{'car': 'shirogane', 'kmh': 80, 'stick_amp': 0.95, 'counter_ticks': 0, 'slide_ticks': 0, 'of_ticks': 600, 'peak_beta_deg': 2.7, 'peak_rear_sy': 0.57}
+{'car': 'shirogane', 'kmh': 140, 'stick_amp': 0.7, 'counter_ticks': 0, 'slide_ticks': 0, 'of_ticks': 600, 'peak_beta_deg': 2.4, 'peak_rear_sy': 0.37}
+{'car': 'shirogane', 'kmh': 140, 'stick_amp': 0.95, 'counter_ticks': 193, 'slide_ticks': 413, 'of_ticks': 600, 'peak_beta_deg': 7.1, 'peak_rear_sy': 1.03}
+{'car': 'arashi', 'kmh': 80, 'stick_amp': 0.7, 'counter_ticks': 0, 'slide_ticks': 0, 'of_ticks': 600, 'peak_beta_deg': 0.8, 'peak_rear_sy': 0.24}
+{'car': 'arashi', 'kmh': 80, 'stick_amp': 0.95, 'counter_ticks': 0, 'slide_ticks': 0, 'of_ticks': 600, 'peak_beta_deg': 2.5, 'peak_rear_sy': 0.54}
+{'car': 'arashi', 'kmh': 140, 'stick_amp': 0.7, 'counter_ticks': 0, 'slide_ticks': 0, 'of_ticks': 600, 'peak_beta_deg': 2.2, 'peak_rear_sy': 0.35}
+{'car': 'arashi', 'kmh': 140, 'stick_amp': 0.95, 'counter_ticks': 0, 'slide_ticks': 0, 'of_ticks': 600, 'peak_beta_deg': 4.8, 'peak_rear_sy': 0.71}

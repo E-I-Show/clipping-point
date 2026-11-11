@@ -1,0 +1,224 @@
+{
+ "steps": [
+  {
+   "name": "sounds[0].set",
+   "ok": true,
+   "out": "None"
+  },
+  {
+   "name": "play(0, 0, loop=True)",
+   "ok": true,
+   "out": "None"
+  },
+  {
+   "name": "play_pos(0) right after",
+   "ok": true,
+   "out": "(0, 0.0)"
+  },
+  {
+   "name": "channels[0].detune = 700",
+   "ok": true,
+   "out": "None"
+  },
+  {
+   "name": "channels[0].detune = -2400",
+   "ok": true,
+   "out": "None"
+  },
+  {
+   "name": "channels[0].detune = 1e6",
+   "ok": true,
+   "out": "None"
+  },
+  {
+   "name": "channels[0].detune = 12.5 (float)",
+   "ok": false,
+   "err": "TypeError: 'float' object cannot be interpreted as an integer"
+  },
+  {
+   "name": "channels[0].gain = 0.0",
+   "ok": true,
+   "out": "None"
+  },
+  {
+   "name": "channels[0].gain = 2.0",
+   "ok": true,
+   "out": "None"
+  },
+  {
+   "name": "channels[0].gain = -1.0",
+   "ok": true,
+   "out": "None"
+  },
+  {
+   "name": "play MML str",
+   "ok": true,
+   "out": "None"
+  },
+  {
+   "name": "channels[1].play(Sound obj)",
+   "ok": true,
+   "out": "None"
+  },
+  {
+   "name": "play with resume",
+   "ok": true,
+   "out": "None"
+  },
+  {
+   "name": "play bad MML",
+   "ok": false,
+   "err": "Exception: MML:15: Unexpected character 'Z'"
+  },
+  {
+   "name": "play ch=7 (out of range)",
+   "ok": false,
+   "err": "ValueError: ch must be a valid channel index"
+  },
+  {
+   "name": "play snd=99 (out of range)",
+   "ok": false,
+   "err": "ValueError: snd must be a valid sound index"
+  },
+  {
+   "name": "musics[0].set",
+   "ok": true,
+   "out": "None"
+  },
+  {
+   "name": "playm(0, loop=True)",
+   "ok": true,
+   "out": "None"
+  },
+  {
+   "name": "stop(3)",
+   "ok": true,
+   "out": "None"
+  },
+  {
+   "name": "stop()",
+   "ok": true,
+   "out": "None"
+  },
+  {
+   "name": "gen_bgm",
+   "ok": true,
+   "out": "[152, 176, 181, 397]"
+  },
+  {
+   "name": "gen_bgm play=True",
+   "ok": true,
+   "out": "[176, 161, 219, 44]"
+  },
+  {
+   "name": "total_sec",
+   "ok": true,
+   "out": "0.6666666865348816"
+  },
+  {
+   "name": "Sound.save",
+   "ok": true,
+   "out": "None"
+  },
+  {
+   "name": "Music.save",
+   "ok": true,
+   "out": "None"
+  }
+ ],
+ "num": {
+  "ch": 4,
+  "tones": 4,
+  "sounds": 64,
+  "musics": 8
+ },
+ "len": {
+  "ch": 4,
+  "tones": 4,
+  "sounds": 64,
+  "musics": 8
+ },
+ "default_gain": [
+  0.125,
+  0.125,
+  0.125,
+  0.125
+ ],
+ "default_detune": [
+  0,
+  0,
+  0,
+  0
+ ],
+ "default_tones": [
+  {
+   "mode": 0,
+   "bits": 4,
+   "wt": [
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    15,
+    14,
+    13,
+    12,
+    11,
+    10,
+    9,
+    8,
+    7,
+    6,
+    5,
+    4,
+    3,
+    2,
+    1,
+    0,
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "gain": 1.0
+  },
+  {
+   "mode": 0,
+   "bits": 1,
+   "wt": [
+    1,
+    0
+   ],
+   "gain": 0.30000001192092896
+  },
+  {
+   "mode": 0,
+   "bits": 1,
+   "wt": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "gain": 0.30000001192092896
+  },
+  {
+   "mode": 2,
+   "bits": 0,
+   "wt": [],
+   "gain": 0.6000000238418579
+  }
+ ],
+ "play_pos_over_flips": "[(0.001, (0, 0.0)), (0.066, (0, 0.0)), (0.131, (0, 0.0)), (0.197, (0, 0.0)), (0.264, (0, 0.0))]",
+ "play_pos_after_sleep_0.5": "(0, 0.0)",
+ "us_per_detune_gain_write_pair": 0.19823809999991227,
+ "us_per_pyxel_channels_index": 0.48635767000007496
+}

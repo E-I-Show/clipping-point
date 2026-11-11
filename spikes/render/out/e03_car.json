@@ -1,0 +1,19 @@
+{
+ "car_tris": {
+  "total": 262,
+  "body": 174,
+  "wheel_each": 22
+ },
+ "body_vertices": 522,
+ "normals_len_body": 522,
+ "h0_cam_at_+z: headlight(CREAM) centroid": [
+  269.5,
+  124.5,
+  2
+ ],
+ "h0_cam_at_+z: taillight(BRAKE) centroid": [
+  50.7,
+  116.2,
+  32
+ ]
+}

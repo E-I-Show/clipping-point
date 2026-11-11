@@ -1,0 +1,773 @@
+[
+ {
+  "case": "control_check",
+  "command": "python3 tools/check.py",
+  "expected_exit": [
+   0
+  ],
+  "exit": 0,
+  "verdict": "as expected",
+  "seconds": 0.33,
+  "last_line": "CHECK_OK sections=6 syntax=ok arch=ok import=ok data=ok adapter=ok docs=ok"
+ },
+ {
+  "case": "control_test",
+  "command": "python3 tools/test.py",
+  "expected_exit": [
+   0
+  ],
+  "exit": 0,
+  "verdict": "as expected",
+  "seconds": 1.15,
+  "last_line": "TEST_OK passed=45 failed=0 errors=0 skipped=0 selected=45 collected=45"
+ },
+ {
+  "case": "control_run",
+  "command": "python3 tools/run.py",
+  "expected_exit": [
+   0
+  ],
+  "exit": 0,
+  "verdict": "as expected",
+  "seconds": 0.37,
+  "last_line": "RUN_OK ticks=120 renders=60 screens=5 fingerprint=7fff92978ca507e3-120-menu driver=flip packaged=False wall=0.137s problems=0"
+ },
+ {
+  "case": "control_screen_check",
+  "command": "python3 tools/screen_check.py",
+  "expected_exit": [
+   0
+  ],
+  "exit": 0,
+  "verdict": "as expected",
+  "seconds": 0.09,
+  "last_line": "SCREEN_CHECK_OK screens=16/16 violations=0 not_checked=0"
+ },
+ {
+  "case": "control_tour",
+  "command": "python3 tools/tour.py",
+  "expected_exit": [
+   0
+  ],
+  "exit": 0,
+  "verdict": "as expected",
+  "seconds": 0.51,
+  "last_line": "TOUR_OK shots=8/8 problems=0 dir=<scratchpad>/spikes/harness/repo/out/selftest/control_tour-hr3njuj5/repo/out/tour"
+ },
+ {
+  "case": "control_export",
+  "command": "python3 tools/export.py",
+  "expected_exit": [
+   0
+  ],
+  "exit": 0,
+  "verdict": "as expected",
+  "seconds": 0.17,
+  "last_line": "EXPORT_OK files=23 pyxapp_kb=25.4 html_kb=34.1 limit_html_kb=2048 problems=0 html=<scratchpad>/spikes/harness/repo/out/selftest/control_expo"
+ },
+ {
+  "case": "control_export_ignores_saves_dir",
+  "command": "python3 tools/export.py",
+  "expected_exit": [
+   0
+  ],
+  "exit": 0,
+  "verdict": "as expected",
+  "seconds": 0.19,
+  "last_line": "EXPORT_OK files=23 pyxapp_kb=25.4 html_kb=34.1 limit_html_kb=2048 problems=0 html=<scratchpad>/spikes/harness/repo/out/selftest/control_expo"
+ },
+ {
+  "case": "control_verify_ui",
+  "command": "python3 tools/verify.py --touched ui",
+  "expected_exit": [
+   0
+  ],
+  "exit": 0,
+  "verdict": "as expected",
+  "seconds": 2.36,
+  "last_line": "VERIFY_OK mode=ui steps=5 ok=5 not_ok=[] seconds=2.3"
+ },
+ {
+  "case": "check_syntax_error",
+  "command": "python3 tools/check.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.28,
+  "last_line": "CHECK_FAILED sections=6 syntax=FAIL arch=ok import=ok data=ok adapter=FAIL docs=ok"
+ },
+ {
+  "case": "check_core_imports_pyxel",
+  "command": "python3 tools/check.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.36,
+  "last_line": "CHECK_FAILED sections=6 syntax=ok arch=FAIL import=FAIL data=ok adapter=ok docs=ok"
+ },
+ {
+  "case": "check_core_lazy_import_in_function",
+  "command": "python3 tools/check.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.32,
+  "last_line": "CHECK_FAILED sections=6 syntax=ok arch=FAIL import=ok data=ok adapter=ok docs=ok"
+ },
+ {
+  "case": "check_ui_imports_adapter",
+  "command": "python3 tools/check.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.36,
+  "last_line": "CHECK_FAILED sections=6 syntax=ok arch=FAIL import=FAIL data=ok adapter=ok docs=ok"
+ },
+ {
+  "case": "check_core_uses_random",
+  "command": "python3 tools/check.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.36,
+  "last_line": "CHECK_FAILED sections=6 syntax=ok arch=FAIL import=ok data=ok adapter=ok docs=ok"
+ },
+ {
+  "case": "check_core_uses_builtin_hash",
+  "command": "python3 tools/check.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.33,
+  "last_line": "CHECK_FAILED sections=6 syntax=ok arch=FAIL import=ok data=ok adapter=ok docs=ok"
+ },
+ {
+  "case": "check_data_unknown_key",
+  "command": "python3 tools/check.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.34,
+  "last_line": "CHECK_FAILED sections=6 syntax=ok arch=ok import=ok data=FAIL adapter=ok docs=ok"
+ },
+ {
+  "case": "check_data_dangling_ref",
+  "command": "python3 tools/check.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.33,
+  "last_line": "CHECK_FAILED sections=6 syntax=ok arch=ok import=ok data=FAIL adapter=ok docs=ok"
+ },
+ {
+  "case": "check_data_out_of_range",
+  "command": "python3 tools/check.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.38,
+  "last_line": "CHECK_FAILED sections=6 syntax=ok arch=ok import=ok data=FAIL adapter=ok docs=ok"
+ },
+ {
+  "case": "check_data_non_ascii_name",
+  "command": "python3 tools/check.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.31,
+  "last_line": "CHECK_FAILED sections=6 syntax=ok arch=ok import=ok data=FAIL adapter=ok docs=ok"
+ },
+ {
+  "case": "check_data_unused_definition",
+  "command": "python3 tools/check.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.34,
+  "last_line": "CHECK_FAILED sections=6 syntax=ok arch=ok import=ok data=FAIL adapter=ok docs=ok"
+ },
+ {
+  "case": "check_test_pack_broken",
+  "command": "python3 tools/check.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.32,
+  "last_line": "CHECK_FAILED sections=6 syntax=ok arch=ok import=ok data=FAIL adapter=ok docs=ok"
+ },
+ {
+  "case": "check_adapter_import_error",
+  "command": "python3 tools/check.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.29,
+  "last_line": "CHECK_FAILED sections=6 syntax=ok arch=ok import=ok data=ok adapter=FAIL docs=ok"
+ },
+ {
+  "case": "check_rules_glob_matches_nothing",
+  "command": "python3 tools/check.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.32,
+  "last_line": "CHECK_FAILED sections=6 syntax=ok arch=ok import=ok data=ok adapter=ok docs=FAIL"
+ },
+ {
+  "case": "check_rules_file_not_in_index",
+  "command": "python3 tools/check.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.32,
+  "last_line": "CHECK_FAILED sections=6 syntax=ok arch=ok import=ok data=ok adapter=ok docs=FAIL"
+ },
+ {
+  "case": "check_claude_md_too_long",
+  "command": "python3 tools/check.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.32,
+  "last_line": "CHECK_FAILED sections=6 syntax=ok arch=ok import=ok data=ok adapter=ok docs=FAIL"
+ },
+ {
+  "case": "test_logic_change_moves_fingerprint",
+  "command": "python3 tools/test.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 1.26,
+  "last_line": "TEST_FAILED passed=43 failed=2 errors=0 skipped=0 selected=45 collected=45 (pytest exit 1)"
+ },
+ {
+  "case": "test_snapshot_file_deleted",
+  "command": "python3 tools/test.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 1.24,
+  "last_line": "TEST_FAILED passed=44 failed=1 errors=0 skipped=0 selected=45 collected=45 (pytest exit 1)"
+ },
+ {
+  "case": "test_set_order_depends_on_hash_seed",
+  "command": "python3 tools/test.py -k rng",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 1.13,
+  "last_line": "TEST_FAILED passed=3 failed=1 errors=0 skipped=0 selected=4 collected=45 k='rng' (pytest exit 1)"
+ },
+ {
+  "case": "test_codec_drops_a_field",
+  "command": "python3 tools/test.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 1.17,
+  "last_line": "TEST_FAILED passed=44 failed=1 errors=0 skipped=0 selected=45 collected=45 (pytest exit 1)"
+ },
+ {
+  "case": "test_new_saved_field_without_decision",
+  "command": "python3 tools/test.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 1.19,
+  "last_line": "TEST_FAILED passed=44 failed=1 errors=0 skipped=0 selected=45 collected=45 (pytest exit 1)"
+ },
+ {
+  "case": "test_stale_not_saved_entry",
+  "command": "python3 tools/test.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 1.21,
+  "last_line": "TEST_FAILED passed=44 failed=1 errors=0 skipped=0 selected=45 collected=45 (pytest exit 1)"
+ },
+ {
+  "case": "test_file_write_truncates",
+  "command": "python3 tools/test.py -k storage or profile",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.88,
+  "last_line": "TEST_FAILED passed=5 failed=3 errors=0 skipped=0 selected=8 collected=45 k='storage or profile' (pytest exit 1)"
+ },
+ {
+  "case": "test_k_matches_nothing",
+  "command": "python3 tools/test.py -k zzz",
+  "expected_exit": [
+   2
+  ],
+  "exit": 2,
+  "verdict": "as expected",
+  "seconds": 0.4,
+  "last_line": "TEST_INCOMPLETE -k word 'zzz' matches none of the 45 tests"
+ },
+ {
+  "case": "test_k_one_word_is_a_typo",
+  "command": "python3 tools/test.py -k rng or profle",
+  "expected_exit": [
+   2
+  ],
+  "exit": 2,
+  "verdict": "as expected",
+  "seconds": 0.42,
+  "last_line": "TEST_INCOMPLETE -k word 'profle' matches none of the 45 tests"
+ },
+ {
+  "case": "test_one_test_skipped",
+  "command": "python3 tools/test.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 1.17,
+  "last_line": "TEST_FAILED passed=44 failed=0 errors=0 skipped=1 selected=45 collected=45 - skipped tests are not accepted: delete the test or make it run"
+ },
+ {
+  "case": "test_process_dies_with_exit_0",
+  "command": "python3 tools/test.py",
+  "expected_exit": [
+   2
+  ],
+  "exit": 2,
+  "verdict": "as expected",
+  "seconds": 1.06,
+  "last_line": "TEST_INCOMPLETE no usable junit report (FileNotFoundError): the test process ended without finishing (pytest exit 0)"
+ },
+ {
+  "case": "test_file_fails_to_load",
+  "command": "python3 tools/test.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.45,
+  "last_line": "TEST_FAILED collection failed or empty (pytest exit 2, tests=45)"
+ },
+ {
+  "case": "test_file_vanished_count_below_floor",
+  "command": "python3 tools/test.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 1.13,
+  "last_line": "TEST_FAILED passed=41 failed=0 errors=0 skipped=0 selected=41 collected=41 - fewer tests than the recorded floor 45 (tests vanished? if intended: --update-floor)"
+ },
+ {
+  "case": "test_pyxel_loaded_in_test_process",
+  "command": "python3 tools/test.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 1.22,
+  "last_line": "TEST_FAILED passed=46 failed=0 errors=0 skipped=0 selected=46 collected=46 (pytest exit 1)"
+ },
+ {
+  "case": "test_exception_only_in_thread",
+  "command": "python3 tools/test.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 1.28,
+  "last_line": "TEST_FAILED passed=45 failed=1 errors=0 skipped=0 selected=46 collected=46 (pytest exit 1)"
+ },
+ {
+  "case": "run_exception_in_update",
+  "command": "python3 tools/run.py --fault update",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.25,
+  "last_line": "RUN_FAILED app exit code 1"
+ },
+ {
+  "case": "run_exception_in_draw",
+  "command": "python3 tools/run.py --fault draw",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.24,
+  "last_line": "RUN_FAILED app exit code 1"
+ },
+ {
+  "case": "run_quit_early_exit_0",
+  "command": "python3 tools/run.py --fault quit_early",
+  "expected_exit": [
+   2
+  ],
+  "exit": 2,
+  "verdict": "as expected",
+  "seconds": 0.25,
+  "last_line": "RUN_INCOMPLETE app exited with code 0 before finishing all ticks (no result file)"
+ },
+ {
+  "case": "run_stall_hits_timeout",
+  "command": "python3 tools/run.py --fault stall --timeout 4",
+  "expected_exit": [
+   2
+  ],
+  "exit": 2,
+  "verdict": "as expected",
+  "seconds": 4.06,
+  "last_line": "RUN_INCOMPLETE timeout after 4s (ticks requested 120)"
+ },
+ {
+  "case": "run_adapter_drops_steering",
+  "command": "python3 tools/run.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.3,
+  "last_line": "RUN_FAILED ticks=120 renders=60 screens=5 fingerprint=13368f63bd807c7f-120-menu driver=flip packaged=False wall=0.158s problems=1"
+ },
+ {
+  "case": "run_storage_write_truncates",
+  "command": "python3 tools/run.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.41,
+  "last_line": "RUN_FAILED app exit code 1"
+ },
+ {
+  "case": "run_packaged_without_build",
+  "command": "python3 tools/run.py --packaged",
+  "expected_exit": [
+   2
+  ],
+  "exit": 2,
+  "verdict": "as expected",
+  "seconds": 0.06,
+  "last_line": "RUN_INCOMPLETE <scratchpad>/spikes/harness/repo/out/selftest/run_packaged_without_build-6l549pu5/repo/dist/clipping_point.pyxapp not found: "
+ },
+ {
+  "case": "screen_text_wider_than_its_box",
+  "command": "python3 tools/screen_check.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.07,
+  "last_line": "SCREEN_CHECK_FAILED screens=16/16 violations=8 not_checked=0"
+ },
+ {
+  "case": "screen_text_off_screen",
+  "command": "python3 tools/screen_check.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.09,
+  "last_line": "SCREEN_CHECK_FAILED screens=16/16 violations=12 not_checked=0"
+ },
+ {
+  "case": "screen_non_ascii_label",
+  "command": "python3 tools/screen_check.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.09,
+  "last_line": "SCREEN_CHECK_FAILED screens=16/16 violations=4 not_checked=0"
+ },
+ {
+  "case": "screen_overflow_only_in_extreme_variant",
+  "command": "python3 tools/screen_check.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.08,
+  "last_line": "SCREEN_CHECK_FAILED screens=16/16 violations=2 not_checked=0"
+ },
+ {
+  "case": "screen_name_budget_raised_layout_not",
+  "command": "python3 tools/screen_check.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.08,
+  "last_line": "SCREEN_CHECK_FAILED screens=16/16 violations=12 not_checked=0"
+ },
+ {
+  "case": "screen_raises",
+  "command": "python3 tools/screen_check.py",
+  "expected_exit": [
+   2
+  ],
+  "exit": 2,
+  "verdict": "as expected",
+  "seconds": 0.08,
+  "last_line": "SCREEN_CHECK_INCOMPLETE screens=12/16 violations=0 not_checked=4"
+ },
+ {
+  "case": "screen_draws_nothing",
+  "command": "python3 tools/screen_check.py",
+  "expected_exit": [
+   2
+  ],
+  "exit": 2,
+  "verdict": "as expected",
+  "seconds": 0.08,
+  "last_line": "SCREEN_CHECK_INCOMPLETE screens=12/16 violations=0 not_checked=4"
+ },
+ {
+  "case": "screen_only_unknown_name",
+  "command": "python3 tools/screen_check.py --only nosuch",
+  "expected_exit": [
+   2
+  ],
+  "exit": 2,
+  "verdict": "as expected",
+  "seconds": 0.08,
+  "last_line": "SCREEN_CHECK_INCOMPLETE no screen named 'nosuch' (known: ['hud', 'menu', 'settings', 'theater'])"
+ },
+ {
+  "case": "screen_no_variants_zero_visited",
+  "command": "python3 tools/screen_check.py",
+  "expected_exit": [
+   2
+  ],
+  "exit": 2,
+  "verdict": "as expected",
+  "seconds": 0.08,
+  "last_line": "SCREEN_CHECK_INCOMPLETE screens=0/0 violations=0 not_checked=0"
+ },
+ {
+  "case": "tour_draw_bypasses_recording",
+  "command": "python3 tools/tour.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.51,
+  "last_line": "TOUR_FAILED shots=8/8 problems=8 dir=<scratchpad>/spikes/harness/repo/out/selftest/tour_draw_bypasses_recording-c2bfn_o6/repo/out/tour"
+ },
+ {
+  "case": "tour_text_metrics_too_small",
+  "command": "python3 tools/tour.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.51,
+  "last_line": "TOUR_FAILED shots=8/8 problems=10 dir=<scratchpad>/spikes/harness/repo/out/selftest/tour_text_metrics_too_small-3h3x42p0/repo/out/tour"
+ },
+ {
+  "case": "tour_text_metrics_too_small_seen_by_screen_check",
+  "command": "python3 tools/screen_check.py",
+  "expected_exit": [
+   0
+  ],
+  "exit": 0,
+  "verdict": "as expected",
+  "seconds": 0.08,
+  "last_line": "SCREEN_CHECK_OK screens=16/16 violations=0 not_checked=0"
+ },
+ {
+  "case": "tour_screen_skipped",
+  "command": "python3 tools/tour.py --fault tour_skip",
+  "expected_exit": [
+   2
+  ],
+  "exit": 2,
+  "verdict": "as expected",
+  "seconds": 0.28,
+  "last_line": "TOUR_INCOMPLETE shots=6/8 problems=0 dir=<scratchpad>/spikes/harness/repo/out/selftest/tour_screen_skipped-hbn61nk_/repo/out/tour"
+ },
+ {
+  "case": "tour_exception_midway",
+  "command": "python3 tools/tour.py --fault tour_exception",
+  "expected_exit": [
+   2
+  ],
+  "exit": 2,
+  "verdict": "as expected",
+  "seconds": 0.23,
+  "last_line": "TOUR_INCOMPLETE app did not finish the tour (exit 1, result file missing)"
+ },
+ {
+  "case": "tour_only_unknown_name",
+  "command": "python3 tools/tour.py --only nosuch",
+  "expected_exit": [
+   2
+  ],
+  "exit": 2,
+  "verdict": "as expected",
+  "seconds": 0.07,
+  "last_line": "TOUR_INCOMPLETE no screen named 'nosuch' (known: ['hud', 'menu', 'settings', 'theater'])"
+ },
+ {
+  "case": "export_test_hook_left_in_app",
+  "command": "python3 tools/export.py",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.05,
+  "last_line": "EXPORT_FAILED app/smoke_config.json exists: a test hook must never be shipped"
+ },
+ {
+  "case": "export_over_size_limit",
+  "command": "python3 tools/export.py --max-html-kb 10",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 0.2,
+  "last_line": "EXPORT_FAILED files=23 pyxapp_kb=25.4 html_kb=34.1 limit_html_kb=10 problems=1 html=<scratchpad>/spikes/harness/repo/out/selftest/export_ove"
+ },
+ {
+  "case": "export_main_py_missing",
+  "command": "python3 tools/export.py",
+  "expected_exit": [
+   1,
+   2
+  ],
+  "exit": 2,
+  "verdict": "as expected",
+  "seconds": 0.15,
+  "last_line": "EXPORT_INCOMPLETE `pyxel package` failed (exit 1)"
+ },
+ {
+  "case": "verify_reports_a_failed_step",
+  "command": "python3 tools/verify.py --touched ui",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 2.21,
+  "last_line": "VERIFY_FAILED mode=ui steps=5 ok=1 not_ok=['test', 'screen-check', 'tour', 'tour-pack'] seconds=2.2"
+ },
+ {
+  "case": "verify_unknown_area",
+  "command": "python3 tools/verify.py --touched nosuch",
+  "expected_exit": [
+   2
+  ],
+  "exit": 2,
+  "verdict": "as expected",
+  "seconds": 0.05,
+  "last_line": "VERIFY_INCOMPLETE unknown area ['nosuch'] or nothing asked (areas: vehicle, track, assist, ai, race, render, replay, ui, audio, save, data, rng, tools)"
+ },
+ {
+  "case": "web_control",
+  "command": "python3 tools/web_smoke.py",
+  "expected_exit": [
+   0
+  ],
+  "exit": 0,
+  "verdict": "as expected",
+  "seconds": 8.14,
+  "last_line": "WEB_SMOKE_OK python=3.14.2 ticks=120 renders=56 storage=WebStorageBackend coarse_summary_equal=True exact_fingerprint_equal=True page_wall_s=1.996 problems=0"
+ },
+ {
+  "case": "web_mirror_missing",
+  "command": "python3 tools/web_smoke.py",
+  "expected_exit": [
+   2
+  ],
+  "exit": 2,
+  "verdict": "as expected",
+  "seconds": 0.05,
+  "last_line": "WEB_SMOKE_INCOMPLETE runtime mirror not found at /nonexistent/mirror (set CP_WEB_MIRROR or build it)"
+ },
+ {
+  "case": "web_exception_in_update",
+  "command": "python3 tools/web_smoke.py --fault update --timeout 40",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 5.81,
+  "last_line": "WEB_SMOKE_FAILED page failed (runner exit 1, signals ['console.error', 'pyxel-error-overlay', 'until-not-seen'], result lines 0)"
+ },
+ {
+  "case": "web_storage_backend_broken",
+  "command": "python3 tools/web_smoke.py --timeout 40",
+  "expected_exit": [
+   1
+  ],
+  "exit": 1,
+  "verdict": "as expected",
+  "seconds": 8.52,
+  "last_line": "WEB_SMOKE_FAILED page failed (runner exit 1, signals ['console.error', 'pyxel-error-overlay', 'until-not-seen'], result lines 0)"
+ }
+]

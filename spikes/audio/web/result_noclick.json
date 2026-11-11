@@ -1,0 +1,118 @@
+{
+ "url": "file://<scratchpad>/spikes/audio/web/app.html",
+ "mirror": "<scratchpad>/spikes/web/mirror",
+ "console": [
+  {
+   "t": 161,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 161,
+   "type": "log",
+   "text": "{command: play, name: app.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIAKUTa10sYEvPCQAAAAcAAAAaAAAAYXBwLy5weX…wL3NvdW5kX2RhdGEucHlQSwUGAAAAAAYABgB9AQAAhSIAAAAA}"
+  },
+  {
+   "t": 2900,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 3354,
+   "type": "log",
+   "text": "Loaded pyxel"
+  }
+ ],
+ "failures": [
+  {
+   "t": 15491,
+   "kind": "until-not-seen",
+   "detail": "no console line matched /^SPIKE_DONE/ within 15000 ms"
+  }
+ ],
+ "requests": [
+  {
+   "t": 140,
+   "status": 200,
+   "url": "file://<scratchpad>/spikes/audio/web/app.html"
+  },
+  {
+   "t": 157,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel.js"
+  },
+  {
+   "t": 179,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel.css"
+  },
+  {
+   "t": 181,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 384,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 406,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/import_hook.py"
+  },
+  {
+   "t": 407,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 513,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 570,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 691,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 715,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 3029,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 3408,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/images/click_to_start_114x14.png"
+  }
+ ],
+ "downloads": [],
+ "allowed": [],
+ "actions": [],
+ "filechoosers": [],
+ "passed": false,
+ "state": {
+  "overlayText": null,
+  "hasFatalError": false,
+  "initialized": false,
+  "canvas": {
+   "width": 300,
+   "height": 150,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": null,
+ "elapsedMs": 15567
+}

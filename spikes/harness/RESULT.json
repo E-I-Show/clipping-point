@@ -1,0 +1,279 @@
+{
+ "summary": "検証の土台は「Python で書いた tools/ のラッパー 9 本 + 1 か所の検証計画（tools/verify.py）」で成立する。試作の木（約 3,000 行、cp_core / cp_ui / cp_app の 3 層、テスト 45 件）を作り、わざと壊す自己検査 70 件（仕込んだ故障 60・対照 10）がすべて期待どおりの終了コードになった（故障の見逃し 0）。\n設計に効く結論: (1) ロジックの分離は「ソース解析（AST）＋許可リスト」が主。import の見張りは関数内の遅延 import と random を見逃し、ImportError で止める方式は try/except に握りつぶされる（12 通りの混入で AST は 12/12、sys.modules 検査 9/12、遮断方式 8/12）。(2) 走らせ役は pytest。ただし pytest も unittest も「全件 skip」「テスト内の os._exit(0)（= pyxel.quit 相当）」「スレッド内だけの例外」「-k の片方の打ち間違い」を exit 0 で通すので、ラッパーで失敗にする。(3) 2D のはみ出しは「描画命令を包む Canvas が矩形を記録 → 純 Python で検査」で数えられ、初稿の画面から本物のはみ出しを 1 件拾った。記録が嘘をつかないことは巡回のピクセル照合（記録に無いインク・画面外インク）で守る。(4) ブラウザ版の煙テスト（kitao.dev 不要、写しを使用）は 1 回 約 7 秒で、Pyodide 3.14.2 上の 120 tick・localStorage の往復・ネイティブとの世界要約の一致まで確かめられたので、全体の検証に常設できる。(5) 全体の検証は試作規模で 11 手順 13.3 秒。当面は区切りごとに全部回し、重くなってから絞る。(6) クラウドコンテナは使い捨てなので、作業の控えは git の中（docs/handoff.md）に置き、SessionStart フックで差し込む（台本は偽の入力で確認、実セッションでの発火は未確認）。",
+ "confirmed": [
+  {
+   "claim": "【問1】cp_core に pyxel を持ち込む 12 通りのうち、ソース解析（AST＋許可リスト、tools/arch_check.py）は 12/12 を検出。実行時の見張り（全モジュールを import して sys.modules を調べる、tools/import_probe.py）は 9/12、meta_path で ImportError を投げる遮断方式は 8/12。見張りが見逃したのは: 呼ばれない関数の中の import pyxel、builtins 経由の動的 import（関数内）、import random。遮断方式はさらに try: import pyxel / except ImportError を見逃す（握りつぶされる）。AST が動的な名前（'py'+'xel'）や builtins 経由を拾えたのは、許可リストが __import__ / exec / eval / compile / hash の呼び出しと、リスト外のモジュール（importlib, builtins）を一律に弾くため。",
+   "evidence": "experiments/isolation_matrix.py を実行。試作の木を一時ディレクトリに写し、1 件ずつ混入して 3 方式を走らせた。結果は results/isolation_matrix.json（m01〜m12 と対照 m00。対照は 3 方式とも exit 0）"
+  },
+  {
+   "claim": "【問2】pytest 9.2.0 と unittest（Python 3.13.18）の終了コードの実測。0 件: pytest 5 / unittest 5。-k が 0 件に当たる: 5 / 5。テスト名の付け間違いで 0 件: 5 / 5。読み込みの失敗（import エラー・構文エラー）: pytest 2 / unittest 1。テスト中の例外: 1 / 1。setUpModule の例外: 1 / 1。subTest 内だけの失敗: 1 / 1。sys.exit(0): 1 / 1。存在しないパス: pytest 4 / unittest 1。ここまでは両方とも失敗を返す。両方とも exit 0 で通してしまう穴: (a) 全件 skip、(b) テスト内の os._exit(0)（出力も無しで 0。pyxel.quit() と同じ型）、(c) スレッドの中だけで起きた例外、(d) -k 'one or twoo' のように片方が打ち間違い。加えて pytest は、読み込めないファイルがあっても別のファイルを名指しすれば exit 0（test_b.py だけ指定）、--continue-on-collection-errors なら exit 1。",
+   "evidence": "runner_exp/run_matrix.py で 13 種の壊した木 × 2 つの走らせ役 + 11 の追加の呼び方を実行。results/runner_matrix.json に全行"
+  },
+  {
+   "claim": "【問2】ラッパー tools/test.py が上の穴を失敗にする。全件 skip/1 件 skip → exit 1、os._exit(0) → exit 2（junit の報告ファイルが無いことで検出）、スレッド内の例外 → exit 1（-W error::pytest.PytestUnhandledThreadExceptionWarning）、-k の語が 1 つでもどのテスト名にも当たらない → exit 2、-k が 0 件 → exit 2、読み込みの失敗 → exit 1、テストファイルが消えて件数が tests/count_floor.txt を下回る → exit 1、テストのプロセスに pyxel が読み込まれた → exit 1（conftest の pytest_sessionfinish）。最後の行に必ず件数が出る（例: TEST_OK passed=45 failed=0 errors=0 skipped=0 selected=45 collected=45）。",
+   "evidence": "tools/selftest_break.py の test_* 15 件。results/break_results.json"
+  },
+  {
+   "claim": "【問3】ラッパー 9 本（check / test / run / screen_check / tour / export / web_smoke / verify / verify_all）を Python で試作し、全部が動いた。終了コードは共通で 0=合格、1=問題あり、2=回り切れない・何も調べていない。各ラッパーは最後に <TOOL>_OK|FAILED|INCOMPLETE key=value… の 1 行（件数つき）を出す。",
+   "evidence": "repo/tools/ 以下を実行。tools/verify_all.py が 11 手順すべて exit 0（results/verify_all_last.json）"
+  },
+  {
+   "claim": "【問3】わざと壊す自己検査は 70 件すべて期待どおり（仕込んだ故障 60 件を検出、対照 10 件は exit 0）。内訳: check 16 件（構文エラー、cp_core の pyxel/遅延 import/random/hash()、cp_ui が cp_app を import、データの知らない鍵・無い id・範囲外・非 ASCII 名・使われない定義・試験用パックの破損、アダプタの import エラー、規則ファイルの glob 空振り・目次漏れ・CLAUDE.md 200 行超え）、test 15 件、run 7 件（update 例外=1、draw 例外=1、pyxel.quit で途中終了=2、固まる=タイムアウト 2、アダプタが舵の入力を落とす=指紋の食い違いで 1、保存の書き込み欠け=1、ビルド無しで --packaged=2）、screen-check 9 件、tour 6 件、export 3 件、verify 2 件、web 3 件（写し無し=2、ブラウザ内の update 例外=1、localStorage バックエンドの破損=1）。",
+   "evidence": "python3 tools/selftest_break.py --json results/break_results.json を実行（所要 59 秒）。最終行 SELFTEST_OK cases=70 planted_faults=60 controls=10 wrong=0"
+  },
+  {
+   "claim": "【問3・追加】先行スパイクの道具はそのまま組み込めた。spikes/web/tools/webrun.js を tools/web/webrun.js に写し、tools/web_smoke.py から node で呼ぶ（--mirror で kitao.dev を写しに差し替え、--until '^CP_SMOKE_DONE'、--json）。同じアプリを app2html の単一 HTML にしてヘッドレス Chromium で動かし、Python 3.14.2 / sys.platform=emscripten、120 tick、実描画 56〜59 回、localStorage バックエンドの保存→読み込み一致、世界の粗い要約がネイティブと一致、を確認。この 120 tick（うち世界は 70 tick）の小さな世界では厳密な指紋もネイティブと一致した（一般には保証されない）。1 回 6.8〜7.5 秒。",
+   "evidence": "CP_WEB_MIRROR=spikes/web/mirror で python3 tools/web_smoke.py を実行。WEB_SMOKE_OK python=3.14.2 ticks=120 renders=59 storage=WebStorageBackend coarse_summary_equal=True exact_fingerprint_equal=True"
+  },
+  {
+   "claim": "【問3】ブラウザ版には環境変数が無いので、煙テストの設定は「煙テスト用に段取りした app/ の写しにだけ置く smoke_config.json」で渡す方式が動いた。出荷用の export は app/smoke_config.json があると exit 1 で拒む。ブラウザ内の故障（update の例外）も webrun.js が console.error / pyxel-error-overlay / until-not-seen として失敗にした。",
+   "evidence": "tools/export.py --smoke-config、tools/web_smoke.py --fault update（exit 1）、自己検査 export_test_hook_left_in_app（exit 1）"
+  },
+  {
+   "claim": "【問3】ヘッドレスの煙テストは、アプリの終了コード 0 だけでは合格にしない判定で動く: 終了コード + 全 tick 後に書く結果ファイル + 指紋（Pyxel を通さず cp_core だけで同じ入力台本を再生した値と一致）+ 画面の遷移 + 実描画回数（tick/2 ± 3）+ 画面が真っ黒でない + 保存の往復。自前ループ（flip, fps=1000）で 120 tick が 0.13 秒、pyxel.run（実時間）で 1.99 秒、pyxel play で .pyxapp を回しても同じ指紋。",
+   "evidence": "tools/run.py、--driver run、--packaged、--pack extreme --ticks 600 を実行。すべて RUN_OK、指紋 7fff92978ca507e3-120-menu が参照と一致"
+  },
+  {
+   "claim": "【問4】描画命令を包む層（cp_ui.canvas.Canvas: text / rect / rectb / line / blt と、親の枠を宣言する box）が矩形を記録し、純 Python の検査（cp_ui.check.find_violations）が 6 種を数える: off_screen（320x240 の外）、out_of_box（親の枠の外。枠どうしの入れ子も）、text_overlap（文字どうしの重なり）、bad_char（印字可能 ASCII 以外）、empty（幅か高さが 0 以下）、座標が int でない（TypeError）。Pyxel 無しで 16 画面（4 画面 × 2 変種 × 2 データ組）を 0.07 秒で回る。",
+   "evidence": "tools/screen_check.py（SCREEN_CHECK_OK screens=16/16）、tests/test_ui_screens.py の test_ui_checker_reports_each_kind_of_overflow"
+  },
+  {
+   "claim": "【問4】この検査は、仕込みではない本物のはみ出しを初稿から 1 件拾った: シアターの一覧を 12 行（上限）にしたとき、12 行目の枠がパネルの外に 2px 出る（typical の 3 行では出ない）。極端な値の変種を回さないと見つからない型。",
+   "evidence": "最初の実行の出力を results/first_catch.txt に保存。直した後、同じ欠陥を自己検査 screen_overflow_only_in_extreme_variant として再現（exit 1）"
+  },
+  {
+   "claim": "【問4】はみ出しの検査の終了コード: はみ出しあり=1、回り切れない=2（--only の名が無い、画面が例外、画面が何も描かない、変種が 0 で 0/0 画面）。文字を枠より長くする・画面外に置く・非 ASCII にする・車名の上限だけ 24 字に上げて画面を直さない、の各故障で exit 1。",
+   "evidence": "自己検査 screen_* 9 件"
+  },
+  {
+   "claim": "【問4】記録だけを調べる検査には穴がある: 文字幅の計算を小さく間違える（FONT_W=3）と screen_check は 16/16 合格のまま通る。巡回（tools/tour.py）のピクセル照合がこれを落とす。巡回は各画面を 16px の余白つきの裏画面（352x272）に描き、(a) 余白に出たインク、(b) どの記録矩形にも覆われないインク、を数える。記録を通さない描画（rectb を 2px 広く描く）も (b) で exit 1。",
+   "evidence": "自己検査 tour_text_metrics_too_small（tour=1）、tour_text_metrics_too_small_seen_by_screen_check（screen_check=0 を対照として記録）、tour_draw_bypasses_recording（exit 1）"
+  },
+  {
+   "claim": "【問4】Pyxel の内蔵フォントの実測: セルは 4x6（pyxel.FONT_WIDTH=4, FONT_HEIGHT=6）。印字可能 ASCII（32〜126）のインクは幅が最大 3px。高さは大文字・数字・記号が 5px、小文字の g j p q y だけ 6 行目を使う。2 行の文字列の 2 行目は y+6 から始まる。非 ASCII の文字（ツ）は 1 ピクセルも描かれない（黙って消える）。文字列のインクの箱 = (4×最長行の字数 − 1, 6×行数 − 1。最終行に g j p q y があれば 6×行数)。",
+   "evidence": "experiments/font_ink.py（pyxel headless で全グリフを描いて pget で測定）。results/font_ink.json"
+  },
+  {
+   "claim": "【問4】巡回は 8 枚の PNG（4 画面 × typical/extreme、2 倍拡大）を 0.5 秒で保存し、回り切れなければ exit 2（1 画面飛ばす=2、途中で例外=2、--only の名が無い=2）。保存した PNG を実際に見て、シアター 12 行の画面が枠内に収まっていることを目でも確かめた。",
+   "evidence": "tools/tour.py を実行、out/tour/theater_extreme.png を Read で表示。自己検査 tour_* 6 件"
+  },
+  {
+   "claim": "【問5】指紋テストの形が動く: 固定の入力で N tick 回した世界の「読める要約」（tick、グリッド順、順位、乱数の状態、車ごとの lap / best / s / v / lat を repr() の文字列、厳密なハッシュ）を tests/snapshots/world_<名>.json に固め、食い違うと「どの車のどの項目が何から何へ」を表示する。挙動の係数を 1.8 → 1.81 に変えると 2 件が落ち、写しのファイルを消すと落ちる（無い写しを黙って作らない）。最下位ビットの差（lateral に 1e-15 を足す）でも厳密な指紋は変わり、粗い要約は変わらない。",
+   "evidence": "tests/test_world_fingerprint.py、自己検査 test_logic_change_moves_fingerprint / test_snapshot_file_deleted"
+  },
+  {
+   "claim": "【問5】PYTHONHASHSEED を 0 / 1 / 12345 に変えた別プロセスでも、ハッシュ抽選の値と 3,600 tick・6 台の世界の指紋が一致する。逆に、グリッド順を list(set(car_ids)) に変える（文字列の集合の並びはプロセスごとに変わる）と、このテストが落ちる。AST の検査は集合の並びへの依存を拾えないので、このテストが要る。",
+   "evidence": "tests/test_rng.py の test_rng_same_result_in_processes_with_different_hash_seeds、自己検査 test_set_order_depends_on_hash_seed（exit 1）"
+  },
+  {
+   "claim": "【問5】乱数は整数だけの splitmix64 で実装でき（状態は整数 1 個）、公開されている参照値（seed 1234567 → 6457827717110365317, 3203168211198807973, 9817491932198370423）と一致。[0,1) への変換は 上位 53 ビット / 2^53 で、2 の冪での割り算なので IEEE 倍精度なら環境によらず同じ値になる。流れを 1 つ引いても別の流れは動かない。未登録の用途名は KeyError。ブラウザ版（Pyodide 3.14.2）でもグリッド順と乱数の状態がネイティブと一致した。",
+   "evidence": "tests/test_rng.py 4 件、web_smoke の portable 要約（grid と rng の 16 進の状態を含む）の一致"
+  },
+  {
+   "claim": "【問6】保存の層は「SaveStore（封筒: magic 'CPSV' + u16 版 + u32 長さ + 本体 + crc32 = 14 バイト増）＋ バックエンド（read / write / delete / keys の 4 つの口）」で、ファイル・メモリ・localStorage を同じコードで包めた。ファイルは 一時ファイル → flush → fsync 1 回 → os.replace。800KB の保存で fsync は 1 回、一時ファイルは残らず、書きかけの .tmp があっても古い保存が読める。封筒は全バイトの 1 ビット反転と全位置の切り詰めを CorruptError にする。容量超過（StorageFull）では何も変わらない。名前空間が違えば混ざらない。",
+   "evidence": "tests/test_storage.py 4 件（Memory と File の両方で実行）、ブラウザ版は web_smoke の storage.ok と backend=WebStorageBackend"
+  },
+  {
+   "claim": "【問6】保存 → 読み込みで全項目が一致するテストが、空どうしの比較にならない形で動く: 各データクラスの全フィールドを型に応じて既定値と違う値にする生成器を使い、「見本が既定値と違うこと」自体も確かめる。保存しない項目は NOT_SAVED（'クラス.フィールド' → 理由）に明示。保存される項目の一覧（'クラス.フィールド:型' と版）を tests/snapshots/profile_schema.json に固めたので、フィールドを足す・消す・型を変えるとテストが落ちて「版を上げて移行を書くか、NOT_SAVED に入れるか」を迫る。コーデックが 1 項目落とす、NOT_SAVED に古い名前が残る、も落ちる。読めない保存は <key>.bad に退避して既定値＋警告で始める（黙って上書きしない）。",
+   "evidence": "tests/test_profile.py 4 件、自己検査 test_codec_drops_a_field / test_new_saved_field_without_decision / test_stale_not_saved_entry / test_file_write_truncates"
+  },
+  {
+   "claim": "【問7】JSON の定義（audio / assists / ai / cars / tracks）の読み込み時の検査が動く。弾くもの: 知らない鍵、足りない鍵、型違い（bool を int として受けない、文字列の数字を受けない）、範囲外、列挙の外、無い id への参照（単体とリストの中）、id の重複、非 ASCII の表示名、表示名の字数の予算超え、id の書式、空の表、リストの長さ。問題は最初の 1 件で止めず全部を並べて報告（3 件仕込んで 3 件）。'_' で始まる鍵（_note など）は注として無視。使われていない定義（audio / ai / assists）は警告で、出荷データでは警告 0 を見張る。",
+   "evidence": "tests/test_datadefs.py（壊した 14 通りをパラメータ化）、tools/check.py --only data、自己検査 check_data_* 5 件 + check_test_pack_broken"
+  },
+  {
+   "claim": "【問7】試験用データパックの重ね方が動く: testpacks/<名>/ に同じファイル名を置き、id が同じなら項目ごと差し替え、新しい id なら追加、重ねた結果をもう一度同じ検査に通す。元のデータは変わらない。パックを重ねたときは保存の名前空間が pack_<名> になり、ふだんの保存に焼き付かない。パックは app/ の外に置くので出荷物に入らない（export が testpacks を含むと失敗にする）。パックつきでヘッドレス実行・巡回もできる。",
+   "evidence": "tests/test_datadefs.py の test_data_every_test_pack_loads…、tools/run.py --pack extreme --ticks 600（RUN_OK）、tools/tour.py --pack extreme（TOUR_OK）"
+  },
+  {
+   "claim": "【問8】検証の計画を 1 か所（tools/verify.py の STEPS / ALL / AREAS）に置き、--all（全体）と --touched 分野,分野（絞り）と --list（分野の表の出力）を同じ定義から作れた。手順は順に回し（並列にしない）、失敗しても最後まで回して 1 枚の表を出し、1 つでも 0 以外なら全体も 0 以外。知らない分野名は exit 2。",
+   "evidence": "tools/verify.py --touched ui（5 手順 2.2 秒）、--all（11 手順 13.3 秒）、自己検査 verify_reports_a_failed_step / verify_unknown_area"
+  },
+  {
+   "claim": "【問9】見張り（tools/claude/rules_guard.py）が動く: CLAUDE.md が 200 行以内、.claude/rules/*.md に paths の前書きがある、どの glob も 1 つ以上のファイルに当たる、ハブのファイル（app/main.py, app/cp_app/app.py）に当たらない、規則ファイルの大きさが上限内、CLAUDE.md の目次と規則ファイルが過不足なく対応。試作中に自分の書いた glob（tools/*.py がハブ指定のファイルに当たる）を実際に拾った。",
+   "evidence": "tools/check.py --only docs、自己検査 check_rules_glob_matches_nothing / check_rules_file_not_in_index / check_claude_md_too_long"
+  },
+  {
+   "claim": "【問9】作業の控えの差し込み台本（tools/claude/handoff_hook.py）は、標準入力の JSON の source で出し分ける: compact / resume は控えの全文（頭に HEAD、控えの最後のコミット、控えより新しいコミットの数、未コミットのパス数、未 push のコミット数）、startup は 3〜5 行の案内だけ、clear は無出力。壊れた入力や控えが無いときも exit 0 で黙る。",
+   "evidence": "一時の git リポジトリ（コミット 2 つ + 未コミット 1 ファイル）で source を 4 通り + 壊れた入力 + 控え無しを流した。出力は results/handoff_hook_test.txt"
+  },
+  {
+   "claim": "【問9】この環境は Claude Code 2.1.322、CLAUDE_CODE_REMOTE=true（クラウドのセッション）。pytest 9.2.0、node 22.23.4、playwright（/opt/node-tools）は最初から入っていた。今回 pip で追加したパッケージは無い。",
+   "evidence": "claude --version、echo $CLAUDE_CODE_REMOTE、python3 -m pytest --version、node -e require.resolve('playwright')"
+  },
+  {
+   "claim": "【問3】export（package → app2html → 検査）が動く: 必須ファイルがアーカイブにある、出荷してはいけないもの（smoke_config.json、testpacks、tests、.saves、__pycache__、.tmp、.sav）が無い、HTML の base64 が .pyxapp と同じ、ランタイムの URL が https://kitao.dev/pyxel/<入っている Pyxel の版>/pyxel.js の 1 本だけ、大きさが tools/budgets.json の上限内。上限を 10KB にすると exit 1、main.py が無いと exit 2。app/.saves/ があっても出荷物に入らない。",
+   "evidence": "tools/export.py（EXPORT_OK files=23 pyxapp_kb=25.4 html_kb=34.1）、自己検査 export_* 3 件 + control_export_ignores_saves_dir"
+  }
+ ],
+ "recommendations": [
+  "【問1 ロジックの分離】3 層にする: app/cp_core（規則・式・世界・リプレイ・保存・データ。純 Python）→ app/cp_ui（2D 画面。Canvas 越しに描く。純 Python。cp_core は import してよい）→ app/cp_app（Pyxel のアダプタ。表示・入力・音・3D・ブラウザの橋）。依存は一方向。検査は tools/arch_check.py（AST）を主にする。許可リスト方式: cp_core が import してよいのは {array, base64, bisect, collections, dataclasses, enum, functools, hashlib, heapq, io, itertools, json, math, os, pathlib, struct, typing, zlib, __future__} と cp_core 自身、cp_ui はそれに cp_core と cp_ui。リスト外は全部失敗（pyxel / js / pyodide / cp_app / random / time / datetime / importlib / builtins を含む）。呼び出しの禁止: __import__ / eval / exec / compile / hash（hash は文字列でプロセスごとに変わるため）。副として tools/import_probe.py（別プロセスで純パッケージの全モジュールを import し、sys.modules に pyxel / js / pyodide / cp_app が無いこと）と、tests/conftest.py の pytest_sessionfinish（テストのプロセスに pyxel か cp_app が読み込まれていたら exit 1）を置く。ImportError を投げて止める方式は採らない（try/except で握りつぶされる）。モジュールを足すときは許可リストに理由つきで足す。",
+  "【問2 走らせ役】pytest を使う（parametrize、tmp_path、差分の表示、-k、junit の件数が要る。PyPI は取得できる）。必ず tools/test.py 経由で回す。ラッパーの決まり: (1) 先に --collect-only -q で全テスト名を取り、-k の式の各語（and/or/not と括弧を除く）がどれかのテスト名に部分一致しなければ exit 2、(2) 実行は -p no:cacheprovider --strict-markers --strict-config -W error::pytest.PytestUnhandledThreadExceptionWarning -W error::pytest.PytestUnraisableExceptionWarning --junitxml=out/test/junit.xml、(3) junit が無い・読めない → exit 2（プロセスが途中で死んだ）、(4) passed<1 → exit 2、(5) skipped>0 → exit 1（skip は置かない。消すか動かす）、(6) pytest の exit 5 → 2、それ以外の非 0 → 1、(7) 全件実行のとき passed が tests/count_floor.txt を下回れば exit 1（増えたら自動で引き上げ、下げるのは --update-floor のみ）、(8) 最後に件数の 1 行。pytest の中では Pyxel を一切動かさない（pyxel.quit は exit 0 で即終了し失敗を消す）。Pyxel が要る確かめはラッパーが別プロセスで行い、pytest からラッパーを呼ぶこともしない（同じ検証を 2 度回さないため）。",
+  "【問3 ラッパー一式】全部 Python で書く（shell にしない理由: cp_core を import して参照の指紋を計算できる、JSON と junit を読める、タイムアウトと終了コードの扱いが確実、引用符の事故が無い、Windows でも動く）。node が要るのは tools/web/webrun.js だけで、Python から呼ぶ。一覧: tools/check.py [--only syntax|arch|import|data|adapter|docs]（構文=全 .py を compile、分離=AST、import=見張り、データ=出荷データが警告 0 で読める＋各試験用パックが重ねて読める、アダプタ=import cp_app.app が通る、文書=規則ファイルの見張り）/ tools/test.py [-k 式] [--update-snapshots] [--update-floor] / tools/run.py [--ticks N] [--driver flip|run] [--packaged] [--pack 名] [--timeout 秒]（例外=1、回り切れない=2）/ tools/screen_check.py [--only 画面] [--pack 名] / tools/tour.py [--only 画面] [--pack 名]（回り切れなければ 2）/ tools/export.py [--max-html-kb N] / tools/web_smoke.py [--ticks N] / tools/verify.py --all | --touched 分野,… | --list / tools/verify_all.py（= verify.py --all。CLAUDE.md に書く名前を固定するためだけの入口）/ tools/selftest_break.py [--only 接頭辞]（道具に触れたら回す）。共通部は tools/_common.py（ROOT / APP / OUT、子プロセスの環境から CP_SMOKE* と PYTHONUNBUFFERED を除く、タイムアウトつき run、終了コード 0/1/2、最終行の出力）。ALSA のエラー行はラッパーが捨てる。",
+  "【問3 先行スパイクの組み込み】(a) frameloop/proto の cp_core/fixed_loop.py（RenderGate: 2 tick 以上 または 1 tick 以上かつ 30ms 以上）はそのまま app/cp_core/fixed_loop.py に置き、テストも tests/ に移す（試作の app.py は簡略版の「2 tick 以上」だけなので、本番は RenderGate に差し替える）。(b) frameloop の smoke.py の「環境変数で煙テストに入る・全 tick 後に結果ファイル・故障の注入」は cp_app/app.py の read_config と finish_run に取り込んだ形を採る。環境変数は CP_SMOKE（結果のパス）/ CP_SMOKE_MODE=run|tour / CP_SMOKE_TICKS / CP_SMOKE_DRIVER=flip|run / CP_SMOKE_SHOT_DIR / CP_SMOKE_ONLY / CP_SMOKE_PACK / CP_SMOKE_SAVE_DIR / CP_SMOKE_FAULT。(c) frameloop の run_smoke.py の判定は tools/run.py、build.py は tools/export.py、tour.py は tools/tour.py に対応。(d) web/tools/webrun.js は無改造で tools/web/webrun.js に置く。fetch_runtime.sh と build_mirror.sh は tools/web/ に置き、取得先を .cache/pyxel_web/（git の外）に直し、SHA256SUMS は git で管理する。写しの場所は環境変数 CP_WEB_MIRROR（既定 .cache/pyxel_web/mirror）。写しが無いときは exit 2 にする（skip を合格にしない）。(e) web/tools/smoke_selftest.sh の役（失敗を失敗と検出するか）は tools/selftest_break.py の web_* の件に入れた。webrun.js 自体を直したときは元の 13 行の自己検査も移して回す。(f) web/apps/_shared/web_bridge.py の Storage は cp_app/storage_web.py の WebStorageBackend（read / write / delete / keys）として取り込み、ファイルの受け渡し・ゲームパッド直読みは cp_app/web_bridge.py に置く。",
+  "【問3 ブラウザ版の煙テストの中身】アプリは最後に 'RESULT_JSON smoke {…}' と 'CP_SMOKE_DONE' を print する（ブラウザでは sys.exit を呼ばない。webrun.js が失敗と数える）。ラッパーの判定: webrun.js の exit 0、RESULT_JSON の行がある（無ければ 2）、platform=='emscripten'、ticks と画面の遷移が参照と同じ、世界の粗い要約がネイティブの参照と同じ、storage.ok かつ backend=='WebStorageBackend'、実描画 1 回以上。厳密な指紋の一致は情報として表示するだけにする。1 回 約 7 秒なので全体の検証（verify --all）に常設し、絞った検証では render / replay / audio / save / data に触れたときに回す。",
+  "【問4 はみ出しの検査】2D の UI は必ず cp_ui の Canvas を通して描く（Pyxel の描画関数を直に呼ばない）。Canvas は引数の並びを pyxel と同じにした text / rect / rectb / line / blt と、with canvas.box(名, x, y, w, h): の枠の宣言を持ち、Item(kind, x, y, w, h, box, label) を記録する。cp_app の PyxelCanvas は同じ記録をしつつ pyxel.Image に転送する（3D と HUD を描く裏画面に対して使う）。画面は「(canvas, view_model) を受ける関数」にし、SCREENS = {名: 関数} に登録する。view_model は cp_ui/fixtures.py（開発用の橋）が typical と extreme の 2 変種を作る。extreme はデータから導く（最長の車名・コース名、LAP 99/99、59:59.983、399 KMH、シアター 12 行・9999 KB など）。検査の決まりは 6 種（画面外・親の枠外・文字の重なり・非 ASCII・空の矩形・非 int 座標）。画面の解像度は 320x240 固定なので、広さを変える代わりに「中身」を変える: 変種 2 つ × データ組（出荷データ + 各試験用パック）。パネル・行・HUD の塊はすべて box にする（box にしないと枠外の検査が効かない）。スクロールする一覧は見えている行だけ描く。データの表示名には Label(max_len) の字数の予算を持たせ（車名・コース名は 14 字 = 55px）、予算を上げるときは画面も直す（screen_check が知らせる）。",
+  "【問4 検査そのものの穴の塞ぎ方】tools/tour.py で毎回ピクセル照合をする: 各画面を (320+32)x(240+32) の裏画面に (16,16) ずらして描き、pget で (a) 余白のインク数 ink_outside_screen、(b) どの記録矩形にも入らないインク数 ink_unrecorded を数え、どちらかが 0 でなければ exit 1。これで「記録を通さない描画」と「文字幅の計算の誤り」を拾える。3D の画面（走行・リプレイ）は記録の検査の対象外なので、巡回では PNG の保存・真っ黒でないこと・HUD 部分のピクセル照合だけを機械で見て、あとは Claude が PNG を見る。巡回の画像は実行ごとに揺れない入力（固定の view_model、固定 tick の世界）で作る。",
+  "【問5 決定性の守り】指紋テストは「固定入力の筋書き（名前・seed・車・tick 数・入力の式）→ world.summary()（読める要約 + 厳密なハッシュ）→ tests/snapshots/world_<名>.json と比べる」形にする。筋書きは最低 2 本: タイムアタック 1 台と、レース 6 台を 1 周以上（接触・周回・AI の抽選が入る長さ）。要約には tick、グリッド、順位、乱数の各流れの状態、車ごとの主要な状態を入れ、浮動小数は repr() の文字列で持つ（JSON でビットまで比べられる）。写しを取り直す決まり: (1) tools/test.py --update-snapshots でだけ書く（テストは無い写しを作らない）、(2) 取り直しは単独のコミットにし、コミット文に理由と「動くはずの項目」を書く、(3) 取り直す前に差分の表示を見て、動いたのが意図した項目だけか確かめる、(4) 挙動を変える段では、手を入れる前の HEAD で写しを固める準備のコミットを先に置く、(5) 写しの書き換えはレビューの観点に入れる（ロジックの変更と同じコミットで写しが変わっていたら指摘）。浮動小数: 同じ環境の中ではビットまで一致する前提でネイティブの写しを正とする。ブラウザ版とは厳密な一致を求めず、整数の状態（tick、周回、乱数の状態、順位）は完全一致、浮動小数は粗い要約で比べる。丸めの境目で揺れないよう、本番では round() ではなく許容差つきの比較（例: 位置 1e-3 m、速度 1e-3 m/s。仮の値）にする。",
+  "【問5 乱数】cp_core/rng.py の 2 つの道具に限る。(1) RngSet(seed): 用途ごとの流れ。このゲームの用途は grid（スタート順の抽選。シングルレース開始時に 1 度）と ai（AI ごとの腕のばらつき＝ペース係数、レース開始時に 1 台 1 回）の 2 つで始め、足すときは PURPOSES に名前を足す（未登録は KeyError）。(2) hash_u64 / hash_unit(seed, 鍵…): 流れを引かない抽選。新しく足す仕組みと、同じ問いに何度でも同じ答えが要るものは全部こちら: AI のコーナーごとのブレーキ点の誤差 = hash_unit(race_seed, 'brake', car_id, lap, corner_index)、AI のライン取りのずれ、AI の車種とセッティングの選び方、リプレイの TV カメラの切り替えの選択（巻き戻しても同じになる必要がある）= hash_unit(replay_id, 'tvcam', lap, camera_index)。表示だけの揺らぎ（火花・煙・エンジン音の揺れ）は cp_app 側の別の乱数にして、世界の流れには絶対に触れない。タイムアタックは乱数を使わない。race_seed はレース開始時に決めてリプレイのヘッダに入れる。標準の random と built-in の hash() は cp_core / cp_ui で禁止（arch_check が弾く）。集合や辞書の並びに頼る抽選も禁止（PYTHONHASHSEED を変えたテストで見張る）。ハッシュ抽選は 1 回 1.4〜2.6 µs かかるので、毎 tick・毎輪の内側では呼ばず、コーナー進入時などに 1 度引いて持つ。",
+  "【問6 保存の層】口は 2 段。下: バックエンド（read(key)->bytes|None / write(key, bytes) / delete(key) / keys()）。FileBackend（デスクトップ。<dir>/<名前空間>.<key>.sav、一時ファイル → flush → fsync 1 回 → os.replace）、WebStorageBackend（ブラウザ。localStorage['clippingpoint/' + key] に base64。QuotaExceededError を StorageFull に変える。無い鍵は JS の null で None ではない点に注意）、MemoryBackend（テスト）。上: SaveStore(backend, namespace)。put(key, payload, version) / get(key)->(version, payload)|None / delete / keys(接頭辞) / used_bytes(接頭辞) / quarantine(key)。封筒は '<4sHI' + 本体 + crc32（14 バイト増）。鍵は小文字 ASCII・数字・_ . - の 48 字まで。鍵の割り当て: profile（設定・操作設定・車ごとのセッティング・ベストラップの表・リプレイの棚の目次を 1 つの JSON）、ghost.<track>.<car>（ゴーストの本体）、replay.<slot 01〜12>（リプレイの本体）。ゲームのコードは SaveStore だけを使い、ファイルや js.localStorage を直に触らない。プロファイルは「変更があったときに丸ごと 1 回」保存する（dirty の印。毎フレーム書かない）。読めない保存は <key>.bad に退避し、既定値で始めて画面に 1 行出す。版が違う保存は移行関数を通す（半分だけ読まない。知らない鍵・足りない鍵は失敗）。棚の上限（12 本・合計 3MB）は used_bytes('replay.') で数え、base64 で 4/3 に膨らむ分を含めた localStorage の実際の上限との関係は replay / web のスパイクの結果で決める。",
+  "【問6 保存する項目と保存しない項目】保存する: settings（効果音と BGM の音量、HUD の表示、速度の単位、最後に選んだモード・車・コース、周回数、AI の強さ）、controls（変速 AT/MT、アシスト ON/OFF、ステアリングの切れ角カーブ、デッドゾーン、アクセルとブレーキの踏み込みカーブ、車速による最大舵角の制限、カウンターステア時の緩和、キーとボタンの割り当て）、setups（車 id → 6 項目の段階）、best_laps（コース・車・ラップの tick 数・そのときのセッティング・ゴーストの有無）、shelf（スロット・題名・モード・コース・車・tick 数・バイト数）。時間は tick 数（1/60 秒の整数）で持ち、表示のときだけ分:秒.ミリ秒にする。保存しない（NOT_SAVED に理由つきで書く）: dirty の印、読み込み時の警告、画面のカーソル位置や開いているタブ、走行中のレースの状態（途中セーブは無い）、乱数の状態、タイムアタックの直近 5 周のリプレイ対象（セッションの中だけ）、接続中のゲームパッドの情報、試験用データパックを重ねたときの一切（別の名前空間 pack_<名> に行く）。テストは 3 本: 全項目の往復の一致（見本は既定値と必ず違う）、NOT_SAVED の名前が実在する、保存される項目の一覧の写し（profile_schema.json）。",
+  "【問7 データの検査】定義は app/data/<表>.json（{\"<表>\": [項目…]}。各項目に id）。検査は cp_core/datadefs.py の SCHEMA（表 → 鍵 → 規則）で書く。外部のライブラリは使わない（ブラウザ版の起動時にも同じ検査を通すため）。規則の部品: Int(lo, hi) / Num(lo, hi) / Bool() / Enum(…) / Ident()（小文字 ASCII・数字・_）/ Label(max_len)（印字可能 ASCII、字数の予算つき）/ Ref(表) / ListOf(規則, 最小, 最大) / Opt(規則)。読む順は 参照される側から（audio → assists → ai → cars → tracks）。問題は全部集めて DataError(problems) で 1 度に投げ、各行に ファイル:表[番号].鍵 を付ける。警告（使われていない定義）は GameData.warnings に入れ、出荷データで空であることを check とテストで見張る。'_' 始まりの鍵は注（_note、仮の値の印）。根拠の薄い値はデータの頭の _note に「placeholder」と書く。表を足すときは SCHEMA + LOAD_ORDER + app/data のファイル + 壊した場合のテストを一緒に足す（test_data_every_schema_table_has_a_file… が見張る）。コースの形状のような大きなデータは JSON にせずバイナリ（magic + 版 + 本体 + crc32）にして同じ「読み込み時に検査」の決まりに乗せる。試験用パックは testpacks/<名>/ に置き、ネイティブの開発時は環境変数（CP_SMOKE_PACK。手で歩く用に CP_DATA_PACK も同じ扱いにする）で重ねる。パックつきの保存は別の名前空間。",
+  "【問8 検証の 2 つの重さ】全体の検証（tools/verify_all.py）の中身と順: check → test → screen-check → run（flip）→ run-realtime（pyxel.run）→ run-pack（試験用パック 600 tick）→ tour → tour-pack → export → run-packaged（pyxel play）→ web-smoke。絞った検証（tools/verify.py --touched …）は 必ず check を先頭に置き、test を -k で絞り、分野ごとの手順を足す。分野の表（試作の AREAS。本番ではテスト名の接頭辞を分野名に揃える: test_vehicle_* / test_track_* / test_controls_* / test_ai_* / test_race_* / test_replay_* / test_ui_* / test_audio_* / test_data_* / test_storage_* / test_profile_* / test_rng_* / test_world_*）: 車両 → test -k \"vehicle or world or fingerprint\" + run。コース → -k \"track or world or fingerprint or data\" + run + tour。操作補正 → -k \"controls or profile or session\" + run。AI → -k \"ai or world or fingerprint or rng\" + run。レース進行 → -k \"race or session or world or fingerprint\" + run + screen-check。描画 → -k \"ui\" + run + run-realtime + tour + web-smoke。リプレイ → -k \"replay or storage or fingerprint\" + run + web-smoke。UI → -k \"ui\" + screen-check + tour + tour-pack。音 → -k \"audio or data\" + run + web-smoke。保存・データ（読み込みと検査）・乱数・固定刻みのループ・世界の状態の型・道具 → 土台なので全部（道具はさらに selftest_break）。この表は tools/verify.py にだけ書き、CLAUDE.md には『python3 tools/verify.py --list』と書く（組み立てを 2 か所に書かない）。規模が小さいうちの扱い: 全体が 13 秒なので、当面はどの区切りでも verify_all を回す。全体が 3 分（仮の値）を超えたら絞った検証に切り替える、と作業記録に書いておく。selftest_break（約 1 分）は tools/ か検査の決まりに触れた区切りと、段の仕上げで回す。報告には各ラッパーの最終行（件数つき）をそのまま貼り、回せなかったものを分けて書く。",
+  "【問9 CLAUDE.md の根（200 行まで）】書くこと: (1) いちばん大事な約束 5〜6 行（cp_core / cp_ui は pyxel・js・cp_app・random・time を import しない／pytest に pyxel を読み込ませない・Pyxel が要るものはラッパー経由／直すファイルは Read してから・新しいファイルの前にその分野の既存ファイルを 1 つ Read／out/ と dist/ は生成物で触らない・ラッパーを同時に 2 本走らせない／正本 docs/spec/ は書き換えずずれは docs/revisions.md へ／区切りは commit + push まで）。(2) ツールチェーン（Python 3.13 ネイティブ + Pyxel 3.0.1、ブラウザは Pyodide 314.0.7 / Python 3.14、Linux のクラウドコンテナ、pip install -r requirements-dev.txt）。(3) コマンドの表（ラッパー 9 本と終了コード 0/1/2）。(4) 検証の組（verify.py --touched / verify_all.py、表は --list）。(5) ディレクトリの表。(6) 土台の方針（60Hz の tick・描画 30fps・時間は tick の整数・乱数の 2 つの道具・保存は SaveStore・データは SCHEMA・320x240 整数倍・文字は印字可能 ASCII）。(7) 書き方の約束（割り切りの印、仮の値、テストを弱めない、写しは単独のコミット）。(8) X を足したら Y も（車 → cars.json + SCHEMA + 画面の extreme は自動 + tour；画面 → SCREENS + fixtures + screen_check + tour；保存する項目 → 版と移行 + profile_schema の写し；表 → SCHEMA + LOAD_ORDER + 壊したテスト；乱数の用途 → PURPOSES か hash 抽選；ラッパー → verify.py の STEPS + selftest_break の件）。(9) 落とし穴（pyxel.quit は exit 0／pyxel.init は chdir する・パスは __file__ 基準／ブラウザで flip と sys.exit は不可／軸に btn・ボタンに btnv で panic／非 ASCII の文字は描かれない／ブラウザのトリガーは 2 値）。(10) 規則ファイルの目次。(11) 文書（作業記録、控え、目次、言葉の表）。",
+  "【問9 .claude/rules/ の分け方と paths の案】vehicle.md: app/cp_core/vehicle/**/*.py, app/data/cars.json, tests/test_vehicle_*.py, tests/snapshots/vehicle_*.json。track.md: app/cp_core/track/**/*.py, app/data/tracks.json, app/data/tracks/*, tests/test_track_*.py。controls.md（操作補正）: app/cp_core/controls/**/*.py, app/data/assists.json, app/cp_app/input_*.py, tests/test_controls_*.py。ai.md: app/cp_core/ai/**/*.py, app/data/ai.json, tests/test_ai_*.py。race.md（レース進行）: app/cp_core/race/**/*.py, tests/test_race_*.py。sim-core.md（決定性）: app/cp_core/rng.py, app/cp_core/fixed_loop.py, app/cp_core/world.py, tests/test_rng*.py, tests/test_world_*.py, tests/snapshots/world_*.json。replay.md: app/cp_core/replay/**/*.py, app/cp_app/replay_*.py, tests/test_replay_*.py。save.md: app/cp_core/storage.py, app/cp_core/profile.py, app/cp_app/storage_web.py, tests/test_storage.py, tests/test_profile.py, tests/snapshots/profile_schema.json。data.md: app/cp_core/datadefs.py, testpacks/**/*.json, tests/test_datadefs.py。ui.md: app/cp_ui/**/*.py, app/cp_app/canvas_pyxel.py, tests/test_ui_*.py。render.md: app/cp_app/render/**/*.py。audio.md: app/cp_app/audio*.py, app/cp_core/audio_model.py, app/data/audio.json, tests/test_audio_*.py。web.md: app/cp_app/web_bridge.py, tools/web/*, tools/web_smoke.py。tools.md: tools/*.py, tools/claude/*.py。ハブ（glob に入れない）: app/main.py, app/cp_app/app.py。app/data/*.json は data.md にまとめず各分野の規則に 1 つずつ割り当てる（どの表を読んでも全規則が来るのを避ける）。各規則ファイルの形は ひな形どおり（約束・値を読む口・X を足したら Y も・守りのテスト・落とし穴・末尾に提案文書への 1 行）。見張りは tools/claude/rules_guard.py を check の docs 節で回す。",
+  "【問9 サブエージェントの型 3 つの直し所】共通: tools から PowerShell を外す（Linux のみ）。実装役（implementer）: tools は Read, Grep, Glob, Edit, Write, Bash。約束に足す: cp_core / cp_ui に pyxel・js・cp_app・random・time を入れない／実行は python3 tools/<ラッパー>.py だけ・1 本ずつ／verify_all はバックグラウンド／pytest に pyxel を読み込ませない・テストが届くコードで pyxel.quit を呼ばない／写しの取り直し（--update-snapshots）は頼まれたときだけ・差分を報告／コミットも push もしない。報告の 3 には各ラッパーの最終行をそのまま貼る。レビュー役（reviewer）: 読むだけ。ラッパーも pytest も回さない（out/ と dist/ を主と取り合う）。観点に足す: pyxel や実時間が cp_core / cp_ui に届く／Canvas を通さない描画／新しいコードが既存の乱数の流れを引く／ロジックの変更と同じコミットで写しが書き換わる／何も調べずに 0 で終われるラッパー／ブラウザ版が通る道にネイティブ専用のコード（pyxel.flip・sys.exit・ファイル・スレッド）。重さ「高」に 保存形式の破れ・決定性の破れ・ブラウザ版が動かない を足す。読み手（reader）: 領域の地図に「データの表と SCHEMA の項」「画面名（SCREENS）とそれを覆うラッパー」「verify.py の AREAS のどれに当たるか」を足す。3 つとも試作を repo/.claude/agents/ に置いた。cache 1 時間と CLAUDE.md を読ませない設定の書き方は、置く前に 2.1.322 の文書で確かめる。",
+  "【問9 permissions.deny と、使い捨てコンテナでの控え】deny の案（repo/.claude/settings.json に試作。パターンの書式は置く前に現行の文書で確かめる）: git push --force / -f / --force-with-lease、git reset --hard、git clean、git checkout -- 、git restore、git branch -D、それぞれの git -C <dir> の形、tests/snapshots の rm -rf、docs/spec/** への Edit と Write（正本）。この環境はセッションの外に残るのが push した git だけなので、スキルの「控えは git の外」をそのまま使えない。決まり: (1) 控えは docs/handoff.md（25 行まで）として git に入れ、区切りのコミットと同じコミットで上書きして push する（控えだけの別コミットにしない）。(2) 区切りの定義に push を含める（実装 → 絞った検証 → レビュー → 直し → 記録 → commit → push）。push していない作業は無いものとして扱う。(3) SessionStart フック（tools/claude/handoff_hook.py）: compact と resume では控えの全文、startup では 3〜5 行の案内だけ（新しいコンテナは同じ作業の続きでも必ず startup で始まるため、まったく出さないと控えに気づけない。全文は出さず関係の無い作業を汚さない）。どの場合も HEAD・控えの最後のコミット・控えより新しいコミット数・未コミットのパス数・未 push のコミット数を添える。(4) 記憶（メモリ）もコンテナと一緒に消える前提で、常設の方針は docs/standing-policy.md として git に置く。(5) 依存（pyxel==3.0.1、pytest==9.2.0）は requirements-dev.txt に版を固定し、クラウド環境のセットアップ（環境のセットアップスクリプト）で pip install と Pyxel Web の写しの取得（tools/web/fetch_runtime.sh + build_mirror.sh、SHA256 で検証）を行う。(6) out/ dist/ .cache/ は .gitignore。",
+  "【問10 リポジトリの木】app/（pyxel package の APP_DIR。直下に main.py。出荷物はここだけ）: main.py（起動の 1 行）, cp_core/（rng.py, fixed_loop.py, world.py, session.py, datadefs.py, storage.py, profile.py, vehicle/, track/, controls/, ai/, race/, replay/, audio_model.py）, cp_ui/（canvas.py, check.py, screens.py か screens/, fixtures.py）, cp_app/（app.py, canvas_pyxel.py, input_pyxel.py, render/, audio.py, storage_web.py, web_bridge.py）, data/（cars.json, tracks.json, assists.json, ai.json, audio.json, tracks/<id>.bin）, assets/（.pyxres, 画像, メッシュ）。tests/: conftest.py（app/ を sys.path に、pyxel の見張り、--update-snapshots）, snapshot.py, test_<分野>_*.py, snapshots/*.json, count_floor.txt。testpacks/<名>/: 試験用データパック（app/ の外）。tools/: _common.py, check.py, arch_check.py, import_probe.py, test.py, run.py, screen_check.py, tour.py, export.py, web_smoke.py, verify.py, verify_all.py, selftest_break.py, budgets.json, web/（webrun.js, fetch_runtime.sh, build_mirror.sh, SHA256SUMS）, claude/（rules_guard.py, handoff_hook.py, 使用量を測る台本など）。docs/: spec/（正本。Claude は書き換えない）, revisions.md（改訂案）, worklog.md（作業記録。頭に状態の表）, handoff.md（控え）, standing-policy.md, index.md（目次）, glossary.md（言葉の表）, stages/（段ごとの設計と批評）, proposals.md, day1-checklist.md。.claude/: settings.json（deny とフック）, rules/<分野>.md, agents/{implementer,reviewer,reader}.md。根: CLAUDE.md, requirements-dev.txt, .gitignore。生成物（git の外）: out/（test, run, tour, web, stage, verify, selftest）, dist/（clipping_point.pyxapp, clipping_point.html）, .cache/pyxel_web/（ランタイムの写し 約 19MB）。pyxel package はアーカイブ名をディレクトリ名から取るので、export は app/ を out/stage/ship/clipping_point/ に写してから package する。"
+ ],
+ "numbers": [
+  {
+   "what": "わざと壊す自己検査の件数と結果",
+   "value": "70 件（仕込んだ故障 60、対照 10）。期待と違う結果 0 件。所要 59.1 秒",
+   "conditions": "python3 tools/selftest_break.py を 1 回。各件は木を一時ディレクトリに写して 1 つ壊し、ラッパーを 1 本走らせる。ブラウザを起動する件を 4 件含む。Linux コンテナ、Python 3.13.18、Pyxel 3.0.1、4 コア"
+  },
+  {
+   "what": "全体の検証（verify_all）の所要時間と内訳",
+   "value": "合計 13.3 秒。check 0.32 / test 1.06 / screen-check 0.07 / run 0.35 / run-realtime 2.22 / run-pack(600 tick) 0.88 / tour 0.46 / tour-pack 0.56 / export 0.22 / run-packaged 0.39 / web-smoke 6.79（秒）",
+   "conditions": "試作の木（Python 約 3,000 行、テスト 45 件、画面 4 つ）で 1 回。本番の規模の数字ではない"
+  },
+  {
+   "what": "絞った検証（--touched ui）の所要時間",
+   "value": "5 手順で 2.2〜2.3 秒",
+   "conditions": "check + test -k ui（10 件）+ screen-check + tour + tour-pack。2 回実行"
+  },
+  {
+   "what": "ロジックのテストの件数と時間",
+   "value": "45 件、ラッパー込みで 1.06 秒（pytest 単体は 0.37〜0.51 秒）",
+   "conditions": "tools/test.py は pytest を 2 回起動する（一覧の取得と実行）。別プロセスを 3 つ起こすテスト 1 件を含む"
+  },
+  {
+   "what": "分離の検査の検出数（12 通りの混入）",
+   "value": "AST＋許可リスト 12/12、sys.modules の見張り 9/12、ImportError で遮断 8/12",
+   "conditions": "experiments/isolation_matrix.py。対照（変更なし）は 3 方式とも exit 0"
+  },
+  {
+   "what": "pytest と unittest が exit 0 で通した壊れ方",
+   "value": "両方とも 4 種: 全件 skip、テスト内の os._exit(0)、スレッド内だけの例外、-k の片方の打ち間違い",
+   "conditions": "pytest 9.2.0 と Python 3.13.18 の unittest。runner_exp/run_matrix.py、37 行の表"
+  },
+  {
+   "what": "はみ出しの検査の速さ",
+   "value": "16 画面（4 画面 × 2 変種 × 2 データ組）で 0.07 秒",
+   "conditions": "Pyxel を使わない純 Python。プロセスの起動を含む"
+  },
+  {
+   "what": "巡回の速さ",
+   "value": "PNG 8 枚（640x480）+ ピクセル照合（352x272 を 8 回 pget で全走査）で 0.46〜0.56 秒",
+   "conditions": "pyxel headless、2D の画面だけ。3D の画面は含まない"
+  },
+  {
+   "what": "ヘッドレス煙テストの速さ",
+   "value": "120 tick: 自前ループ（flip, fps=1000）で 0.13 秒、pyxel.run（実時間）で 1.99 秒。600 tick（flip）で 0.67 秒。実描画は 120 tick で 60 回",
+   "conditions": "アプリ内で測った壁時計。2D の画面と小さな世界だけ"
+  },
+  {
+   "what": "ブラウザ版の煙テストの速さ",
+   "value": "1 回 6.8〜7.5 秒（ページ内の 120 tick は 1.99 秒、実描画 56〜59 回）",
+   "conditions": "ヘッドレス Chromium + Pyodide 314.0.7（Python 3.14.2）、ランタイムは spikes/web/mirror の写し。ビルド（package + app2html）込み。3 回実行"
+  },
+  {
+   "what": "試作の出荷物の大きさ",
+   "value": ".pyxapp 25.4 KB（23 ファイル）、HTML 34.1 KB（比 約 1.34）",
+   "conditions": "試作の app/（Python 13 本 + JSON 5 本）。本番の大きさではない。上限は tools/budgets.json に仮の値（HTML 2048 KB、pyxapp 1536 KB）"
+  },
+  {
+   "what": "内蔵フォントのインクの箱",
+   "value": "幅は最大 3px（セル 4px）、高さは 5px（セル 6px）。g j p q y だけ 6px。非 ASCII は 0 ピクセル",
+   "conditions": "pyxel.Image.text で ASCII 32〜126 を 1 字ずつ描いて pget で測定"
+  },
+  {
+   "what": "乱数の速さ（ネイティブ）",
+   "value": "splitmix64 の unit() 約 380 ns/回、標準の random.Random.random() 約 50 ns/回、hash_unit（整数の鍵 2 つ）約 1.42 µs/回、hash_unit（文字列 2 + 整数 2）約 2.63 µs/回。計測のラムダ呼び出し自体が約 24 ns",
+   "conditions": "Python 3.13.18、20 万回 × 5 の最小値。ブラウザ版では測っていない"
+  },
+  {
+   "what": "保存の封筒の増分",
+   "value": "1 つの保存につき 14 バイト（magic 4 + 版 2 + 長さ 4 + crc32 4）",
+   "conditions": "cp_core/storage.py の実装。localStorage では全体が base64 で 4/3 倍になる"
+  },
+  {
+   "what": "試作の規模",
+   "value": "Python 2,978 行（app 13 本、tools 14 本、tests 9 本）、JSON 6 本、規則ファイル 5 本、エージェント定義 3 本",
+   "conditions": "wc -l の合計（webrun.js と shell は含まない）"
+  }
+ ],
+ "unverified": [
+  "Claude Code の器は実セッションで確かめていない: SessionStart フックが実際に発火して出力が文脈に入るか、source の値（startup / resume / compact / clear）と matcher の書式、permissions.deny のパターンの書式（'Bash(git push --force:*)' や 'Bash(git -C * reset --hard*)' が意図どおり効くか、誤って正当な命令を断らないか）、.claude/rules の paths による読み込み、サブエージェントの定義が読み込まれるか。確かめたのはフックの台本を偽の標準入力で流した結果と、見張りの台本だけ。版は 2.1.322。",
+  "サブエージェントの cache を 1 時間にする設定と、読み手に CLAUDE.md を読ませない設定（資料では omitClaudeMd）の書き方は調べていない。最初の要求の重さも測っていない。",
+  "クラウド環境のセットアップ（セットアップスクリプトで pip install と写しの取得をする案）は試していない。tools/web/fetch_runtime.sh と build_mirror.sh は web スパイクのものを写しただけで、リポジトリの配置（.cache/pyxel_web/）に合わせたパスの直しと再実行はしていない。ブラウザ版の煙テストは web スパイクが作った写し（spikes/web/mirror）を使って回した。新しいコンテナで写しを取得する所要時間は未確認。",
+  "数字はすべて約 3,000 行の試作のもの。本番の規模（車両モデル、6 台、コース、3D）での検証時間、テスト件数、出荷物の大きさは未確認。『全体が 3 分を超えたら絞る』の 3 分は仮の値。",
+  "3D の画面（走行・リプレイ）の検証は試作していない。記録による はみ出しの検査は 2D の Canvas 経由の描画だけが対象。3D の巡回（固定 tick・固定カメラでの PNG、真っ黒でないことの判定、HUD 部分だけのピクセル照合）は案のみ。",
+  "音の検証（チャンネルの割り当て、ピッチの式）と、ゲームパッドのアナログ入力（ブラウザでの js 直読み）を煙テストに入れる方法は試作していない。試作の入力台本は set_btn / set_btnv だけ。",
+  "ネイティブとブラウザの厳密な指紋の一致は、この試作の小さな世界（70 tick、sin と cos を 1 台 1 回ずつ）で 1 例確かめただけ。web スパイクの結果（数学関数の 3〜24% で最下位ビットが違う）からみて、一般には一致しない前提で設計する。粗い要約を round(…, 3) で作る方式は丸めの境目で揺れる恐れがあり、長い筋書きでは確かめていない（許容差つきの比較を推奨したが未試作）。",
+  "ブラウザ版で走らせたのは煙テストの道筋（起動、データの読み込み、120 tick、4 画面の描画、保存の往復）だけ。ロジックのテスト 45 件を Pyodide 上で回すことはしていない。Python 3.13 と 3.14 の差で壊れるコードは、煙テストが通る道にある分しか拾えない。",
+  "標準の random.Random をストリームごとに使う案（約 7 倍速い）がネイティブとブラウザで同じ列を出すかは確かめていない。splitmix64 は整数演算だけなので一致し、試作でもグリッド順と状態が一致した。",
+  "localStorage の容量の上限、3MB の棚が base64 で収まるか、file:// で開いた単一 HTML での保存の持続、別タブとの競合は、このスパイクでは調べていない（web / replay のスパイクの担当）。確かめたのは約 1.5KB の往復だけ。",
+  "FileBackend は Linux でだけ確かめた。Windows や macOS での os.replace と fsync のふるまい、ディレクトリの fsync、保存先のディレクトリ（ユーザーごとの場所）の決め方は未確認・未設計。保存の版の移行関数は口だけで、実際の移行は試作していない。",
+  "pyxel play で回す .pyxapp には testpacks/ が入らないので、試験用パックつきの実行は展開前のソースでしか確かめていない（意図どおりだが、パックつきのパッケージ実行は無い）。",
+  "tools/test.py の -k の語の確かめはテスト名への部分一致で、pytest 本体の -k（マーカーなども見る）と完全には同じでない。スレッド内の例外を失敗にする -W の指定は pytest 9.2.0 で確かめただけで、ほかの版の警告クラス名は未確認。unittest を使う場合のラッパーは作っていない。",
+  "tools/check.py の構文の確かめは Python 3.13 での compile だけ。型検査や lint（ruff / mypy）は入れていない。",
+  "使用量を測る台本、レビューの結果をまとめる台本（未評価を exit 1 にする）、ちょうど 1 か所だけ置き換える補助は作っていない。docs/ の器（作業記録、目次、言葉の表、常設の方針、初日のチェックリストの写し）は handoff.md の見本以外は置いていない。",
+  "試作の CLAUDE.md と規則ファイルは見張りを通すための最小の見本で、本番の文面（200 行までの根、14 本の規則ファイル）は書いていない。規則ファイルの大きさの上限 6,000 バイトは仮の値。",
+  "報告用のファイルは作っていない（指示どおり）。実験の生の結果は results/ の JSON とテキストにある。"
+ ],
+ "artifacts": [
+  "<scratchpad>/spikes/harness/repo/tools/verify.py",
+  "<scratchpad>/spikes/harness/repo/tools/selftest_break.py",
+  "<scratchpad>/spikes/harness/repo/tools/check.py",
+  "<scratchpad>/spikes/harness/repo/tools/arch_check.py",
+  "<scratchpad>/spikes/harness/repo/tools/import_probe.py",
+  "<scratchpad>/spikes/harness/repo/tools/test.py",
+  "<scratchpad>/spikes/harness/repo/tools/run.py",
+  "<scratchpad>/spikes/harness/repo/tools/screen_check.py",
+  "<scratchpad>/spikes/harness/repo/tools/tour.py",
+  "<scratchpad>/spikes/harness/repo/tools/export.py",
+  "<scratchpad>/spikes/harness/repo/tools/web_smoke.py",
+  "<scratchpad>/spikes/harness/repo/tools/verify_all.py",
+  "<scratchpad>/spikes/harness/repo/tools/_common.py",
+  "<scratchpad>/spikes/harness/repo/tools/web/webrun.js",
+  "<scratchpad>/spikes/harness/repo/tools/claude/rules_guard.py",
+  "<scratchpad>/spikes/harness/repo/tools/claude/handoff_hook.py",
+  "<scratchpad>/spikes/harness/repo/app/cp_core/rng.py",
+  "<scratchpad>/spikes/harness/repo/app/cp_core/world.py",
+  "<scratchpad>/spikes/harness/repo/app/cp_core/storage.py",
+  "<scratchpad>/spikes/harness/repo/app/cp_core/profile.py",
+  "<scratchpad>/spikes/harness/repo/app/cp_core/datadefs.py",
+  "<scratchpad>/spikes/harness/repo/app/cp_core/session.py",
+  "<scratchpad>/spikes/harness/repo/app/cp_ui/canvas.py",
+  "<scratchpad>/spikes/harness/repo/app/cp_ui/check.py",
+  "<scratchpad>/spikes/harness/repo/app/cp_ui/screens.py",
+  "<scratchpad>/spikes/harness/repo/app/cp_ui/fixtures.py",
+  "<scratchpad>/spikes/harness/repo/app/cp_app/app.py",
+  "<scratchpad>/spikes/harness/repo/app/cp_app/canvas_pyxel.py",
+  "<scratchpad>/spikes/harness/repo/app/cp_app/storage_web.py",
+  "<scratchpad>/spikes/harness/repo/tests/conftest.py",
+  "<scratchpad>/spikes/harness/repo/tests/snapshot.py",
+  "<scratchpad>/spikes/harness/repo/tests/test_profile.py",
+  "<scratchpad>/spikes/harness/repo/tests/test_world_fingerprint.py",
+  "<scratchpad>/spikes/harness/repo/tests/test_datadefs.py",
+  "<scratchpad>/spikes/harness/repo/CLAUDE.md",
+  "<scratchpad>/spikes/harness/repo/.claude/settings.json",
+  "<scratchpad>/spikes/harness/repo/.claude/rules/ui.md",
+  "<scratchpad>/spikes/harness/repo/.claude/agents/implementer.md",
+  "<scratchpad>/spikes/harness/repo/.claude/agents/reviewer.md",
+  "<scratchpad>/spikes/harness/repo/.claude/agents/reader.md",
+  "<scratchpad>/spikes/harness/results/break_results.json",
+  "<scratchpad>/spikes/harness/results/runner_matrix.json",
+  "<scratchpad>/spikes/harness/results/isolation_matrix.json",
+  "<scratchpad>/spikes/harness/results/verify_all_last.json",
+  "<scratchpad>/spikes/harness/results/font_ink.json",
+  "<scratchpad>/spikes/harness/results/rng_speed.json",
+  "<scratchpad>/spikes/harness/results/first_catch.txt",
+  "<scratchpad>/spikes/harness/results/handoff_hook_test.txt",
+  "<scratchpad>/spikes/harness/experiments/isolation_matrix.py",
+  "<scratchpad>/spikes/harness/experiments/font_ink.py",
+  "<scratchpad>/spikes/harness/runner_exp/run_matrix.py"
+ ],
+ "report_path": ""
+}

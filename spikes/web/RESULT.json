@@ -1,0 +1,60 @@
+{
+ "note": "このスパイクの担当エージェントは、コンテナの再起動で結果を返す前に止まった。以下は、残っていた結果ファイル（results/*.json）と道具（tools/）を主のエージェントが読んでまとめたもの。",
+ "summary": "ブラウザ版（Pyxel Web = Pyodide 314.0.7、Python 3.14.2）は、この環境でも実際に動かせる。ランタイムは GitHub（kitao/pyxel v3.0.1 の wasm/）と npm（pyodide 314.0.7）から取得でき、ヘッドレスの Chromium + Playwright で app2html の HTML をそのまま開ける（kitao.dev への要求をローカルの写しに差し替える）。純 Python の速さはネイティブの約 1/2、Pyxel Cube の描画はテクスチャ付き 8,192 三角形で 2.4 ms。fps=60 で update は毎秒 60.0 回、描画の間引きで実描画 30 回/秒。Python から import js が使え、localStorage・Blob ダウンロード・ファイル選択・ゲームパッドの直読みが動いた。Pyxel 経由のトリガーは 2 値になるが、直読みならアナログ値が取れる。数学関数の結果はネイティブとブラウザで最下位ビットが違うことがある。",
+ "confirmed": [
+  {"claim": "app2html の HTML（未改変）を、kitao.dev への要求をローカルの写しで満たす形で開くと起動する。sys.platform は emscripten、Python は 3.14.2、pyxel.VERSION は 3.0.1。", "evidence": "results/hello_a_file_route.json、hello_c_http_local.json のコンソール出力。tools/webrun.js --mirror"},
+  {"claim": "ランタイム一式は raw.githubusercontent.com（kitao/pyxel の v3.0.1 タグの wasm/ 以下: pyxel.js、import_hook.py、pyxel.css、wheel、images）と registry.npmjs.org（pyodide-314.0.7.tgz）から取得でき、SHA256 で照合できる。kitao.dev と cdn.jsdelivr.net には届かない。", "evidence": "tools/fetch_runtime.sh、vendor/SHA256SUMS、results/hello_no_mirror.json（ERR_TUNNEL_CONNECTION_FAILED）"},
+  {"claim": "ブラウザ版でも fps=60 の指定で update は毎秒 60.0 回呼ばれ、描画を1回おきに間引くと実描画は毎秒 30 回。描画が重いと（1回 20 ms の負荷）Pyxel が update を続けて呼んで追い付き、update は毎秒 60 回を保つ。", "evidence": "results/web_ticks_fps60.extracted.json、web_ticks_fps60_skip.extracted.json、web_ticks_fps60_skip_load20.extracted.json"},
+  {"claim": "fps=60・間引きあり・Cube の実描画つきの 900 tick で、update 60.0 回/秒、実描画 29.97〜30.0 回/秒、実描画 1 回 平均 2.3〜2.4 ms（最大 7.0 ms）。", "evidence": "results/web_budget_mult1/10/30.extracted.json"},
+  {"claim": "Python から import js が使える。js.localStorage の読み書き、存在しない鍵の戻り値は Python の None ではなく jsnull（偽として扱える）、容量を超えると JsException（js_name が QuotaExceededError）が出る。", "evidence": "results/web_jsbridge_http.extracted.json"},
+  {"claim": "localStorage は http と file:// のどちらでも使え、ページの再読み込み後も値が残る（ヘッドレス Chromium）。250 KB のデータ 12 本（base64 で合計 約400万文字）を保存し、再読み込み後に 12 本とも一致した。", "evidence": "results/web_bridge_demo_http.json（visit 1 と 2）、web_jsbridge_file2/3b.extracted.json"},
+  {"claim": "Blob とリンクでのダウンロード、および window._savePyxelFile でのダウンロードは、どちらも中身が一致した。", "evidence": "results/web_jsbridge_http.extracted.json の download_blob / download_savePyxelFile（sha256 一致）、downloads/"},
+  {"claim": "input type=file を作ってファイルを受け取れる（then + create_proxy、asyncio + await のどちらでも）。", "evidence": "results/web_jsbridge_http.extracted.json の file_then / file_asyncio"},
+  {"claim": "画面へのファイルのドロップは、ブラウザ版では pyxel._dropped_files に入り、pyxel.dropped_files は空のままだった。ファイルは /tmp/<名前を無害化したもの> に書かれる。", "evidence": "results/web_jsbridge_http.extracted.json の drop"},
+  {"claim": "ゲームパッド: Pyxel 経由の btnv はスティックはアナログ値、トリガーは 0 か 32767 の 2 値。js.navigator.getGamepads() の直読みではトリガーのアナログ値（0..1）が取れ、1 回 約0.05 ms。", "evidence": "results/web_gamepad.extracted.json（偽のゲームパッドを init-script で差し込んで確認）、web_bridge_demo_http.json の triggers"},
+  {"claim": "sin / cos / tan / atan2 / exp は、試した入力の 0.05〜24% で、ネイティブ（glibc）とブラウザ（Pyodide）の結果が 1 ULP 違う。", "evidence": "results/libm_ulp_summary.json（各 4,000 入力）"},
+  {"claim": "標準ライブラリの math、random、struct、zlib、json、base64、binascii、hashlib、array、dataclasses、enum などはブラウザ版で import できる。", "evidence": "results/web_imports.summary.json"},
+  {"claim": "ブラウザ版の煙テストの道具（webrun.js）は、仕込んだ失敗 10 通り（import 失敗、モジュール欠け、構文エラー、update 例外、draw 例外、API の誤用、無応答、コールバック内例外、asyncio 内例外、sys.exit）をすべて失敗と判定し、正常 3 通りを合格と判定した（http と file の両方）。", "evidence": "results/selftest_http_*.json、selftest_file_*.json、tools/smoke_selftest.sh"},
+  {"claim": "pyxel.screenshot と pyxel.screencast（GIF）はブラウザ版でも動き、ダウンロードになる。", "evidence": "results/web_capture_s0/s1.extracted.json、downloads/capture_s0/"}
+ ],
+ "recommendations": [
+  "ブラウザ版の煙テストを検証の組に入れる。道具は tools/webrun.js（合否判定つき）、tools/fetch_runtime.sh（ランタイムの写しの取得と照合）、tools/build_mirror.sh を元にする。kitao.dev の許可は要らない。",
+  "アナログのアクセルとブレーキは、ブラウザ版では js.navigator.getGamepads() の直読みで取る（buttons[6].value が左トリガー、buttons[7].value が右トリガー、mapping が standard のとき）。Pyxel 経由のトリガーは 2 値なのでデジタルとして扱う。",
+  "保存の層はブラウザ版で js.localStorage を使う。無い鍵の jsnull を None に直す。容量超過の例外（js_name が QuotaExceededError）を捕まえて失敗として返す。バイナリは base64 にする。",
+  "ドロップされたファイルは、ブラウザ版では pyxel._dropped_files から読む（pyxel.dropped_files ではなく）。両方を見る読み方にする。",
+  "指紋テストの基準はデスクトップ版で持ち、ブラウザ版では同じ台本を 2 回回して一致することと完走を見る。",
+  "処理時間の予算は、純 Python がブラウザ版で約 2 倍（起動直後は 3〜4.5 倍）遅い前提で立てる。"
+ ],
+ "numbers": [
+  {"what": "純 Python の速さの比（ブラウザ版 / ネイティブ 3.13）", "value": "1.8〜2.2 倍遅い（各ベンチの最小値どうし）。最初の1回は 3.1〜4.5 倍", "conditions": "浮動小数のループ、属性アクセス、関数呼び出し、簡易の車両6台。各3回。ヘッドレス Chromium 153、このコンテナ4コア"},
+  {"what": "Pyxel Cube の描画（320x240）", "value": "テクスチャ付き 8,192 三角形で 2.43 ms（ネイティブ 1.84 ms）。4,050 で 1.70 ms、2,048 で 1.30 ms", "conditions": "120 フレームの平均。results/web_bench_cube.extracted.json、native_cube.json"},
+  {"what": "update の間隔（ブラウザ版、fps=60）", "value": "平均 16.67 ms、5〜95% が 16.5〜16.9 ms", "conditions": "600 回。results/web_ticks_fps60.extracted.json"},
+  {"what": "localStorage の上限", "value": "1 つの値で約 524 万文字。全体でも同程度（250 KB×12 本 = 約400万文字を入れた後、同じ大きさがあと 3 本入った）", "conditions": "ヘッドレス Chromium。results/web_jsbridge_http.extracted.json、web_bridge_demo_http.json"},
+  {"what": "localStorage の読み書き時間（512 KB のバイナリを base64 で）", "value": "encode 4.0 ms、setItem 2.0 ms、getItem 9.1 ms、decode 2.8 ms", "conditions": "1 回。results/web_jsbridge_http.extracted.json"},
+  {"what": "ランタイムの大きさ", "value": "合計 19.5 MB（gzip で圧縮した場合 12.2 MB）。うち pyodide.asm.wasm 9.6 MB、Pyxel の wheel 5.9 MB", "conditions": "results/runtime_sizes.json"},
+  {"what": "起動時間（ローカルの http サーバー）", "value": "ページを開いてから Python の最初の出力まで約 3.1 秒、開始の合図（click to start）まで約 2.8 秒", "conditions": "results/hello_c_http_local.json"},
+  {"what": "GIF の書き出し時間（ブラウザ版）", "value": "0.7〜1.5 秒", "conditions": "fps=60、660 tick 後に pyxel.screencast。results/web_capture_s0/s1.extracted.json"}
+ ],
+ "unverified": [
+  "実物のブラウザ（Chrome、Firefox、Safari の通常の画面つき）では動かしていない。すべてヘッドレスの Chromium。",
+  "実物のゲームパッドは使っていない。偽のゲームパッド（navigator.getGamepads の差し替え）での確認。実機で mapping が standard にならないコントローラーの扱いは未確認。",
+  "音は鳴らせない（ヘッドレス）。",
+  "スマホと画面上パッドは未確認。",
+  "file:// で開いたときの localStorage の持続は Chromium でのみ確認。ほかのブラウザでは未確認。",
+  "kitao.dev 本番からの読み込み時間（回線と配信の圧縮設定に依存）は未確認。",
+  "ファイル選択は、利用者の操作なしでもヘッドレスでは動いた。実物のブラウザでは利用者の操作（クリックやキー）の直後でないと開かない可能性がある。",
+  "担当エージェントが途中で止まったため、道具（tools/）の最終の整理と、試作コード（apps/bridge_demo/）の見直しは済んでいない。"
+ ],
+ "report_path": "",
+ "artifacts": [
+  "<scratchpad>/spikes/web/tools/webrun.js",
+  "<scratchpad>/spikes/web/tools/fetch_runtime.sh",
+  "<scratchpad>/spikes/web/tools/build_mirror.sh",
+  "<scratchpad>/spikes/web/tools/build_app.sh",
+  "<scratchpad>/spikes/web/tools/smoke_selftest.sh",
+  "<scratchpad>/spikes/web/apps/bridge_demo/",
+  "<scratchpad>/spikes/web/apps/jsbridge/",
+  "<scratchpad>/spikes/web/apps/gamepad/",
+  "<scratchpad>/spikes/web/results/"
+ ]
+}

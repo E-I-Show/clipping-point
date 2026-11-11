@@ -1,0 +1,160 @@
+{
+ "url": "file://<scratchpad>/spikes/web/build/fail_asyncio.html",
+ "mirror": "mirror",
+ "console": [
+  {
+   "t": 129,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 129,
+   "type": "log",
+   "text": "{command: play, name: fail_asyncio.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIAO4Oa10sYEvPCQAAAAcAAAAjAAAAZmFpbF9hc3…5bmNpby9tYWluLnB5UEsFBgAAAAAEAAQAIwEAAFMZAAAAAA==}"
+  },
+  {
+   "t": 2276,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 2655,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 3067,
+   "type": "warning",
+   "text": "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)"
+  },
+  {
+   "t": 3106,
+   "type": "warning",
+   "text": "[.WebGL-0x32cc0670b600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3124,
+   "type": "warning",
+   "text": "[.WebGL-0x32cc0670b600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3139,
+   "type": "warning",
+   "text": "[.WebGL-0x32cc0670b600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3161,
+   "type": "warning",
+   "text": "[.WebGL-0x32cc0670b600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  },
+  {
+   "t": 3518,
+   "type": "error",
+   "text": "Traceback (most recent call last):\n\n  File \"/tmp/.pyxel/play/42_c5391023-92ad-4d11-b748-d7df631a3d81/fail_asyncio/main.py\", line 11, in bad_task\n    raise KeyError(\"boom inside an asyncio task\")\n\nKeyError: 'boom inside an asyncio task'\n\n"
+  }
+ ],
+ "failures": [
+  {
+   "t": 3519,
+   "kind": "console.error",
+   "detail": "Traceback (most recent call last):\n\n  File \"/tmp/.pyxel/play/42_c5391023-92ad-4d11-b748-d7df631a3d81/fail_asyncio/main.py\", line 11, in bad_task\n    raise KeyError(\"boom inside an asyncio task\")\n\nKeyError: 'boom inside an asyncio task'\n\n"
+  },
+  {
+   "t": 4129,
+   "kind": "pyxel-error-overlay",
+   "detail": "Traceback (most recent call last):\n\n  File \"/tmp/.pyxel/play/42_c5391023-92ad-4d11-b748-d7df631a3d81/fail_asyncio/main.py\", line 11, in bad_task\n    raise KeyError(\"boom inside an asyncio task\")\n\nKeyError: 'boom inside an asyncio task'\n\n"
+  },
+  {
+   "t": 4129,
+   "kind": "until-not-seen",
+   "detail": "no console line matched /^SPIKE_DONE/ within 20000 ms"
+  }
+ ],
+ "requests": [
+  {
+   "t": 114,
+   "status": 200,
+   "url": "file://<scratchpad>/spikes/web/build/fail_asyncio.html"
+  },
+  {
+   "t": 124,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel.js"
+  },
+  {
+   "t": 150,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel.css"
+  },
+  {
+   "t": 150,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 319,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 338,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/import_hook.py"
+  },
+  {
+   "t": 338,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 422,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 456,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 561,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 580,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 2376,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 2699,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/images/click_to_start_114x14.png"
+  }
+ ],
+ "downloads": [],
+ "allowed": [],
+ "actions": [],
+ "filechoosers": [],
+ "passed": false,
+ "promptAt": 2823,
+ "clickedAt": 2827,
+ "state": {
+  "overlayText": "Traceback (most recent call last):\n\n  File \"/tmp/.pyxel/play/42_c5391023-92ad-4d11-b748-d7df631a3d81/fail_asyncio/main.py\", line 11, in bad_task\n    raise KeyError(\"boom inside an asyncio task\")\n\nKeyError: 'boom inside an asyncio task'\n\n",
+  "hasFatalError": false,
+  "initialized": true,
+  "canvas": {
+   "width": 960,
+   "height": 720,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": null,
+ "elapsedMs": 4165
+}

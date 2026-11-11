@@ -1,0 +1,160 @@
+{
+ "url": "http://127.0.0.1:8765/apps/fail_api.html",
+ "mirror": null,
+ "console": [
+  {
+   "t": 128,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 128,
+   "type": "log",
+   "text": "{command: play, name: fail_api.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIAO4Oa10sYEvPCQAAAAcAAAAfAAAAZmFpbF9hcG…haWxfYXBpL21haW4ucHlQSwUGAAAAAAQABAATAQAA+RgAAAAA}"
+  },
+  {
+   "t": 2015,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 2293,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 3023,
+   "type": "warning",
+   "text": "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)"
+  },
+  {
+   "t": 3061,
+   "type": "warning",
+   "text": "[.WebGL-0x86c00b71a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3073,
+   "type": "warning",
+   "text": "[.WebGL-0x86c00b71a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3088,
+   "type": "warning",
+   "text": "[.WebGL-0x86c00b71a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3123,
+   "type": "warning",
+   "text": "[.WebGL-0x86c00b71a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  },
+  {
+   "t": 3746,
+   "type": "error",
+   "text": "Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_263523fb-8303-468e-b016-f00eccedfe97/fail_api/main.py\", line 10, in update\n    pyxel.no_such_function(1, 2)\n    ^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: module 'pyxel' has no attribute 'no_such_function'\n"
+  }
+ ],
+ "failures": [
+  {
+   "t": 3746,
+   "kind": "console.error",
+   "detail": "Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_263523fb-8303-468e-b016-f00eccedfe97/fail_api/main.py\", line 10, in update\n    pyxel.no_such_function(1, 2)\n    ^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: module 'pyxel' has no attribute 'no_such_function'\n"
+  },
+  {
+   "t": 4368,
+   "kind": "pyxel-error-overlay",
+   "detail": "Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_263523fb-8303-468e-b016-f00eccedfe97/fail_api/main.py\", line 10, in update\n    pyxel.no_such_function(1, 2)\n    ^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: module 'pyxel' has no attribute 'no_such_function'\n"
+  },
+  {
+   "t": 4368,
+   "kind": "until-not-seen",
+   "detail": "no console line matched /^SPIKE_DONE/ within 20000 ms"
+  }
+ ],
+ "requests": [
+  {
+   "t": 112,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/apps/fail_api.html"
+  },
+  {
+   "t": 124,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.js"
+  },
+  {
+   "t": 130,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.css"
+  },
+  {
+   "t": 131,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 185,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 187,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/import_hook.py"
+  },
+  {
+   "t": 188,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 206,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 206,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 209,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 247,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 2020,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 2335,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/click_to_start_114x14.png"
+  }
+ ],
+ "downloads": [],
+ "allowed": [],
+ "actions": [],
+ "filechoosers": [],
+ "passed": false,
+ "promptAt": 2782,
+ "clickedAt": 2787,
+ "state": {
+  "overlayText": "Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_263523fb-8303-468e-b016-f00eccedfe97/fail_api/main.py\", line 10, in update\n    pyxel.no_such_function(1, 2)\n    ^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: module 'pyxel' has no attribute 'no_such_function'\n",
+  "hasFatalError": false,
+  "initialized": true,
+  "canvas": {
+   "width": 960,
+   "height": 720,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": null,
+ "elapsedMs": 4443
+}

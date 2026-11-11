@@ -1,0 +1,160 @@
+{
+ "url": "http://127.0.0.1:8765/apps/fail_draw.html",
+ "mirror": null,
+ "console": [
+  {
+   "t": 123,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 124,
+   "type": "log",
+   "text": "{command: play, name: fail_draw.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIAO4Oa10sYEvPCQAAAAcAAAAgAAAAZmFpbF9kcm…sX2RyYXcvbWFpbi5weVBLBQYAAAAABAAEABcBAADrGAAAAAA=}"
+  },
+  {
+   "t": 1883,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 2168,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 2877,
+   "type": "warning",
+   "text": "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)"
+  },
+  {
+   "t": 2913,
+   "type": "warning",
+   "text": "[.WebGL-0x172409895a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 2927,
+   "type": "warning",
+   "text": "[.WebGL-0x172409895a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 2954,
+   "type": "warning",
+   "text": "[.WebGL-0x172409895a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 2980,
+   "type": "warning",
+   "text": "[.WebGL-0x172409895a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  },
+  {
+   "t": 3605,
+   "type": "error",
+   "text": "Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_91d59b4f-8e13-4606-a778-f2a8a3119399/fail_draw/main.py\", line 16, in draw\n    raise ValueError(\"boom in draw at frame 20\")\nValueError: boom in draw at frame 20\n"
+  }
+ ],
+ "failures": [
+  {
+   "t": 3606,
+   "kind": "console.error",
+   "detail": "Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_91d59b4f-8e13-4606-a778-f2a8a3119399/fail_draw/main.py\", line 16, in draw\n    raise ValueError(\"boom in draw at frame 20\")\nValueError: boom in draw at frame 20\n"
+  },
+  {
+   "t": 4259,
+   "kind": "pyxel-error-overlay",
+   "detail": "Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_91d59b4f-8e13-4606-a778-f2a8a3119399/fail_draw/main.py\", line 16, in draw\n    raise ValueError(\"boom in draw at frame 20\")\nValueError: boom in draw at frame 20\n"
+  },
+  {
+   "t": 4259,
+   "kind": "until-not-seen",
+   "detail": "no console line matched /^SPIKE_DONE/ within 20000 ms"
+  }
+ ],
+ "requests": [
+  {
+   "t": 109,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/apps/fail_draw.html"
+  },
+  {
+   "t": 120,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.js"
+  },
+  {
+   "t": 126,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.css"
+  },
+  {
+   "t": 127,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 182,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/import_hook.py"
+  },
+  {
+   "t": 182,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 189,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 196,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 196,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 196,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 240,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 1889,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 2208,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/click_to_start_114x14.png"
+  }
+ ],
+ "downloads": [],
+ "allowed": [],
+ "actions": [],
+ "filechoosers": [],
+ "passed": false,
+ "promptAt": 2664,
+ "clickedAt": 2668,
+ "state": {
+  "overlayText": "Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_91d59b4f-8e13-4606-a778-f2a8a3119399/fail_draw/main.py\", line 16, in draw\n    raise ValueError(\"boom in draw at frame 20\")\nValueError: boom in draw at frame 20\n",
+  "hasFatalError": false,
+  "initialized": true,
+  "canvas": {
+   "width": 960,
+   "height": 720,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": null,
+ "elapsedMs": 4332
+}

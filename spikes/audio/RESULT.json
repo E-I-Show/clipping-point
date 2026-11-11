@@ -1,0 +1,308 @@
+{
+ "summary": "結論: 企画どおりの「長いループ音を鳴らし続けて Channel.detune / gain を毎 tick 書き換える」は、そのままでは効かない。detune と gain は「音符の鳴り始め」にしか読まれない（ソースと、実ミキサー出力の録音の両方で確認。ネイティブもブラウザも同じ）。\n対策は「長さ 1/60 秒の音符 1 個だけの音を loop=True で鳴らす」こと。これなら毎 tick の書き換えが次の音符（遅れ 10〜35 ms）で効き、音符の境目で位相は途切れない。MML の @GLI1{*,*} を付けると前の高さから滑らかにつながる。動かせる幅は実質無制限（-3600〜+4800 セントを実測）。スキールも同じ形（ノイズの 1/60 秒ループ + gain）で成り立つ。\nチャンネルは pyxel.channels に追加でき、8ch にしてもネイティブ・ブラウザとも動いた。4ch に縛らなければ、リプレイ中も BGM・エンジン・スキール・効果音を同時に鳴らせる。\nBGM と効果音は MML 文字列をコード内のデータとして持つのがよい（.pyxres は MML も Tone も保存しない）。gen_bgm は仮曲づくりに使える（同じ seed で同じ出力。出力を文字列として固定して持つ）。\nヘッドレスでは音の API は全部落ちずに呼べる。さらに環境変数 SDL_AUDIODRIVER=disk で実ミキサーの出力をファイルに録れるので、音の高さの自動テストが書ける。ブラウザ版は「click to start」を押すまで Python 自体が始まらず、押した後は AudioContext が running になる。\n音色の良し悪し（エンジンらしさ、スキールの聞こえ方、音量の釣り合い）は耳では確かめていない。波形の解析だけで、試聴用の WAV を残した。",
+ "confirmed": [
+  {
+   "claim": "音の API の形（Pyxel 3.0.1）。Channel: gain(float, 既定 0.125) / detune(int, セント) / play(snd, sec=0, loop=False, resume=False) / stop() / play_pos()。Tone: mode(0 波形表, 1 短周期ノイズ, 2 長周期ノイズ) / sample_bits(1-16, 既定 4) / wavetable(list) / gain。Sound: set(notes,tones,volumes,effects,speed) / mml(code) / pcm(file) / save(filename, sec, ffmpeg=False) / total_sec()。Music: set(*seqs) / save(...)。pyxel.play(ch, snd, sec, loop, resume) / playm(msc, sec, loop) / stop(ch=None) / play_pos(ch) / gen_bgm(preset, transp, instr, seed, play=False)。snd は番号・番号の list・Sound・Sound の list・MML 文字列のどれでもよい。既定の数は チャンネル 4、Tone 4、Sound 64、Music 8。既定の Tone は 0=三角波(32 サンプル 4bit, gain 1.0)、1=矩形 [1,0] gain 0.3、2=パルス [1,0,0,0] gain 0.3、3=長周期ノイズ gain 0.6。",
+   "evidence": "/usr/local/lib/python3.13/site-packages/pyxel/__init__.pyi の 1021〜1197 行と 1804〜1876 行を読んだ。exp/t01_headless_api.py で pyxel.NUM_* と len(pyxel.channels) など、既定 Tone の中身を実行して出力（exp/out_t01.json）。"
+  },
+  {
+   "claim": "Channel.detune と Channel.gain は、音符が鳴り始める瞬間にだけ読まれる。鳴っている最中の音符には効かない。",
+   "evidence": "ソース crates/pyxel-core/src/channel.rs（v3.0.1）: self.detune と self.gain を読むのは start_mml_note() だけ（621〜623 行。midi_note に detune/100 を足し、velocity = gain * volume_level）。PCM 再生だけは mix_pcm で毎回 gain を読む。実測（実ミキサー出力を SDL の disk ドライバで録音、exp/t03_live.py → exp/out_a03.json）: 16 秒の 1 音符を鳴らし detune を毎 tick 0→1200 に書き換えても、高さは 130.60〜130.84 Hz（幅 3.1 セント）のまま。ノイズの 1 音符で gain を 0.3→0 に下げても RMS は 4942→5716 と下がらない。ブラウザ版（ヘッドレス Chromium、ScriptProcessorNode の出力を横取りして録音、web2/）でも同じ: detune 0→2400 で高さは -2.3〜-1.1 セント、gain を 0 にしても RMS 約 5300 のまま（exp/out_a10.json）。"
+  },
+  {
+   "claim": "「長さ 1/60 秒の音符 1 個の音を loop=True で鳴らし、毎 tick detune を書く」方式なら回転数に追従する。",
+   "evidence": "exp/t03_live.py S2（Sound.set(\"c1\",\"0\",\"7\",\"n\",2) を loop）: detune を 2 秒で 0→2400 に上げると高さが追従し、指令との時間ずれ 21 ms、誤差 RMSE 10.7 セント、止めた後は 522.71 Hz（狙い 523.24 Hz、-1.7 セント）。MML 版（\"T600 Q100 @0 V127 O3 L24 C\"）でも同じ（exp/out_a06.json、out_a10.json）。ブラウザ版でも追従（最終値 2398.3 セント、ずれ 23 ms）。ループの折り返しのたびに音符が始まり直すので、そのたびに detune / gain が読まれる（channel.rs process() の should_loop の分岐）。"
+  },
+  {
+   "claim": "音符の境目で波形の位相は途切れない（プチ音の元になる飛びは出ない）。音量の変化は 0.8 ms かけてつながる。",
+   "evidence": "ソース voice.rs play_note(): 波形の読み位置 waveform_index を戻さず、残りクロックを新しい周波数に合わせて按分する（rescale_sample_remaining_clocks）。音符の頭では直前の gain から新しい gain へ NOTE_INTERP_CLOCKS（0.8 ms）で補間。実測: 1/60 秒ループの録音で隣り合うサンプルの最大差 / ピーク = 0.096〜0.102、鳴らしっぱなしの 1 音符で 0.086〜0.089（差は高さが 4 倍に上がった分の三角波の傾き 4*f/sr=0.095 と一致）。4 ms 窓の RMS が 0 に落ちる区間は無い。"
+  },
+  {
+   "claim": "MML のグライド @GLI1{*,*} を付けると、各音符が「前の音符の高さ」から「今の高さ」へ音符の長さをかけて滑る。ループをまたいでも前の高さを覚えている。",
+   "evidence": "ソース channel.rs start_mml_note(): glide_pending_params が (None, None) のとき offset = last_midi_note - midi_note、長さ = 音符の tick 数。last_midi_note は play() のときだけ消える。voice.rs Glide は半音単位で直線、tick ごとに更新。実測（1200 セント/秒で上げる、周期ごとの高さの飛び）: ネイティブ グライド無し p95 24 / 最大 43 セント → グライド有り(1/60 秒) p95 12 / 最大 17〜18 → グライド有り(3/60 秒) p95 10 / 最大 13〜15。ブラウザ: 無し p95 35 / 最大 65.5 → 有り(1/60) p95 15.9 / 最大 24.7 → 有り(3/60) p95 10.0 / 最大 12.9。旧形式の効果 \"s\"（slide）も同じ仕組みで p95 15.7 / 最大 21.6。"
+  },
+  {
+   "claim": "毎 tick ch.play(snd) で鳴らし直す方式も追従する（グライドは効かない）。",
+   "evidence": "exp/t03_live.py S3 と web2 の E: 16 秒の 1 音符を毎 tick detune を書いてから ch.play(LONG)。追従し、ずれはネイティブ 6〜33 ms、ブラウザ 9 ms。play() は last_midi_note を消すのでグライドは働かず、飛びはグライド無しと同じ（ブラウザ最大 69 セント）。呼び出しの重さは ch.play(Sound) が 0.53 µs、ch.play(MML 文字列) が 3.47 µs（ネイティブ、2 万回平均、exp/t11_misc.py）。"
+  },
+  {
+   "claim": "detune の使える幅は実質無制限（少なくとも -3600〜+4800 セント = 7 オクターブ）。高い音では周波数が段になる。式: 実際の周波数 = 1789773 / (round(1789773 / (f * L)) * L)（L は波形表の長さ。ノイズは L=1）。",
+   "evidence": "ソース: detune は i32、上下の制限無し。voice.rs update_sample_clocks: sample_clocks = round(clock_rate / frequency / samples_per_cycle)、clock_rate = 1,789,773。実測（基準 261.63 Hz の三角波 32 サンプル、exp/out_a03.json S4）: -3600→32.71 Hz(+0.2 セント)、-2400→65.42(+0.3)、-1200→130.68(-1.8)、0→261.35(-1.8)、+1200→522.71(-1.8)、+2400→1055.29(+14.4)、+3600→2071.5(-17.9)、+4800→4302.37(+47.4)。上の式の値（1055.3 / 2071.5 / 4302.3）と一致。detune に 1000000 を書いても例外は出ない。float を書くと TypeError。"
+  },
+  {
+   "claim": "音の書き換えが実際に出音へ反映される細かさは、音のコールバックの大きさで決まる。ネイティブは 512 サンプル = 23.2 ms、ブラウザは 1024 サンプル = 46.4 ms（どちらも 22,050 Hz）。",
+   "evidence": "ソース settings.rs: AUDIO_SAMPLE_RATE 22050、AUDIO_BUFFER_SAMPLES は emscripten で 1024、それ以外 512。audio.rs: コールバック 1 回でバッファ全体を描く。実測: ネイティブ（SDL_AUDIODRIVER=dummy）で play_pos の進み幅は 23.22 ms の 1 種類だけ（exp/out_t09.json）。ブラウザでは 120 tick（2 秒）の間に play_pos の値が 43 種類 = 毎秒 21.5 回。ブラウザ側は createScriptProcessor(1024, 0, 1)、AudioContext 44,100 Hz（web2/web_log.json の cap_info）。"
+  },
+  {
+   "claim": "Tone.gain と Tone.wavetable の書き換えは、鳴っている最中の音符にも 1/60 秒ごとに効く。",
+   "evidence": "ソース settings.rs VOICE_CONTROL_RATE = 60、voice.rs advance_control_clock → refresh_tone_state（コメント「Tone edits are polled at the control rate」）。実測（Tone.gain のみ）: 鳴らしっぱなしのノイズ 1 音符で pyxel.tones[3].gain を 0→0.6→0 と動かすと RMS が 86→5741→48 と追従（ネイティブ）、366→5525→1（ブラウザ）。wavetable の書き換えは重さだけ測った（64 要素の代入 1.1 µs）。"
+  },
+  {
+   "claim": "Tone で波形を自作できる。pyxel.tones は増やせる（8 個にして @4〜@7 を使えた）。波形表の長さは自由。",
+   "evidence": "examples/14_synthesizer.py（Tone 5 個、チャンネル 8 個に差し替えている）。proto/pyxel_audio.py で pyxel.tones.append(pyxel.Tone()) して 8 個にし、ネイティブとブラウザで実行（num_tones 8）。64 サンプルの波形表（1 周 = 4 ストローク 1 周期に点火の山 4 つ）を作り、Sound.save で WAV に出して解析: 900 / 3000 / 6000 / 7500 rpm で点火周波数（rpm/30）30.0 / 99.97 / 200.15 / 249.76 Hz、誤差 ±2 セント以内。山の高さを不ぞろいにした NA 用は点火周波数の半分の成分が -13 dB で出る。そろえたターボ用は出ない（exp/out_t08.json）。"
+  },
+  {
+   "claim": "ノイズの「高さ」は乱数列を進める速さ。短周期ノイズは 93 ステップで一周するので、速さ/93 の音程のあるブザー音になる。旧形式の音符はノイズだけ 2 オクターブ高く読まれる。",
+   "evidence": "ソース voice.rs: ノイズは samples_per_cycle = 1、短周期は tap 6。sound.rs emit_notes: 旧形式の C0 は波形表なら MIDI 36、ノイズなら MIDI 60。実測（Sound.save → スペクトル）: \"@6 O9 Y3600 B\"（短周期、速さ 127.8 kHz）の山は 1374 / 2749 / 4124 / 5499 Hz …で、127.84 kHz / 93 = 1374.6 Hz と一致。速さを高くするとエネルギーの大半が 11 kHz より上に逃げ、同じ gain でも RMS が小さい（gain 0.125・Tone gain 1.0 で RMS 754。長周期ノイズ O7C は 2343）。"
+  },
+  {
+   "claim": "スキール音: ノイズの 1/60 秒ループを鳴らし続けて Channel.gain を書き換える方式は成り立つ。",
+   "evidence": "exp/t03_live.py S6 と web2 の F（\"T600 Q100 @3 V127 O6 L24 C\" を loop、gain を 0→0.4→0）: RMS が指令に比例して動く。ネイティブ 64→7553（gain 0.393 のとき）→77、ブラウザ 289→7467→68。鳴らしっぱなしの 1 音符では効かない（上の項目）。"
+  },
+  {
+   "claim": "チャンネルは 4 個より増やせる。pyxel.channels.append(pyxel.Channel()) で 8 個にして、番号 4〜7 で鳴らせた（ネイティブとブラウザ）。",
+   "evidence": "examples/14_synthesizer.py が 8 チャンネルに差し替えている。exp/t03_live.py S8: 5 個目のチャンネルで \"O5 A\" を鳴らすと録音に 879.9 Hz が出た。proto をブラウザ版で実行: num_channels 8、メニュー中に鳴っているチャンネルが [4,5,6,7]、リプレイ中が [0,3,4,5]（web/result2_spike.json）。Python の例外無し。"
+  },
+  {
+   "claim": "出力の大きさは ピーク ≒ 32767 × Channel.gain × (V/127) × Tone.gain。全チャンネルの合計が 1.0 を超えると ±32767 で頭打ちになる（折り返しではない）。",
+   "evidence": "実測: gain 0.3 の三角波（Tone gain 1.0, V127）のピーク 9905（0.3×32767=9830、帯域制限の行き過ぎ +0.8%）。gain 0.5 を 4 チャンネル重ねた録音で 32767 と -32768 に張り付いた平らな区間が出る（例: 30309, 32048, 32767×5, -8412, -32768×5）。exp/t11_misc.py、exp/out_a11.json。この試験の波形は手違いでのこぎり波になっていたが、頭打ちの確認には影響しない。examples/14 のコメントにも「合計 1.0 以下に」とある。"
+  },
+  {
+   "claim": "MML の書き方（パーサのソースから）。T<bpm>（既定 120）/ Q<0-100>（音の長さの割合 %、既定 80）/ V<0-127>（既定 100）/ K<半音> 移調 / Y<セント> / @<n> Tone 番号 / O<-1〜9>（既定 4）と > < / L<長さ>（既定 4）/ 音名 CDEFGAB と # + - / 長さは 1,2,3,4,6,8,12,16,24,32,48,64,96,192 のどれか（192 の約数）と付点 / R 休符 / & タイ（同じ高さは 1 個の音符にまとまる。C&8 は長さの足し算）/ [ ... ]n 繰り返し（n を省くか 0 で無限）/ @ENVn{初期音量, tick, 音量, ...} / @VIBn{遅れ tick, 周期 tick, 深さセント} / @GLIn{セント|*, tick|*}（n は 1 以上。@ENV0 などで切る）。大文字小文字は問わず、空白は無視。1 tick = 1.25 / bpm 秒（4 分音符 = 48 tick）。",
+   "evidence": "crates/pyxel-core/src/mml_parser.rs と mml_command.rs を読んだ（範囲の定数、parse_length_ticks、parse_note、parse_envelope / vibrato / glide、bpm_to_clocks_per_tick）。実測: \"T120 Q100 @1 V127 O4 A1\" は 439.96 Hz、\"O2 C\" は 65.42 Hz。T600 の L24（8 tick）は 1/60 秒。誤りは例外になる: \"MML:15: Unexpected character 'Z'\"、\"Repeat start '[' has no matching ']'\"、\"Invalid note length '5'\"、\"'O' exceeds maximum 9\"（位置つき、exp/out_t08.json）。"
+  },
+  {
+   "claim": "旧形式（Sound.set）: 1 音符 = speed tick（毎秒 120 tick）、音は切れ目なし、c0 = 65.4 Hz（MIDI 36）、a2 = 440 Hz。speed=2 で 1/60 秒。",
+   "evidence": "sound.rs emit_fixed_params / emit_notes（SOUND_TICKS_PER_SECOND 120、gate 1.0）。実測: Sound.set(\"c0 a2\",\"t\",\"7\",\"n\",60) を WAV に出すと 65.42 Hz と 440.4 Hz。"
+  },
+  {
+   "claim": "効果音の MML の例を書き、WAV に出して長さと高さを確かめた。カウントダウン 440.0 Hz・0.20 秒、スタート 879.9 Hz・0.60 秒、接触 0.375 秒（ノイズの打撃 + 低い三角波）、変速 0.187 秒、縁石のループ 0.20 秒（25 ms 周期の低い矩形波の連打）。",
+   "evidence": "proto/sound_data.py の SFX と CURB_LOOP_MML。exp/t08_render.py が Sound.total_sec() と Sound.save の WAV を解析（exp/out_t08.json、WAV は exp/wav/sfx_*.wav）。"
+  },
+  {
+   "claim": "play(..., resume=True) は、鳴っていたループを一時的に割り込んで、終わると元のループに戻る。",
+   "evidence": "exp/t09_resume.py（SDL_AUDIODRIVER=dummy で play_pos を追跡）: 縁石ループ中に接触音を resume=True で鳴らすと、0.375 秒後もチャンネルは鳴り続け、位置がループ（0.2 秒周期）に戻る。割り込みを 2 回続けても戻る。無音から resume=True で鳴らすと 0.385 秒で終わる。resume 無しで鳴らすとループは戻らない。proto の全体デモの録音でも、接触の後の縁石区間の RMS が前と同じ（2712 対 3021）。"
+  },
+  {
+   "claim": "playm は Music の seq の番号 = チャンネル番号で鳴らし、空の seq のチャンネルには触らない。全パートを 1 回のロックの中で始めるのでずれない。playm が使えるのは pyxel.sounds の番号（0〜63）だけ。",
+   "evidence": "audio.rs play_music（空の seq を除外、AudioLock を 1 回）。music.rs set（チャンネル数まで空で埋める）。実測（exp/t09_resume.py E）: ch0 でエンジンのループを鳴らしたまま、seqs が [[],[],[],[],[4],[5],[],[]] の Music を playm すると、鳴っているのは [0, 4, 5]。"
+  },
+  {
+   "claim": "gen_bgm は使える。常に 4 本の MML 文字列を返し、使わないパートは音符の無い MML（total_sec 0.0）。パートの順は 旋律・ベース・副旋律など・ドラム。全パートの長さは同じで、preset により 11.2〜20.9 秒。同じ seed なら同じ出力。Tone は @0〜@3（既定の 4 つ）を使う。範囲外の引数は PanicException（BaseException の仲間）になり、Rust のバックトレースが出る。",
+   "evidence": "exp/t05_bgm.py（exp/out_t05.json）: 8 preset × 4 instr の表、同じ seed 2 回で一致、別 seed で不一致、gen_bgm(8,0,0,1) / (0,6,0,1) / (0,0,4,1) が PanicException。出力例と、3 曲分を proto/bgm_data.py に文字列で固定。pyxel.sounds[i].mml() に入れて Music.save で 8 秒の WAV が出た（exp/out_t05_menu.wav）。"
+  },
+  {
+   "claim": ".pyxres は旧形式の音（notes / tones / volumes / effects / speed）と Music の seq しか保存しない。MML、Tone（波形表）、チャンネルの gain / detune は保存されない。",
+   "evidence": "crates/pyxel-core/src/resource_data.rs の SoundData / MusicData / ResourceData を読んだ。"
+  },
+  {
+   "claim": "PCM（Sound.pcm で読んだ WAV / OGG）は高さを変えられない。",
+   "evidence": "channel.rs mix_pcm: サンプルをそのまま gain だけ掛けて足している。detune を読む箇所が無い。PCM の再生そのものは試していない。"
+  },
+  {
+   "claim": "ヘッドレス（音のデバイス無し）で音の API は全部落ちずに呼べる。ただし再生位置は進まない。",
+   "evidence": "exp/t01_headless_api.py: play / playm / stop / detune と gain の書き込み / MML 文字列の再生 / resume / gen_bgm / Sound.save / Music.save / total_sec がすべて成功、終了コード 0。play_pos は 300 回 flip しても (0, 0.0) のまま。例外になるもの: detune に float（TypeError）、誤った MML（Exception）、範囲外のチャンネル番号や音番号（ValueError）。Tone 番号が範囲外の MML は例外にならず Tone 0 で鳴る（channel.rs の or_else(tones.first())、実行でも例外無し）。「Failed to initialize audio device」は標準出力に出る。"
+  },
+  {
+   "claim": "環境変数 SDL_AUDIODRIVER=dummy を付けると、デバイスが無くても音のコールバックが実時間で動く（play_pos が進む）。SDL_AUDIODRIVER=disk と SDL_DISKAUDIOFILE=<ファイル> を付けると、実ミキサーの出力（全チャンネルの合成、16 bit・モノラル・22,050 Hz の生データ）がファイルに書かれる。",
+   "evidence": "exp/t02_sdl_driver.py: 既定では play_pos が (0, 0.0) のまま、dummy と disk では 0.65 秒で 0.650 まで進む。disk の出力は 19.8 秒の実行で 873,472 バイト = 19.81 秒分。先頭に鳴らした O7 C（2093 Hz）が 2090.9 Hz と測れた。Linux の pip 版で確認。"
+  },
+  {
+   "claim": "Sound.save / Music.save は 22,050 Hz・モノラル・16 bit の WAV を書く。新しいチャンネル（gain 0.125、detune 0、ループ再生）で描くので、Channel.detune / gain の効果は入らない。",
+   "evidence": "sound.rs save / music.rs save（Channel::new() を作って描く）。実行して wave モジュールで読んだ（sr 22050、1 秒で 22050 サンプル、gain 0.125 の矩形波でピーク 1285）。"
+  },
+  {
+   "claim": "ブラウザ版（ブリーフ 4b の手順）: 音の API（再生、detune と gain の毎 tick 書き換え、Tone の追加と書き換え、チャンネルの追加、playm、MML の効果音、resume、stop）を呼んで例外無し、結果は PASS。",
+   "evidence": "proto を pyxel package → app2html し、webrun.js（ヘッドレス Chromium、kitao.dev の写し）で実行。1140 tick の台本（メニュー → カウントダウン → 加速と変速 → スライド → 縁石と接触 → 路外 → 一時停止 → リプレイ → リザルト）を最後まで実行して SPIKE_DONE、failures 0（web/result2.json）。Python 3.14.2。コンソールの警告は「ScriptProcessorNode is deprecated」と WebGL の ReadPixels だけ。"
+  },
+  {
+   "claim": "ブラウザ版で音が出始める条件: ランタイムが「click to start」の絵を出し、画面のクリック・タッチ、または絵にフォーカスして Enter / Space が来るまで、アプリの Python は 1 行も実行されない。押した後に始まるので、AudioContext は running になる。",
+   "evidence": "pyxel.js: launchPyxel() が _waitForInput() を待ってから _executePyxelCommand() を呼ぶ（113 行、760〜800 行。body の click / touchstart と、絵の keydown Enter / Space）。実行: webrun.js --no-click では 15 秒待っても initialized が false、Python の出力無し。クリック有りでは audioContext.state が \"running\"、sampleRate 44100、currentTime が 19.0 秒まで進んだ（web/result2_spike.json）。"
+  },
+  {
+   "claim": "ブラウザ版の実際の出音（Pyxel が SDL2 経由で ScriptProcessorNode に渡した波形）を録って解析し、ネイティブと同じ振る舞いを確かめた。",
+   "evidence": "web2/capture_audio.js（createScriptProcessor を包んで出力を貯め、最後にダウンロードさせる）を webrun.js の --init-script で入れ、--downloads で web2/dl/webcap.raw（26.35 秒、44,100 Hz）を取得。exp/a10_cap.py で解析（exp/out_a10.json）。同じ台本をネイティブの disk ドライバでも録って並べた。"
+  },
+  {
+   "claim": "ロジックと音の出し方を分けた試作が、ネイティブ（ヘッドレス）とブラウザの両方で同じコードで動く。",
+   "evidence": "proto/audio_iface.py（pyxel を import しない。AudioFrame / CarAudio / 出来事の型、回転数→セント、音量の式、最も近い車の選び方）、proto/sound_data.py と bgm_data.py（データ）、proto/pyxel_audio.py（Pyxel 側）、proto/main.py（台本）。ネイティブの録音（exp/out_a07.json）: 頭打ち 0 サンプル、最大ピーク 9506 / 32767、アイドリング 900 rpm で 31.3 Hz が最強、7000 rpm で 233.4 Hz が最強（7000/30 = 233.3）、一時停止中の RMS 1、終了後 0。"
+  },
+  {
+   "claim": "最も近い車を選ぶ処理（行ったり来たりを防ぐ仕組みつき）が意図どおり動く。",
+   "evidence": "exp/t11_misc.py: NearestPicker(switch_ratio=0.8, min_hold_ticks=20)。車 1 が近づく台本で切り替えは 1 回だけ、74 tick 目（距離が相手の 0.8 倍を切った直後）。2 台が毎 tick 5% 差で入れ替わる入力では 200 tick で切り替え 0 回。assert で確認。"
+  }
+ ],
+ "recommendations": [
+  "【エンジン音の方式】ch0 で次の音を loop=True で鳴らし続ける: MML \"T600 Q100 @{tone} V127 @GLI1{*,*} O0 L24 C\"（T600 の L24 = 8 tick = 1/60 秒の音符 1 個。Q100 で切れ目なし。@GLI1{*,*} で前の高さから滑る）。毎 tick（60 Hz の update の中。draw ではない）に ch.detune = round(1200 * log2(rpm / 1962.19)) と ch.gain = ... を書く。1962.19 = 16.3516 Hz（O0 C）× 120。波形表の 1 周を「4 ストローク 1 周期（クランク 2 回転）」とするので、音符の周波数 = rpm / 120、点火の周波数 = rpm / 30。900 rpm で -1349 セント、7500 rpm で +2321 セント。detune は必ず int にする。タイ（&）で音符をつなぐと 1 個の音符にまとまって効かなくなるので使わない。",
+  "【方式の比較】(a) 1/60 秒ループ + グライド: 遅れ 17〜34 ms、1200 セント/秒の変化で段差 最大 18〜25 セント。毎 tick の仕事は属性 2 つの書き込みだけ。これを標準にする。(b) 同じでグライド無し: 遅れ 9〜23 ms、段差がネイティブ最大 43、ブラウザ最大 65 セント（46 ms ごとの階段）。(c) 音符を 3/60 秒にしてグライド: 段差 最大 13 セントで最も滑らかだが遅れ 54〜74 ms。ブラウザで段差が耳につくときの切り替え先としてデータで選べるようにしておく。(d) 毎 tick ch.play() で鳴らし直す: 遅れは最小（6〜33 ms）だがグライドが効かず (b) と同じ階段。(e) 回転数ごとに別の音を用意して鳴らし直す: (d) と同じで、高さが粗くなりデータが増えるだけ。採らない。(f) 録音した音（PCM）: 高さを変えられないので不可。",
+  "【音色】Tone を 4 番以降に足して使う（既定の 0〜3 は BGM と gen_bgm が使うので変えない）。エンジンは 64 サンプル・4 bit、1 周に点火の山 4 つ（鋭く立ち上がって減衰）。山の高さを [1.0, 0.72, 0.92, 0.6] のように不ぞろいにすると半分の次数の成分が出てゴロゴロした感じになる（NA 用）。そろえて丸くするとなめらか（ターボ用）。車ごとの違いは山の数・不ぞろいの度合い・減衰の鋭さで付ける。アクセルの開きは gain（閉 0.10 → 開 0.22 程度）で表す。さらに欲しければ、自車用と他車用に Tone を別々に持ち、波形表を開度で混ぜて書き換える（60 Hz で効く。代入 1.1 µs）。同じ Tone を 2 台で共有すると互いに書き換えてしまうので、チャンネルごとに Tone を分ける。",
+  "【アイドリングと変速】アイドリング: ロジックが出す回転数の下限（900 rpm など）をそのまま鳴らし、音側で detune に ±10〜15 セント・6 Hz 前後の揺れを足す（数値は試聴で決める）。変速: ロジックが出す回転数の落ち込み（例 0.62 倍 = -828 セント）をそのまま追わせる。グライドが 1 音符ぶん（17 ms 前後）でつなぐので階段にならない。変速の出来事で ch2 に変速音を鳴らし、アクセルが抜ける間は gain が自然に下がる。音側で回転数に 30〜50 ms の一次遅れを掛けるかどうかは試聴で決める。",
+  "【スキール音】ch1 で短周期ノイズの 1/60 秒ループ \"T600 Q100 @6 V127 O9 L24 Y3600 B\"（1374 Hz を基音とするブザー状の音）を、滑りの量がしきい値（0.15）を超えたら loop=True で鳴らし始め、毎 tick gain = 最大 0.30 × (slip - 0.15) / 0.85、detune = -300 + 500 × slip（滑るほど少し高く）を書く。しきい値を下回ったら stop。高い速さのノイズはエネルギーが逃げるので、エンジン（0.22）より大きい gain が要る。芝・グラベルは同じ ch1 で長周期ノイズ \"T600 Q100 @7 V127 O7 L24 C\" に切り替え、gain は最大 0.12 × min(速度/30, 1)。音程と gain は試聴で直す前提で、MML と数値をデータに出しておく。",
+  "【効果音（ch2）】読み込み時に pyxel.Sound() を作って .mml(code) しておき、鳴らすときは ch.play(sound, resume=True)。例: 接触 \"T120 Q100 @7 V127 @ENV1{127,8,40,16,0} O5 L16 C @0 @ENV2{120,24,0} O1 L8 G\"（0.375 秒）。変速 \"T120 Q100 @2 V100 @ENV1{127,4,0} O4 L32 G @1 V80 @ENV2{100,8,0} O2 L16 C\"（0.187 秒）。カウントダウン \"T150 Q100 @1 V100 @ENV1{127,20,100,4,0} O4 L8 A\"（440 Hz、0.2 秒）。スタート \"T150 Q100 @1 V110 @ENV1{127,60,100,12,0} O5 L8 A&8&8\"（880 Hz、0.6 秒）。縁石は乗っている間だけループ \"T600 Q60 @1 V90 O1 L32 [C R]8\" を loop=True で鳴らす。単発音を resume=True で鳴らせば、終わった後に縁石ループへ自動で戻る。強さ（接触の勢いなど）は鳴らす直前に ch.gain を書く（音符の頭で読まれる）。注意: 縁石を降りたときに ch.stop() すると鳴っている単発音も切れる。単発音の残り tick 数を自分で数え、残っている間は stop を遅らせる（この組み合わせは未試験）。",
+  "【BGM】メニュー・リプレイ・リザルトの 3 曲を「パートごとの MML 文字列の list」としてコード内のデータ（Python のモジュール。例 bgm_data.py）に持つ。.pyxres は MML も Tone も保存できないので使わない。仮曲は gen_bgm（例: メニュー preset 0 instr 3、リプレイ preset 4 の旋律とベース、リザルト preset 2 instr 0）を開発時に 1 回だけ呼び、出力を文字列として固定する。実行時に gen_bgm を呼ばない（引数を誤ると PanicException）。読み込み時に pyxel.sounds[base + k].mml(part) で音のバンクに入れ（1 曲 4 枠。0〜3 / 4〜7 / 8〜11）、pyxel.musics[n].set(...) でチャンネルに割り当てる。曲の切り替えは pyxel.stop() の後に pyxel.playm(n, loop=True)。ループは loop=True で、全パートの total_sec() が等しいことを読み込み時に検査する。イントロ付きにしたいときは MML の \"イントロ [本体]\"（回数無しの繰り返し = 無限）を使い loop=False にする。",
+  "【チャンネルの割り当て: 8ch 案（推奨）】起動時に pyxel.channels を 8 個に増やす。ch0 自車エンジン / ch1 タイヤ（スキール・路外）/ ch2 効果音 / ch3 近い他車のエンジン / ch4〜7 BGM。Music の seq は先頭に空の list を 4 つ置いて [[],[],[],[],[旋律],[ベース],[副],[ドラム]] とする。こうすると走行中・リプレイ中・メニューで割り当てが変わらず、リプレイ中もスキールと効果音を落とさずに済む。リプレイの BGM は旋律とベースの 2 本だけにして音を空ける。「内蔵 4ch」という見た目の縛りを守りたい場合の 4ch 案: 走行中 ch0 エンジン / ch1 タイヤ / ch2 効果音 / ch3 他車。リプレイ中 ch0 エンジン / ch1・ch2 BGM（seqs = [[],[旋律],[ベース],[]]）/ ch3 他車（スキールと効果音は無し）。メニューとリザルトは ch0〜2 BGM、ch3 決定音。どちらにするかはユーザーに確認する。",
+  "【音量の配分】ピーク ≒ 32767 × Channel.gain × V/127 × Tone.gain で、合計が 1.0 を超えると頭打ちで歪む。8ch 案の初期値: エンジン 0.22、タイヤ 最大 0.30（短周期ノイズは実効が小さい）、効果音 0.20、他車 0.14 × 距離の減衰、BGM 各 0.07。この値で全体デモのピークは 9506 / 32767、頭打ち 0。最終的な釣り合いは試聴で決める。",
+  "【他車のエンジン音（ch3）】毎 tick、聞き手（走行中は自車、リプレイ中はカメラ）からの距離が最も近い車を選ぶ。行ったり来たりを防ぐため、今の車から替えるのは「20 tick 以上たっていて、新しい車の距離が今の車の 0.8 倍未満」のときだけ。音量は距離で減衰（6 m 以内 1.0、そこから 6/d、60 m で 0 になるよう (1 - d/60) を掛ける）。車が替わると回転数が飛ぶが、グライドが 1 音符でつなぐ。エンジンの種類が違えば、その種類のループ音に鳴らし直す。Tone は自車用と別の番号を使う。",
+  "【ロジックと分ける口】ロジック（pyxel を import しない）は毎 tick、AudioFrame を 1 個出すだけにする: scene（MENU / RACE / REPLAY / RESULT / SILENT）、paused、player: CarAudio、others: list[CarAudio]、events: list[(Ev, 強さ 0〜1)]。CarAudio = engine（音色の番号）、rpm、throttle（0〜1）、slip（0〜1。しきい値処理はロジック側）、on_curb、off_road、speed、dist（聞き手までの距離）。Ev = CONTACT / SHIFT / COUNT_BEEP / COUNT_GO。回転数→セント、音量の式、最も近い車の選び方は pyxel 無しの関数として置き、単体テストする。Pyxel 側は PyxelAudio.update(frame) の 1 か所だけ。場面が変わったら pyxel.stop() して BGM を切り替え、連続音は「鳴っていなければ鳴らし直し、detune と gain を書く」、出来事は ch2 に鳴らす。出来事の list は表示用の出力であり、ゲームの状態や指紋に入れない。",
+  "【リプレイで音を再現するための記録】リプレイは状態の記録から音を作り直すので、音に要る値を記録に含める。回転数 8 bit は直線だとアイドリング付近で 1 段 59 セントになる（8000 rpm / 255 = 31 rpm 刻み、900 rpm で）。対数にする: rpm = 600 × (8000/600)^(b/255) なら全域で 1 段 17.6 セント（計算値）。予備の 8 bit を「アクセル開度 4 bit + 滑りの量 4 bit」に充てるとスキールと音量を再現できる。変速はギアの値の変化から、接触・縁石・路外はフラグのビットから出来事を作り直す。20 Hz の記録は tick ごとに補間してから音側へ渡す。スロー・早送り・巻き戻し・一時停止の間は、エンジンとタイヤの音を止め、出来事を捨てる（BGM は続ける）という扱いを提案する。",
+  "【テスト】(1) 煙テストとヘッドレス実行は音のデバイス無しのままでよい（全 API が落ちない）。(2) ロジックや進行を play_pos に頼らせない（デバイスが無いと進まず、単発音が永久に「鳴っている」ことになる）。長さは tick で数える。(3) 読み込み時の検査: 全 MML を Sound.mml() に通す（誤りは位置つきの例外）。Tone 番号が範囲内か自前で調べる（範囲外は黙って Tone 0 になる）。BGM の全パートの total_sec() が等しく 0 より大きいこと。チャンネル数と Tone 数。(4) 音の高さの回帰テスト: SDL_AUDIODRIVER=disk と SDL_DISKAUDIOFILE を付けた別プロセスで台本を流し、生データを解析して「7000 rpm のとき 233 Hz 前後が最強」「一時停止中は無音」「頭打ち 0」を確かめる（exp/a07_demo.py が雛形）。(5) Sound.save は detune / gain を反映しないので、音色と単発音の確認だけに使う。(6) 結果行には目印（SPIKE_RESULT など）を付ける。「Failed to initialize audio device」が標準出力に混ざる。",
+  "【ブラウザ版】音を出すための追加の仕掛けは要らない（ランタイムの click to start がユーザー操作を受けてから Python を始める）。タイトル画面は「最初のクリックはランタイムが使う」前提で作る。音の反映が 46 ms 刻みなので、エンジン音はグライド付きを必須とする。",
+  "【試聴の依頼】音色と釣り合いは耳で決めるしかない。exp/wav/demo_full_scenario.wav（19 秒。メニュー BGM → カウントダウン → アイドリングと空ぶかし → 3 段の加速と変速 → スライド → 縁石と接触 → 路外 → 一時停止 → リプレイ → リザルト）と、exp/wav/engine_*.wav、noise_*.wav、sfx_*.wav をユーザーに聞いてもらい、エンジンらしさ・スキールの高さ・音量を決める段を設計に入れる。"
+ ],
+ "numbers": [
+  {
+   "what": "鳴らしっぱなしの 1 音符に detune を書き続けたときの高さの動き",
+   "value": "ネイティブ 130.60〜130.84 Hz（幅 3.1 セント）。ブラウザ -2.3〜-1.1 セント。指令は 0→1200 / 0→2400 セント",
+   "conditions": "三角波 O3 C（130.81 Hz）の 16 秒の 1 音符。ネイティブは SDL disk ドライバの録音（1.5 秒、176 周期）、ブラウザはヘッドレス Chromium で ScriptProcessorNode の出力を録音。各 1 回"
+  },
+  {
+   "what": "1/60 秒ループ方式の追従（グライド無し）",
+   "value": "ネイティブ: 遅れ 9〜21 ms、誤差 RMSE 10.7〜13.2 セント、周期ごとの段差 p95 24 / 最大 43 セント。ブラウザ: 遅れ 23 ms、RMSE 17.6、段差 p95 35.0 / 最大 65.5 セント。最終値 2398.3 セント（狙い 2400）",
+   "conditions": "detune を 2 秒で 0→2400（1200 セント/秒）。三角波、ゼロ交差で周期ごとの周波数を測定。ネイティブ 3 回、ブラウザ 1 回。遅れは録音した波形に対する値で、実機の出力の遅れは含まない"
+  },
+  {
+   "what": "1/60 秒ループ + グライド @GLI1{*,*}",
+   "value": "ネイティブ: 遅れ 17〜34 ms、段差 p95 12 / 最大 17〜18 セント。ブラウザ: 遅れ 30 ms、段差 p95 15.9 / 最大 24.7 セント",
+   "conditions": "同上。MML \"T600 Q100 @0 V127 @GLI1{*,*} O3 L24 C\"。ネイティブ 2 回、ブラウザ 1 回"
+  },
+  {
+   "what": "3/60 秒ループ + グライド",
+   "value": "ネイティブ: 遅れ 54〜74 ms、段差 p95 10〜11 / 最大 13〜15 セント。ブラウザ: 遅れ 64 ms、段差 p95 10.0 / 最大 12.9 セント",
+   "conditions": "同上。MML の L8（24 tick = 50 ms）"
+  },
+  {
+   "what": "毎 tick ch.play() で鳴らし直す方式",
+   "value": "ネイティブ: 遅れ 6〜33 ms、段差 最大 47 セント。ブラウザ: 遅れ 9 ms、段差 p95 37 / 最大 69 セント",
+   "conditions": "同上。16 秒の 1 音符を毎 tick 鳴らし直し"
+  },
+  {
+   "what": "detune の幅と高さの誤差",
+   "value": "-3600: 32.71 Hz (+0.2) / -2400: 65.42 (+0.3) / -1200: 130.68 (-1.8) / 0: 261.35 (-1.8) / +1200: 522.71 (-1.8) / +2400: 1055.29 (+14.4) / +3600: 2071.5 (-17.9) / +4800: 4302.37 (+47.4)。括弧内は狙いとの差（セント）",
+   "conditions": "基準 261.63 Hz、三角波 32 サンプル、各 0.5 秒保持、ネイティブ disk ドライバの録音、ゼロ交差で測定。式 1789773 / (round(1789773/(f*32))*32) と一致"
+  },
+  {
+   "what": "エンジン用の波形表（64 サンプル）での点火周波数",
+   "value": "900 rpm: 30.00 Hz / 3000: 99.97 / 6000: 200.15 / 7500: 249.76（狙い rpm/30 との差 ±2 セント以内）。全体デモの録音では 7000 rpm で 233.4 Hz が最強",
+   "conditions": "Sound.save の WAV（MML の Y で detune を代用）を自己相関で測定。全体デモは実チャンネルの detune 書き換えを disk ドライバで録音"
+  },
+  {
+   "what": "音のコールバックの刻み",
+   "value": "ネイティブ 23.22 ms（512 サンプル）。ブラウザ 46.4 ms 相当（2 秒で play_pos が 43 種類 = 毎秒 21.5 回）。ブラウザの ScriptProcessorNode は 1024 フレーム / 44,100 Hz",
+   "conditions": "ネイティブは SDL_AUDIODRIVER=dummy で play_pos を 0.5 ms ごとに読んで進み幅を集計（43 回、1 種類）。ブラウザはヘッドレス Chromium"
+  },
+  {
+   "what": "channel.gain の書き換え（ノイズ）",
+   "value": "1/60 秒ループ: gain 0→0.4→0 で RMS 64→7553→77（ネイティブ）、289→7467→68（ブラウザ）。鳴らしっぱなしの 1 音符: gain 0.3→0 でも RMS 4942→5716（ネイティブ）、約 5300 のまま（ブラウザ）",
+   "conditions": "既定の Tone 3（長周期ノイズ）、O6 C、50〜100 ms 窓の RMS"
+  },
+  {
+   "what": "Tone.gain の書き換え（鳴らしっぱなしの 1 音符）",
+   "value": "0→0.6→0 で RMS 86→5741→48（ネイティブ）、366→5525→1（ブラウザ）",
+   "conditions": "同上、channel.gain 0.3"
+  },
+  {
+   "what": "スキール候補のスペクトル",
+   "value": "\"@6 O9 Y3600 B\": 山が 1374 / 2749 / 4124 / 5499 / 6873 Hz、重心 4925 Hz、RMS 754。\"@6 O9 Y2400 B\": 688 Hz の倍音列、RMS 1050。\"@6 O9 B\": 170 Hz 間隔と 5280 Hz、RMS 2235。長周期 \"@7 O7 C\": 重心 1900 Hz、RMS 2343",
+   "conditions": "Sound.save（gain 0.125、Tone gain 1.0、ただし @7 は 0.6）の WAV を 16384 点の FFT で解析"
+  },
+  {
+   "what": "ピークと gain の関係",
+   "value": "gain 0.3 の三角波でピーク 9905（32767×0.3 = 9830）。gain 0.125 の矩形波（Tone gain 0.3）でピーク 1285。合計 2.0 で ±32767 / -32768 に張り付き",
+   "conditions": "ネイティブ disk ドライバの録音と Sound.save"
+  },
+  {
+   "what": "全体デモの音量",
+   "value": "最大ピーク 9506 / 32767、頭打ち 0 サンプル。区間ごとの RMS: メニュー BGM 1085、アイドリング 1320、加速 3346〜3426、スライド 2872、縁石 3021、接触 3168、路外 3383、一時停止 1、リプレイ 3089、リザルト 1241",
+   "conditions": "proto/main.py の 1140 tick の台本、8ch、ネイティブ disk ドライバの録音 1 回（19.0 秒）"
+  },
+  {
+   "what": "呼び出しの重さ（ネイティブ）",
+   "value": "detune と gain の書き込み 1 組 0.20 µs（log2 の計算込みで 0.5 µs）、ch.play(Sound) 0.53 µs、ch.play(MML 文字列) 3.47 µs、play_pos 0.18 µs、64 要素の波形表の代入 1.1 µs、PyxelAudio.update 全体 3.4 µs（連続で回したとき）/ 44〜50 µs（実時間の 60 fps ループの中、p99 100〜120 µs）",
+   "conditions": "このコンテナ、CPython 3.13、ヘッドレス。2 万〜10 万回の平均。update は自車 + 他車 5 台"
+  },
+  {
+   "what": "呼び出しの重さ（ブラウザ）",
+   "value": "PyxelAudio.update 平均 99〜110 µs、中央値 100 µs、p99 300〜1500 µs、最大 2.1〜5.9 ms。初期化（チャンネルと Tone の追加、MML 20 本ほどの解析）4.9〜5.5 ms",
+   "conditions": "ヘッドレス Chromium、Pyodide（Python 3.14.2）、1140 tick を 3 回。ブラウザの時計の刻みが 0.1 ms なので平均は粗い"
+  },
+  {
+   "what": "ブラウザ版の AudioContext",
+   "value": "state \"running\"、sampleRate 44100、baseLatency 0.01 秒、outputLatency 0.032 秒、19 秒の実行で currentTime 19.01 秒",
+   "conditions": "ヘッドレス Chromium（音のデバイス無し）。クリック後。実機の値ではない"
+  },
+  {
+   "what": "gen_bgm の出力",
+   "value": "常に 4 本。1 本 112〜638 文字。長さ: preset 0,1,5 = 14.44 秒 / 2 = 20.87 / 3 = 18.46 / 4 = 16.0 / 6 = 12.8 / 7 = 11.23 秒。使わないパートは 43〜44 文字で 0.0 秒",
+   "conditions": "seed 7、transp 0、8 preset × 4 instr。Sound.total_sec() で測定"
+  },
+  {
+   "what": "効果音の長さと高さ",
+   "value": "接触 0.375 秒 / 変速 0.187 秒 / カウントダウン 0.200 秒・440.0 Hz / スタート 0.600 秒・879.9 Hz / 縁石ループ 0.200 秒",
+   "conditions": "proto/sound_data.py の MML。total_sec() と Sound.save の WAV"
+  },
+  {
+   "what": "MML の時間の式",
+   "value": "1 tick = 1.25 / bpm 秒。T600 で 2.083 ms、L24 = 8 tick = 16.67 ms（1/60 秒）、L8 = 24 tick = 50 ms。旧形式は 1 tick = 1/120 秒で speed=2 が 1/60 秒",
+   "conditions": "mml_parser.rs の bpm_to_clocks_per_tick と TICKS_PER_QUARTER_NOTE=48、settings.rs の SOUND_TICKS_PER_SECOND=120 から計算。1/60 秒ループの実測で整合"
+  },
+  {
+   "what": "リプレイの回転数 8 bit の刻み（計算値）",
+   "value": "直線（8000 rpm / 255）: 900 rpm で 1 段 59 セント、6000 rpm で 9 セント。対数（600〜8000 rpm）: 全域で 1 段 17.6 セント",
+   "conditions": "計算のみ。1200*log2(1 + 31.4/rpm) と 1200*log2(8000/600)/255"
+  }
+ ],
+ "unverified": [
+  "音の聞こえ方は一切、耳で確かめていない（この環境に音の出口が無い）。エンジンらしく聞こえるか、スキールの音程と質感、効果音の印象、BGM との音量の釣り合い、1/60 秒ループの段差やグライドが耳でどう聞こえるかは未確認。確かめたのは周波数・スペクトル・音量の数値だけ。",
+  "実機のブラウザでの出音の遅れ（操作から音まで）。録音は ScriptProcessorNode に渡した時点の波形で、その先の遅れは測れていない。ヘッドレス Chromium が返した outputLatency 0.032 秒は実機の値ではない。",
+  "スマホのブラウザ・Safari での動作（click to start 後に音が出るか、ScriptProcessorNode が非推奨であることの影響）。Chromium 以外では動かしていない。",
+  "タブが裏に回ったとき・復帰したときの音の振る舞い（止まるか、たまった分が一気に鳴るか）。",
+  "8 チャンネルにしたときのミキサー（Rust / WebAssembly 側）の負荷。Python 側の呼び出し時間しか測っていない。低い性能の端末での音切れの有無も未確認。",
+  "ブラウザ版の update の時間は時計の刻みが 0.1 ms のため粗い。最大 2〜6 ms の跳ねが 1 回ずつ出た原因（初回の実行か、ごみ集めか）は調べていない。",
+  "Tone.wavetable を鳴っている最中に書き換えたときの出音（アクセル開度で波形を混ぜる案）。ソースと代入の重さだけ確認し、録音での確認はしていない。",
+  "PCM（Sound.pcm）の再生は試していない。高さを変えられないことはソースの読み取りだけ。",
+  "4ch 案を通しで動かしてはいない。確かめたのは仕組み（空の seq のチャンネルに playm が触らないこと）だけで、試作は 8ch 案で動かした。",
+  "縁石ループの上に単発音を resume=True で重ねている最中に、縁石を降りて stop() したときの扱い（単発音も切れるはず）。試していない。",
+  "アイドリングの揺れ、回転数への一次遅れ、レブリミッターやターボの音などの演出は試作に入れていない。提案だけ。",
+  "リプレイの回転数を対数 8 bit にする案、予備 8 bit を開度と滑りに充てる案は計算と提案だけで、リプレイ担当の調査とは突き合わせていない。",
+  "gen_bgm の出力がネイティブとブラウザで同じかは確かめていない（出力を文字列で固定して持つので設計上は不要）。生成された曲がゲームに合うかも未確認。",
+  "SDL_AUDIODRIVER=dummy / disk が使えることは Linux の pip 版（Pyxel 3.0.1）でしか確かめていない。macOS や Windows の配布物では未確認。",
+  "disk ドライバの録音と Python 側の時刻の合わせは先頭の目印音で行っており、ずれは 4〜20 ms あった。遅れの数値にはこの程度の不確かさがある。",
+  "追加で入れたパッケージは無い。解析には環境に既にあった numpy 2.5.3 を使った。ブラウザの実行は先行スパイクの webrun.js と写しをそのまま使った。"
+ ],
+ "artifacts": [
+  "<scratchpad>/spikes/audio/proto/audio_iface.py",
+  "<scratchpad>/spikes/audio/proto/sound_data.py",
+  "<scratchpad>/spikes/audio/proto/bgm_data.py",
+  "<scratchpad>/spikes/audio/proto/pyxel_audio.py",
+  "<scratchpad>/spikes/audio/proto/main.py",
+  "<scratchpad>/spikes/audio/exp/wavtool.py",
+  "<scratchpad>/spikes/audio/exp/t01_headless_api.py",
+  "<scratchpad>/spikes/audio/exp/t02_sdl_driver.py",
+  "<scratchpad>/spikes/audio/exp/t03_live.py",
+  "<scratchpad>/spikes/audio/exp/a03_analyze.py",
+  "<scratchpad>/spikes/audio/exp/out_a03.json",
+  "<scratchpad>/spikes/audio/exp/t05_bgm.py",
+  "<scratchpad>/spikes/audio/exp/out_t05.json",
+  "<scratchpad>/spikes/audio/exp/t06_glide.py",
+  "<scratchpad>/spikes/audio/exp/out_a06.json",
+  "<scratchpad>/spikes/audio/exp/a07_demo.py",
+  "<scratchpad>/spikes/audio/exp/out_a07.json",
+  "<scratchpad>/spikes/audio/exp/t08_render.py",
+  "<scratchpad>/spikes/audio/exp/out_t08.json",
+  "<scratchpad>/spikes/audio/exp/t09_resume.py",
+  "<scratchpad>/spikes/audio/exp/out_t09.json",
+  "<scratchpad>/spikes/audio/exp/a10_cap.py",
+  "<scratchpad>/spikes/audio/exp/out_a10.json",
+  "<scratchpad>/spikes/audio/exp/t11_misc.py",
+  "<scratchpad>/spikes/audio/exp/out_t11.json",
+  "<scratchpad>/spikes/audio/exp/t12_cost.py",
+  "<scratchpad>/spikes/audio/exp/wav/demo_full_scenario.wav",
+  "<scratchpad>/spikes/audio/exp/wav",
+  "<scratchpad>/spikes/audio/web/app.html",
+  "<scratchpad>/spikes/audio/web/result2.json",
+  "<scratchpad>/spikes/audio/web/result2_spike.json",
+  "<scratchpad>/spikes/audio/web/result_noclick.json",
+  "<scratchpad>/spikes/audio/web2/capture_audio.js",
+  "<scratchpad>/spikes/audio/web2/app/main.py",
+  "<scratchpad>/spikes/audio/web2/web_log.json",
+  "<scratchpad>/spikes/audio/web2/dl/webcap.raw",
+  "<scratchpad>/spikes/audio/src_ref/channel.rs",
+  "<scratchpad>/spikes/audio/src_ref/voice.rs",
+  "<scratchpad>/spikes/audio/src_ref/audio.rs",
+  "<scratchpad>/spikes/audio/src_ref/sound.rs",
+  "<scratchpad>/spikes/audio/src_ref/mml_parser.rs",
+  "<scratchpad>/spikes/audio/src_ref/settings.rs",
+  "<scratchpad>/spikes/audio/src_ref/resource_data.rs"
+ ],
+ "report_path": ""
+}

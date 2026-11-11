@@ -1,0 +1,60 @@
+{
+ "platform": "linux",
+ "python": "3.13.18",
+ "N": 84,
+ "world_build_ms": 74.3,
+ "tris": {
+  "ground": 6272,
+  "track": 4400,
+  "props": 82,
+  "sprites_total": 168,
+  "cars": 1620
+ },
+ "results": {
+  "ground_first/cull1/chase": {
+   "median_ms": 3.337,
+   "p95_ms": 5.819,
+   "max_ms": 18.14
+  },
+  "ground_first/cull1/bumper": {
+   "median_ms": 2.813,
+   "p95_ms": 3.611,
+   "max_ms": 4.964
+  },
+  "ground_first/cull1/tv_tele": {
+   "median_ms": 3.237,
+   "p95_ms": 3.783,
+   "max_ms": 4.238
+  },
+  "ground_first/cull1/tv_wide": {
+   "median_ms": 5.816,
+   "p95_ms": 6.322,
+   "max_ms": 8.564
+  },
+  "ground_first/cull0/chase": {
+   "median_ms": 3.358,
+   "p95_ms": 4.566,
+   "max_ms": 4.8
+  },
+  "ground_first/cull0/bumper": {
+   "median_ms": 3.167,
+   "p95_ms": 4.418,
+   "max_ms": 4.847
+  },
+  "ground_first/cull0/tv_tele": {
+   "median_ms": 3.71,
+   "p95_ms": 4.735,
+   "max_ms": 4.96
+  },
+  "ground_first/cull0/tv_wide": {
+   "median_ms": 4.245,
+   "p95_ms": 5.722,
+   "max_ms": 6.072
+  },
+  "moving_chase_full_frame(update poses+visibility+bg+3d+hud)": {
+   "median_ms": 3.792,
+   "p95_ms": 4.792,
+   "max_ms": 19.022
+  }
+ }
+}

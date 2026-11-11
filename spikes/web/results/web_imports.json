@@ -1,0 +1,1050 @@
+{
+ "url": "http://127.0.0.1:8765/apps/imports.html",
+ "mirror": null,
+ "console": [
+  {
+   "t": 121,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 121,
+   "type": "log",
+   "text": "{command: play, name: imports.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIAEMPa10sYEvPCQAAAAcAAAAeAAAAaW1wb3J0cy…faW5zaWRlL3N1Yi5weVBLBQYAAAAABgAGAKIBAAAnHgAAAAA=}"
+  },
+  {
+   "t": 1869,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 2125,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 2781,
+   "type": "log",
+   "text": "INFO before pyxel.init cwd=/pyxel_working_directory sys.path=[\"/tmp/.pyxel/play/42_5d03f8a2-79e4-4d4d-bf5c-5387545ffb81/imports\", \"\", \"/lib/python314.zip\", \"/lib/python3.14/lib-dynload\", \"/lib/python3.14/site-packages\"]"
+  },
+  {
+   "t": 2781,
+   "type": "log",
+   "text": "IMPORT_BEGIN math"
+  },
+  {
+   "t": 2781,
+   "type": "log",
+   "text": "IMPORT_END math"
+  },
+  {
+   "t": 2782,
+   "type": "log",
+   "text": "IMPORT_BEGIN random"
+  },
+  {
+   "t": 2787,
+   "type": "log",
+   "text": "IMPORT_END random"
+  },
+  {
+   "t": 2787,
+   "type": "log",
+   "text": "IMPORT_BEGIN struct"
+  },
+  {
+   "t": 2790,
+   "type": "log",
+   "text": "IMPORT_END struct"
+  },
+  {
+   "t": 2791,
+   "type": "log",
+   "text": "IMPORT_BEGIN zlib"
+  },
+  {
+   "t": 2791,
+   "type": "log",
+   "text": "IMPORT_END zlib"
+  },
+  {
+   "t": 2791,
+   "type": "log",
+   "text": "IMPORT_BEGIN json"
+  },
+  {
+   "t": 2791,
+   "type": "log",
+   "text": "IMPORT_END json"
+  },
+  {
+   "t": 2791,
+   "type": "log",
+   "text": "IMPORT_BEGIN base64"
+  },
+  {
+   "t": 2791,
+   "type": "log",
+   "text": "IMPORT_END base64"
+  },
+  {
+   "t": 2791,
+   "type": "log",
+   "text": "IMPORT_BEGIN binascii"
+  },
+  {
+   "t": 2791,
+   "type": "log",
+   "text": "IMPORT_END binascii"
+  },
+  {
+   "t": 2791,
+   "type": "log",
+   "text": "IMPORT_BEGIN hashlib"
+  },
+  {
+   "t": 2796,
+   "type": "log",
+   "text": "IMPORT_END hashlib"
+  },
+  {
+   "t": 2796,
+   "type": "log",
+   "text": "IMPORT_BEGIN array"
+  },
+  {
+   "t": 2798,
+   "type": "log",
+   "text": "IMPORT_END array"
+  },
+  {
+   "t": 2798,
+   "type": "log",
+   "text": "IMPORT_BEGIN time"
+  },
+  {
+   "t": 2798,
+   "type": "log",
+   "text": "IMPORT_END time"
+  },
+  {
+   "t": 2798,
+   "type": "log",
+   "text": "IMPORT_BEGIN dataclasses"
+  },
+  {
+   "t": 2798,
+   "type": "log",
+   "text": "IMPORT_END dataclasses"
+  },
+  {
+   "t": 2798,
+   "type": "log",
+   "text": "IMPORT_BEGIN enum"
+  },
+  {
+   "t": 2798,
+   "type": "log",
+   "text": "IMPORT_END enum"
+  },
+  {
+   "t": 2802,
+   "type": "log",
+   "text": "IMPORT_BEGIN typing"
+  },
+  {
+   "t": 2802,
+   "type": "log",
+   "text": "IMPORT_END typing"
+  },
+  {
+   "t": 2802,
+   "type": "log",
+   "text": "IMPORT_BEGIN collections"
+  },
+  {
+   "t": 2802,
+   "type": "log",
+   "text": "IMPORT_END collections"
+  },
+  {
+   "t": 2802,
+   "type": "log",
+   "text": "IMPORT_BEGIN itertools"
+  },
+  {
+   "t": 2802,
+   "type": "log",
+   "text": "IMPORT_END itertools"
+  },
+  {
+   "t": 2802,
+   "type": "log",
+   "text": "IMPORT_BEGIN functools"
+  },
+  {
+   "t": 2802,
+   "type": "log",
+   "text": "IMPORT_END functools"
+  },
+  {
+   "t": 2802,
+   "type": "log",
+   "text": "IMPORT_BEGIN bisect"
+  },
+  {
+   "t": 2802,
+   "type": "log",
+   "text": "IMPORT_END bisect"
+  },
+  {
+   "t": 2802,
+   "type": "log",
+   "text": "IMPORT_BEGIN heapq"
+  },
+  {
+   "t": 2802,
+   "type": "log",
+   "text": "IMPORT_END heapq"
+  },
+  {
+   "t": 2802,
+   "type": "log",
+   "text": "IMPORT_BEGIN io"
+  },
+  {
+   "t": 2802,
+   "type": "log",
+   "text": "IMPORT_END io"
+  },
+  {
+   "t": 2802,
+   "type": "log",
+   "text": "IMPORT_BEGIN os"
+  },
+  {
+   "t": 2802,
+   "type": "log",
+   "text": "IMPORT_END os"
+  },
+  {
+   "t": 2802,
+   "type": "log",
+   "text": "IMPORT_BEGIN re"
+  },
+  {
+   "t": 2802,
+   "type": "log",
+   "text": "IMPORT_END re"
+  },
+  {
+   "t": 2802,
+   "type": "log",
+   "text": "IMPORT_BEGIN copy"
+  },
+  {
+   "t": 2802,
+   "type": "log",
+   "text": "IMPORT_END copy"
+  },
+  {
+   "t": 2802,
+   "type": "log",
+   "text": "IMPORT_BEGIN pickle"
+  },
+  {
+   "t": 2805,
+   "type": "log",
+   "text": "IMPORT_END pickle"
+  },
+  {
+   "t": 2806,
+   "type": "log",
+   "text": "IMPORT_BEGIN gzip"
+  },
+  {
+   "t": 2822,
+   "type": "log",
+   "text": "IMPORT_END gzip"
+  },
+  {
+   "t": 2822,
+   "type": "log",
+   "text": "IMPORT_BEGIN zipfile"
+  },
+  {
+   "t": 2822,
+   "type": "log",
+   "text": "IMPORT_END zipfile"
+  },
+  {
+   "t": 2822,
+   "type": "log",
+   "text": "IMPORT_BEGIN datetime"
+  },
+  {
+   "t": 2825,
+   "type": "log",
+   "text": "IMPORT_END datetime"
+  },
+  {
+   "t": 2826,
+   "type": "log",
+   "text": "IMPORT_BEGIN statistics"
+  },
+  {
+   "t": 2907,
+   "type": "log",
+   "text": "IMPORT_END statistics"
+  },
+  {
+   "t": 2907,
+   "type": "log",
+   "text": "IMPORT_BEGIN fractions"
+  },
+  {
+   "t": 2907,
+   "type": "log",
+   "text": "IMPORT_END fractions"
+  },
+  {
+   "t": 2907,
+   "type": "log",
+   "text": "IMPORT_BEGIN decimal"
+  },
+  {
+   "t": 2908,
+   "type": "log",
+   "text": "IMPORT_END decimal"
+  },
+  {
+   "t": 2908,
+   "type": "log",
+   "text": "IMPORT_BEGIN operator"
+  },
+  {
+   "t": 2908,
+   "type": "log",
+   "text": "IMPORT_END operator"
+  },
+  {
+   "t": 2908,
+   "type": "log",
+   "text": "IMPORT_BEGIN abc"
+  },
+  {
+   "t": 2909,
+   "type": "log",
+   "text": "IMPORT_END abc"
+  },
+  {
+   "t": 2909,
+   "type": "log",
+   "text": "IMPORT_BEGIN contextlib"
+  },
+  {
+   "t": 2909,
+   "type": "log",
+   "text": "IMPORT_END contextlib"
+  },
+  {
+   "t": 2909,
+   "type": "log",
+   "text": "IMPORT_BEGIN weakref"
+  },
+  {
+   "t": 2909,
+   "type": "log",
+   "text": "IMPORT_END weakref"
+  },
+  {
+   "t": 2910,
+   "type": "log",
+   "text": "IMPORT_BEGIN types"
+  },
+  {
+   "t": 2910,
+   "type": "log",
+   "text": "IMPORT_END types"
+  },
+  {
+   "t": 2910,
+   "type": "log",
+   "text": "IMPORT_BEGIN numbers"
+  },
+  {
+   "t": 2910,
+   "type": "log",
+   "text": "IMPORT_END numbers"
+  },
+  {
+   "t": 2910,
+   "type": "log",
+   "text": "IMPORT_BEGIN cmath"
+  },
+  {
+   "t": 2911,
+   "type": "log",
+   "text": "IMPORT_END cmath"
+  },
+  {
+   "t": 2911,
+   "type": "log",
+   "text": "IMPORT_BEGIN string"
+  },
+  {
+   "t": 2912,
+   "type": "log",
+   "text": "IMPORT_END string"
+  },
+  {
+   "t": 2912,
+   "type": "log",
+   "text": "IMPORT_BEGIN textwrap"
+  },
+  {
+   "t": 2912,
+   "type": "log",
+   "text": "IMPORT_END textwrap"
+  },
+  {
+   "t": 2912,
+   "type": "log",
+   "text": "IMPORT_BEGIN traceback"
+  },
+  {
+   "t": 2912,
+   "type": "log",
+   "text": "IMPORT_END traceback"
+  },
+  {
+   "t": 2912,
+   "type": "log",
+   "text": "IMPORT_BEGIN logging"
+  },
+  {
+   "t": 2912,
+   "type": "log",
+   "text": "IMPORT_END logging"
+  },
+  {
+   "t": 2912,
+   "type": "log",
+   "text": "IMPORT_BEGIN warnings"
+  },
+  {
+   "t": 2912,
+   "type": "log",
+   "text": "IMPORT_END warnings"
+  },
+  {
+   "t": 2912,
+   "type": "log",
+   "text": "IMPORT_BEGIN platform"
+  },
+  {
+   "t": 2942,
+   "type": "log",
+   "text": "Attempting to fetch '_wmi/__init__.py'"
+  },
+  {
+   "t": 2947,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 2947,
+   "type": "log",
+   "text": "Attempting to fetch '_wmi.py'"
+  },
+  {
+   "t": 2950,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 2951,
+   "type": "log",
+   "text": "IMPORT_END platform"
+  },
+  {
+   "t": 2951,
+   "type": "log",
+   "text": "IMPORT_BEGIN uuid"
+  },
+  {
+   "t": 2951,
+   "type": "log",
+   "text": "IMPORT_END uuid"
+  },
+  {
+   "t": 2951,
+   "type": "log",
+   "text": "IMPORT_BEGIN tempfile"
+  },
+  {
+   "t": 2951,
+   "type": "log",
+   "text": "IMPORT_END tempfile"
+  },
+  {
+   "t": 2952,
+   "type": "log",
+   "text": "IMPORT_BEGIN pathlib"
+  },
+  {
+   "t": 2952,
+   "type": "log",
+   "text": "IMPORT_END pathlib"
+  },
+  {
+   "t": 2953,
+   "type": "log",
+   "text": "IMPORT_BEGIN csv"
+  },
+  {
+   "t": 2963,
+   "type": "log",
+   "text": "IMPORT_END csv"
+  },
+  {
+   "t": 2964,
+   "type": "log",
+   "text": "IMPORT_BEGIN tomllib"
+  },
+  {
+   "t": 2988,
+   "type": "log",
+   "text": "IMPORT_END tomllib"
+  },
+  {
+   "t": 2988,
+   "type": "log",
+   "text": "IMPORT_BEGIN asyncio"
+  },
+  {
+   "t": 2989,
+   "type": "log",
+   "text": "IMPORT_END asyncio"
+  },
+  {
+   "t": 2989,
+   "type": "log",
+   "text": "IMPORT_BEGIN unittest"
+  },
+  {
+   "t": 3194,
+   "type": "log",
+   "text": "IMPORT_END unittest"
+  },
+  {
+   "t": 3195,
+   "type": "log",
+   "text": "IMPORT_BEGIN ctypes"
+  },
+  {
+   "t": 3228,
+   "type": "log",
+   "text": "IMPORT_END ctypes"
+  },
+  {
+   "t": 3228,
+   "type": "log",
+   "text": "IMPORT_BEGIN sqlite3"
+  },
+  {
+   "t": 3233,
+   "type": "log",
+   "text": "IMPORT_END sqlite3"
+  },
+  {
+   "t": 3233,
+   "type": "log",
+   "text": "IMPORT_BEGIN ssl"
+  },
+  {
+   "t": 3233,
+   "type": "log",
+   "text": "IMPORT_END ssl"
+  },
+  {
+   "t": 3233,
+   "type": "log",
+   "text": "IMPORT_BEGIN lzma"
+  },
+  {
+   "t": 3233,
+   "type": "log",
+   "text": "IMPORT_END lzma"
+  },
+  {
+   "t": 3233,
+   "type": "log",
+   "text": "IMPORT_BEGIN bz2"
+  },
+  {
+   "t": 3234,
+   "type": "log",
+   "text": "IMPORT_END bz2"
+  },
+  {
+   "t": 3234,
+   "type": "log",
+   "text": "IMPORT_BEGIN multiprocessing"
+  },
+  {
+   "t": 3234,
+   "type": "log",
+   "text": "IMPORT_END multiprocessing"
+  },
+  {
+   "t": 3234,
+   "type": "log",
+   "text": "IMPORT_BEGIN threading"
+  },
+  {
+   "t": 3234,
+   "type": "log",
+   "text": "IMPORT_END threading"
+  },
+  {
+   "t": 3234,
+   "type": "log",
+   "text": "IMPORT_BEGIN socket"
+  },
+  {
+   "t": 3234,
+   "type": "log",
+   "text": "IMPORT_END socket"
+  },
+  {
+   "t": 3236,
+   "type": "log",
+   "text": "IMPORT_BEGIN urllib.request"
+  },
+  {
+   "t": 3481,
+   "type": "log",
+   "text": "IMPORT_END urllib.request"
+  },
+  {
+   "t": 3481,
+   "type": "log",
+   "text": "IMPORT_BEGIN tkinter"
+  },
+  {
+   "t": 3481,
+   "type": "log",
+   "text": "Attempting to fetch 'tkinter/__init__.py'"
+  },
+  {
+   "t": 3485,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 3485,
+   "type": "log",
+   "text": "Attempting to fetch 'tkinter.py'"
+  },
+  {
+   "t": 3487,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 3488,
+   "type": "log",
+   "text": "IMPORT_END tkinter"
+  },
+  {
+   "t": 3488,
+   "type": "log",
+   "text": "IMPORT_BEGIN js"
+  },
+  {
+   "t": 3488,
+   "type": "log",
+   "text": "IMPORT_END js"
+  },
+  {
+   "t": 3489,
+   "type": "log",
+   "text": "IMPORT_BEGIN pyodide"
+  },
+  {
+   "t": 3489,
+   "type": "log",
+   "text": "IMPORT_END pyodide"
+  },
+  {
+   "t": 3489,
+   "type": "log",
+   "text": "IMPORT_BEGIN pyodide.ffi"
+  },
+  {
+   "t": 3489,
+   "type": "log",
+   "text": "IMPORT_END pyodide.ffi"
+  },
+  {
+   "t": 3489,
+   "type": "log",
+   "text": "IMPORT_BEGIN pyodide.http"
+  },
+  {
+   "t": 3508,
+   "type": "log",
+   "text": "IMPORT_END pyodide.http"
+  },
+  {
+   "t": 3508,
+   "type": "log",
+   "text": "IMPORT_BEGIN micropip"
+  },
+  {
+   "t": 3508,
+   "type": "log",
+   "text": "Attempting to fetch 'micropip/__init__.py'"
+  },
+  {
+   "t": 3511,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 3511,
+   "type": "log",
+   "text": "Attempting to fetch 'micropip.py'"
+  },
+  {
+   "t": 3514,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 3514,
+   "type": "log",
+   "text": "IMPORT_END micropip"
+  },
+  {
+   "t": 3514,
+   "type": "log",
+   "text": "IMPORT_BEGIN numpy"
+  },
+  {
+   "t": 3515,
+   "type": "log",
+   "text": "Attempting to fetch 'numpy/__init__.py'"
+  },
+  {
+   "t": 3517,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 3518,
+   "type": "log",
+   "text": "Attempting to fetch 'numpy.py'"
+  },
+  {
+   "t": 3520,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 3520,
+   "type": "log",
+   "text": "IMPORT_END numpy"
+  },
+  {
+   "t": 3520,
+   "type": "log",
+   "text": "IMPORT_BEGIN pkg_inside"
+  },
+  {
+   "t": 3521,
+   "type": "log",
+   "text": "IMPORT_END pkg_inside"
+  },
+  {
+   "t": 3521,
+   "type": "log",
+   "text": "IMPORT_BEGIN pkg_inside.sub"
+  },
+  {
+   "t": 3522,
+   "type": "log",
+   "text": "IMPORT_END pkg_inside.sub"
+  },
+  {
+   "t": 3524,
+   "type": "log",
+   "text": "RESULT_JSON imports [{\"module\": \"math\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"random\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"struct\", \"ok\": true, \"error\": null, \"ms\": 0.2, \"already_loaded\": true}, {\"module\": \"zlib\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"json\", \"ok\": true, \"error\": null, \"ms\": 0.1, \"already_loaded\": true}, {\"module\": \"base64\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"binascii\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"hashlib\", \"ok\": true, \"error\": null, \"ms\": 7.7, \"already_loaded\": false}, {\"module\": \"array\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"time\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"dataclasses\", \"ok\": true, \"error\": null, \"ms\": 0.1, \"already_loaded\": true}, {\"module\": \"enum\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"typing\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"collections\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"itertools\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"functools\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"bisect\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"heapq\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"io\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"os\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"re\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"copy\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"pickle\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"gzip\", \"ok\": true, \"error\": null, \"ms\": 19.6, \"already_loaded\": false}, {\"module\": \"zipfile\", \"ok\": true, \"error\": null, \"ms\": 0.1, \"already_loaded\": true}, {\"module\": \"datetime\", \"ok\": true, \"error\": null, \"ms\": 2.7, \"already_loaded\": false}, {\"module\": \"statistics\", \"ok\": true, \"error\": null, \"ms\": 81.1, \"already_loaded\": false}, {\"module\": \"fractions\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"decimal\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"operator\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"abc\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"contextlib\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"weakref\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"types\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"numbers\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"cmath\", \"ok\": true, \"error\": null, \"ms\": 0.3, \"already_loaded\": false}, {\"module\": \"string\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"textwrap\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"traceback\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"logging\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"warnings\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"platform\", \"ok\": true, \"error\": null, \"ms\": 37.9, \"already_loaded\": false}, {\"module\": \"uuid\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"tempfile\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"pathlib\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"csv\", \"ok\": true, \"error\": null, \"ms\": 10.6, \"already_loaded\": false}, {\"module\": \"tomllib\", \"ok\": true, \"error\": null, \"ms\": 24.3, \"already_loaded\": false}, {\"module\": \"asyncio\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"unittest\", \"ok\": true, \"error\": null, \"ms\": 205.5, \"already_loaded\": false}, {\"module\": \"ctypes\", \"ok\": true, \"error\": null, \"ms\": 33.1, \"already_loaded\": false}, {\"module\": \"sqlite3\", \"ok\": true, \"error\": null, \"ms\": 4.0, \"already_loaded\": false}, {\"module\": \"ssl\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"lzma\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"bz2\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"multiprocessing\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"threading\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"socket\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"urllib.request\", \"ok\": true, \"error\": null, \"ms\": 245.0, \"already_loaded\": false}, {\"module\": \"tkinter\", \"ok\": false, \"error\": \"ModuleNotFoundError: No module named 'tkinter'\", \"ms\": 6.4, \"already_loaded\": false}, {\"module\": \"js\", \"ok\": true, \"error\": null, \"ms\": 0.2, \"already_loaded\": false}, {\"module\": \"pyodide\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"pyodide.ffi\", \"ok\": true, \"error\": null, \"ms\": 0.0, \"already_loaded\": true}, {\"module\": \"pyodide.http\", \"ok\": true, \"error\": null, \"ms\": 18.3, \"already_loaded\": false}, {\"module\": \"micropip\", \"ok\": false, \"error\": \"ModuleNotFoundError: No module named 'micropip'\", \"ms\": 6.2, \"already_loaded\": false}, {\"module\": \"numpy\", \"ok\": false, \"error\": \"ModuleNotFoundError: No module named 'numpy'\", \"ms\": 5.6, \"already_loaded\": false}, {\"module\": \"pkg_inside\", \"ok\": true, \"error\": null, \"ms\": 0.5, \"already_loaded\": false}, {\"module\": \"pkg_inside.sub\", \"ok\": true, \"error\": null, \"ms\": 0.5, \"already_loaded\": false}]"
+  },
+  {
+   "t": 3601,
+   "type": "warning",
+   "text": "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)"
+  },
+  {
+   "t": 3635,
+   "type": "warning",
+   "text": "[.WebGL-0x85c10846400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3648,
+   "type": "warning",
+   "text": "[.WebGL-0x85c10846400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3676,
+   "type": "warning",
+   "text": "[.WebGL-0x85c10846400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3706,
+   "type": "warning",
+   "text": "[.WebGL-0x85c10846400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  },
+  {
+   "t": 3732,
+   "type": "log",
+   "text": "INFO after pyxel.init cwd=/tmp/.pyxel/play/42_5d03f8a2-79e4-4d4d-bf5c-5387545ffb81/imports"
+  },
+  {
+   "t": 3733,
+   "type": "log",
+   "text": "IMPORT_BEGIN late_missing_module"
+  },
+  {
+   "t": 3733,
+   "type": "log",
+   "text": "INFO late import failed as expected: No module named 'late_missing_module'"
+  },
+  {
+   "t": 3734,
+   "type": "log",
+   "text": "IMPORT_END late_missing_module"
+  },
+  {
+   "t": 3803,
+   "type": "log",
+   "text": "RESULT_JSON zlib {\"in\": 500000, \"out\": 3681, \"compress_ms\": 4.0, \"decompress_ms\": 0.7, \"ok\": true}"
+  },
+  {
+   "t": 3821,
+   "type": "log",
+   "text": "SPIKE_DONE"
+  }
+ ],
+ "failures": [],
+ "requests": [
+  {
+   "t": 106,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/apps/imports.html"
+  },
+  {
+   "t": 117,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.js"
+  },
+  {
+   "t": 122,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.css"
+  },
+  {
+   "t": 123,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 178,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 180,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/import_hook.py"
+  },
+  {
+   "t": 183,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 195,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 195,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 195,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 222,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 1873,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 2163,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/click_to_start_114x14.png"
+  },
+  {
+   "t": 2947,
+   "status": 404,
+   "url": "http://127.0.0.1:8765/apps/_wmi/__init__.py"
+  },
+  {
+   "t": 2949,
+   "status": 404,
+   "url": "http://127.0.0.1:8765/apps/_wmi.py"
+  },
+  {
+   "t": 3485,
+   "status": 404,
+   "url": "http://127.0.0.1:8765/apps/tkinter/__init__.py"
+  },
+  {
+   "t": 3487,
+   "status": 404,
+   "url": "http://127.0.0.1:8765/apps/tkinter.py"
+  },
+  {
+   "t": 3511,
+   "status": 404,
+   "url": "http://127.0.0.1:8765/apps/micropip/__init__.py"
+  },
+  {
+   "t": 3514,
+   "status": 404,
+   "url": "http://127.0.0.1:8765/apps/micropip.py"
+  },
+  {
+   "t": 3517,
+   "status": 404,
+   "url": "http://127.0.0.1:8765/apps/numpy/__init__.py"
+  },
+  {
+   "t": 3520,
+   "status": 404,
+   "url": "http://127.0.0.1:8765/apps/numpy.py"
+  }
+ ],
+ "downloads": [],
+ "allowed": [
+  {
+   "t": 2947,
+   "kind": "http",
+   "detail": "404 http://127.0.0.1:8765/apps/_wmi/__init__.py"
+  },
+  {
+   "t": 2947,
+   "kind": "console.error",
+   "detail": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 2949,
+   "kind": "http",
+   "detail": "404 http://127.0.0.1:8765/apps/_wmi.py"
+  },
+  {
+   "t": 2950,
+   "kind": "console.error",
+   "detail": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 3485,
+   "kind": "http",
+   "detail": "404 http://127.0.0.1:8765/apps/tkinter/__init__.py"
+  },
+  {
+   "t": 3485,
+   "kind": "console.error",
+   "detail": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 3487,
+   "kind": "http",
+   "detail": "404 http://127.0.0.1:8765/apps/tkinter.py"
+  },
+  {
+   "t": 3487,
+   "kind": "console.error",
+   "detail": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 3511,
+   "kind": "http",
+   "detail": "404 http://127.0.0.1:8765/apps/micropip/__init__.py"
+  },
+  {
+   "t": 3511,
+   "kind": "console.error",
+   "detail": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 3514,
+   "kind": "http",
+   "detail": "404 http://127.0.0.1:8765/apps/micropip.py"
+  },
+  {
+   "t": 3514,
+   "kind": "console.error",
+   "detail": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 3517,
+   "kind": "http",
+   "detail": "404 http://127.0.0.1:8765/apps/numpy/__init__.py"
+  },
+  {
+   "t": 3517,
+   "kind": "console.error",
+   "detail": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 3520,
+   "kind": "http",
+   "detail": "404 http://127.0.0.1:8765/apps/numpy.py"
+  },
+  {
+   "t": 3520,
+   "kind": "console.error",
+   "detail": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  }
+ ],
+ "actions": [],
+ "filechoosers": [],
+ "passed": true,
+ "promptAt": 2617,
+ "clickedAt": 2621,
+ "state": {
+  "overlayText": null,
+  "hasFatalError": false,
+  "initialized": true,
+  "canvas": {
+   "width": 960,
+   "height": 720,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": 3821,
+ "elapsedMs": 4211
+}

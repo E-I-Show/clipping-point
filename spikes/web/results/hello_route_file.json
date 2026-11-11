@@ -1,0 +1,212 @@
+{
+ "url": "file://<scratchpad>/spikes/web/build/hello.html",
+ "mirror": "mirror",
+ "console": [
+  {
+   "t": 159,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 160,
+   "type": "log",
+   "text": "{command: play, name: hello.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIAOsMa10sYEvPCQAAAAcAAAAcAAAAaGVsbG8vLn…AaGVsbG8vbWFpbi5weVBLBQYAAAAAAgACAIUAAAC/AQAAAAA=}"
+  },
+  {
+   "t": 2468,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 2901,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 3219,
+   "type": "log",
+   "text": "Attempting to fetch '_wmi/__init__.py'"
+  },
+  {
+   "t": 3223,
+   "type": "error",
+   "text": "Access to XMLHttpRequest at 'file://<scratchpad>/spikes/web/build/_wmi/__init__.py' from origin 'null' has been blocked by CORS policy: Cross origin requests are only supported for protocol schemes: chrome, chrome-untrusted, data, http, https."
+  },
+  {
+   "t": 3224,
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_FAILED"
+  },
+  {
+   "t": 3225,
+   "type": "log",
+   "text": "Attempting to fetch '_wmi.py'"
+  },
+  {
+   "t": 3227,
+   "type": "error",
+   "text": "Access to XMLHttpRequest at 'file://<scratchpad>/spikes/web/build/_wmi.py' from origin 'null' has been blocked by CORS policy: Cross origin requests are only supported for protocol schemes: chrome, chrome-untrusted, data, http, https."
+  },
+  {
+   "t": 3228,
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_FAILED"
+  },
+  {
+   "t": 3334,
+   "type": "warning",
+   "text": "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)"
+  },
+  {
+   "t": 3338,
+   "type": "log",
+   "text": "HELLO sys.platform=emscripten version=3.14.2 impl=CPython"
+  },
+  {
+   "t": 3338,
+   "type": "log",
+   "text": "HELLO pyxel.VERSION=3.0.1"
+  },
+  {
+   "t": 3376,
+   "type": "warning",
+   "text": "[.WebGL-0x2c1406ce5c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3393,
+   "type": "warning",
+   "text": "[.WebGL-0x2c1406ce5c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3406,
+   "type": "warning",
+   "text": "[.WebGL-0x2c1406ce5c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3427,
+   "type": "warning",
+   "text": "[.WebGL-0x2c1406ce5c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  },
+  {
+   "t": 4286,
+   "type": "log",
+   "text": "SPIKE_DONE frame=30"
+  }
+ ],
+ "failures": [
+  {
+   "t": 3223,
+   "kind": "console.error",
+   "detail": "Access to XMLHttpRequest at 'file://<scratchpad>/spikes/web/build/_wmi/__init__.py' from origin 'null' has been blocked by CORS policy: Cross origin requests are only supported for protocol schemes: chrome, chrome-untrusted, data, http, https."
+  },
+  {
+   "t": 3224,
+   "kind": "requestfailed",
+   "detail": "file://<scratchpad>/spikes/web/build/_wmi/__init__.py net::ERR_FAILED"
+  },
+  {
+   "t": 3225,
+   "kind": "console.error",
+   "detail": "Failed to load resource: net::ERR_FAILED"
+  },
+  {
+   "t": 3227,
+   "kind": "console.error",
+   "detail": "Access to XMLHttpRequest at 'file://<scratchpad>/spikes/web/build/_wmi.py' from origin 'null' has been blocked by CORS policy: Cross origin requests are only supported for protocol schemes: chrome, chrome-untrusted, data, http, https."
+  },
+  {
+   "t": 3227,
+   "kind": "requestfailed",
+   "detail": "file://<scratchpad>/spikes/web/build/_wmi.py net::ERR_FAILED"
+  },
+  {
+   "t": 3228,
+   "kind": "console.error",
+   "detail": "Failed to load resource: net::ERR_FAILED"
+  }
+ ],
+ "requests": [
+  {
+   "t": 133,
+   "status": 200,
+   "url": "file://<scratchpad>/spikes/web/build/hello.html"
+  },
+  {
+   "t": 153,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel.js"
+  },
+  {
+   "t": 166,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel.css"
+  },
+  {
+   "t": 176,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 363,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 363,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/import_hook.py"
+  },
+  {
+   "t": 380,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 484,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 537,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 635,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 656,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 2577,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 2952,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/images/click_to_start_114x14.png"
+  }
+ ],
+ "downloads": [],
+ "passed": false,
+ "promptAt": 3017,
+ "clickedAt": 3031,
+ "state": {
+  "overlayText": null,
+  "hasFatalError": false,
+  "initialized": true,
+  "canvas": {
+   "width": 960,
+   "height": 720,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": 4286,
+ "elapsedMs": 4691
+}

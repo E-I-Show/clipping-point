@@ -1,0 +1,62 @@
+{
+ "cube_batch": {
+  "frames": 120,
+  "rows": [
+   {
+    "textured": false,
+    "tris": 512,
+    "draw_ms": 0.87
+   },
+   {
+    "textured": false,
+    "tris": 2048,
+    "draw_ms": 1.107
+   },
+   {
+    "textured": false,
+    "tris": 4050,
+    "draw_ms": 1.437
+   },
+   {
+    "textured": false,
+    "tris": 8192,
+    "draw_ms": 2.074
+   },
+   {
+    "textured": true,
+    "tris": 512,
+    "draw_ms": 0.995
+   },
+   {
+    "textured": true,
+    "tris": 2048,
+    "draw_ms": 1.298
+   },
+   {
+    "textured": true,
+    "tris": 4050,
+    "draw_ms": 1.696
+   },
+   {
+    "textured": true,
+    "tris": 8192,
+    "draw_ms": 2.429
+   }
+  ],
+  "distinct_colors_on_screen": [
+   5,
+   12,
+   13
+  ],
+  "cls_plus_40_text_ms": 0.042
+ },
+ "cube_live": {
+  "frames": 150,
+  "draw_mean_ms": 2.467,
+  "draw_median_ms": 2.4,
+  "draw_max_ms": 4.4,
+  "update_interval_mean_ms": 33.266,
+  "update_interval_median_ms": 33.3,
+  "update_interval_max_ms": 34.8
+ }
+}

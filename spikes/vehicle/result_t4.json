@@ -1,0 +1,2506 @@
+{
+ "exit": [
+  {
+   "car": "tsubame",
+   "throttle": 1.0,
+   "tcs": false,
+   "v0_kmh": 53.5,
+   "beta0_deg": 0.62,
+   "dv_kmh_1.5s": 11.8,
+   "peak_beta_deg": 0.6,
+   "t_front_past_peak": null,
+   "t_rear_past_peak": null,
+   "t_beta_gt_25deg": null,
+   "max_drive_util": 1.38,
+   "ran_wide_m_at_end": 5.57,
+   "verdict": "understeer / runs wide",
+   "rows": {
+    "0.5s": {
+     "speed_kmh": 57.3,
+     "yaw_ratio": 0.73,
+     "curv_ratio": 0.68,
+     "beta_deg": 0.6,
+     "sy_front": 0.47,
+     "sy_rear": 0.2,
+     "util": [
+      1.29,
+      0.32,
+      0.0,
+      0.0
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "1.0s": {
+     "speed_kmh": 61.4,
+     "yaw_ratio": 0.72,
+     "curv_ratio": 0.62,
+     "beta_deg": 0.4,
+     "sy_front": 0.51,
+     "sy_rear": 0.2,
+     "util": [
+      1.28,
+      0.32,
+      0.0,
+      0.0
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "1.5s": {
+     "speed_kmh": 65.3,
+     "yaw_ratio": 0.7,
+     "curv_ratio": 0.57,
+     "beta_deg": 0.1,
+     "sy_front": 0.56,
+     "sy_rear": 0.21,
+     "util": [
+      1.33,
+      0.33,
+      0.0,
+      0.0
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "2.0s": {
+     "speed_kmh": 69.1,
+     "yaw_ratio": 0.67,
+     "curv_ratio": 0.52,
+     "beta_deg": -0.1,
+     "sy_front": 0.6,
+     "sy_rear": 0.22,
+     "util": [
+      1.38,
+      0.33,
+      0.0,
+      0.0
+     ],
+     "boost": 0.0,
+     "gear": 2
+    }
+   },
+   "tcs_axle": false
+  },
+  {
+   "car": "tsubame",
+   "throttle": 0.5,
+   "tcs": false,
+   "v0_kmh": 53.5,
+   "beta0_deg": 0.62,
+   "dv_kmh_1.5s": 5.9,
+   "peak_beta_deg": 0.7,
+   "t_front_past_peak": null,
+   "t_rear_past_peak": null,
+   "t_beta_gt_25deg": null,
+   "max_drive_util": 0.78,
+   "ran_wide_m_at_end": 2.18,
+   "verdict": "understeer / runs wide",
+   "rows": {
+    "0.5s": {
+     "speed_kmh": 55.5,
+     "yaw_ratio": 0.9,
+     "curv_ratio": 0.86,
+     "beta_deg": 0.7,
+     "sy_front": 0.41,
+     "sy_rear": 0.26,
+     "util": [
+      0.73,
+      0.13,
+      0.0,
+      0.0
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "1.0s": {
+     "speed_kmh": 57.5,
+     "yaw_ratio": 0.9,
+     "curv_ratio": 0.84,
+     "beta_deg": 0.6,
+     "sy_front": 0.44,
+     "sy_rear": 0.27,
+     "util": [
+      0.74,
+      0.13,
+      0.0,
+      0.0
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "1.5s": {
+     "speed_kmh": 59.4,
+     "yaw_ratio": 0.89,
+     "curv_ratio": 0.8,
+     "beta_deg": 0.4,
+     "sy_front": 0.47,
+     "sy_rear": 0.28,
+     "util": [
+      0.76,
+      0.13,
+      0.0,
+      0.0
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "2.0s": {
+     "speed_kmh": 61.3,
+     "yaw_ratio": 0.88,
+     "curv_ratio": 0.77,
+     "beta_deg": 0.2,
+     "sy_front": 0.5,
+     "sy_rear": 0.29,
+     "util": [
+      0.78,
+      0.13,
+      0.0,
+      0.0
+     ],
+     "boost": 0.0,
+     "gear": 2
+    }
+   },
+   "tcs_axle": false
+  },
+  {
+   "car": "tsubame",
+   "throttle": 1.0,
+   "tcs": true,
+   "v0_kmh": 53.5,
+   "beta0_deg": 0.62,
+   "dv_kmh_1.5s": 10.0,
+   "peak_beta_deg": 0.8,
+   "t_front_past_peak": null,
+   "t_rear_past_peak": null,
+   "t_beta_gt_25deg": null,
+   "max_drive_util": 1.35,
+   "ran_wide_m_at_end": 4.61,
+   "verdict": "understeer / runs wide",
+   "rows": {
+    "0.5s": {
+     "speed_kmh": 56.8,
+     "yaw_ratio": 0.77,
+     "curv_ratio": 0.72,
+     "beta_deg": 0.8,
+     "sy_front": 0.44,
+     "sy_rear": 0.2,
+     "util": [
+      0.97,
+      0.21,
+      0.0,
+      0.0
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "1.0s": {
+     "speed_kmh": 60.3,
+     "yaw_ratio": 0.77,
+     "curv_ratio": 0.68,
+     "beta_deg": 0.5,
+     "sy_front": 0.47,
+     "sy_rear": 0.21,
+     "util": [
+      0.97,
+      0.21,
+      0.0,
+      0.0
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "1.5s": {
+     "speed_kmh": 63.5,
+     "yaw_ratio": 0.76,
+     "curv_ratio": 0.64,
+     "beta_deg": 0.3,
+     "sy_front": 0.52,
+     "sy_rear": 0.22,
+     "util": [
+      0.97,
+      0.2,
+      0.0,
+      0.0
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "2.0s": {
+     "speed_kmh": 66.5,
+     "yaw_ratio": 0.74,
+     "curv_ratio": 0.6,
+     "beta_deg": 0.1,
+     "sy_front": 0.55,
+     "sy_rear": 0.23,
+     "util": [
+      0.97,
+      0.19,
+      0.0,
+      0.0
+     ],
+     "boost": 0.0,
+     "gear": 2
+    }
+   },
+   "tcs_axle": false
+  },
+  {
+   "car": "tsubame",
+   "throttle": 1.0,
+   "tcs": true,
+   "v0_kmh": 53.5,
+   "beta0_deg": 0.62,
+   "dv_kmh_1.5s": 11.8,
+   "peak_beta_deg": 0.6,
+   "t_front_past_peak": null,
+   "t_rear_past_peak": null,
+   "t_beta_gt_25deg": null,
+   "max_drive_util": 1.38,
+   "ran_wide_m_at_end": 5.57,
+   "verdict": "understeer / runs wide",
+   "rows": {
+    "0.5s": {
+     "speed_kmh": 57.3,
+     "yaw_ratio": 0.73,
+     "curv_ratio": 0.68,
+     "beta_deg": 0.6,
+     "sy_front": 0.47,
+     "sy_rear": 0.2,
+     "util": [
+      1.29,
+      0.32,
+      0.0,
+      0.0
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "1.0s": {
+     "speed_kmh": 61.4,
+     "yaw_ratio": 0.72,
+     "curv_ratio": 0.62,
+     "beta_deg": 0.4,
+     "sy_front": 0.51,
+     "sy_rear": 0.2,
+     "util": [
+      1.28,
+      0.32,
+      0.0,
+      0.0
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "1.5s": {
+     "speed_kmh": 65.3,
+     "yaw_ratio": 0.7,
+     "curv_ratio": 0.57,
+     "beta_deg": 0.1,
+     "sy_front": 0.56,
+     "sy_rear": 0.21,
+     "util": [
+      1.33,
+      0.33,
+      0.0,
+      0.0
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "2.0s": {
+     "speed_kmh": 69.1,
+     "yaw_ratio": 0.67,
+     "curv_ratio": 0.52,
+     "beta_deg": -0.1,
+     "sy_front": 0.6,
+     "sy_rear": 0.22,
+     "util": [
+      1.38,
+      0.33,
+      0.0,
+      0.0
+     ],
+     "boost": 0.0,
+     "gear": 2
+    }
+   },
+   "tcs_axle": true
+  },
+  {
+   "car": "kazane",
+   "throttle": 1.0,
+   "tcs": false,
+   "v0_kmh": 53.5,
+   "beta0_deg": -0.33,
+   "dv_kmh_1.5s": -2.2,
+   "peak_beta_deg": 85.4,
+   "t_front_past_peak": 0.4666666666666667,
+   "t_rear_past_peak": 0.3333333333333333,
+   "t_beta_gt_25deg": 0.95,
+   "max_drive_util": 2.44,
+   "ran_wide_m_at_end": 1.6,
+   "verdict": "oversteer / spin",
+   "rows": {
+    "0.5s": {
+     "speed_kmh": 56.7,
+     "yaw_ratio": 1.92,
+     "curv_ratio": 1.81,
+     "beta_deg": -7.7,
+     "sy_front": 1.15,
+     "sy_rear": 1.6,
+     "util": [
+      0.0,
+      0.0,
+      1.5,
+      0.42
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "1.0s": {
+     "speed_kmh": 57.0,
+     "yaw_ratio": 2.8,
+     "curv_ratio": 2.63,
+     "beta_deg": -27.8,
+     "sy_front": 4.11,
+     "sy_rear": 5.15,
+     "util": [
+      0.0,
+      0.0,
+      1.44,
+      0.43
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "1.5s": {
+     "speed_kmh": 51.3,
+     "yaw_ratio": 3.34,
+     "curv_ratio": 3.48,
+     "beta_deg": -61.3,
+     "sy_front": 17.03,
+     "sy_rear": 18.75,
+     "util": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "boost": 0.0,
+     "gear": 1
+    },
+    "2.0s": {
+     "speed_kmh": 40.2,
+     "yaw_ratio": 4.52,
+     "curv_ratio": 6.01,
+     "beta_deg": -73.0,
+     "sy_front": 28.23,
+     "sy_rear": 66.89,
+     "util": [
+      0.0,
+      0.0,
+      1.86,
+      0.7
+     ],
+     "boost": 0.0,
+     "gear": 1
+    }
+   },
+   "tcs_axle": false
+  },
+  {
+   "car": "kazane",
+   "throttle": 0.5,
+   "tcs": false,
+   "v0_kmh": 53.5,
+   "beta0_deg": -0.33,
+   "dv_kmh_1.5s": 6.9,
+   "peak_beta_deg": 2.7,
+   "t_front_past_peak": null,
+   "t_rear_past_peak": null,
+   "t_beta_gt_25deg": null,
+   "max_drive_util": 0.95,
+   "ran_wide_m_at_end": 1.24,
+   "verdict": "understeer / runs wide",
+   "rows": {
+    "0.5s": {
+     "speed_kmh": 55.9,
+     "yaw_ratio": 1.01,
+     "curv_ratio": 0.97,
+     "beta_deg": -1.1,
+     "sy_front": 0.5,
+     "sy_rear": 0.44,
+     "util": [
+      0.0,
+      0.0,
+      0.88,
+      0.2
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "1.0s": {
+     "speed_kmh": 58.2,
+     "yaw_ratio": 1.01,
+     "curv_ratio": 0.93,
+     "beta_deg": -1.4,
+     "sy_front": 0.56,
+     "sy_rear": 0.47,
+     "util": [
+      0.0,
+      0.0,
+      0.9,
+      0.2
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "1.5s": {
+     "speed_kmh": 60.4,
+     "yaw_ratio": 1.02,
+     "curv_ratio": 0.9,
+     "beta_deg": -2.0,
+     "sy_front": 0.63,
+     "sy_rear": 0.54,
+     "util": [
+      0.0,
+      0.0,
+      0.93,
+      0.2
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "2.0s": {
+     "speed_kmh": 62.3,
+     "yaw_ratio": 1.02,
+     "curv_ratio": 0.87,
+     "beta_deg": -2.7,
+     "sy_front": 0.74,
+     "sy_rear": 0.62,
+     "util": [
+      0.0,
+      0.0,
+      0.95,
+      0.2
+     ],
+     "boost": 0.0,
+     "gear": 2
+    }
+   },
+   "tcs_axle": false
+  },
+  {
+   "car": "kazane",
+   "throttle": 1.0,
+   "tcs": true,
+   "v0_kmh": 53.5,
+   "beta0_deg": -0.33,
+   "dv_kmh_1.5s": 6.8,
+   "peak_beta_deg": 4.2,
+   "t_front_past_peak": null,
+   "t_rear_past_peak": null,
+   "t_beta_gt_25deg": null,
+   "max_drive_util": 1.62,
+   "ran_wide_m_at_end": 0.87,
+   "verdict": "neutral / mild",
+   "rows": {
+    "0.5s": {
+     "speed_kmh": 56.3,
+     "yaw_ratio": 1.11,
+     "curv_ratio": 1.06,
+     "beta_deg": -2.1,
+     "sy_front": 0.6,
+     "sy_rear": 0.6,
+     "util": [
+      0.0,
+      0.0,
+      0.97,
+      0.22
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "1.0s": {
+     "speed_kmh": 58.4,
+     "yaw_ratio": 1.07,
+     "curv_ratio": 0.98,
+     "beta_deg": -2.9,
+     "sy_front": 0.74,
+     "sy_rear": 0.69,
+     "util": [
+      0.0,
+      0.0,
+      0.97,
+      0.21
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "1.5s": {
+     "speed_kmh": 60.3,
+     "yaw_ratio": 1.04,
+     "curv_ratio": 0.92,
+     "beta_deg": -3.4,
+     "sy_front": 0.83,
+     "sy_rear": 0.74,
+     "util": [
+      0.0,
+      0.0,
+      0.97,
+      0.2
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "2.0s": {
+     "speed_kmh": 62.0,
+     "yaw_ratio": 1.06,
+     "curv_ratio": 0.92,
+     "beta_deg": -4.2,
+     "sy_front": 0.94,
+     "sy_rear": 0.85,
+     "util": [
+      0.0,
+      0.0,
+      0.98,
+      0.2
+     ],
+     "boost": 0.0,
+     "gear": 2
+    }
+   },
+   "tcs_axle": false
+  },
+  {
+   "car": "kazane",
+   "throttle": 1.0,
+   "tcs": true,
+   "v0_kmh": 53.5,
+   "beta0_deg": -0.33,
+   "dv_kmh_1.5s": -1.8,
+   "peak_beta_deg": 85.3,
+   "t_front_past_peak": 0.4666666666666667,
+   "t_rear_past_peak": 0.35,
+   "t_beta_gt_25deg": 0.9666666666666667,
+   "max_drive_util": 2.44,
+   "ran_wide_m_at_end": 1.62,
+   "verdict": "oversteer / spin",
+   "rows": {
+    "0.5s": {
+     "speed_kmh": 56.7,
+     "yaw_ratio": 1.89,
+     "curv_ratio": 1.79,
+     "beta_deg": -7.5,
+     "sy_front": 1.12,
+     "sy_rear": 1.56,
+     "util": [
+      0.0,
+      0.0,
+      1.48,
+      0.41
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "1.0s": {
+     "speed_kmh": 57.0,
+     "yaw_ratio": 2.78,
+     "curv_ratio": 2.6,
+     "beta_deg": -27.2,
+     "sy_front": 4.0,
+     "sy_rear": 5.02,
+     "util": [
+      0.0,
+      0.0,
+      1.44,
+      0.43
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "1.5s": {
+     "speed_kmh": 51.7,
+     "yaw_ratio": 3.35,
+     "curv_ratio": 3.47,
+     "beta_deg": -60.3,
+     "sy_front": 16.08,
+     "sy_rear": 17.86,
+     "util": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "boost": 0.0,
+     "gear": 1
+    },
+    "2.0s": {
+     "speed_kmh": 39.9,
+     "yaw_ratio": 3.9,
+     "curv_ratio": 5.23,
+     "beta_deg": -76.1,
+     "sy_front": 34.97,
+     "sy_rear": 86.1,
+     "util": [
+      0.0,
+      0.0,
+      1.44,
+      0.47
+     ],
+     "boost": 0.0,
+     "gear": 1
+    }
+   },
+   "tcs_axle": true
+  },
+  {
+   "car": "shirogane",
+   "throttle": 1.0,
+   "tcs": false,
+   "v0_kmh": 53.5,
+   "beta0_deg": 0.47,
+   "dv_kmh_1.5s": 1.9,
+   "peak_beta_deg": 85.4,
+   "t_front_past_peak": 0.5833333333333334,
+   "t_rear_past_peak": 0.43333333333333335,
+   "t_beta_gt_25deg": 1.1,
+   "max_drive_util": 2.49,
+   "ran_wide_m_at_end": 1.26,
+   "verdict": "oversteer / spin",
+   "rows": {
+    "0.5s": {
+     "speed_kmh": 57.0,
+     "yaw_ratio": 1.68,
+     "curv_ratio": 1.57,
+     "beta_deg": -4.6,
+     "sy_front": 0.83,
+     "sy_rear": 1.21,
+     "util": [
+      0.0,
+      0.0,
+      1.64,
+      0.46
+     ],
+     "boost": 0.68,
+     "gear": 2
+    },
+    "1.0s": {
+     "speed_kmh": 58.5,
+     "yaw_ratio": 2.56,
+     "curv_ratio": 2.34,
+     "beta_deg": -20.2,
+     "sy_front": 2.89,
+     "sy_rear": 3.88,
+     "util": [
+      0.0,
+      0.0,
+      1.71,
+      0.5
+     ],
+     "boost": 0.87,
+     "gear": 2
+    },
+    "1.5s": {
+     "speed_kmh": 55.4,
+     "yaw_ratio": 3.46,
+     "curv_ratio": 3.34,
+     "beta_deg": -50.0,
+     "sy_front": 10.11,
+     "sy_rear": 12.28,
+     "util": [
+      0.0,
+      0.0,
+      1.65,
+      0.54
+     ],
+     "boost": 0.95,
+     "gear": 2
+    },
+    "2.0s": {
+     "speed_kmh": 43.9,
+     "yaw_ratio": 4.06,
+     "curv_ratio": 4.94,
+     "beta_deg": -85.3,
+     "sy_front": 149.92,
+     "sy_rear": 94.65,
+     "util": [
+      0.0,
+      0.0,
+      2.11,
+      0.75
+     ],
+     "boost": 0.63,
+     "gear": 1
+    }
+   },
+   "tcs_axle": false
+  },
+  {
+   "car": "shirogane",
+   "throttle": 0.5,
+   "tcs": false,
+   "v0_kmh": 53.5,
+   "beta0_deg": 0.47,
+   "dv_kmh_1.5s": 6.6,
+   "peak_beta_deg": 1.7,
+   "t_front_past_peak": null,
+   "t_rear_past_peak": null,
+   "t_beta_gt_25deg": null,
+   "max_drive_util": 0.95,
+   "ran_wide_m_at_end": 1.01,
+   "verdict": "understeer / runs wide",
+   "rows": {
+    "0.5s": {
+     "speed_kmh": 55.6,
+     "yaw_ratio": 1.01,
+     "curv_ratio": 0.97,
+     "beta_deg": 0.0,
+     "sy_front": 0.42,
+     "sy_rear": 0.36,
+     "util": [
+      0.0,
+      0.0,
+      0.8,
+      0.19
+     ],
+     "boost": 0.35,
+     "gear": 2
+    },
+    "1.0s": {
+     "speed_kmh": 57.8,
+     "yaw_ratio": 1.03,
+     "curv_ratio": 0.95,
+     "beta_deg": -0.3,
+     "sy_front": 0.47,
+     "sy_rear": 0.4,
+     "util": [
+      0.0,
+      0.0,
+      0.86,
+      0.2
+     ],
+     "boost": 0.43,
+     "gear": 2
+    },
+    "1.5s": {
+     "speed_kmh": 60.1,
+     "yaw_ratio": 1.05,
+     "curv_ratio": 0.93,
+     "beta_deg": -0.9,
+     "sy_front": 0.55,
+     "sy_rear": 0.47,
+     "util": [
+      0.0,
+      0.0,
+      0.91,
+      0.2
+     ],
+     "boost": 0.47,
+     "gear": 2
+    },
+    "2.0s": {
+     "speed_kmh": 62.1,
+     "yaw_ratio": 1.06,
+     "curv_ratio": 0.92,
+     "beta_deg": -1.7,
+     "sy_front": 0.65,
+     "sy_rear": 0.56,
+     "util": [
+      0.0,
+      0.0,
+      0.95,
+      0.2
+     ],
+     "boost": 0.49,
+     "gear": 2
+    }
+   },
+   "tcs_axle": false
+  },
+  {
+   "car": "shirogane",
+   "throttle": 1.0,
+   "tcs": true,
+   "v0_kmh": 53.5,
+   "beta0_deg": 0.47,
+   "dv_kmh_1.5s": 7.3,
+   "peak_beta_deg": 2.7,
+   "t_front_past_peak": null,
+   "t_rear_past_peak": null,
+   "t_beta_gt_25deg": null,
+   "max_drive_util": 1.43,
+   "ran_wide_m_at_end": 0.72,
+   "verdict": "neutral / mild",
+   "rows": {
+    "0.5s": {
+     "speed_kmh": 56.5,
+     "yaw_ratio": 1.1,
+     "curv_ratio": 1.04,
+     "beta_deg": -0.9,
+     "sy_front": 0.52,
+     "sy_rear": 0.51,
+     "util": [
+      0.0,
+      0.0,
+      0.97,
+      0.23
+     ],
+     "boost": 0.42,
+     "gear": 2
+    },
+    "1.0s": {
+     "speed_kmh": 58.8,
+     "yaw_ratio": 1.09,
+     "curv_ratio": 0.99,
+     "beta_deg": -1.6,
+     "sy_front": 0.62,
+     "sy_rear": 0.58,
+     "util": [
+      0.0,
+      0.0,
+      0.97,
+      0.21
+     ],
+     "boost": 0.49,
+     "gear": 2
+    },
+    "1.5s": {
+     "speed_kmh": 60.8,
+     "yaw_ratio": 1.08,
+     "curv_ratio": 0.95,
+     "beta_deg": -2.2,
+     "sy_front": 0.71,
+     "sy_rear": 0.65,
+     "util": [
+      0.0,
+      0.0,
+      0.97,
+      0.2
+     ],
+     "boost": 0.5,
+     "gear": 2
+    },
+    "2.0s": {
+     "speed_kmh": 62.5,
+     "yaw_ratio": 1.06,
+     "curv_ratio": 0.91,
+     "beta_deg": -2.7,
+     "sy_front": 0.8,
+     "sy_rear": 0.71,
+     "util": [
+      0.0,
+      0.0,
+      0.97,
+      0.19
+     ],
+     "boost": 0.5,
+     "gear": 2
+    }
+   },
+   "tcs_axle": false
+  },
+  {
+   "car": "shirogane",
+   "throttle": 1.0,
+   "tcs": true,
+   "v0_kmh": 53.5,
+   "beta0_deg": 0.47,
+   "dv_kmh_1.5s": 1.6,
+   "peak_beta_deg": 77.3,
+   "t_front_past_peak": 0.6,
+   "t_rear_past_peak": 0.43333333333333335,
+   "t_beta_gt_25deg": 1.1833333333333333,
+   "max_drive_util": 2.44,
+   "ran_wide_m_at_end": 0.94,
+   "verdict": "oversteer / spin",
+   "rows": {
+    "0.5s": {
+     "speed_kmh": 56.9,
+     "yaw_ratio": 1.64,
+     "curv_ratio": 1.54,
+     "beta_deg": -4.4,
+     "sy_front": 0.82,
+     "sy_rear": 1.18,
+     "util": [
+      0.0,
+      0.0,
+      1.52,
+      0.42
+     ],
+     "boost": 0.66,
+     "gear": 2
+    },
+    "1.0s": {
+     "speed_kmh": 58.1,
+     "yaw_ratio": 2.34,
+     "curv_ratio": 2.16,
+     "beta_deg": -18.0,
+     "sy_front": 2.6,
+     "sy_rear": 3.43,
+     "util": [
+      0.0,
+      0.0,
+      1.52,
+      0.42
+     ],
+     "boost": 0.78,
+     "gear": 2
+    },
+    "1.5s": {
+     "speed_kmh": 55.1,
+     "yaw_ratio": 3.01,
+     "curv_ratio": 2.92,
+     "beta_deg": -42.6,
+     "sy_front": 7.57,
+     "sy_rear": 9.19,
+     "util": [
+      0.0,
+      0.0,
+      1.5,
+      0.45
+     ],
+     "boost": 0.82,
+     "gear": 2
+    },
+    "2.0s": {
+     "speed_kmh": 44.4,
+     "yaw_ratio": 3.25,
+     "curv_ratio": 3.91,
+     "beta_deg": -77.3,
+     "sy_front": 109.27,
+     "sy_rear": 65.42,
+     "util": [
+      0.0,
+      0.0,
+      1.45,
+      0.41
+     ],
+     "boost": 0.38,
+     "gear": 1
+    }
+   },
+   "tcs_axle": true
+  },
+  {
+   "car": "arashi",
+   "throttle": 1.0,
+   "tcs": false,
+   "v0_kmh": 53.5,
+   "beta0_deg": 0.58,
+   "dv_kmh_1.5s": 21.8,
+   "peak_beta_deg": 1.1,
+   "t_front_past_peak": null,
+   "t_rear_past_peak": null,
+   "t_beta_gt_25deg": null,
+   "max_drive_util": 1.11,
+   "ran_wide_m_at_end": 7.39,
+   "verdict": "understeer / runs wide",
+   "rows": {
+    "0.5s": {
+     "speed_kmh": 59.9,
+     "yaw_ratio": 0.79,
+     "curv_ratio": 0.7,
+     "beta_deg": -0.5,
+     "sy_front": 0.58,
+     "sy_rear": 0.34,
+     "util": [
+      1.01,
+      0.18,
+      1.06,
+      0.34
+     ],
+     "boost": 0.66,
+     "gear": 2
+    },
+    "1.0s": {
+     "speed_kmh": 67.5,
+     "yaw_ratio": 0.68,
+     "curv_ratio": 0.54,
+     "beta_deg": -0.4,
+     "sy_front": 0.61,
+     "sy_rear": 0.26,
+     "util": [
+      1.03,
+      0.2,
+      1.08,
+      0.38
+     ],
+     "boost": 0.84,
+     "gear": 2
+    },
+    "1.5s": {
+     "speed_kmh": 75.3,
+     "yaw_ratio": 0.63,
+     "curv_ratio": 0.45,
+     "beta_deg": -0.9,
+     "sy_front": 0.69,
+     "sy_rear": 0.29,
+     "util": [
+      1.06,
+      0.21,
+      1.1,
+      0.38
+     ],
+     "boost": 0.93,
+     "gear": 2
+    },
+    "2.0s": {
+     "speed_kmh": 83.0,
+     "yaw_ratio": 0.57,
+     "curv_ratio": 0.37,
+     "beta_deg": -1.1,
+     "sy_front": 0.74,
+     "sy_rear": 0.28,
+     "util": [
+      1.04,
+      0.2,
+      1.08,
+      0.37
+     ],
+     "boost": 0.97,
+     "gear": 2
+    }
+   },
+   "tcs_axle": false
+  },
+  {
+   "car": "arashi",
+   "throttle": 0.5,
+   "tcs": false,
+   "v0_kmh": 53.5,
+   "beta0_deg": 0.58,
+   "dv_kmh_1.5s": 7.0,
+   "peak_beta_deg": 0.6,
+   "t_front_past_peak": null,
+   "t_rear_past_peak": null,
+   "t_beta_gt_25deg": null,
+   "max_drive_util": 0.62,
+   "ran_wide_m_at_end": 1.69,
+   "verdict": "understeer / runs wide",
+   "rows": {
+    "0.5s": {
+     "speed_kmh": 55.7,
+     "yaw_ratio": 0.95,
+     "curv_ratio": 0.91,
+     "beta_deg": 0.5,
+     "sy_front": 0.39,
+     "sy_rear": 0.28,
+     "util": [
+      0.38,
+      0.05,
+      0.56,
+      0.12
+     ],
+     "boost": 0.39,
+     "gear": 2
+    },
+    "1.0s": {
+     "speed_kmh": 58.1,
+     "yaw_ratio": 0.95,
+     "curv_ratio": 0.88,
+     "beta_deg": 0.3,
+     "sy_front": 0.43,
+     "sy_rear": 0.29,
+     "util": [
+      0.4,
+      0.05,
+      0.59,
+      0.12
+     ],
+     "boost": 0.45,
+     "gear": 2
+    },
+    "1.5s": {
+     "speed_kmh": 60.5,
+     "yaw_ratio": 0.95,
+     "curv_ratio": 0.84,
+     "beta_deg": 0.0,
+     "sy_front": 0.47,
+     "sy_rear": 0.31,
+     "util": [
+      0.43,
+      0.05,
+      0.61,
+      0.13
+     ],
+     "boost": 0.48,
+     "gear": 2
+    },
+    "2.0s": {
+     "speed_kmh": 62.8,
+     "yaw_ratio": 0.94,
+     "curv_ratio": 0.8,
+     "beta_deg": -0.2,
+     "sy_front": 0.51,
+     "sy_rear": 0.33,
+     "util": [
+      0.44,
+      0.05,
+      0.62,
+      0.12
+     ],
+     "boost": 0.49,
+     "gear": 2
+    }
+   },
+   "tcs_axle": false
+  },
+  {
+   "car": "arashi",
+   "throttle": 1.0,
+   "tcs": true,
+   "v0_kmh": 53.5,
+   "beta0_deg": 0.58,
+   "dv_kmh_1.5s": 18.4,
+   "peak_beta_deg": 1.0,
+   "t_front_past_peak": null,
+   "t_rear_past_peak": null,
+   "t_beta_gt_25deg": null,
+   "max_drive_util": 1.11,
+   "ran_wide_m_at_end": 5.71,
+   "verdict": "understeer / runs wide",
+   "rows": {
+    "0.5s": {
+     "speed_kmh": 59.2,
+     "yaw_ratio": 0.84,
+     "curv_ratio": 0.76,
+     "beta_deg": -0.2,
+     "sy_front": 0.52,
+     "sy_rear": 0.32,
+     "util": [
+      0.85,
+      0.14,
+      0.97,
+      0.28
+     ],
+     "boost": 0.57,
+     "gear": 2
+    },
+    "1.0s": {
+     "speed_kmh": 65.5,
+     "yaw_ratio": 0.78,
+     "curv_ratio": 0.64,
+     "beta_deg": -0.3,
+     "sy_front": 0.57,
+     "sy_rear": 0.29,
+     "util": [
+      0.87,
+      0.15,
+      0.97,
+      0.3
+     ],
+     "boost": 0.71,
+     "gear": 2
+    },
+    "1.5s": {
+     "speed_kmh": 71.9,
+     "yaw_ratio": 0.73,
+     "curv_ratio": 0.54,
+     "beta_deg": -0.7,
+     "sy_front": 0.64,
+     "sy_rear": 0.3,
+     "util": [
+      0.89,
+      0.15,
+      0.97,
+      0.29
+     ],
+     "boost": 0.77,
+     "gear": 2
+    },
+    "2.0s": {
+     "speed_kmh": 78.1,
+     "yaw_ratio": 0.68,
+     "curv_ratio": 0.46,
+     "beta_deg": -1.0,
+     "sy_front": 0.7,
+     "sy_rear": 0.31,
+     "util": [
+      0.89,
+      0.14,
+      0.97,
+      0.29
+     ],
+     "boost": 0.81,
+     "gear": 2
+    }
+   },
+   "tcs_axle": false
+  },
+  {
+   "car": "arashi",
+   "throttle": 1.0,
+   "tcs": true,
+   "v0_kmh": 53.5,
+   "beta0_deg": 0.58,
+   "dv_kmh_1.5s": 21.8,
+   "peak_beta_deg": 1.1,
+   "t_front_past_peak": null,
+   "t_rear_past_peak": null,
+   "t_beta_gt_25deg": null,
+   "max_drive_util": 1.11,
+   "ran_wide_m_at_end": 7.39,
+   "verdict": "understeer / runs wide",
+   "rows": {
+    "0.5s": {
+     "speed_kmh": 59.9,
+     "yaw_ratio": 0.79,
+     "curv_ratio": 0.7,
+     "beta_deg": -0.5,
+     "sy_front": 0.58,
+     "sy_rear": 0.34,
+     "util": [
+      1.01,
+      0.18,
+      1.06,
+      0.34
+     ],
+     "boost": 0.66,
+     "gear": 2
+    },
+    "1.0s": {
+     "speed_kmh": 67.5,
+     "yaw_ratio": 0.68,
+     "curv_ratio": 0.54,
+     "beta_deg": -0.4,
+     "sy_front": 0.61,
+     "sy_rear": 0.26,
+     "util": [
+      1.03,
+      0.2,
+      1.08,
+      0.38
+     ],
+     "boost": 0.84,
+     "gear": 2
+    },
+    "1.5s": {
+     "speed_kmh": 75.3,
+     "yaw_ratio": 0.63,
+     "curv_ratio": 0.45,
+     "beta_deg": -0.9,
+     "sy_front": 0.69,
+     "sy_rear": 0.29,
+     "util": [
+      1.06,
+      0.21,
+      1.1,
+      0.38
+     ],
+     "boost": 0.93,
+     "gear": 2
+    },
+    "2.0s": {
+     "speed_kmh": 83.0,
+     "yaw_ratio": 0.57,
+     "curv_ratio": 0.37,
+     "beta_deg": -1.1,
+     "sy_front": 0.74,
+     "sy_rear": 0.28,
+     "util": [
+      1.04,
+      0.2,
+      1.08,
+      0.37
+     ],
+     "boost": 0.97,
+     "gear": 2
+    }
+   },
+   "tcs_axle": true
+  },
+  {
+   "car": "mikazuki",
+   "throttle": 1.0,
+   "tcs": false,
+   "v0_kmh": 53.5,
+   "beta0_deg": -0.16,
+   "dv_kmh_1.5s": 11.4,
+   "peak_beta_deg": 30.9,
+   "t_front_past_peak": 0.6333333333333333,
+   "t_rear_past_peak": 0.5666666666666667,
+   "t_beta_gt_25deg": 1.75,
+   "max_drive_util": 1.28,
+   "ran_wide_m_at_end": 2.58,
+   "verdict": "oversteer / spin",
+   "rows": {
+    "0.5s": {
+     "speed_kmh": 58.8,
+     "yaw_ratio": 1.35,
+     "curv_ratio": 1.22,
+     "beta_deg": -4.3,
+     "sy_front": 0.82,
+     "sy_rear": 0.92,
+     "util": [
+      0.0,
+      0.0,
+      1.2,
+      0.39
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "1.0s": {
+     "speed_kmh": 62.7,
+     "yaw_ratio": 1.5,
+     "curv_ratio": 1.28,
+     "beta_deg": -10.5,
+     "sy_front": 1.66,
+     "sy_rear": 1.79,
+     "util": [
+      0.0,
+      0.0,
+      1.21,
+      0.38
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "1.5s": {
+     "speed_kmh": 64.9,
+     "yaw_ratio": 1.63,
+     "curv_ratio": 1.35,
+     "beta_deg": -19.6,
+     "sy_front": 3.03,
+     "sy_rear": 3.18,
+     "util": [
+      0.0,
+      0.0,
+      1.18,
+      0.39
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "2.0s": {
+     "speed_kmh": 64.9,
+     "yaw_ratio": 1.72,
+     "curv_ratio": 1.41,
+     "beta_deg": -30.9,
+     "sy_front": 5.03,
+     "sy_rear": 5.16,
+     "util": [
+      0.0,
+      0.0,
+      1.16,
+      0.4
+     ],
+     "boost": 0.0,
+     "gear": 2
+    }
+   },
+   "tcs_axle": false
+  },
+  {
+   "car": "mikazuki",
+   "throttle": 0.5,
+   "tcs": false,
+   "v0_kmh": 53.5,
+   "beta0_deg": -0.16,
+   "dv_kmh_1.5s": 7.7,
+   "peak_beta_deg": 1.0,
+   "t_front_past_peak": null,
+   "t_rear_past_peak": null,
+   "t_beta_gt_25deg": null,
+   "max_drive_util": 0.65,
+   "ran_wide_m_at_end": 1.82,
+   "verdict": "understeer / runs wide",
+   "rows": {
+    "0.5s": {
+     "speed_kmh": 56.1,
+     "yaw_ratio": 0.95,
+     "curv_ratio": 0.91,
+     "beta_deg": -0.3,
+     "sy_front": 0.41,
+     "sy_rear": 0.29,
+     "util": [
+      0.0,
+      0.0,
+      0.61,
+      0.17
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "1.0s": {
+     "speed_kmh": 58.7,
+     "yaw_ratio": 0.95,
+     "curv_ratio": 0.87,
+     "beta_deg": -0.5,
+     "sy_front": 0.45,
+     "sy_rear": 0.31,
+     "util": [
+      0.0,
+      0.0,
+      0.62,
+      0.17
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "1.5s": {
+     "speed_kmh": 61.2,
+     "yaw_ratio": 0.95,
+     "curv_ratio": 0.83,
+     "beta_deg": -0.8,
+     "sy_front": 0.5,
+     "sy_rear": 0.33,
+     "util": [
+      0.0,
+      0.0,
+      0.64,
+      0.17
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "2.0s": {
+     "speed_kmh": 63.6,
+     "yaw_ratio": 0.93,
+     "curv_ratio": 0.79,
+     "beta_deg": -1.0,
+     "sy_front": 0.54,
+     "sy_rear": 0.35,
+     "util": [
+      0.0,
+      0.0,
+      0.65,
+      0.17
+     ],
+     "boost": 0.0,
+     "gear": 2
+    }
+   },
+   "tcs_axle": false
+  },
+  {
+   "car": "mikazuki",
+   "throttle": 1.0,
+   "tcs": true,
+   "v0_kmh": 53.5,
+   "beta0_deg": -0.16,
+   "dv_kmh_1.5s": 14.4,
+   "peak_beta_deg": 2.3,
+   "t_front_past_peak": null,
+   "t_rear_past_peak": null,
+   "t_beta_gt_25deg": null,
+   "max_drive_util": 1.28,
+   "ran_wide_m_at_end": 3.39,
+   "verdict": "understeer / runs wide",
+   "rows": {
+    "0.5s": {
+     "speed_kmh": 58.5,
+     "yaw_ratio": 0.98,
+     "curv_ratio": 0.9,
+     "beta_deg": -1.6,
+     "sy_front": 0.58,
+     "sy_rear": 0.47,
+     "util": [
+      0.0,
+      0.0,
+      0.97,
+      0.3
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "1.0s": {
+     "speed_kmh": 63.3,
+     "yaw_ratio": 0.9,
+     "curv_ratio": 0.76,
+     "beta_deg": -1.7,
+     "sy_front": 0.65,
+     "sy_rear": 0.44,
+     "util": [
+      0.0,
+      0.0,
+      0.97,
+      0.29
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "1.5s": {
+     "speed_kmh": 67.9,
+     "yaw_ratio": 0.87,
+     "curv_ratio": 0.69,
+     "beta_deg": -2.0,
+     "sy_front": 0.7,
+     "sy_rear": 0.45,
+     "util": [
+      0.0,
+      0.0,
+      0.97,
+      0.29
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "2.0s": {
+     "speed_kmh": 72.3,
+     "yaw_ratio": 0.83,
+     "curv_ratio": 0.61,
+     "beta_deg": -2.3,
+     "sy_front": 0.77,
+     "sy_rear": 0.47,
+     "util": [
+      0.0,
+      0.0,
+      0.97,
+      0.29
+     ],
+     "boost": 0.0,
+     "gear": 2
+    }
+   },
+   "tcs_axle": false
+  },
+  {
+   "car": "mikazuki",
+   "throttle": 1.0,
+   "tcs": true,
+   "v0_kmh": 53.5,
+   "beta0_deg": -0.16,
+   "dv_kmh_1.5s": 11.4,
+   "peak_beta_deg": 30.9,
+   "t_front_past_peak": 0.6333333333333333,
+   "t_rear_past_peak": 0.5666666666666667,
+   "t_beta_gt_25deg": 1.75,
+   "max_drive_util": 1.28,
+   "ran_wide_m_at_end": 2.58,
+   "verdict": "oversteer / spin",
+   "rows": {
+    "0.5s": {
+     "speed_kmh": 58.8,
+     "yaw_ratio": 1.35,
+     "curv_ratio": 1.22,
+     "beta_deg": -4.3,
+     "sy_front": 0.82,
+     "sy_rear": 0.92,
+     "util": [
+      0.0,
+      0.0,
+      1.2,
+      0.39
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "1.0s": {
+     "speed_kmh": 62.7,
+     "yaw_ratio": 1.5,
+     "curv_ratio": 1.28,
+     "beta_deg": -10.5,
+     "sy_front": 1.66,
+     "sy_rear": 1.79,
+     "util": [
+      0.0,
+      0.0,
+      1.21,
+      0.38
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "1.5s": {
+     "speed_kmh": 64.9,
+     "yaw_ratio": 1.63,
+     "curv_ratio": 1.35,
+     "beta_deg": -19.6,
+     "sy_front": 3.03,
+     "sy_rear": 3.18,
+     "util": [
+      0.0,
+      0.0,
+      1.18,
+      0.39
+     ],
+     "boost": 0.0,
+     "gear": 2
+    },
+    "2.0s": {
+     "speed_kmh": 64.9,
+     "yaw_ratio": 1.72,
+     "curv_ratio": 1.41,
+     "beta_deg": -30.9,
+     "sy_front": 5.03,
+     "sy_rear": 5.16,
+     "util": [
+      0.0,
+      0.0,
+      1.16,
+      0.4
+     ],
+     "boost": 0.0,
+     "gear": 2
+    }
+   },
+   "tcs_axle": true
+  }
+ ],
+ "brake_turn": [
+  {
+   "car": "tsubame",
+   "brake": 0.0,
+   "beta0_deg": -0.62,
+   "peak_beta_deg": 0.62,
+   "0.5s": {
+    "curv_ratio": 1.0,
+    "yaw_ratio": 1.0,
+    "beta_deg": -0.62,
+    "speed_kmh": 73.1,
+    "loads": [
+     1569,
+     4775,
+     1141,
+     2792
+    ],
+    "util": [
+     0.28,
+     0.03,
+     0.0,
+     0.0
+    ]
+   },
+   "1.0s": {
+    "curv_ratio": 1.0,
+    "yaw_ratio": 1.0,
+    "beta_deg": -0.62,
+    "speed_kmh": 73.1,
+    "loads": [
+     1569,
+     4775,
+     1141,
+     2792
+    ],
+    "util": [
+     0.28,
+     0.03,
+     0.0,
+     0.0
+    ]
+   },
+   "case": "hold throttle"
+  },
+  {
+   "car": "tsubame",
+   "brake": 0.0,
+   "beta0_deg": -0.62,
+   "peak_beta_deg": 0.78,
+   "0.5s": {
+    "curv_ratio": 1.1,
+    "yaw_ratio": 1.07,
+    "beta_deg": -0.76,
+    "speed_kmh": 71.0,
+    "loads": [
+     1643,
+     4917,
+     1013,
+     2699
+    ],
+    "util": [
+     -0.06,
+     -0.1,
+     0.0,
+     0.0
+    ]
+   },
+   "1.0s": {
+    "curv_ratio": 1.13,
+    "yaw_ratio": 1.06,
+    "beta_deg": -0.72,
+    "speed_kmh": 69.0,
+    "loads": [
+     1629,
+     4931,
+     1004,
+     2705
+    ],
+    "util": [
+     -0.06,
+     -0.1,
+     0.0,
+     0.0
+    ]
+   },
+   "case": "lift off"
+  },
+  {
+   "car": "tsubame",
+   "brake": 0.3,
+   "beta0_deg": -0.62,
+   "peak_beta_deg": 1.0,
+   "0.5s": {
+    "curv_ratio": 1.21,
+    "yaw_ratio": 1.06,
+    "beta_deg": -0.91,
+    "speed_kmh": 64.5,
+    "loads": [
+     2187,
+     5078,
+     753,
+     2242
+    ],
+    "util": [
+     -0.74,
+     -0.44,
+     -0.39,
+     -0.14
+    ]
+   },
+   "1.0s": {
+    "curv_ratio": 1.39,
+    "yaw_ratio": 1.07,
+    "beta_deg": -0.78,
+    "speed_kmh": 56.1,
+    "loads": [
+     2171,
+     5094,
+     738,
+     2243
+    ],
+    "util": [
+     -0.73,
+     -0.43,
+     -0.39,
+     -0.14
+    ]
+   },
+   "case": "brake 0.3"
+  },
+  {
+   "car": "tsubame",
+   "brake": 0.6,
+   "beta0_deg": -0.62,
+   "peak_beta_deg": 0.88,
+   "0.5s": {
+    "curv_ratio": 0.63,
+    "yaw_ratio": 0.51,
+    "beta_deg": -0.13,
+    "speed_kmh": 59.3,
+    "loads": [
+     3271,
+     4643,
+     815,
+     1522
+    ],
+    "util": [
+     -1.0,
+     -0.83,
+     -0.71,
+     -0.4
+    ]
+   },
+   "1.0s": {
+    "curv_ratio": 1.02,
+    "yaw_ratio": 0.62,
+    "beta_deg": -0.05,
+    "speed_kmh": 44.8,
+    "loads": [
+     3273,
+     4689,
+     770,
+     1499
+    ],
+    "util": [
+     -0.99,
+     -0.81,
+     -0.75,
+     -0.41
+    ]
+   },
+   "case": "brake 0.6"
+  },
+  {
+   "car": "kazane",
+   "brake": 0.0,
+   "beta0_deg": -1.12,
+   "peak_beta_deg": 1.12,
+   "0.5s": {
+    "curv_ratio": 1.0,
+    "yaw_ratio": 1.0,
+    "beta_deg": -1.12,
+    "speed_kmh": 73.1,
+    "loads": [
+     1273,
+     3537,
+     1337,
+     3345
+    ],
+    "util": [
+     0.0,
+     0.0,
+     0.32,
+     0.03
+    ]
+   },
+   "1.0s": {
+    "curv_ratio": 1.0,
+    "yaw_ratio": 1.0,
+    "beta_deg": -1.12,
+    "speed_kmh": 73.1,
+    "loads": [
+     1273,
+     3537,
+     1337,
+     3345
+    ],
+    "util": [
+     0.0,
+     0.0,
+     0.32,
+     0.03
+    ]
+   },
+   "case": "hold throttle"
+  },
+  {
+   "car": "kazane",
+   "brake": 0.0,
+   "beta0_deg": -1.12,
+   "peak_beta_deg": 1.37,
+   "0.5s": {
+    "curv_ratio": 1.1,
+    "yaw_ratio": 1.07,
+    "beta_deg": -1.25,
+    "speed_kmh": 71.5,
+    "loads": [
+     1326,
+     3649,
+     1227,
+     3287
+    ],
+    "util": [
+     0.0,
+     0.0,
+     0.0,
+     -0.1
+    ]
+   },
+   "1.0s": {
+    "curv_ratio": 1.16,
+    "yaw_ratio": 1.11,
+    "beta_deg": -1.37,
+    "speed_kmh": 70.1,
+    "loads": [
+     1280,
+     3667,
+     1211,
+     3328
+    ],
+    "util": [
+     0.0,
+     0.0,
+     -0.08,
+     -0.15
+    ]
+   },
+   "case": "lift off"
+  },
+  {
+   "car": "kazane",
+   "brake": 0.3,
+   "beta0_deg": -1.12,
+   "peak_beta_deg": 2.95,
+   "0.5s": {
+    "curv_ratio": 1.36,
+    "yaw_ratio": 1.21,
+    "beta_deg": -1.77,
+    "speed_kmh": 65.0,
+    "loads": [
+     1748,
+     3920,
+     941,
+     2868
+    ],
+    "util": [
+     -0.71,
+     -0.36,
+     -0.55,
+     -0.33
+    ]
+   },
+   "1.0s": {
+    "curv_ratio": 1.93,
+    "yaw_ratio": 1.48,
+    "beta_deg": -2.95,
+    "speed_kmh": 56.2,
+    "loads": [
+     1650,
+     4063,
+     804,
+     2944
+    ],
+    "util": [
+     -0.75,
+     -0.36,
+     -0.61,
+     -0.31
+    ]
+   },
+   "case": "brake 0.3"
+  },
+  {
+   "car": "kazane",
+   "brake": 0.6,
+   "beta0_deg": -1.12,
+   "peak_beta_deg": 1.31,
+   "0.5s": {
+    "curv_ratio": 0.78,
+    "yaw_ratio": 0.64,
+    "beta_deg": -0.76,
+    "speed_kmh": 59.6,
+    "loads": [
+     2600,
+     3714,
+     1083,
+     2071
+    ],
+    "util": [
+     -1.01,
+     -0.76,
+     -0.87,
+     -0.65
+    ]
+   },
+   "1.0s": {
+    "curv_ratio": 1.28,
+    "yaw_ratio": 0.78,
+    "beta_deg": -1.21,
+    "speed_kmh": 44.9,
+    "loads": [
+     2569,
+     3807,
+     986,
+     2084
+    ],
+    "util": [
+     -1.02,
+     -0.75,
+     -0.91,
+     -0.61
+    ]
+   },
+   "case": "brake 0.6"
+  },
+  {
+   "car": "shirogane",
+   "brake": 0.0,
+   "beta0_deg": -0.65,
+   "peak_beta_deg": 0.65,
+   "0.5s": {
+    "curv_ratio": 1.0,
+    "yaw_ratio": 1.0,
+    "beta_deg": -0.65,
+    "speed_kmh": 73.1,
+    "loads": [
+     1804,
+     5324,
+     1737,
+     4392
+    ],
+    "util": [
+     0.0,
+     0.0,
+     0.27,
+     0.04
+    ]
+   },
+   "1.0s": {
+    "curv_ratio": 1.0,
+    "yaw_ratio": 1.0,
+    "beta_deg": -0.65,
+    "speed_kmh": 73.1,
+    "loads": [
+     1804,
+     5324,
+     1737,
+     4392
+    ],
+    "util": [
+     0.0,
+     0.0,
+     0.27,
+     0.04
+    ]
+   },
+   "case": "hold throttle"
+  },
+  {
+   "car": "shirogane",
+   "brake": 0.0,
+   "beta0_deg": -0.65,
+   "peak_beta_deg": 0.74,
+   "0.5s": {
+    "curv_ratio": 1.09,
+    "yaw_ratio": 1.06,
+    "beta_deg": -0.73,
+    "speed_kmh": 70.9,
+    "loads": [
+     1920,
+     5503,
+     1562,
+     4265
+    ],
+    "util": [
+     0.0,
+     0.0,
+     -0.14,
+     -0.16
+    ]
+   },
+   "1.0s": {
+    "curv_ratio": 1.11,
+    "yaw_ratio": 1.04,
+    "beta_deg": -0.64,
+    "speed_kmh": 68.7,
+    "loads": [
+     1933,
+     5488,
+     1571,
+     4252
+    ],
+    "util": [
+     0.0,
+     0.0,
+     -0.13,
+     -0.15
+    ]
+   },
+   "case": "lift off"
+  },
+  {
+   "car": "shirogane",
+   "brake": 0.3,
+   "beta0_deg": -0.65,
+   "peak_beta_deg": 1.44,
+   "0.5s": {
+    "curv_ratio": 1.34,
+    "yaw_ratio": 1.18,
+    "beta_deg": -1.24,
+    "speed_kmh": 64.0,
+    "loads": [
+     2473,
+     5860,
+     1172,
+     3726
+    ],
+    "util": [
+     -0.71,
+     -0.35,
+     -0.63,
+     -0.33
+    ]
+   },
+   "1.0s": {
+    "curv_ratio": 1.56,
+    "yaw_ratio": 1.17,
+    "beta_deg": -1.23,
+    "speed_kmh": 55.1,
+    "loads": [
+     2416,
+     5912,
+     1122,
+     3759
+    ],
+    "util": [
+     -0.72,
+     -0.34,
+     -0.62,
+     -0.31
+    ]
+   },
+   "case": "brake 0.3"
+  },
+  {
+   "car": "shirogane",
+   "brake": 0.6,
+   "beta0_deg": -0.65,
+   "peak_beta_deg": 1.77,
+   "0.5s": {
+    "curv_ratio": 1.02,
+    "yaw_ratio": 0.82,
+    "beta_deg": -1.23,
+    "speed_kmh": 58.3,
+    "loads": [
+     3539,
+     5631,
+     1235,
+     2813
+    ],
+    "util": [
+     -1.03,
+     -0.71,
+     -1.03,
+     -0.62
+    ]
+   },
+   "1.0s": {
+    "curv_ratio": 1.57,
+    "yaw_ratio": 0.93,
+    "beta_deg": -1.66,
+    "speed_kmh": 43.2,
+    "loads": [
+     3456,
+     5718,
+     1152,
+     2858
+    ],
+    "util": [
+     -1.05,
+     -0.7,
+     -1.04,
+     -0.57
+    ]
+   },
+   "case": "brake 0.6"
+  },
+  {
+   "car": "arashi",
+   "brake": 0.0,
+   "beta0_deg": -0.58,
+   "peak_beta_deg": 0.58,
+   "0.5s": {
+    "curv_ratio": 1.0,
+    "yaw_ratio": 1.0,
+    "beta_deg": -0.58,
+    "speed_kmh": 73.1,
+    "loads": [
+     2000,
+     6075,
+     1587,
+     4085
+    ],
+    "util": [
+     0.13,
+     -0.0,
+     0.22,
+     0.01
+    ]
+   },
+   "1.0s": {
+    "curv_ratio": 1.0,
+    "yaw_ratio": 1.0,
+    "beta_deg": -0.58,
+    "speed_kmh": 73.1,
+    "loads": [
+     2000,
+     6075,
+     1587,
+     4085
+    ],
+    "util": [
+     0.13,
+     -0.0,
+     0.22,
+     0.01
+    ]
+   },
+   "case": "hold throttle"
+  },
+  {
+   "car": "arashi",
+   "brake": 0.0,
+   "beta0_deg": -0.58,
+   "peak_beta_deg": 0.69,
+   "0.5s": {
+    "curv_ratio": 1.09,
+    "yaw_ratio": 1.06,
+    "beta_deg": -0.68,
+    "speed_kmh": 71.3,
+    "loads": [
+     2092,
+     6254,
+     1422,
+     3973
+    ],
+    "util": [
+     0.01,
+     -0.04,
+     -0.02,
+     -0.09
+    ]
+   },
+   "1.0s": {
+    "curv_ratio": 1.1,
+    "yaw_ratio": 1.05,
+    "beta_deg": -0.63,
+    "speed_kmh": 69.5,
+    "loads": [
+     2089,
+     6257,
+     1418,
+     3973
+    ],
+    "util": [
+     0.01,
+     -0.04,
+     -0.01,
+     -0.09
+    ]
+   },
+   "case": "lift off"
+  },
+  {
+   "car": "arashi",
+   "brake": 0.3,
+   "beta0_deg": -0.58,
+   "peak_beta_deg": 1.68,
+   "0.5s": {
+    "curv_ratio": 1.35,
+    "yaw_ratio": 1.2,
+    "beta_deg": -1.22,
+    "speed_kmh": 64.7,
+    "loads": [
+     2718,
+     6634,
+     986,
+     3386
+    ],
+    "util": [
+     -0.74,
+     -0.41,
+     -0.55,
+     -0.29
+    ]
+   },
+   "1.0s": {
+    "curv_ratio": 1.73,
+    "yaw_ratio": 1.31,
+    "beta_deg": -1.68,
+    "speed_kmh": 55.5,
+    "loads": [
+     2659,
+     6835,
+     824,
+     3383
+    ],
+    "util": [
+     -0.75,
+     -0.39,
+     -0.61,
+     -0.27
+    ]
+   },
+   "case": "brake 0.3"
+  },
+  {
+   "car": "arashi",
+   "brake": 0.6,
+   "beta0_deg": -0.58,
+   "peak_beta_deg": 1.23,
+   "0.5s": {
+    "curv_ratio": 0.84,
+    "yaw_ratio": 0.68,
+    "beta_deg": -0.59,
+    "speed_kmh": 59.1,
+    "loads": [
+     4124,
+     6241,
+     1023,
+     2321
+    ],
+    "util": [
+     -1.02,
+     -0.78,
+     -0.93,
+     -0.58
+    ]
+   },
+   "1.0s": {
+    "curv_ratio": 1.51,
+    "yaw_ratio": 0.9,
+    "beta_deg": -1.22,
+    "speed_kmh": 43.6,
+    "loads": [
+     4115,
+     6397,
+     883,
+     2282
+    ],
+    "util": [
+     -1.01,
+     -0.76,
+     -1.0,
+     -0.55
+    ]
+   },
+   "case": "brake 0.6"
+  },
+  {
+   "car": "mikazuki",
+   "brake": 0.0,
+   "beta0_deg": -0.93,
+   "peak_beta_deg": 0.93,
+   "0.5s": {
+    "curv_ratio": 1.0,
+    "yaw_ratio": 1.0,
+    "beta_deg": -0.93,
+    "speed_kmh": 73.1,
+    "loads": [
+     1285,
+     3715,
+     2128,
+     4559
+    ],
+    "util": [
+     0.0,
+     0.0,
+     0.2,
+     0.03
+    ]
+   },
+   "1.0s": {
+    "curv_ratio": 1.0,
+    "yaw_ratio": 1.0,
+    "beta_deg": -0.93,
+    "speed_kmh": 73.1,
+    "loads": [
+     1285,
+     3715,
+     2128,
+     4559
+    ],
+    "util": [
+     0.0,
+     0.0,
+     0.2,
+     0.03
+    ]
+   },
+   "case": "hold throttle"
+  },
+  {
+   "car": "mikazuki",
+   "brake": 0.0,
+   "beta0_deg": -0.93,
+   "peak_beta_deg": 1.02,
+   "0.5s": {
+    "curv_ratio": 1.09,
+    "yaw_ratio": 1.06,
+    "beta_deg": -1.02,
+    "speed_kmh": 71.1,
+    "loads": [
+     1368,
+     3854,
+     1987,
+     4473
+    ],
+    "util": [
+     0.0,
+     0.0,
+     -0.06,
+     -0.11
+    ]
+   },
+   "1.0s": {
+    "curv_ratio": 1.1,
+    "yaw_ratio": 1.04,
+    "beta_deg": -0.93,
+    "speed_kmh": 69.2,
+    "loads": [
+     1380,
+     3841,
+     1997,
+     4458
+    ],
+    "util": [
+     0.0,
+     0.0,
+     -0.06,
+     -0.11
+    ]
+   },
+   "case": "lift off"
+  },
+  {
+   "car": "mikazuki",
+   "brake": 0.3,
+   "beta0_deg": -0.93,
+   "peak_beta_deg": 1.29,
+   "0.5s": {
+    "curv_ratio": 1.26,
+    "yaw_ratio": 1.11,
+    "beta_deg": -1.27,
+    "speed_kmh": 64.3,
+    "loads": [
+     1851,
+     4157,
+     1674,
+     3980
+    ],
+    "util": [
+     -0.71,
+     -0.36,
+     -0.48,
+     -0.31
+    ]
+   },
+   "1.0s": {
+    "curv_ratio": 1.29,
+    "yaw_ratio": 0.99,
+    "beta_deg": -0.78,
+    "speed_kmh": 55.7,
+    "loads": [
+     1909,
+     4096,
+     1724,
+     3912
+    ],
+    "util": [
+     -0.69,
+     -0.37,
+     -0.45,
+     -0.3
+    ]
+   },
+   "case": "brake 0.3"
+  },
+  {
+   "car": "mikazuki",
+   "brake": 0.6,
+   "beta0_deg": -0.93,
+   "peak_beta_deg": 1.13,
+   "0.5s": {
+    "curv_ratio": 0.85,
+    "yaw_ratio": 0.68,
+    "beta_deg": -0.75,
+    "speed_kmh": 58.5,
+    "loads": [
+     2728,
+     4023,
+     1800,
+     3095
+    ],
+    "util": [
+     -1.01,
+     -0.75,
+     -0.83,
+     -0.61
+    ]
+   },
+   "1.0s": {
+    "curv_ratio": 1.09,
+    "yaw_ratio": 0.65,
+    "beta_deg": -0.41,
+    "speed_kmh": 43.5,
+    "loads": [
+     2771,
+     4013,
+     1795,
+     3037
+    ],
+    "util": [
+     -1.0,
+     -0.75,
+     -0.81,
+     -0.6
+    ]
+   },
+   "case": "brake 0.6"
+  }
+ ]
+}

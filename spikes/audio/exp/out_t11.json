@@ -1,0 +1,71 @@
+{
+ "detune_900rpm": -1349,
+ "detune_7500rpm": 2321,
+ "detune_ref": 0,
+ "picker_first_switch_tick": 74,
+ "picker_switch_count": 1,
+ "picker_flap_switches": 0,
+ "squeal_gain_table": [
+  [
+   0.0,
+   0.0
+  ],
+  [
+   0.2,
+   0.018
+  ],
+  [
+   0.4,
+   0.088
+  ],
+  [
+   0.6,
+   0.159
+  ],
+  [
+   0.8,
+   0.229
+  ],
+  [
+   1.0,
+   0.3
+  ]
+ ],
+ "distance_gain_table": [
+  [
+   0,
+   1.0
+  ],
+  [
+   6,
+   0.9
+  ],
+  [
+   12,
+   0.4
+  ],
+  [
+   24,
+   0.15
+  ],
+  [
+   40,
+   0.05
+  ],
+  [
+   60,
+   0.0
+  ]
+ ],
+ "us_play_sound_obj": 0.53,
+ "us_play_mml_string": 3.47,
+ "us_play_pos": 0.18,
+ "us_detune_gain_with_log2": 0.5,
+ "us_wavetable_assign_64": 1.1,
+ "marks": {
+  "t_start": 0.43269697499999893,
+  "t_g1": 1.5995465339999555,
+  "t_g2": 2.2673034270001153,
+  "t_end": 2.932396906000122
+ }
+}

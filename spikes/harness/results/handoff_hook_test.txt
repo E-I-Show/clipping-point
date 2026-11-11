@@ -1,0 +1,39 @@
+=== source=startup
+[handoff] HEAD f6b49e5 2026-11-11T02:33:05+00:00 checkpoint 4
+[handoff] note last committed: a89a9da 2026-11-11T02:33:05+00:00
+[handoff] 1 commit(s) are NEWER than the note: trust git log over the note
+[handoff] 1 uncommitted path(s) in the work tree: they vanish with this container
+[handoff] docs/handoff.md exists. If this session continues that work, read it first, then the state table in docs/worklog.md.
+(exit 0)
+=== source=resume
+[handoff] HEAD f6b49e5 2026-11-11T02:33:05+00:00 checkpoint 4
+[handoff] note last committed: a89a9da 2026-11-11T02:33:05+00:00
+[handoff] 1 commit(s) are NEWER than the note: trust git log over the note
+[handoff] 1 uncommitted path(s) in the work tree: they vanish with this container
+--- docs/handoff.md (6 lines) ---
+# Handoff (max 25 lines; rewrite at every checkpoint commit, commit and push with it)
+- stage / checkpoint: S0 foundation / 3 of 6
+- done: wrappers check, test, run, screen-check, tour
+- doing now: export + web smoke wrapper
+- verification still owed: tools/verify_all.py after export lands
+- next: rule files, agents, first stage plan
+(exit 0)
+=== source=compact
+[handoff] HEAD f6b49e5 2026-11-11T02:33:05+00:00 checkpoint 4
+[handoff] note last committed: a89a9da 2026-11-11T02:33:05+00:00
+[handoff] 1 commit(s) are NEWER than the note: trust git log over the note
+[handoff] 1 uncommitted path(s) in the work tree: they vanish with this container
+--- docs/handoff.md (6 lines) ---
+# Handoff (max 25 lines; rewrite at every checkpoint commit, commit and push with it)
+- stage / checkpoint: S0 foundation / 3 of 6
+- done: wrappers check, test, run, screen-check, tour
+- doing now: export + web smoke wrapper
+- verification still owed: tools/verify_all.py after export lands
+- next: rule files, agents, first stage plan
+(exit 0)
+=== source=clear
+(exit 0)
+=== bad stdin
+(exit 0)
+=== no note
+(exit 0)

@@ -1,0 +1,33 @@
+{
+ "tris": {
+  "ground": 1568,
+  "track": 3520,
+  "props": 82,
+  "sprites_total": 168,
+  "cars": 1620
+ },
+ "sections": 22,
+ "track_segments": 220,
+ "track_length_m": 1125.6,
+ "segment_len_m": 5.12,
+ "chase": {
+  "fov": 58.0,
+  "visible_sections": 9,
+  "sprites_drawn": 19
+ },
+ "bumper": {
+  "fov": 62.0,
+  "visible_sections": 9,
+  "sprites_drawn": 19
+ },
+ "tv": {
+  "fov": 8.8,
+  "visible_sections": 10,
+  "sprites_drawn": 32
+ },
+ "tv_wide": {
+  "fov": 55.0,
+  "visible_sections": 14,
+  "sprites_drawn": 41
+ }
+}

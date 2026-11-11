@@ -1,0 +1,11 @@
+{
+ "capture": {
+  "params": {
+   "scale": 1,
+   "fps": 60,
+   "at": 660
+  },
+  "screenshot_ms": 8.9,
+  "screencast_ms": 710.1
+ }
+}

@@ -1,0 +1,142 @@
+{
+ "near_clip_ground": {
+  "tile1400_near0.05_h0.62": {
+   "holes_bottom_rows140-240": 0,
+   "ground_px": 38400
+  },
+  "tile1400_near0.05_h2.1": {
+   "holes_bottom_rows140-240": 0,
+   "ground_px": 40320
+  },
+  "tile1400_near0.3_h0.62": {
+   "holes_bottom_rows140-240": 0,
+   "ground_px": 38400
+  },
+  "tile1400_near0.3_h2.1": {
+   "holes_bottom_rows140-240": 0,
+   "ground_px": 40320
+  },
+  "tile1400_near1.0_h0.62": {
+   "holes_bottom_rows140-240": 0,
+   "ground_px": 38400
+  },
+  "tile1400_near1.0_h2.1": {
+   "holes_bottom_rows140-240": 0,
+   "ground_px": 40320
+  },
+  "tile1400_near3.0_h0.62": {
+   "holes_bottom_rows140-240": 24960,
+   "ground_px": 13440
+  },
+  "tile1400_near3.0_h2.1": {
+   "holes_bottom_rows140-240": 0,
+   "ground_px": 40320
+  },
+  "tile50_near0.05_h0.62": {
+   "holes_bottom_rows140-240": 0,
+   "ground_px": 38400
+  },
+  "tile50_near0.05_h2.1": {
+   "holes_bottom_rows140-240": 0,
+   "ground_px": 40320
+  },
+  "tile50_near0.3_h0.62": {
+   "holes_bottom_rows140-240": 0,
+   "ground_px": 38400
+  },
+  "tile50_near0.3_h2.1": {
+   "holes_bottom_rows140-240": 0,
+   "ground_px": 40320
+  },
+  "tile50_near1.0_h0.62": {
+   "holes_bottom_rows140-240": 0,
+   "ground_px": 38400
+  },
+  "tile50_near1.0_h2.1": {
+   "holes_bottom_rows140-240": 0,
+   "ground_px": 40320
+  },
+  "tile50_near3.0_h0.62": {
+   "holes_bottom_rows140-240": 24960,
+   "ground_px": 13440
+  },
+  "tile50_near3.0_h2.1": {
+   "holes_bottom_rows140-240": 0,
+   "ground_px": 40320
+  }
+ },
+ "far_cut_rows": {
+  "h0.62_far300": {
+   "first_ground_row_at_center": 120,
+   "expected_px_below_horizon": 0.43
+  },
+  "h0.62_far150": {
+   "first_ground_row_at_center": 121,
+   "expected_px_below_horizon": 0.86
+  },
+  "h0.62_far1000": {
+   "first_ground_row_at_center": 120,
+   "expected_px_below_horizon": 0.13
+  },
+  "h2.1_far300": {
+   "first_ground_row_at_center": 121,
+   "expected_px_below_horizon": 1.45
+  },
+  "h2.1_far150": {
+   "first_ground_row_at_center": 123,
+   "expected_px_below_horizon": 2.91
+  },
+  "h2.1_far1000": {
+   "first_ground_row_at_center": 121,
+   "expected_px_below_horizon": 0.44
+  },
+  "h8.0_far300": {
+   "first_ground_row_at_center": 126,
+   "expected_px_below_horizon": 5.54
+  },
+  "h8.0_far150": {
+   "first_ground_row_at_center": 131,
+   "expected_px_below_horizon": 11.09
+  },
+  "h8.0_far1000": {
+   "first_ground_row_at_center": 122,
+   "expected_px_below_horizon": 1.66
+  }
+ },
+ "affine_files": [
+  "out/e04_affine_12.0x12.0.png",
+  "out/e04_affine_chase_12.0x12.0.png",
+  "out/e04_affine_6.0x6.0.png",
+  "out/e04_affine_chase_6.0x6.0.png",
+  "out/e04_affine_6.0x3.0.png",
+  "out/e04_affine_chase_6.0x3.0.png",
+  "out/e04_affine_3.0x3.0.png",
+  "out/e04_affine_chase_3.0x3.0.png",
+  "out/e04_affine_3.0x1.5.png",
+  "out/e04_affine_chase_3.0x1.5.png",
+  "out/e04_affine_1.5x1.5.png",
+  "out/e04_affine_chase_1.5x1.5.png"
+ ],
+ "depth_same_camera_two_roots: center pixel (RED=12 kept / BLUE=23 overwritten)": 23,
+ "clear_color_None_keeps_background(MARK px)": 59376,
+ "depth_single_draw_near_first: center pixel": 12,
+ "same_root_twice_ok_center": 12,
+ "viewport: changed px outside rect": 0,
+ "viewport: unclear(MARK) px inside rect": 0,
+ "viewport_240x60: box width px, height px": [
+  12,
+  12
+ ],
+ "viewport_320x240: box width px, height px": [
+  46,
+  46
+ ],
+ "sprite at origin h=2: rows": [
+  99,
+  140
+ ],
+ "dither(0.5) box: RED px": 1058,
+ "opacity=0.5 box: RED px": 1058,
+ "opacity=0.5 mesh node (no shading): RED px": 1058,
+ "opacity=1.0 mesh node: RED px": 2116
+}

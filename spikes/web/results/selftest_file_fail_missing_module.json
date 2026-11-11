@@ -1,0 +1,195 @@
+{
+ "url": "file://<scratchpad>/spikes/web/build/fail_missing_module.html",
+ "mirror": "mirror",
+ "console": [
+  {
+   "t": 160,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 160,
+   "type": "log",
+   "text": "{command: play, name: fail_missing_module.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIAO4Oa10sYEvPCQAAAAcAAAAqAAAAZmFpbF9taX…tb2R1bGUvbWFpbi5weVBLBQYAAAAABAAEAD8BAAC9GAAAAAA=}"
+  },
+  {
+   "t": 2227,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 2599,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 2933,
+   "type": "log",
+   "text": "Attempting to fetch 'module_that_does_not_exist/__init__.py'"
+  },
+  {
+   "t": 2936,
+   "type": "error",
+   "text": "Access to XMLHttpRequest at 'file://<scratchpad>/spikes/web/build/module_that_does_not_exist/__init__.py' from origin 'null' has been blocked by CORS policy: Cross origin requests are only supported for protocol schemes: chrome, chrome-untrusted, data, http, https."
+  },
+  {
+   "t": 2937,
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_FAILED"
+  },
+  {
+   "t": 2937,
+   "type": "log",
+   "text": "Attempting to fetch 'module_that_does_not_exist.py'"
+  },
+  {
+   "t": 2939,
+   "type": "error",
+   "text": "Access to XMLHttpRequest at 'file://<scratchpad>/spikes/web/build/module_that_does_not_exist.py' from origin 'null' has been blocked by CORS policy: Cross origin requests are only supported for protocol schemes: chrome, chrome-untrusted, data, http, https."
+  },
+  {
+   "t": 2939,
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_FAILED"
+  },
+  {
+   "t": 2944,
+   "type": "error",
+   "text": "Traceback (most recent call last):\n  File \"/lib/python314.zip/_pyodide/_base.py\", line 539, in eval_code\n    .run(globals, locals)\n     ~~~^^^^^^^^^^^^^^^^^\n  File \"/lib/python314.zip/_pyodide/_base.py\", line 366, in run\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 3, in <module>\n  File \"/lib/python3.14/site-packages/pyxel/cli.py\", line 166, in play_pyxel_app\n    runpy.run_path(startup_script_file, run_name=\"__main__\")\n    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/tmp/.pyxel/play/42_51ea2f24-c6a5-45cb-b623-62596ec641a5/fail_missing_module/main.py\", line 2, in <module>\n    import module_that_does_not_exist  # noqa: F401\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nModuleNotFoundError: No module named 'module_that_does_not_exist'\n"
+  }
+ ],
+ "failures": [
+  {
+   "t": 2936,
+   "kind": "console.error",
+   "detail": "Access to XMLHttpRequest at 'file://<scratchpad>/spikes/web/build/module_that_does_not_exist/__init__.py' from origin 'null' has been blocked by CORS policy: Cross origin requests are only supported for protocol schemes: chrome, chrome-untrusted, data, http, https."
+  },
+  {
+   "t": 2937,
+   "kind": "requestfailed",
+   "detail": "file://<scratchpad>/spikes/web/build/module_that_does_not_exist/__init__.py net::ERR_FAILED"
+  },
+  {
+   "t": 2937,
+   "kind": "console.error",
+   "detail": "Failed to load resource: net::ERR_FAILED"
+  },
+  {
+   "t": 2939,
+   "kind": "console.error",
+   "detail": "Access to XMLHttpRequest at 'file://<scratchpad>/spikes/web/build/module_that_does_not_exist.py' from origin 'null' has been blocked by CORS policy: Cross origin requests are only supported for protocol schemes: chrome, chrome-untrusted, data, http, https."
+  },
+  {
+   "t": 2939,
+   "kind": "requestfailed",
+   "detail": "file://<scratchpad>/spikes/web/build/module_that_does_not_exist.py net::ERR_FAILED"
+  },
+  {
+   "t": 2939,
+   "kind": "console.error",
+   "detail": "Failed to load resource: net::ERR_FAILED"
+  },
+  {
+   "t": 2944,
+   "kind": "console.error",
+   "detail": "Traceback (most recent call last):\n  File \"/lib/python314.zip/_pyodide/_base.py\", line 539, in eval_code\n    .run(globals, locals)\n     ~~~^^^^^^^^^^^^^^^^^\n  File \"/lib/python314.zip/_pyodide/_base.py\", line 366, in run\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 3, in <module>\n  File \"/lib/python3.14/site-packages/pyxel/cli.py\", line 166, in play_pyxel_app\n    runpy.run_path(startup_script_file, run_name=\"__main__\")\n    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/tmp/.pyxel/play/42_51ea2f24-c6a5-45cb-b623-62596ec641a5/fail_missing_module/main.py\", line 2, in <module>\n    import module_that_does_not_exist  # noqa: F401\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nModuleNotFoundError: No module named 'module_that_does_not_exist'\n"
+  },
+  {
+   "t": 3551,
+   "kind": "pyxel-error-overlay",
+   "detail": "Traceback (most recent call last):\n  File \"/lib/python314.zip/_pyodide/_base.py\", line 539, in eval_code\n    .run(globals, locals)\n     ~~~^^^^^^^^^^^^^^^^^\n  File \"/lib/python314.zip/_pyodide/_base.py\", line 366, in run\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 3, in <module>\n  File \"/lib/python3.14/site-packages/pyxel/cli.py\", line 166, in play_pyxel_app\n    runpy.run_path(startup_script_file, run_name=\"__main__\")\n    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/tmp/.pyxel/play/42_51ea2f24-c6a5-45cb-b623-62596ec641a5/fail_missing_module/main.py\", line 2, in <module>\n    import module_that_does_not_exist  # noqa: F401\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nModuleNotFoundError: No module named 'module_that_does_not_exist'\n"
+  },
+  {
+   "t": 3551,
+   "kind": "until-not-seen",
+   "detail": "no console line matched /^SPIKE_DONE/ within 20000 ms"
+  }
+ ],
+ "requests": [
+  {
+   "t": 143,
+   "status": 200,
+   "url": "file://<scratchpad>/spikes/web/build/fail_missing_module.html"
+  },
+  {
+   "t": 156,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel.js"
+  },
+  {
+   "t": 164,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel.css"
+  },
+  {
+   "t": 166,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 329,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 346,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/import_hook.py"
+  },
+  {
+   "t": 347,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 429,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 466,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 563,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 582,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 2327,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 2640,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/images/click_to_start_114x14.png"
+  }
+ ],
+ "downloads": [],
+ "allowed": [],
+ "actions": [],
+ "filechoosers": [],
+ "passed": false,
+ "promptAt": 2769,
+ "clickedAt": 2774,
+ "state": {
+  "overlayText": "Traceback (most recent call last):\n  File \"/lib/python314.zip/_pyodide/_base.py\", line 539, in eval_code\n    .run(globals, locals)\n     ~~~^^^^^^^^^^^^^^^^^\n  File \"/lib/python314.zip/_pyodide/_base.py\", line 366, in run\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 3, in <module>\n  File \"/lib/python3.14/site-packages/pyxel/cli.py\", line 166, in play_pyxel_app\n    runpy.run_path(startup_script_file, run_name=\"__main__\")\n    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/tmp/.pyxel/play/42_51ea2f24-c6a5-45cb-b623-62596ec641a5/fail_missing_module/main.py\", line 2, in <module>\n    import module_that_does_not_exist  # noqa: F401\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nModuleNotFoundError: No module named 'module_that_does_not_exist'\n",
+  "hasFatalError": false,
+  "initialized": true,
+  "canvas": {
+   "width": 300,
+   "height": 150,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": null,
+ "elapsedMs": 3598
+}

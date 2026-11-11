@@ -1,0 +1,149 @@
+{
+ "url": "file://<scratchpad>/spikes/replay/web_build/cpr_spike.html",
+ "mirror": "<scratchpad>/spikes/web/mirror",
+ "console": [
+  {
+   "t": 187,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 188,
+   "type": "log",
+   "text": "{command: play, name: cpr_spike.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIAEcUa10sYEvPCQAAAAcAAAAgAAAAY3ByX3NwaW…fc3Bpa2Uvc3ludGgucHlQSwUGAAAAAAkACQBmAgAAE58CAAAA}"
+  },
+  {
+   "t": 2684,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 3126,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 3554,
+   "type": "warning",
+   "text": "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)"
+  },
+  {
+   "t": 3599,
+   "type": "warning",
+   "text": "[.WebGL-0x1bf406cadc00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 5792,
+   "type": "log",
+   "text": "RESULT {\"python\": \"3.14.2\", \"platform\": \"emscripten\", \"byteorder\": \"little\", \"zlib\": \"1.3.1\", \"read_native_small_content_crc\": 1982588776, \"read_native_big_content_crc\": 1190822823, \"read_native_ok\": true, \"pose_crc_small\": 2918819481, \"pose_values\": 20550, \"pose_crc_equal_native\": true, \"pose_crc_big_equal_native\": true, \"write_read_exact\": true, \"rewritten_big_bytes_identical_to_native_file\": true, \"rewritten_big_len\": 150336, \"rewritten_small_bytes_identical_to_native_file\": true, \"reject_codes\": [\"E_CORRUPT\", \"E_TRUNCATED\", \"E_NOT_CPR\", \"E_CORRUPT\"], \"browser_recorded_content_crc\": 1982588776, \"browser_recorded_equals_native_recording\": true, \"browser_recorded_differing_bytes\": 0, \"browser_recorded_total_bytes\": 5600, \"browser_file_b64\": \"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\", \"browser_file_crc32\": 558161692, \"t_load_big_ms\": 73.30000000000014, \"t_dump_big_ms\": 253.19999999999965, \"t_dump_big_level6_ms\": 145.99999999999991, \"t_peek_big_ms\": 0.39999999999995595, \"t_b64_big_ms\": 0.6999999999992568, \"t_unb64_big_ms\": 0.700000000000145, \"recorder_tick_us_avg_6cars\": 6.99999999999997, \"recorder_sample_tick_us_6cars\": 16.999999999999606, \"pose_6cars_us_lerp\": 29.433333333333422, \"pose_6cars_us_hermite\": 40.4666666666668, \"localstorage_roundtrip\": true, \"localstorage_len\": 200448, \"localstorage_reload_exact\": true, \"localstorage_quota_chars_at_least\": 5000000, \"localstorage_quota_error\": \"JsException: QuotaExceededError: Failed to execute 'setItem' on 'Storage': Setting the value of 'cpr_quota_10' exceeded the quota.\", \"location\": \"file:\"}"
+  },
+  {
+   "t": 5793,
+   "type": "log",
+   "text": "SPIKE_DONE"
+  },
+  {
+   "t": 5811,
+   "type": "warning",
+   "text": "[.WebGL-0x1bf406cadc00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 5830,
+   "type": "warning",
+   "text": "[.WebGL-0x1bf406cadc00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 5842,
+   "type": "warning",
+   "text": "[.WebGL-0x1bf406cadc00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  }
+ ],
+ "failures": [],
+ "requests": [
+  {
+   "t": 147,
+   "status": 200,
+   "url": "file://<scratchpad>/spikes/replay/web_build/cpr_spike.html"
+  },
+  {
+   "t": 180,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel.js"
+  },
+  {
+   "t": 191,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel.css"
+  },
+  {
+   "t": 204,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 394,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 416,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/import_hook.py"
+  },
+  {
+   "t": 416,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 526,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 580,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 710,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 739,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 2810,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 3184,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/images/click_to_start_114x14.png"
+  }
+ ],
+ "downloads": [],
+ "allowed": [],
+ "actions": [],
+ "filechoosers": [],
+ "passed": true,
+ "promptAt": 3240,
+ "clickedAt": 3244,
+ "state": {
+  "overlayText": null,
+  "hasFatalError": false,
+  "initialized": true,
+  "canvas": {
+   "width": 960,
+   "height": 720,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": 5793,
+ "elapsedMs": 6269
+}

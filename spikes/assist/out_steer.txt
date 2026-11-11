@@ -1,0 +1,463 @@
+{'k': 0.0, 'slope_at_centre': 1.0, 'equiv_power_p': 1.0, 'cubic': [0.1, 0.25, 0.5, 0.75, 0.9], 'power': [0.1, 0.25, 0.5, 0.75, 0.9]}
+{'k': 0.2, 'slope_at_centre': 0.8, 'equiv_power_p': 1.234, 'cubic': [0.08, 0.203, 0.425, 0.684, 0.866], 'power': [0.058, 0.181, 0.425, 0.701, 0.878]}
+{'k': 0.4, 'slope_at_centre': 0.6, 'equiv_power_p': 1.515, 'cubic': [0.06, 0.156, 0.35, 0.619, 0.832], 'power': [0.031, 0.122, 0.35, 0.647, 0.853]}
+{'k': 0.6, 'slope_at_centre': 0.4, 'equiv_power_p': 1.862, 'cubic': [0.041, 0.109, 0.275, 0.553, 0.797], 'power': [0.014, 0.076, 0.275, 0.585, 0.822]}
+{'k': 0.8, 'slope_at_centre': 0.2, 'equiv_power_p': 2.322, 'cubic': [0.021, 0.062, 0.2, 0.487, 0.763], 'power': [0.005, 0.04, 0.2, 0.513, 0.783]}
+{'k': 1.0, 'slope_at_centre': 0.0, 'equiv_power_p': 3.0, 'cubic': [0.001, 0.016, 0.125, 0.422, 0.729], 'power': [0.001, 0.016, 0.125, 0.422, 0.729]}
+{'kmh': 0, 'kinematic_L*a/v^2_deg': 31.5, 'physics_stage1_deg': 31.51, 'physics_stage2_deg': 31.51, 'physics_stage3_deg': 31.51, 'physics_stage4_deg': 31.51, 'physics_stage5_deg': 31.51, 'simple_deg': 31.51}
+{'kmh': 20, 'kinematic_L*a/v^2_deg': 31.51, 'physics_stage1_deg': 31.51, 'physics_stage2_deg': 31.51, 'physics_stage3_deg': 31.51, 'physics_stage4_deg': 31.51, 'physics_stage5_deg': 31.51, 'simple_deg': 25.75}
+{'kmh': 40, 'kinematic_L*a/v^2_deg': 12.76, 'physics_stage1_deg': 19.7, 'physics_stage2_deg': 16.29, 'physics_stage3_deg': 14.26, 'physics_stage4_deg': 12.64, 'physics_stage5_deg': 11.45, 'simple_deg': 17.19}
+{'kmh': 60, 'kinematic_L*a/v^2_deg': 5.67, 'physics_stage1_deg': 10.84, 'physics_stage2_deg': 8.49, 'physics_stage3_deg': 7.17, 'physics_stage4_deg': 6.12, 'physics_stage5_deg': 5.42, 'simple_deg': 11.76}
+{'kmh': 80, 'kinematic_L*a/v^2_deg': 3.19, 'physics_stage1_deg': 7.74, 'physics_stage2_deg': 5.76, 'physics_stage3_deg': 4.69, 'physics_stage4_deg': 3.84, 'physics_stage5_deg': 3.31, 'simple_deg': 8.73}
+{'kmh': 100, 'kinematic_L*a/v^2_deg': 2.04, 'physics_stage1_deg': 6.3, 'physics_stage2_deg': 4.5, 'physics_stage3_deg': 3.54, 'physics_stage4_deg': 2.78, 'physics_stage5_deg': 2.34, 'simple_deg': 7.0}
+{'kmh': 120, 'kinematic_L*a/v^2_deg': 1.42, 'physics_stage1_deg': 5.52, 'physics_stage2_deg': 3.81, 'physics_stage3_deg': 2.92, 'physics_stage4_deg': 2.2, 'physics_stage5_deg': 1.81, 'simple_deg': 5.94}
+{'kmh': 150, 'kinematic_L*a/v^2_deg': 0.91, 'physics_stage1_deg': 4.88, 'physics_stage2_deg': 3.25, 'physics_stage3_deg': 2.41, 'physics_stage4_deg': 1.74, 'physics_stage5_deg': 1.37, 'simple_deg': 5.0}
+{'kmh': 180, 'kinematic_L*a/v^2_deg': 0.63, 'physics_stage1_deg': 4.54, 'physics_stage2_deg': 2.94, 'physics_stage3_deg': 2.13, 'physics_stage4_deg': 1.48, 'physics_stage5_deg': 1.14, 'simple_deg': 4.46}
+{'kmh': 220, 'kinematic_L*a/v^2_deg': 0.42, 'physics_stage1_deg': 4.28, 'physics_stage2_deg': 2.71, 'physics_stage3_deg': 1.92, 'physics_stage4_deg': 1.29, 'physics_stage5_deg': 0.96, 'simple_deg': 4.04}
+{'kmh': 260, 'kinematic_L*a/v^2_deg': 0.3, 'physics_stage1_deg': 4.13, 'physics_stage2_deg': 2.58, 'physics_stage3_deg': 1.8, 'physics_stage4_deg': 1.18, 'physics_stage5_deg': 0.86, 'simple_deg': 3.79}
+--- full stick (analog) held 3 s ---
+tsubame    60 raw               hold        | steer  31.5 syf   4.44 / 4.20 syr   0.47 g 0.82 /0.70 beta   1.2 spin None
+tsubame    60 raw               coast0.12   | steer  31.5 syf   4.47 / 3.49 syr   0.48 g 0.82 /0.73 beta   5.2 spin None
+tsubame    60 simple            hold        | steer  12.1 syf   1.60 / 1.44 syr   0.64 g 0.91 /0.84 beta   1.5 spin None
+tsubame    60 simple            hold+assist | steer  12.9 syf   1.60 / 1.42 syr   0.65 g 0.91 /0.86 beta   1.5 spin None
+tsubame    60 simple            coast0.12   | steer  16.2 syf   1.76 / 1.54 syr   0.78 g 0.91 /0.88 beta   2.2 spin None
+tsubame    60 physics_wide      hold        | steer  15.5 syf   2.01 / 1.83 syr   0.57 g 0.89 /0.83 beta   1.2 spin None
+tsubame    60 physics_wide      hold+assist | steer  17.1 syf   2.01 / 1.91 syr   0.57 g 0.89 /0.84 beta   1.2 spin None
+tsubame    60 physics_wide      coast0.12   | steer  23.8 syf   2.44 / 2.28 syr   0.64 g 0.88 /0.82 beta   2.8 spin None
+tsubame    60 physics_mid       hold        | steer   7.0 syf   0.94 / 0.85 syr   0.69 g 0.93 /0.86 beta   1.8 spin None
+tsubame    60 physics_mid       hold+assist | steer   7.0 syf   0.91 / 0.77 syr   0.67 g 0.93 /0.89 beta   1.7 spin None
+tsubame    60 physics_mid       coast0.12   | steer   9.8 syf   1.07 / 0.86 syr   0.81 g 0.93 /0.90 beta   2.4 spin None
+tsubame    60 physics_tight     hold        | steer   7.3 syf   0.99 / 0.89 syr   0.70 g 0.93 /0.86 beta   1.9 spin None
+tsubame    60 physics_tight     hold+assist | steer   7.2 syf   0.93 / 0.77 syr   0.67 g 0.93 /0.88 beta   1.7 spin None
+tsubame    60 physics_tight     coast0.12   | steer   9.6 syf   1.11 / 0.83 syr   0.84 g 0.93 /0.90 beta   2.7 spin None
+tsubame    60 physics_mid+clip  hold        | steer   7.0 syf   0.94 / 0.85 syr   0.69 g 0.93 /0.86 beta   1.8 spin None
+tsubame    60 physics_mid+clip  hold+assist | steer   7.0 syf   0.91 / 0.77 syr   0.67 g 0.93 /0.89 beta   1.7 spin None
+tsubame    60 physics_mid+clip  coast0.12   | steer   9.8 syf   1.07 / 0.86 syr   0.81 g 0.93 /0.90 beta   2.4 spin None
+tsubame    60 clip_only         hold        | steer  31.5 syf   4.43 / 4.13 syr   0.47 g 0.82 /0.73 beta   1.3 spin None
+tsubame    60 clip_only         hold+assist | steer  31.5 syf   4.43 / 3.91 syr   0.47 g 0.82 /0.76 beta   2.4 spin None
+tsubame    60 clip_only         coast0.12   | steer  31.5 syf   4.46 / 3.38 syr   0.48 g 0.81 /0.72 beta   6.0 spin None
+tsubame   100 raw               hold        | steer  31.5 syf   5.20 / 4.68 syr   0.62 g 0.86 /0.75 beta   3.4 spin None
+tsubame   100 raw               coast0.12   | steer  31.5 syf   5.30 / 4.63 syr   0.67 g 0.85 /0.72 beta   3.9 spin None
+tsubame   100 simple            hold        | steer   7.2 syf   1.65 / 1.06 syr   0.93 g 0.94 /0.84 beta   5.7 spin None
+tsubame   100 simple            hold+assist | steer   7.5 syf   1.70 / 1.20 syr   0.97 g 0.94 /0.89 beta   6.0 spin None
+tsubame   100 simple            coast0.12   | steer   8.9 syf   2.42 / 1.37 syr   1.58 g 0.94 /0.88 beta  10.4 spin None
+tsubame   100 physics_wide      hold        | steer  10.8 syf   2.05 / 1.56 syr   0.82 g 0.92 /0.81 beta   4.9 spin None
+tsubame   100 physics_wide      hold+assist | steer  11.2 syf   2.08 / 1.65 syr   0.84 g 0.92 /0.86 beta   5.1 spin None
+tsubame   100 physics_wide      coast0.12   | steer  12.3 syf   2.45 / 1.83 syr   1.15 g 0.92 /0.89 beta   7.3 spin None
+tsubame   100 physics_mid       hold        | steer   3.4 syf   0.94 / 0.74 syr   0.72 g 0.93 /0.89 beta   4.2 spin None
+tsubame   100 physics_mid       hold+assist | steer   3.4 syf   0.94 / 0.65 syr   0.72 g 0.93 /0.87 beta   4.2 spin None
+tsubame   100 physics_mid       coast0.12   | steer   4.2 syf   1.51 / 0.97 syr   1.27 g 0.95 /0.91 beta   8.1 spin None
+tsubame   100 physics_tight     hold        | steer   4.4 syf   1.21 / 0.82 syr   0.86 g 0.94 /0.89 beta   5.3 spin None
+tsubame   100 physics_tight     hold+assist | steer   4.4 syf   1.23 / 0.70 syr   0.88 g 0.94 /0.81 beta   5.4 spin None
+tsubame   100 physics_tight     coast0.12   | steer   5.2 syf   2.02 / 1.32 syr   1.63 g 0.95 /0.91 beta  10.7 spin None
+tsubame   100 physics_mid+clip  hold        | steer   3.4 syf   0.94 / 0.74 syr   0.72 g 0.93 /0.89 beta   4.2 spin None
+tsubame   100 physics_mid+clip  hold+assist | steer   3.4 syf   0.94 / 0.65 syr   0.72 g 0.93 /0.87 beta   4.2 spin None
+tsubame   100 physics_mid+clip  coast0.12   | steer   4.2 syf   1.51 / 0.97 syr   1.27 g 0.95 /0.91 beta   8.1 spin None
+tsubame   100 clip_only         hold        | steer  31.5 syf   5.22 / 4.68 syr   0.63 g 0.86 /0.75 beta   3.6 spin None
+tsubame   100 clip_only         hold+assist | steer  31.5 syf   5.23 / 4.67 syr   0.63 g 0.86 /0.76 beta   3.6 spin None
+tsubame   100 clip_only         coast0.12   | steer  31.5 syf   5.29 / 4.62 syr   0.67 g 0.85 /0.71 beta   3.9 spin None
+tsubame   140 raw               hold        | steer  31.5 syf   5.60 / 4.87 syr   0.77 g 0.89 /0.76 beta   5.2 spin None
+tsubame   140 raw               coast0.12   | steer  31.5 syf   5.78 / 4.90 syr   0.88 g 0.88 /0.72 beta   6.0 spin None
+tsubame   140 simple            hold        | steer   5.5 syf   1.95 / 1.03 syr   1.33 g 0.96 /0.88 beta   9.3 spin None
+tsubame   140 simple            hold+assist | steer   5.6 syf   2.04 / 1.07 syr   1.41 g 0.96 /0.90 beta   9.9 spin None
+tsubame   140 simple            coast0.12   | steer   7.1 syf   4.08 / 3.94 syr   3.17 g 0.96 /0.87 beta  21.9 spin None
+tsubame   140 physics_wide      hold        | steer   9.7 syf   2.41 / 1.58 syr   1.20 g 0.94 /0.86 beta   8.3 spin None
+tsubame   140 physics_wide      hold+assist | steer   9.8 syf   2.46 / 1.64 syr   1.24 g 0.94 /0.88 beta   8.6 spin None
+tsubame   140 physics_wide      coast0.12   | steer  10.2 syf   3.21 / 1.85 syr   1.90 g 0.94 /0.87 beta  13.3 spin None
+tsubame   140 physics_mid       hold        | steer   2.5 syf   1.01 / 0.58 syr   0.81 g 0.95 /0.83 beta   5.4 spin None
+tsubame   140 physics_mid       hold+assist | steer   2.5 syf   1.02 / 0.58 syr   0.81 g 0.95 /0.83 beta   5.5 spin None
+tsubame   140 physics_mid       coast0.12   | steer   3.1 syf   2.64 / 2.57 syr   2.36 g 0.96 /0.90 beta  16.5 spin None
+tsubame   140 physics_tight     hold        | steer   3.7 syf   1.53 / 0.77 syr   1.15 g 0.96 /0.86 beta   8.0 spin None
+tsubame   140 physics_tight     hold+assist | steer   3.7 syf   1.59 / 0.76 syr   1.21 g 0.96 /0.86 beta   8.4 spin None
+tsubame   140 physics_tight     coast0.12   | steer   4.4 syf   3.82 / 3.76 syr   3.30 g 0.96 /0.87 beta  22.7 spin None
+tsubame   140 physics_mid+clip  hold        | steer   2.5 syf   1.01 / 0.58 syr   0.81 g 0.95 /0.83 beta   5.4 spin None
+tsubame   140 physics_mid+clip  hold+assist | steer   2.5 syf   1.02 / 0.58 syr   0.81 g 0.95 /0.83 beta   5.5 spin None
+tsubame   140 physics_mid+clip  coast0.12   | steer   3.1 syf   2.64 / 2.57 syr   2.36 g 0.96 /0.90 beta  16.5 spin None
+tsubame   140 clip_only         hold        | steer  31.5 syf   5.64 / 4.88 syr   0.80 g 0.89 /0.76 beta   5.4 spin None
+tsubame   140 clip_only         hold+assist | steer  31.5 syf   5.64 / 4.88 syr   0.80 g 0.89 /0.76 beta   5.4 spin None
+tsubame   140 clip_only         coast0.12   | steer  31.5 syf   5.78 / 4.89 syr   0.88 g 0.88 /0.72 beta   6.1 spin None
+tsubame   180 raw               hold        | steer  31.5 syf   5.64 / 4.97 syr   0.75 g 0.91 /0.77 beta   5.3 spin None
+tsubame   180 raw               coast0.12   | steer  31.5 syf   5.98 / 5.01 syr   0.96 g 0.89 /0.73 beta   6.9 spin None
+tsubame   180 simple            hold        | steer   4.6 syf   1.59 / 1.01 syr   1.05 g 0.96 /0.90 beta   7.5 spin None
+tsubame   180 simple            hold+assist | steer   4.6 syf   1.63 / 1.04 syr   1.08 g 0.96 /0.92 beta   7.7 spin None
+tsubame   180 simple            coast0.12   | steer   6.2 syf   6.17 / 5.66 syr   5.02 g 0.97 /0.85 beta  33.0 spin 1.73
+tsubame   180 physics_wide      hold        | steer   9.1 syf   2.19 / 1.59 syr   1.02 g 0.95 /0.89 beta   7.2 spin None
+tsubame   180 physics_wide      hold+assist | steer   9.2 syf   2.20 / 1.60 syr   1.03 g 0.95 /0.89 beta   7.3 spin None
+tsubame   180 physics_wide      coast0.12   | steer   9.5 syf   3.75 / 2.91 syr   2.40 g 0.95 /0.90 beta  17.1 spin None
+tsubame   180 physics_mid       hold        | steer   2.1 syf   0.88 / 0.61 syr   0.68 g 0.94 /0.86 beta   4.7 spin None
+tsubame   180 physics_mid       hold+assist | steer   2.1 syf   0.88 / 0.61 syr   0.68 g 0.94 /0.86 beta   4.7 spin None
+tsubame   180 physics_mid       coast0.12   | steer   2.6 syf   4.15 / 3.73 syr   3.84 g 0.97 /0.88 beta  26.2 spin 2.72
+tsubame   180 physics_tight     hold        | steer   3.4 syf   1.31 / 0.83 syr   0.93 g 0.96 /0.90 beta   6.6 spin None
+tsubame   180 physics_tight     hold+assist | steer   3.4 syf   1.33 / 0.83 syr   0.96 g 0.96 /0.90 beta   6.8 spin None
+tsubame   180 physics_tight     coast0.12   | steer   4.0 syf   5.97 / 5.28 syr   5.30 g 0.98 /0.86 beta  34.3 spin 1.83
+tsubame   180 physics_mid+clip  hold        | steer   2.1 syf   0.88 / 0.61 syr   0.68 g 0.94 /0.86 beta   4.7 spin None
+tsubame   180 physics_mid+clip  hold+assist | steer   2.1 syf   0.88 / 0.61 syr   0.68 g 0.94 /0.86 beta   4.7 spin None
+tsubame   180 physics_mid+clip  coast0.12   | steer   2.6 syf   4.15 / 3.73 syr   3.84 g 0.97 /0.88 beta  26.2 spin 2.72
+tsubame   180 clip_only         hold        | steer  31.5 syf   5.69 / 4.98 syr   0.78 g 0.91 /0.77 beta   5.5 spin None
+tsubame   180 clip_only         hold+assist | steer  31.5 syf   5.69 / 4.98 syr   0.78 g 0.91 /0.77 beta   5.5 spin None
+tsubame   180 clip_only         coast0.12   | steer  31.5 syf   5.98 / 5.00 syr   0.96 g 0.89 /0.73 beta   6.8 spin None
+kazane     60 raw               hold        | steer  31.5 syf   4.85 / 4.60 syr   0.62 g 0.84 /0.66 beta   2.7 spin None
+kazane     60 raw               coast0.12   | steer  31.5 syf   4.65 / 3.86 syr   0.53 g 0.84 /0.72 beta   2.1 spin None
+kazane     60 simple            hold        | steer  19.7 syf  13.05 / 9.13 syr   7.70 g 0.91 /0.70 beta  41.4 spin 1.95
+kazane     60 simple            hold+assist | steer  12.6 syf   1.95 / 1.66 syr   0.89 g 0.91 /0.82 beta   4.1 spin None
+kazane     60 simple            coast0.12   | steer  16.1 syf   2.00 / 1.69 syr   0.91 g 0.92 /0.88 beta   4.1 spin None
+kazane     60 physics_wide      hold        | steer  19.1 syf   6.85 / 6.02 syr   3.92 g 0.89 /0.72 beta  24.5 spin None
+kazane     60 physics_wide      hold+assist | steer  14.9 syf   2.22 / 2.00 syr   0.79 g 0.89 /0.80 beta   3.5 spin None
+kazane     60 physics_wide      coast0.12   | steer  20.6 syf   2.23 / 2.15 syr   0.77 g 0.90 /0.84 beta   3.2 spin None
+kazane     60 physics_mid       hold        | steer  31.5 syf 169.04 /33.18 syr  16.11 g 0.92 /0.71 beta  60.7 spin 1.83
+kazane     60 physics_mid       hold+assist | steer   6.5 syf   1.14 / 0.89 syr   0.90 g 0.93 /0.86 beta   4.2 spin None
+kazane     60 physics_mid       coast0.12   | steer   9.1 syf   1.27 / 0.86 syr   1.02 g 0.94 /0.91 beta   4.8 spin None
+kazane     60 physics_tight     hold        | steer  31.5 syf 167.31 /37.24 syr  17.84 g 0.93 /0.71 beta  62.6 spin 1.78
+kazane     60 physics_tight     hold+assist | steer   7.0 syf   1.24 / 0.95 syr   0.95 g 0.93 /0.86 beta   4.6 spin None
+kazane     60 physics_tight     coast0.12   | steer   9.0 syf   1.39 / 0.85 syr   1.10 g 0.94 /0.90 beta   5.4 spin None
+kazane     60 physics_mid+clip  hold        | steer  31.5 syf 169.04 /33.18 syr  16.11 g 0.92 /0.71 beta  60.7 spin 1.83
+kazane     60 physics_mid+clip  hold+assist | steer   6.5 syf   1.14 / 0.89 syr   0.90 g 0.93 /0.86 beta   4.2 spin None
+kazane     60 physics_mid+clip  coast0.12   | steer   9.1 syf   1.27 / 0.86 syr   1.02 g 0.94 /0.91 beta   4.8 spin None
+kazane     60 clip_only         hold        | steer  31.5 syf   4.84 / 4.55 syr   0.62 g 0.84 /0.65 beta   2.7 spin None
+kazane     60 clip_only         hold+assist | steer  31.5 syf   4.75 / 4.45 syr   0.58 g 0.84 /0.65 beta   2.3 spin None
+kazane     60 clip_only         coast0.12   | steer  31.5 syf   4.65 / 3.73 syr   0.55 g 0.84 /0.72 beta   2.7 spin None
+kazane    100 raw               hold        | steer  31.5 syf   5.46 / 4.85 syr   0.73 g 0.87 /0.65 beta   4.8 spin None
+kazane    100 raw               coast0.12   | steer  31.5 syf   5.48 / 4.72 syr   0.77 g 0.88 /0.72 beta   4.9 spin None
+kazane    100 simple            hold        | steer   7.8 syf   3.27 / 2.15 syr   2.33 g 0.94 /0.83 beta  16.2 spin None
+kazane    100 simple            hold+assist | steer   7.8 syf   2.31 / 1.33 syr   1.48 g 0.94 /0.85 beta  10.0 spin None
+kazane    100 simple            coast0.12   | steer   9.7 syf   3.35 / 2.42 syr   2.33 g 0.95 /0.88 beta  15.9 spin None
+kazane    100 physics_wide      hold        | steer  10.7 syf   2.98 / 1.72 syr   1.65 g 0.92 /0.80 beta  11.4 spin None
+kazane    100 physics_wide      hold+assist | steer  10.8 syf   2.40 / 1.82 syr   1.14 g 0.92 /0.84 beta   7.6 spin None
+kazane    100 physics_wide      coast0.12   | steer  11.9 syf   2.83 / 1.79 syr   1.51 g 0.93 /0.87 beta  10.2 spin None
+kazane    100 physics_mid       hold        | steer   3.4 syf   2.15 / 1.83 syr   1.89 g 0.94 /0.86 beta  13.1 spin None
+kazane    100 physics_mid       hold+assist | steer   3.4 syf   1.29 / 0.79 syr   1.07 g 0.95 /0.85 beta   7.1 spin None
+kazane    100 physics_mid       coast0.12   | steer   4.6 syf   2.55 / 2.46 syr   2.24 g 0.96 /0.90 beta  15.2 spin None
+kazane    100 physics_tight     hold        | steer   4.5 syf   2.89 / 2.47 syr   2.45 g 0.95 /0.85 beta  17.0 spin None
+kazane    100 physics_tight     hold+assist | steer   4.5 syf   1.82 / 0.91 syr   1.44 g 0.95 /0.84 beta   9.8 spin None
+kazane    100 physics_tight     coast0.12   | steer   5.8 syf   3.45 / 3.36 syr   2.94 g 0.96 /0.88 beta  19.9 spin None
+kazane    100 physics_mid+clip  hold        | steer   3.4 syf   2.15 / 1.83 syr   1.89 g 0.94 /0.86 beta  13.1 spin None
+kazane    100 physics_mid+clip  hold+assist | steer   3.4 syf   1.29 / 0.79 syr   1.07 g 0.95 /0.85 beta   7.1 spin None
+kazane    100 physics_mid+clip  coast0.12   | steer   4.6 syf   2.55 / 2.46 syr   2.24 g 0.96 /0.90 beta  15.2 spin None
+kazane    100 clip_only         hold        | steer  31.5 syf   5.50 / 4.82 syr   0.76 g 0.87 /0.66 beta   5.0 spin None
+kazane    100 clip_only         hold+assist | steer  31.5 syf   5.45 / 4.82 syr   0.74 g 0.87 /0.66 beta   4.8 spin None
+kazane    100 clip_only         coast0.12   | steer  31.5 syf   5.50 / 4.70 syr   0.78 g 0.88 /0.72 beta   5.0 spin None
+kazane    140 raw               hold        | steer  31.5 syf   5.78 / 4.93 syr   0.86 g 0.88 /0.68 beta   6.1 spin None
+kazane    140 raw               coast0.12   | steer  31.5 syf   5.92 / 4.93 syr   0.96 g 0.90 /0.73 beta   6.7 spin None
+kazane    140 simple            hold        | steer   5.8 syf   3.19 / 2.13 syr   2.44 g 0.95 /0.89 beta  17.3 spin None
+kazane    140 simple            hold+assist | steer   6.2 syf   3.28 / 2.46 syr   2.50 g 0.95 /0.91 beta  17.7 spin None
+kazane    140 simple            coast0.12   | steer  10.6 syf  10.81 / 8.68 syr   7.72 g 0.97 /0.83 beta  44.6 spin 1.45
+kazane    140 physics_wide      hold        | steer   9.6 syf   2.81 / 1.68 syr   1.55 g 0.93 /0.84 beta  11.1 spin None
+kazane    140 physics_wide      hold+assist | steer   9.7 syf   2.82 / 1.67 syr   1.56 g 0.94 /0.85 beta  11.1 spin None
+kazane    140 physics_wide      coast0.12   | steer  10.4 syf   4.49 / 3.99 syr   2.97 g 0.95 /0.88 beta  20.8 spin None
+kazane    140 physics_mid       hold        | steer   2.5 syf   1.59 / 0.87 syr   1.37 g 0.96 /0.88 beta   9.7 spin None
+kazane    140 physics_mid       hold+assist | steer   2.6 syf   1.64 / 1.20 syr   1.42 g 0.96 /0.92 beta  10.1 spin None
+kazane    140 physics_mid       coast0.12   | steer   4.2 syf   7.24 / 5.65 syr   6.58 g 0.97 /0.85 beta  39.9 spin 1.9
+kazane    140 physics_tight     hold        | steer   3.7 syf   2.67 / 1.97 syr   2.24 g 0.95 /0.90 beta  16.0 spin None
+kazane    140 physics_tight     hold+assist | steer   3.9 syf   2.82 / 2.39 syr   2.38 g 0.96 /0.91 beta  16.9 spin None
+kazane    140 physics_tight     coast0.12   | steer   6.2 syf  10.90 / 8.10 syr   9.15 g 0.97 /0.83 beta  49.2 spin 1.53
+kazane    140 physics_mid+clip  hold        | steer   2.5 syf   1.59 / 0.87 syr   1.37 g 0.96 /0.88 beta   9.7 spin None
+kazane    140 physics_mid+clip  hold+assist | steer   2.6 syf   1.64 / 1.20 syr   1.42 g 0.96 /0.92 beta  10.1 spin None
+kazane    140 physics_mid+clip  coast0.12   | steer   4.2 syf   7.24 / 5.65 syr   6.58 g 0.97 /0.85 beta  39.9 spin 1.9
+kazane    140 clip_only         hold        | steer  31.5 syf   5.79 / 4.92 syr   0.87 g 0.88 /0.68 beta   6.1 spin None
+kazane    140 clip_only         hold+assist | steer  31.5 syf   5.78 / 4.92 syr   0.86 g 0.88 /0.68 beta   6.1 spin None
+kazane    140 clip_only         coast0.12   | steer  31.5 syf   5.95 / 4.94 syr   0.98 g 0.90 /0.73 beta   6.9 spin None
+kazane    180 raw               hold        | steer  31.5 syf   6.02 / 5.00 syr   0.98 g 0.89 /0.70 beta   7.1 spin None
+kazane    180 raw               coast0.12   | steer  31.5 syf   6.32 / 5.05 syr   1.17 g 0.92 /0.74 beta   8.5 spin None
+kazane    180 simple            hold        | steer   5.0 syf   3.64 / 2.97 syr   2.94 g 0.96 /0.89 beta  20.8 spin None
+kazane    180 simple            hold+assist | steer   5.4 syf   4.28 / 4.13 syr   3.49 g 0.97 /0.88 beta  24.4 spin None
+kazane    180 simple            coast0.12   | steer  15.8 syf  91.87 /25.56 syr  20.84 g 0.99 /0.81 beta  69.4 spin 1.2
+kazane    180 physics_wide      hold        | steer   9.1 syf   3.24 / 1.72 syr   1.97 g 0.94 /0.88 beta  14.3 spin None
+kazane    180 physics_wide      hold+assist | steer   9.2 syf   3.27 / 1.88 syr   2.00 g 0.95 /0.88 beta  14.4 spin None
+kazane    180 physics_wide      coast0.12   | steer  10.7 syf  10.14 / 8.70 syr   7.12 g 0.97 /0.83 beta  42.7 spin 1.42
+kazane    180 physics_mid       hold        | steer   2.1 syf   2.18 / 1.73 syr   1.95 g 0.96 /0.93 beta  14.1 spin None
+kazane    180 physics_mid       hold+assist | steer   2.2 syf   2.56 / 2.50 syr   2.32 g 0.97 /0.91 beta  16.6 spin None
+kazane    180 physics_mid       coast0.12   | steer   5.5 syf  17.31 /10.28 syr  14.13 g 0.98 /0.83 beta  61.0 spin 1.5
+kazane    180 physics_tight     hold        | steer   3.4 syf   3.25 / 2.78 syr   2.80 g 0.96 /0.90 beta  20.0 spin None
+kazane    180 physics_tight     hold+assist | steer   3.6 syf   3.99 / 3.90 syr   3.49 g 0.97 /0.88 beta  24.3 spin None
+kazane    180 physics_tight     coast0.12   | steer  10.8 syf  55.97 /18.92 syr  23.48 g 0.99 /0.82 beta  71.4 spin 1.27
+kazane    180 physics_mid+clip  hold        | steer   2.1 syf   2.18 / 1.73 syr   1.95 g 0.96 /0.93 beta  14.1 spin None
+kazane    180 physics_mid+clip  hold+assist | steer   2.2 syf   2.56 / 2.50 syr   2.32 g 0.97 /0.91 beta  16.6 spin None
+kazane    180 physics_mid+clip  coast0.12   | steer   5.5 syf  17.31 /10.28 syr  14.13 g 0.98 /0.83 beta  61.0 spin 1.5
+kazane    180 clip_only         hold        | steer  31.5 syf   6.02 / 5.00 syr   0.98 g 0.90 /0.70 beta   7.1 spin None
+kazane    180 clip_only         hold+assist | steer  31.5 syf   6.00 / 4.99 syr   0.97 g 0.90 /0.70 beta   7.0 spin None
+kazane    180 clip_only         coast0.12   | steer  31.5 syf   6.36 / 5.06 syr   1.19 g 0.92 /0.74 beta   8.6 spin None
+shirogane  60 raw               hold        | steer  31.5 syf   4.60 / 4.44 syr   0.56 g 0.86 /0.71 beta   1.7 spin None
+shirogane  60 raw               coast0.12   | steer  31.5 syf   4.39 / 3.42 syr   0.47 g 0.86 /0.76 beta   4.5 spin None
+shirogane  60 simple            hold        | steer  19.2 syf  12.39 / 7.72 syr   8.09 g 0.94 /0.75 beta  41.3 spin 2.22
+shirogane  60 simple            hold+assist | steer  12.3 syf   1.68 / 1.52 syr   0.78 g 0.94 /0.88 beta   2.6 spin None
+shirogane  60 simple            coast0.12   | steer  16.4 syf   1.72 / 1.45 syr   0.80 g 0.96 /0.93 beta   2.5 spin None
+shirogane  60 physics_wide      hold        | steer  19.0 syf   4.98 / 4.41 syr   2.76 g 0.91 /0.78 beta  16.4 spin None
+shirogane  60 physics_wide      hold+assist | steer  16.4 syf   2.18 / 2.05 syr   0.68 g 0.91 /0.84 beta   2.1 spin None
+shirogane  60 physics_wide      coast0.12   | steer  26.1 syf   2.61 / 2.39 syr   0.64 g 0.93 /0.85 beta   2.8 spin None
+shirogane  60 physics_mid       hold        | steer  25.5 syf  31.51 / 9.64 syr  11.84 g 0.95 /0.77 beta  52.0 spin 2.15
+shirogane  60 physics_mid       hold+assist | steer   7.4 syf   1.02 / 0.86 syr   0.76 g 0.96 /0.92 beta   2.6 spin None
+shirogane  60 physics_mid       coast0.12   | steer  11.3 syf   1.09 / 0.88 syr   0.82 g 0.98 /0.95 beta   2.6 spin None
+shirogane  60 physics_tight     hold        | steer  23.6 syf  29.33 / 9.56 syr  12.26 g 0.95 /0.77 beta  52.9 spin 2.13
+shirogane  60 physics_tight     hold+assist | steer   7.6 syf   1.05 / 0.91 syr   0.77 g 0.96 /0.92 beta   2.7 spin None
+shirogane  60 physics_tight     coast0.12   | steer  10.6 syf   1.10 / 0.83 syr   0.85 g 0.98 /0.95 beta   2.7 spin None
+shirogane  60 physics_mid+clip  hold        | steer  25.5 syf  31.51 / 9.64 syr  11.84 g 0.95 /0.77 beta  52.0 spin 2.15
+shirogane  60 physics_mid+clip  hold+assist | steer   7.4 syf   1.02 / 0.86 syr   0.76 g 0.96 /0.92 beta   2.6 spin None
+shirogane  60 physics_mid+clip  coast0.12   | steer  11.3 syf   1.09 / 0.88 syr   0.82 g 0.98 /0.95 beta   2.6 spin None
+shirogane  60 clip_only         hold        | steer  31.5 syf   4.57 / 4.37 syr   0.55 g 0.86 /0.70 beta   1.6 spin None
+shirogane  60 clip_only         hold+assist | steer  31.5 syf   4.51 / 4.25 syr   0.51 g 0.86 /0.70 beta   1.2 spin None
+shirogane  60 clip_only         coast0.12   | steer  31.5 syf   4.38 / 3.28 syr   0.48 g 0.86 /0.76 beta   5.3 spin None
+shirogane 100 raw               hold        | steer  31.5 syf   5.28 / 4.85 syr   0.65 g 0.89 /0.69 beta   3.9 spin None
+shirogane 100 raw               coast0.12   | steer  31.5 syf   5.25 / 4.60 syr   0.67 g 0.90 /0.76 beta   3.9 spin None
+shirogane 100 simple            hold        | steer   7.4 syf   2.49 / 1.73 syr   1.70 g 0.98 /0.87 beta  11.5 spin None
+shirogane 100 simple            hold+assist | steer   7.5 syf   1.85 / 1.31 syr   1.12 g 0.98 /0.91 beta   7.2 spin None
+shirogane 100 simple            coast0.12   | steer   9.1 syf   2.42 / 1.36 syr   1.60 g 1.00 /0.92 beta  10.6 spin None
+shirogane 100 physics_wide      hold        | steer  11.2 syf   2.51 / 1.74 syr   1.21 g 0.96 /0.85 beta   7.9 spin None
+shirogane 100 physics_wide      hold+assist | steer  11.2 syf   2.20 / 1.84 syr   0.94 g 0.96 /0.88 beta   5.8 spin None
+shirogane 100 physics_wide      coast0.12   | steer  12.7 syf   2.45 / 1.85 syr   1.15 g 0.97 /0.94 beta   7.3 spin None
+shirogane 100 physics_mid       hold        | steer   3.6 syf   1.53 / 1.42 syr   1.28 g 0.97 /0.91 beta   8.5 spin None
+shirogane 100 physics_mid       hold+assist | steer   3.6 syf   1.07 / 0.83 syr   0.85 g 0.98 /0.92 beta   5.2 spin None
+shirogane 100 physics_mid       coast0.12   | steer   4.5 syf   1.49 / 0.95 syr   1.25 g 1.00 /0.96 beta   8.0 spin None
+shirogane 100 physics_tight     hold        | steer   4.7 syf   2.04 / 1.78 syr   1.65 g 0.98 /0.90 beta  11.1 spin None
+shirogane 100 physics_tight     hold+assist | steer   4.7 syf   1.37 / 0.93 syr   1.02 g 0.99 /0.92 beta   6.5 spin None
+shirogane 100 physics_tight     coast0.12   | steer   5.5 syf   1.98 / 1.27 syr   1.60 g 1.00 /0.95 beta  10.6 spin None
+shirogane 100 physics_mid+clip  hold        | steer   3.6 syf   1.53 / 1.42 syr   1.28 g 0.97 /0.91 beta   8.5 spin None
+shirogane 100 physics_mid+clip  hold+assist | steer   3.6 syf   1.07 / 0.83 syr   0.85 g 0.98 /0.92 beta   5.2 spin None
+shirogane 100 physics_mid+clip  coast0.12   | steer   4.5 syf   1.49 / 0.95 syr   1.25 g 1.00 /0.96 beta   8.0 spin None
+shirogane 100 clip_only         hold        | steer  31.5 syf   5.27 / 4.77 syr   0.65 g 0.90 /0.70 beta   3.9 spin None
+shirogane 100 clip_only         hold+assist | steer  31.5 syf   5.26 / 4.77 syr   0.65 g 0.90 /0.70 beta   3.9 spin None
+shirogane 100 clip_only         coast0.12   | steer  31.5 syf   5.27 / 4.58 syr   0.68 g 0.90 /0.76 beta   4.0 spin None
+shirogane 140 raw               hold        | steer  31.5 syf   5.60 / 4.91 syr   0.77 g 0.91 /0.71 beta   5.2 spin None
+shirogane 140 raw               coast0.12   | steer  31.5 syf   5.67 / 4.88 syr   0.82 g 0.93 /0.76 beta   5.6 spin None
+shirogane 140 simple            hold        | steer   5.5 syf   2.32 / 1.11 syr   1.68 g 0.99 /0.90 beta  11.9 spin None
+shirogane 140 simple            hold+assist | steer   5.7 syf   2.09 / 1.09 syr   1.47 g 1.00 /0.91 beta  10.3 spin None
+shirogane 140 simple            coast0.12   | steer   6.9 syf   3.57 / 3.34 syr   2.75 g 1.02 /0.93 beta  19.2 spin None
+shirogane 140 physics_wide      hold        | steer   9.8 syf   2.53 / 1.77 syr   1.30 g 0.97 /0.91 beta   9.1 spin None
+shirogane 140 physics_wide      hold+assist | steer   9.9 syf   2.39 / 1.79 syr   1.17 g 0.98 /0.92 beta   8.2 spin None
+shirogane 140 physics_wide      coast0.12   | steer  10.4 syf   2.97 / 1.72 syr   1.68 g 0.99 /0.92 beta  11.8 spin None
+shirogane 140 physics_mid       hold        | steer   2.6 syf   1.29 / 0.67 syr   1.08 g 0.98 /0.89 beta   7.5 spin None
+shirogane 140 physics_mid       hold+assist | steer   2.6 syf   1.17 / 0.69 syr   0.96 g 1.00 /0.91 beta   6.6 spin None
+shirogane 140 physics_mid       coast0.12   | steer   3.1 syf   2.19 / 2.05 syr   1.94 g 1.01 /0.97 beta  13.6 spin None
+shirogane 140 physics_tight     hold        | steer   3.8 syf   1.90 / 0.89 syr   1.51 g 0.99 /0.90 beta  10.7 spin None
+shirogane 140 physics_tight     hold+assist | steer   3.8 syf   1.69 / 0.84 syr   1.31 g 1.01 /0.91 beta   9.2 spin None
+shirogane 140 physics_tight     coast0.12   | steer   4.4 syf   3.24 / 3.16 syr   2.77 g 1.02 /0.93 beta  19.3 spin None
+shirogane 140 physics_mid+clip  hold        | steer   2.6 syf   1.29 / 0.67 syr   1.08 g 0.98 /0.89 beta   7.5 spin None
+shirogane 140 physics_mid+clip  hold+assist | steer   2.6 syf   1.17 / 0.69 syr   0.96 g 1.00 /0.91 beta   6.6 spin None
+shirogane 140 physics_mid+clip  coast0.12   | steer   3.1 syf   2.19 / 2.05 syr   1.94 g 1.01 /0.97 beta  13.6 spin None
+shirogane 140 clip_only         hold        | steer  31.5 syf   5.59 / 4.89 syr   0.77 g 0.91 /0.72 beta   5.2 spin None
+shirogane 140 clip_only         hold+assist | steer  31.5 syf   5.59 / 4.89 syr   0.76 g 0.91 /0.72 beta   5.2 spin None
+shirogane 140 clip_only         coast0.12   | steer  31.5 syf   5.69 / 4.87 syr   0.83 g 0.93 /0.76 beta   5.7 spin None
+shirogane 180 raw               hold        | steer  31.5 syf   5.79 / 4.96 syr   0.84 g 0.93 /0.73 beta   6.0 spin None
+shirogane 180 raw               coast0.12   | steer  31.5 syf   5.96 / 4.99 syr   0.95 g 0.96 /0.77 beta   6.8 spin None
+shirogane 180 simple            hold        | steer   4.7 syf   2.45 / 1.17 syr   1.87 g 1.01 /0.93 beta  13.5 spin None
+shirogane 180 simple            hold+assist | steer   4.8 syf   2.40 / 1.21 syr   1.82 g 1.02 /0.94 beta  13.1 spin None
+shirogane 180 simple            coast0.12   | steer   6.2 syf   5.82 / 5.46 syr   4.74 g 1.04 /0.90 beta  31.5 spin 1.78
+shirogane 180 physics_wide      hold        | steer   9.2 syf   2.68 / 1.72 syr   1.46 g 0.99 /0.93 beta  10.5 spin None
+shirogane 180 physics_wide      hold+assist | steer   9.3 syf   2.61 / 1.72 syr   1.40 g 1.00 /0.93 beta  10.1 spin None
+shirogane 180 physics_wide      coast0.12   | steer   9.6 syf   3.68 / 2.75 syr   2.33 g 1.01 /0.96 beta  16.7 spin None
+shirogane 180 physics_mid       hold        | steer   2.2 syf   1.39 / 0.66 syr   1.18 g 1.01 /0.92 beta   8.5 spin None
+shirogane 180 physics_mid       hold+assist | steer   2.2 syf   1.33 / 0.67 syr   1.12 g 1.02 /0.92 beta   8.0 spin None
+shirogane 180 physics_mid       coast0.12   | steer   2.7 syf   3.76 / 3.47 syr   3.45 g 1.03 /0.94 beta  23.9 spin None
+shirogane 180 physics_tight     hold        | steer   3.4 syf   2.11 / 0.99 syr   1.71 g 1.01 /0.93 beta  12.3 spin None
+shirogane 180 physics_tight     hold+assist | steer   3.5 syf   2.05 / 1.02 syr   1.66 g 1.02 /0.94 beta  11.9 spin None
+shirogane 180 physics_tight     coast0.12   | steer   4.1 syf   5.55 / 5.03 syr   4.91 g 1.04 /0.91 beta  32.3 spin 1.9
+shirogane 180 physics_mid+clip  hold        | steer   2.2 syf   1.39 / 0.66 syr   1.18 g 1.01 /0.92 beta   8.5 spin None
+shirogane 180 physics_mid+clip  hold+assist | steer   2.2 syf   1.33 / 0.67 syr   1.12 g 1.02 /0.92 beta   8.0 spin None
+shirogane 180 physics_mid+clip  coast0.12   | steer   2.7 syf   3.76 / 3.47 syr   3.45 g 1.03 /0.94 beta  23.9 spin None
+shirogane 180 clip_only         hold        | steer  31.5 syf   5.79 / 4.96 syr   0.84 g 0.94 /0.74 beta   6.0 spin None
+shirogane 180 clip_only         hold+assist | steer  31.5 syf   5.78 / 4.96 syr   0.84 g 0.94 /0.74 beta   6.0 spin None
+shirogane 180 clip_only         coast0.12   | steer  31.5 syf   5.98 / 4.99 syr   0.97 g 0.96 /0.77 beta   6.9 spin None
+arashi     60 raw               hold        | steer  31.5 syf   4.48 / 4.40 syr   0.46 g 0.86 /0.72 beta   1.1 spin None
+arashi     60 raw               coast0.12   | steer  31.5 syf   4.44 / 3.32 syr   0.48 g 0.85 /0.76 beta   6.0 spin None
+arashi     60 simple            hold        | steer  12.1 syf   1.66 / 1.48 syr   0.71 g 0.94 /0.89 beta   2.2 spin None
+arashi     60 simple            hold+assist | steer  12.1 syf   1.63 / 1.45 syr   0.68 g 0.94 /0.90 beta   2.0 spin None
+arashi     60 simple            coast0.12   | steer  17.2 syf   1.78 / 1.52 syr   0.80 g 0.95 /0.91 beta   2.4 spin None
+arashi     60 physics_wide      hold        | steer  15.6 syf   2.08 / 1.90 syr   0.62 g 0.91 /0.86 beta   1.6 spin None
+arashi     60 physics_wide      hold+assist | steer  15.6 syf   2.07 / 1.88 syr   0.61 g 0.91 /0.87 beta   1.6 spin None
+arashi     60 physics_wide      coast0.12   | steer  27.3 syf   2.73 / 2.45 syr   0.65 g 0.92 /0.83 beta   3.7 spin None
+arashi     60 physics_mid       hold        | steer   7.2 syf   0.96 / 0.88 syr   0.68 g 0.96 /0.91 beta   2.1 spin None
+arashi     60 physics_mid       hold+assist | steer   7.2 syf   0.95 / 0.87 syr   0.68 g 0.96 /0.91 beta   2.0 spin None
+arashi     60 physics_mid       coast0.12   | steer  11.3 syf   1.12 / 0.89 syr   0.85 g 0.97 /0.94 beta   2.6 spin None
+arashi     60 physics_tight     hold        | steer   7.4 syf   1.00 / 0.92 syr   0.69 g 0.96 /0.91 beta   2.1 spin None
+arashi     60 physics_tight     hold+assist | steer   7.4 syf   0.99 / 0.91 syr   0.69 g 0.96 /0.92 beta   2.1 spin None
+arashi     60 physics_tight     coast0.12   | steer  10.7 syf   1.15 / 0.83 syr   0.88 g 0.97 /0.94 beta   2.8 spin None
+arashi     60 physics_mid+clip  hold        | steer   7.2 syf   0.96 / 0.88 syr   0.68 g 0.96 /0.91 beta   2.1 spin None
+arashi     60 physics_mid+clip  hold+assist | steer   7.2 syf   0.95 / 0.87 syr   0.68 g 0.96 /0.91 beta   2.0 spin None
+arashi     60 physics_mid+clip  coast0.12   | steer  11.3 syf   1.12 / 0.89 syr   0.85 g 0.97 /0.94 beta   2.6 spin None
+arashi     60 clip_only         hold        | steer  31.5 syf   4.47 / 4.30 syr   0.47 g 0.86 /0.73 beta   1.1 spin None
+arashi     60 clip_only         hold+assist | steer  31.5 syf   4.47 / 4.30 syr   0.47 g 0.86 /0.73 beta   1.1 spin None
+arashi     60 clip_only         coast0.12   | steer  31.5 syf   4.44 / 3.18 syr   0.48 g 0.85 /0.75 beta   7.1 spin None
+arashi    100 raw               hold        | steer  31.5 syf   5.20 / 4.72 syr   0.61 g 0.89 /0.74 beta   3.5 spin None
+arashi    100 raw               coast0.12   | steer  31.5 syf   5.29 / 4.60 syr   0.67 g 0.90 /0.75 beta   4.0 spin None
+arashi    100 simple            hold        | steer   7.2 syf   1.70 / 1.17 syr   0.98 g 0.98 /0.91 beta   6.1 spin None
+arashi    100 simple            hold+assist | steer   7.4 syf   1.70 / 1.15 syr   0.97 g 0.98 /0.89 beta   6.1 spin None
+arashi    100 simple            coast0.12   | steer   9.3 syf   2.60 / 1.46 syr   1.73 g 0.98 /0.91 beta  11.5 spin None
+arashi    100 physics_wide      hold        | steer  11.0 syf   2.10 / 1.70 syr   0.85 g 0.96 /0.89 beta   5.2 spin None
+arashi    100 physics_wide      hold+assist | steer  11.0 syf   2.09 / 1.63 syr   0.85 g 0.96 /0.87 beta   5.2 spin None
+arashi    100 physics_wide      coast0.12   | steer  12.7 syf   2.55 / 1.84 syr   1.23 g 0.96 /0.92 beta   7.9 spin None
+arashi    100 physics_mid       hold        | steer   3.5 syf   0.92 / 0.66 syr   0.70 g 0.97 /0.91 beta   4.1 spin None
+arashi    100 physics_mid       hold+assist | steer   3.5 syf   0.92 / 0.66 syr   0.70 g 0.97 /0.91 beta   4.1 spin None
+arashi    100 physics_mid       coast0.12   | steer   4.5 syf   1.63 / 1.11 syr   1.37 g 0.99 /0.95 beta   8.9 spin None
+arashi    100 physics_tight     hold        | steer   4.5 syf   1.22 / 0.80 syr   0.87 g 0.98 /0.91 beta   5.4 spin None
+arashi    100 physics_tight     hold+assist | steer   4.5 syf   1.22 / 0.80 syr   0.87 g 0.98 /0.91 beta   5.4 spin None
+arashi    100 physics_tight     coast0.12   | steer   5.5 syf   2.19 / 1.54 syr   1.79 g 0.99 /0.95 beta  11.9 spin None
+arashi    100 physics_mid+clip  hold        | steer   3.5 syf   0.92 / 0.66 syr   0.70 g 0.97 /0.91 beta   4.1 spin None
+arashi    100 physics_mid+clip  hold+assist | steer   3.5 syf   0.92 / 0.66 syr   0.70 g 0.97 /0.91 beta   4.1 spin None
+arashi    100 physics_mid+clip  coast0.12   | steer   4.5 syf   1.63 / 1.11 syr   1.37 g 0.99 /0.95 beta   8.9 spin None
+arashi    100 clip_only         hold        | steer  31.5 syf   5.22 / 4.70 syr   0.62 g 0.90 /0.74 beta   3.6 spin None
+arashi    100 clip_only         hold+assist | steer  31.5 syf   5.22 / 4.70 syr   0.62 g 0.90 /0.74 beta   3.6 spin None
+arashi    100 clip_only         coast0.12   | steer  31.5 syf   5.30 / 4.59 syr   0.68 g 0.89 /0.75 beta   4.0 spin None
+arashi    140 raw               hold        | steer  31.5 syf   5.52 / 4.87 syr   0.72 g 0.92 /0.75 beta   4.8 spin None
+arashi    140 raw               coast0.12   | steer  31.5 syf   5.68 / 4.88 syr   0.82 g 0.92 /0.75 beta   5.6 spin None
+arashi    140 simple            hold        | steer   5.5 syf   1.79 / 1.14 syr   1.18 g 0.99 /0.95 beta   8.2 spin None
+arashi    140 simple            hold+assist | steer   5.6 syf   1.82 / 1.28 syr   1.20 g 0.99 /0.96 beta   8.4 spin None
+arashi    140 simple            coast0.12   | steer   6.9 syf   3.67 / 3.33 syr   2.83 g 1.00 /0.92 beta  19.7 spin None
+arashi    140 physics_wide      hold        | steer   9.8 syf   2.24 / 1.72 syr   1.04 g 0.97 /0.92 beta   7.1 spin None
+arashi    140 physics_wide      hold+assist | steer   9.8 syf   2.24 / 1.76 syr   1.04 g 0.97 /0.92 beta   7.2 spin None
+arashi    140 physics_wide      coast0.12   | steer  10.3 syf   3.01 / 1.72 syr   1.72 g 0.98 /0.91 beta  12.1 spin None
+arashi    140 physics_mid       hold        | steer   2.5 syf   0.96 / 0.66 syr   0.75 g 0.98 /0.92 beta   5.0 spin None
+arashi    140 physics_mid       hold+assist | steer   2.5 syf   0.96 / 0.66 syr   0.75 g 0.98 /0.92 beta   5.0 spin None
+arashi    140 physics_mid       coast0.12   | steer   3.1 syf   2.24 / 2.10 syr   1.99 g 1.00 /0.96 beta  13.9 spin None
+arashi    140 physics_tight     hold        | steer   3.7 syf   1.39 / 0.88 syr   1.03 g 0.99 /0.95 beta   7.1 spin None
+arashi    140 physics_tight     hold+assist | steer   3.7 syf   1.40 / 0.88 syr   1.03 g 0.99 /0.95 beta   7.1 spin None
+arashi    140 physics_tight     coast0.12   | steer   4.3 syf   3.33 / 3.22 syr   2.86 g 1.01 /0.92 beta  19.9 spin None
+arashi    140 physics_mid+clip  hold        | steer   2.5 syf   0.96 / 0.66 syr   0.75 g 0.98 /0.92 beta   5.0 spin None
+arashi    140 physics_mid+clip  hold+assist | steer   2.5 syf   0.96 / 0.66 syr   0.75 g 0.98 /0.92 beta   5.0 spin None
+arashi    140 physics_mid+clip  coast0.12   | steer   3.1 syf   2.24 / 2.10 syr   1.99 g 1.00 /0.96 beta  13.9 spin None
+arashi    140 clip_only         hold        | steer  31.5 syf   5.54 / 4.87 syr   0.73 g 0.92 /0.75 beta   4.9 spin None
+arashi    140 clip_only         hold+assist | steer  31.5 syf   5.54 / 4.87 syr   0.73 g 0.92 /0.75 beta   4.9 spin None
+arashi    140 clip_only         coast0.12   | steer  31.5 syf   5.69 / 4.88 syr   0.82 g 0.92 /0.75 beta   5.6 spin None
+arashi    180 raw               hold        | steer  31.5 syf   5.71 / 4.96 syr   0.80 g 0.94 /0.77 beta   5.6 spin None
+arashi    180 raw               coast0.12   | steer  31.5 syf   5.96 / 4.99 syr   0.95 g 0.94 /0.76 beta   6.8 spin None
+arashi    180 simple            hold        | steer   4.7 syf   1.91 / 1.08 syr   1.35 g 1.01 /0.96 beta   9.7 spin None
+arashi    180 simple            hold+assist | steer   4.7 syf   1.98 / 1.02 syr   1.42 g 1.01 /0.94 beta  10.2 spin None
+arashi    180 simple            coast0.12   | steer   6.0 syf   5.26 / 5.09 syr   4.28 g 1.02 /0.90 beta  29.0 spin 1.8
+arashi    180 physics_wide      hold        | steer   9.2 syf   2.40 / 1.67 syr   1.20 g 0.99 /0.94 beta   8.6 spin None
+arashi    180 physics_wide      hold+assist | steer   9.2 syf   2.42 / 1.67 syr   1.22 g 0.99 /0.94 beta   8.8 spin None
+arashi    180 physics_wide      coast0.12   | steer   9.5 syf   3.62 / 2.46 syr   2.28 g 1.00 /0.94 beta  16.3 spin None
+arashi    180 physics_mid       hold        | steer   2.1 syf   1.05 / 0.68 syr   0.85 g 1.00 /0.94 beta   6.0 spin None
+arashi    180 physics_mid       hold+assist | steer   2.1 syf   1.05 / 0.68 syr   0.85 g 1.00 /0.94 beta   6.0 spin None
+arashi    180 physics_mid       coast0.12   | steer   2.6 syf   3.42 / 3.31 syr   3.12 g 1.02 /0.93 beta  21.9 spin None
+arashi    180 physics_tight     hold        | steer   3.4 syf   1.59 / 0.90 syr   1.21 g 1.01 /0.96 beta   8.7 spin None
+arashi    180 physics_tight     hold+assist | steer   3.4 syf   1.63 / 0.84 syr   1.25 g 1.01 /0.94 beta   9.0 spin None
+arashi    180 physics_tight     coast0.12   | steer   4.0 syf   5.09 / 4.76 syr   4.47 g 1.02 /0.90 beta  30.0 spin 1.9
+arashi    180 physics_mid+clip  hold        | steer   2.1 syf   1.05 / 0.68 syr   0.85 g 1.00 /0.94 beta   6.0 spin None
+arashi    180 physics_mid+clip  hold+assist | steer   2.1 syf   1.05 / 0.68 syr   0.85 g 1.00 /0.94 beta   6.0 spin None
+arashi    180 physics_mid+clip  coast0.12   | steer   2.6 syf   3.42 / 3.31 syr   3.12 g 1.02 /0.93 beta  21.9 spin None
+arashi    180 clip_only         hold        | steer  31.5 syf   5.74 / 4.96 syr   0.81 g 0.94 /0.77 beta   5.7 spin None
+arashi    180 clip_only         hold+assist | steer  31.5 syf   5.74 / 4.96 syr   0.81 g 0.94 /0.77 beta   5.7 spin None
+arashi    180 clip_only         coast0.12   | steer  31.5 syf   5.97 / 4.99 syr   0.96 g 0.94 /0.76 beta   6.9 spin None
+tsubame    60 digital_preset    hold        | steer   5.9 syf   0.71 / 0.65 syr   0.58 g 0.90 /0.82 beta   1.2 spin None
+tsubame    60 digital_preset    hold+assist | steer   5.9 syf   0.71 / 0.65 syr   0.58 g 0.90 /0.85 beta   1.2 spin None
+tsubame    60 digital_preset    coast0.12   | steer   7.7 syf   0.75 / 0.69 syr   0.63 g 0.91 /0.90 beta   1.3 spin None
+tsubame   100 digital_preset    hold        | steer   2.7 syf   0.73 / 0.63 syr   0.61 g 0.91 /0.88 beta   3.4 spin None
+tsubame   100 digital_preset    hold+assist | steer   2.7 syf   0.73 / 0.63 syr   0.61 g 0.91 /0.88 beta   3.4 spin None
+tsubame   100 digital_preset    coast0.12   | steer   3.1 syf   0.94 / 0.74 syr   0.83 g 0.94 /0.91 beta   4.9 spin None
+tsubame   140 digital_preset    hold        | steer   1.8 syf   0.56 / 0.46 syr   0.44 g 0.86 /0.78 beta   2.8 spin None
+tsubame   140 digital_preset    hold+assist | steer   1.8 syf   0.56 / 0.46 syr   0.44 g 0.86 /0.78 beta   2.8 spin None
+tsubame   140 digital_preset    coast0.12   | steer   2.1 syf   1.45 / 1.33 syr   1.32 g 0.96 /0.95 beta   9.2 spin None
+tsubame   180 digital_preset    hold        | steer   1.4 syf   0.55 / 0.45 syr   0.42 g 0.86 /0.78 beta   2.9 spin None
+tsubame   180 digital_preset    hold+assist | steer   1.4 syf   0.55 / 0.45 syr   0.42 g 0.86 /0.78 beta   2.9 spin None
+tsubame   180 digital_preset    coast0.12   | steer   1.7 syf   2.28 / 2.16 syr   2.13 g 0.97 /0.92 beta  15.2 spin None
+kazane     60 digital_preset    hold        | steer   5.3 syf   1.54 / 0.95 syr   1.41 g 0.91 /0.85 beta   8.1 spin None
+kazane     60 digital_preset    hold+assist | steer   5.3 syf   0.84 / 0.65 syr   0.72 g 0.90 /0.88 beta   3.1 spin None
+kazane     60 digital_preset    coast0.12   | steer   6.9 syf   0.83 / 0.73 syr   0.72 g 0.93 /0.91 beta   2.8 spin None
+kazane    100 digital_preset    hold        | steer   2.5 syf   1.45 / 1.25 syr   1.32 g 0.90 /0.88 beta   9.0 spin None
+kazane    100 digital_preset    hold+assist | steer   2.5 syf   0.87 / 0.65 syr   0.75 g 0.91 /0.86 beta   4.8 spin None
+kazane    100 digital_preset    coast0.12   | steer   3.1 syf   1.38 / 1.28 syr   1.25 g 0.95 /0.95 beta   8.3 spin None
+kazane    140 digital_preset    hold        | steer   1.7 syf   0.94 / 0.61 syr   0.82 g 0.92 /0.85 beta   5.7 spin None
+kazane    140 digital_preset    hold+assist | steer   1.7 syf   0.91 / 0.60 syr   0.79 g 0.93 /0.86 beta   5.5 spin None
+kazane    140 digital_preset    coast0.12   | steer   2.4 syf   3.93 / 3.21 syr   3.76 g 0.96 /0.89 beta  25.5 spin 2.93
+kazane    180 digital_preset    hold        | steer   1.4 syf   1.27 / 1.04 syr   1.15 g 0.94 /0.93 beta   8.3 spin None
+kazane    180 digital_preset    hold+assist | steer   1.4 syf   1.14 / 0.97 syr   1.02 g 0.97 /0.95 beta   7.3 spin None
+kazane    180 digital_preset    coast0.12   | steer   2.3 syf   7.70 / 5.42 syr   7.40 g 0.98 /0.86 beta  43.5 spin 2.07
+shirogane  60 digital_preset    hold        | steer   6.3 syf   1.05 / 0.64 syr   0.94 g 0.98 /0.89 beta   4.1 spin None
+shirogane  60 digital_preset    hold+assist | steer   6.3 syf   0.79 / 0.63 syr   0.67 g 0.93 /0.90 beta   2.2 spin None
+shirogane  60 digital_preset    coast0.12   | steer   8.8 syf   0.76 / 0.71 syr   0.64 g 0.96 /0.94 beta   1.4 spin None
+shirogane 100 digital_preset    hold        | steer   2.8 syf   0.82 / 0.58 syr   0.69 g 0.95 /0.90 beta   4.2 spin None
+shirogane 100 digital_preset    hold+assist | steer   2.8 syf   0.77 / 0.58 syr   0.64 g 0.94 /0.90 beta   3.8 spin None
+shirogane 100 digital_preset    coast0.12   | steer   3.4 syf   0.93 / 0.73 syr   0.81 g 0.99 /0.96 beta   4.8 spin None
+shirogane 140 digital_preset    hold        | steer   1.9 syf   0.79 / 0.58 syr   0.66 g 0.95 /0.90 beta   4.5 spin None
+shirogane 140 digital_preset    hold+assist | steer   1.9 syf   0.78 / 0.58 syr   0.66 g 0.95 /0.90 beta   4.4 spin None
+shirogane 140 digital_preset    coast0.12   | steer   2.2 syf   1.25 / 1.07 syr   1.13 g 1.01 /1.00 beta   7.8 spin None
+shirogane 180 digital_preset    hold        | steer   1.5 syf   0.86 / 0.58 syr   0.74 g 0.98 /0.91 beta   5.3 spin None
+shirogane 180 digital_preset    hold+assist | steer   1.5 syf   0.86 / 0.58 syr   0.74 g 0.99 /0.91 beta   5.2 spin None
+shirogane 180 digital_preset    coast0.12   | steer   1.7 syf   1.96 / 1.91 syr   1.82 g 1.03 /0.99 beta  13.0 spin None
+arashi     60 digital_preset    hold        | steer   6.0 syf   0.69 / 0.65 syr   0.54 g 0.93 /0.89 beta   1.1 spin None
+arashi     60 digital_preset    hold+assist | steer   6.0 syf   0.69 / 0.65 syr   0.54 g 0.93 /0.89 beta   1.1 spin None
+arashi     60 digital_preset    coast0.12   | steer   8.8 syf   0.78 / 0.71 syr   0.65 g 0.96 /0.93 beta   1.4 spin None
+arashi    100 digital_preset    hold        | steer   2.7 syf   0.66 / 0.57 syr   0.53 g 0.94 /0.90 beta   2.9 spin None
+arashi    100 digital_preset    hold+assist | steer   2.7 syf   0.66 / 0.57 syr   0.53 g 0.94 /0.90 beta   2.9 spin None
+arashi    100 digital_preset    coast0.12   | steer   3.3 syf   1.01 / 0.80 syr   0.89 g 0.99 /0.96 beta   5.4 spin None
+arashi    140 digital_preset    hold        | steer   1.8 syf   0.58 / 0.53 syr   0.46 g 0.91 /0.89 beta   2.9 spin None
+arashi    140 digital_preset    hold+assist | steer   1.8 syf   0.58 / 0.53 syr   0.46 g 0.91 /0.89 beta   2.9 spin None
+arashi    140 digital_preset    coast0.12   | steer   2.1 syf   1.26 / 1.12 syr   1.13 g 1.00 /0.99 beta   7.8 spin None
+arashi    180 digital_preset    hold        | steer   1.5 syf   0.63 / 0.49 syr   0.51 g 0.95 /0.86 beta   3.5 spin None
+arashi    180 digital_preset    hold+assist | steer   1.5 syf   0.63 / 0.49 syr   0.51 g 0.95 /0.86 beta   3.5 spin None
+arashi    180 digital_preset    coast0.12   | steer   1.7 syf   1.92 / 1.88 syr   1.78 g 1.01 /0.98 beta  12.8 spin None
+--- digital tap on a straight ---
+{'car': 'kazane', 'kmh': 120, 'key_ms': 50, 'mode': 'raw', 'speed_stage': 3, 'peak_steer_deg': 2.86, 'frac_of_limit': 0.09, 'peak_yaw_deg_s': 9.3, 'peak_lat_g': 0.42, 'heading_change_deg': 1.4, 'lateral_m_3s': 2.29, 'peak_beta_deg': 0.5, 'peak_front_sy': 0.35, 'peak_rear_sy': 0.08, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'kazane', 'kmh': 120, 'key_ms': 50, 'mode': 'assist', 'speed_stage': 1, 'peak_steer_deg': 0.08, 'frac_of_limit': 0.04, 'peak_yaw_deg_s': 0.2, 'peak_lat_g': 0.01, 'heading_change_deg': 0.0, 'lateral_m_3s': 0.04, 'peak_beta_deg': 0.0, 'peak_front_sy': 0.01, 'peak_rear_sy': 0.0, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'kazane', 'kmh': 120, 'key_ms': 50, 'mode': 'assist', 'speed_stage': 3, 'peak_steer_deg': 0.13, 'frac_of_limit': 0.07, 'peak_yaw_deg_s': 0.4, 'peak_lat_g': 0.02, 'heading_change_deg': 0.0, 'lateral_m_3s': 0.07, 'peak_beta_deg': 0.0, 'peak_front_sy': 0.02, 'peak_rear_sy': 0.0, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'kazane', 'kmh': 120, 'key_ms': 50, 'mode': 'assist', 'speed_stage': 5, 'peak_steer_deg': 0.25, 'frac_of_limit': 0.13, 'peak_yaw_deg_s': 0.7, 'peak_lat_g': 0.05, 'heading_change_deg': 0.1, 'lateral_m_3s': 0.13, 'peak_beta_deg': 0.0, 'peak_front_sy': 0.03, 'peak_rear_sy': 0.0, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'kazane', 'kmh': 120, 'key_ms': 100, 'mode': 'raw', 'speed_stage': 3, 'peak_steer_deg': 5.73, 'frac_of_limit': 0.18, 'peak_yaw_deg_s': 23.1, 'peak_lat_g': 0.64, 'heading_change_deg': 6.1, 'lateral_m_3s': 9.28, 'peak_beta_deg': 1.9, 'peak_front_sy': 0.7, 'peak_rear_sy': 0.31, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'kazane', 'kmh': 120, 'key_ms': 100, 'mode': 'assist', 'speed_stage': 1, 'peak_steer_deg': 0.19, 'frac_of_limit': 0.1, 'peak_yaw_deg_s': 0.8, 'peak_lat_g': 0.04, 'heading_change_deg': 0.1, 'lateral_m_3s': 0.19, 'peak_beta_deg': 0.0, 'peak_front_sy': 0.02, 'peak_rear_sy': 0.01, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'kazane', 'kmh': 120, 'key_ms': 100, 'mode': 'assist', 'speed_stage': 3, 'peak_steer_deg': 0.34, 'frac_of_limit': 0.17, 'peak_yaw_deg_s': 1.4, 'peak_lat_g': 0.07, 'heading_change_deg': 0.2, 'lateral_m_3s': 0.35, 'peak_beta_deg': 0.1, 'peak_front_sy': 0.04, 'peak_rear_sy': 0.01, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'kazane', 'kmh': 120, 'key_ms': 100, 'mode': 'assist', 'speed_stage': 5, 'peak_steer_deg': 0.71, 'frac_of_limit': 0.36, 'peak_yaw_deg_s': 3.0, 'peak_lat_g': 0.14, 'heading_change_deg': 0.5, 'lateral_m_3s': 0.76, 'peak_beta_deg': 0.2, 'peak_front_sy': 0.08, 'peak_rear_sy': 0.03, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'kazane', 'kmh': 120, 'key_ms': 200, 'mode': 'raw', 'speed_stage': 3, 'peak_steer_deg': 11.46, 'frac_of_limit': 0.36, 'peak_yaw_deg_s': 32.2, 'peak_lat_g': 0.94, 'heading_change_deg': 54.4, 'lateral_m_3s': 34.63, 'peak_beta_deg': 17.0, 'peak_front_sy': 2.26, 'peak_rear_sy': 2.41, 'spin': False, 'final_yaw_rate': 0.0406}
+{'car': 'kazane', 'kmh': 120, 'key_ms': 200, 'mode': 'assist', 'speed_stage': 1, 'peak_steer_deg': 0.5, 'frac_of_limit': 0.25, 'peak_yaw_deg_s': 3.0, 'peak_lat_g': 0.11, 'heading_change_deg': 0.6, 'lateral_m_3s': 1.0, 'peak_beta_deg': 0.2, 'peak_front_sy': 0.06, 'peak_rear_sy': 0.03, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'kazane', 'kmh': 120, 'key_ms': 200, 'mode': 'assist', 'speed_stage': 3, 'peak_steer_deg': 0.97, 'frac_of_limit': 0.5, 'peak_yaw_deg_s': 6.1, 'peak_lat_g': 0.21, 'heading_change_deg': 1.4, 'lateral_m_3s': 2.11, 'peak_beta_deg': 0.4, 'peak_front_sy': 0.12, 'peak_rear_sy': 0.07, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'kazane', 'kmh': 120, 'key_ms': 200, 'mode': 'assist', 'speed_stage': 5, 'peak_steer_deg': 1.96, 'frac_of_limit': 1.0, 'peak_yaw_deg_s': 13.1, 'peak_lat_g': 0.4, 'heading_change_deg': 3.5, 'lateral_m_3s': 5.22, 'peak_beta_deg': 1.0, 'peak_front_sy': 0.24, 'peak_rear_sy': 0.17, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'kazane', 'kmh': 120, 'key_ms': 500, 'mode': 'raw', 'speed_stage': 3, 'peak_steer_deg': 28.65, 'frac_of_limit': 0.91, 'peak_yaw_deg_s': 30.2, 'peak_lat_g': 0.89, 'heading_change_deg': 20.4, 'lateral_m_3s': 25.74, 'peak_beta_deg': 5.5, 'peak_front_sy': 4.93, 'peak_rear_sy': 0.8, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'kazane', 'kmh': 120, 'key_ms': 500, 'mode': 'assist', 'speed_stage': 1, 'peak_steer_deg': 1.93, 'frac_of_limit': 0.98, 'peak_yaw_deg_s': 17.1, 'peak_lat_g': 0.7, 'heading_change_deg': 9.0, 'lateral_m_3s': 11.83, 'peak_beta_deg': 2.1, 'peak_front_sy': 0.31, 'peak_rear_sy': 0.34, 'spin': False, 'final_yaw_rate': 0.0}
+{'car': 'kazane', 'kmh': 120, 'key_ms': 500, 'mode': 'assist', 'speed_stage': 3, 'peak_steer_deg': 1.96, 'frac_of_limit': 1.0, 'peak_yaw_deg_s': 19.9, 'peak_lat_g': 0.78, 'heading_change_deg': 11.2, 'lateral_m_3s': 14.87, 'peak_beta_deg': 2.8, 'peak_front_sy': 0.39, 'peak_rear_sy': 0.44, 'spin': False, 'final_yaw_rate': 0.0}
+{'car': 'kazane', 'kmh': 120, 'key_ms': 500, 'mode': 'assist', 'speed_stage': 5, 'peak_steer_deg': 1.96, 'frac_of_limit': 1.0, 'peak_yaw_deg_s': 20.8, 'peak_lat_g': 0.83, 'heading_change_deg': 12.8, 'lateral_m_3s': 17.06, 'peak_beta_deg': 3.2, 'peak_front_sy': 0.47, 'peak_rear_sy': 0.49, 'spin': False, 'final_yaw_rate': 0.0}
+{'car': 'kazane', 'kmh': 180, 'key_ms': 50, 'mode': 'raw', 'speed_stage': 3, 'peak_steer_deg': 2.86, 'frac_of_limit': 0.09, 'peak_yaw_deg_s': 10.0, 'peak_lat_g': 0.44, 'heading_change_deg': 2.0, 'lateral_m_3s': 4.48, 'peak_beta_deg': 0.8, 'peak_front_sy': 0.36, 'peak_rear_sy': 0.11, 'spin': False, 'final_yaw_rate': 0.0}
+{'car': 'kazane', 'kmh': 180, 'key_ms': 50, 'mode': 'assist', 'speed_stage': 1, 'peak_steer_deg': 0.06, 'frac_of_limit': 0.04, 'peak_yaw_deg_s': 0.2, 'peak_lat_g': 0.01, 'heading_change_deg': 0.0, 'lateral_m_3s': 0.06, 'peak_beta_deg': 0.0, 'peak_front_sy': 0.01, 'peak_rear_sy': 0.0, 'spin': False, 'final_yaw_rate': 0.0}
+{'car': 'kazane', 'kmh': 180, 'key_ms': 50, 'mode': 'assist', 'speed_stage': 3, 'peak_steer_deg': 0.09, 'frac_of_limit': 0.07, 'peak_yaw_deg_s': 0.3, 'peak_lat_g': 0.02, 'heading_change_deg': 0.0, 'lateral_m_3s': 0.1, 'peak_beta_deg': 0.0, 'peak_front_sy': 0.01, 'peak_rear_sy': 0.0, 'spin': False, 'final_yaw_rate': 0.0}
+{'car': 'kazane', 'kmh': 180, 'key_ms': 50, 'mode': 'assist', 'speed_stage': 5, 'peak_steer_deg': 0.18, 'frac_of_limit': 0.13, 'peak_yaw_deg_s': 0.5, 'peak_lat_g': 0.04, 'heading_change_deg': 0.1, 'lateral_m_3s': 0.18, 'peak_beta_deg': 0.0, 'peak_front_sy': 0.02, 'peak_rear_sy': 0.0, 'spin': False, 'final_yaw_rate': 0.0}
+{'car': 'kazane', 'kmh': 180, 'key_ms': 100, 'mode': 'raw', 'speed_stage': 3, 'peak_steer_deg': 5.73, 'frac_of_limit': 0.18, 'peak_yaw_deg_s': 24.3, 'peak_lat_g': 0.89, 'heading_change_deg': 13.0, 'lateral_m_3s': 24.84, 'peak_beta_deg': 4.1, 'peak_front_sy': 0.75, 'peak_rear_sy': 0.58, 'spin': False, 'final_yaw_rate': 0.0}
+{'car': 'kazane', 'kmh': 180, 'key_ms': 100, 'mode': 'assist', 'speed_stage': 1, 'peak_steer_deg': 0.13, 'frac_of_limit': 0.1, 'peak_yaw_deg_s': 0.6, 'peak_lat_g': 0.03, 'heading_change_deg': 0.1, 'lateral_m_3s': 0.26, 'peak_beta_deg': 0.0, 'peak_front_sy': 0.02, 'peak_rear_sy': 0.01, 'spin': False, 'final_yaw_rate': 0.0}
+{'car': 'kazane', 'kmh': 180, 'key_ms': 100, 'mode': 'assist', 'speed_stage': 3, 'peak_steer_deg': 0.24, 'frac_of_limit': 0.17, 'peak_yaw_deg_s': 1.1, 'peak_lat_g': 0.05, 'heading_change_deg': 0.2, 'lateral_m_3s': 0.48, 'peak_beta_deg': 0.1, 'peak_front_sy': 0.03, 'peak_rear_sy': 0.01, 'spin': False, 'final_yaw_rate': 0.0}
+{'car': 'kazane', 'kmh': 180, 'key_ms': 100, 'mode': 'assist', 'speed_stage': 5, 'peak_steer_deg': 0.5, 'frac_of_limit': 0.36, 'peak_yaw_deg_s': 2.4, 'peak_lat_g': 0.11, 'heading_change_deg': 0.5, 'lateral_m_3s': 1.05, 'peak_beta_deg': 0.2, 'peak_front_sy': 0.06, 'peak_rear_sy': 0.03, 'spin': False, 'final_yaw_rate': 0.0}
+{'car': 'kazane', 'kmh': 180, 'key_ms': 200, 'mode': 'raw', 'speed_stage': 3, 'peak_steer_deg': 11.46, 'frac_of_limit': 0.36, 'peak_yaw_deg_s': 30.8, 'peak_lat_g': 0.96, 'heading_change_deg': 63.1, 'lateral_m_3s': 33.35, 'peak_beta_deg': 34.4, 'peak_front_sy': 5.18, 'peak_rear_sy': 5.27, 'spin': True, 'final_yaw_rate': 0.154}
+{'car': 'kazane', 'kmh': 180, 'key_ms': 200, 'mode': 'assist', 'speed_stage': 1, 'peak_steer_deg': 0.35, 'frac_of_limit': 0.25, 'peak_yaw_deg_s': 2.5, 'peak_lat_g': 0.1, 'heading_change_deg': 0.6, 'lateral_m_3s': 1.37, 'peak_beta_deg': 0.2, 'peak_front_sy': 0.05, 'peak_rear_sy': 0.03, 'spin': False, 'final_yaw_rate': 0.0}
+{'car': 'kazane', 'kmh': 180, 'key_ms': 200, 'mode': 'assist', 'speed_stage': 3, 'peak_steer_deg': 0.68, 'frac_of_limit': 0.5, 'peak_yaw_deg_s': 4.9, 'peak_lat_g': 0.19, 'heading_change_deg': 1.3, 'lateral_m_3s': 2.83, 'peak_beta_deg': 0.5, 'peak_front_sy': 0.09, 'peak_rear_sy': 0.07, 'spin': False, 'final_yaw_rate': 0.0}
+{'car': 'kazane', 'kmh': 180, 'key_ms': 200, 'mode': 'assist', 'speed_stage': 5, 'peak_steer_deg': 1.37, 'frac_of_limit': 1.0, 'peak_yaw_deg_s': 10.6, 'peak_lat_g': 0.44, 'heading_change_deg': 3.2, 'lateral_m_3s': 6.92, 'peak_beta_deg': 1.2, 'peak_front_sy': 0.19, 'peak_rear_sy': 0.18, 'spin': False, 'final_yaw_rate': 0.0}
+{'car': 'kazane', 'kmh': 180, 'key_ms': 500, 'mode': 'raw', 'speed_stage': 3, 'peak_steer_deg': 28.65, 'frac_of_limit': 0.91, 'peak_yaw_deg_s': 29.2, 'peak_lat_g': 0.94, 'heading_change_deg': 18.1, 'lateral_m_3s': 30.31, 'peak_beta_deg': 7.2, 'peak_front_sy': 5.28, 'peak_rear_sy': 0.99, 'spin': False, 'final_yaw_rate': 0.0}
+{'car': 'kazane', 'kmh': 180, 'key_ms': 500, 'mode': 'assist', 'speed_stage': 1, 'peak_steer_deg': 1.35, 'frac_of_limit': 0.99, 'peak_yaw_deg_s': 14.2, 'peak_lat_g': 0.77, 'heading_change_deg': 9.0, 'lateral_m_3s': 16.13, 'peak_beta_deg': 2.7, 'peak_front_sy': 0.34, 'peak_rear_sy': 0.39, 'spin': False, 'final_yaw_rate': 0.0}
+{'car': 'kazane', 'kmh': 180, 'key_ms': 500, 'mode': 'assist', 'speed_stage': 3, 'peak_steer_deg': 1.38, 'frac_of_limit': 1.0, 'peak_yaw_deg_s': 16.8, 'peak_lat_g': 0.86, 'heading_change_deg': 12.5, 'lateral_m_3s': 21.65, 'peak_beta_deg': 3.7, 'peak_front_sy': 0.47, 'peak_rear_sy': 0.53, 'spin': False, 'final_yaw_rate': 0.0}
+{'car': 'kazane', 'kmh': 180, 'key_ms': 500, 'mode': 'assist', 'speed_stage': 5, 'peak_steer_deg': 1.38, 'frac_of_limit': 1.0, 'peak_yaw_deg_s': 17.7, 'peak_lat_g': 0.9, 'heading_change_deg': 15.7, 'lateral_m_3s': 26.09, 'peak_beta_deg': 4.5, 'peak_front_sy': 0.56, 'peak_rear_sy': 0.63, 'spin': False, 'final_yaw_rate': 0.0}
+{'car': 'shirogane', 'kmh': 120, 'key_ms': 50, 'mode': 'raw', 'speed_stage': 3, 'peak_steer_deg': 2.86, 'frac_of_limit': 0.09, 'peak_yaw_deg_s': 8.1, 'peak_lat_g': 0.46, 'heading_change_deg': 1.3, 'lateral_m_3s': 2.08, 'peak_beta_deg': 0.4, 'peak_front_sy': 0.34, 'peak_rear_sy': 0.07, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'shirogane', 'kmh': 120, 'key_ms': 50, 'mode': 'assist', 'speed_stage': 1, 'peak_steer_deg': 0.09, 'frac_of_limit': 0.04, 'peak_yaw_deg_s': 0.2, 'peak_lat_g': 0.02, 'heading_change_deg': 0.0, 'lateral_m_3s': 0.05, 'peak_beta_deg': 0.0, 'peak_front_sy': 0.01, 'peak_rear_sy': 0.0, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'shirogane', 'kmh': 120, 'key_ms': 50, 'mode': 'assist', 'speed_stage': 3, 'peak_steer_deg': 0.15, 'frac_of_limit': 0.07, 'peak_yaw_deg_s': 0.4, 'peak_lat_g': 0.03, 'heading_change_deg': 0.0, 'lateral_m_3s': 0.07, 'peak_beta_deg': 0.0, 'peak_front_sy': 0.02, 'peak_rear_sy': 0.0, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'shirogane', 'kmh': 120, 'key_ms': 50, 'mode': 'assist', 'speed_stage': 5, 'peak_steer_deg': 0.28, 'frac_of_limit': 0.13, 'peak_yaw_deg_s': 0.7, 'peak_lat_g': 0.06, 'heading_change_deg': 0.1, 'lateral_m_3s': 0.14, 'peak_beta_deg': 0.0, 'peak_front_sy': 0.03, 'peak_rear_sy': 0.0, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'shirogane', 'kmh': 120, 'key_ms': 100, 'mode': 'raw', 'speed_stage': 3, 'peak_steer_deg': 5.73, 'frac_of_limit': 0.18, 'peak_yaw_deg_s': 20.4, 'peak_lat_g': 0.66, 'heading_change_deg': 5.0, 'lateral_m_3s': 7.74, 'peak_beta_deg': 1.4, 'peak_front_sy': 0.68, 'peak_rear_sy': 0.25, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'shirogane', 'kmh': 120, 'key_ms': 100, 'mode': 'assist', 'speed_stage': 1, 'peak_steer_deg': 0.21, 'frac_of_limit': 0.1, 'peak_yaw_deg_s': 0.8, 'peak_lat_g': 0.04, 'heading_change_deg': 0.1, 'lateral_m_3s': 0.2, 'peak_beta_deg': 0.0, 'peak_front_sy': 0.02, 'peak_rear_sy': 0.01, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'shirogane', 'kmh': 120, 'key_ms': 100, 'mode': 'assist', 'speed_stage': 3, 'peak_steer_deg': 0.38, 'frac_of_limit': 0.17, 'peak_yaw_deg_s': 1.4, 'peak_lat_g': 0.08, 'heading_change_deg': 0.2, 'lateral_m_3s': 0.37, 'peak_beta_deg': 0.1, 'peak_front_sy': 0.04, 'peak_rear_sy': 0.01, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'shirogane', 'kmh': 120, 'key_ms': 100, 'mode': 'assist', 'speed_stage': 5, 'peak_steer_deg': 0.8, 'frac_of_limit': 0.36, 'peak_yaw_deg_s': 3.0, 'peak_lat_g': 0.16, 'heading_change_deg': 0.5, 'lateral_m_3s': 0.81, 'peak_beta_deg': 0.1, 'peak_front_sy': 0.09, 'peak_rear_sy': 0.03, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'shirogane', 'kmh': 120, 'key_ms': 200, 'mode': 'raw', 'speed_stage': 3, 'peak_steer_deg': 11.46, 'frac_of_limit': 0.36, 'peak_yaw_deg_s': 30.4, 'peak_lat_g': 0.96, 'heading_change_deg': 31.6, 'lateral_m_3s': 34.36, 'peak_beta_deg': 6.6, 'peak_front_sy': 1.51, 'peak_rear_sy': 0.98, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'shirogane', 'kmh': 120, 'key_ms': 200, 'mode': 'assist', 'speed_stage': 1, 'peak_steer_deg': 0.56, 'frac_of_limit': 0.25, 'peak_yaw_deg_s': 3.1, 'peak_lat_g': 0.13, 'heading_change_deg': 0.7, 'lateral_m_3s': 1.06, 'peak_beta_deg': 0.2, 'peak_front_sy': 0.06, 'peak_rear_sy': 0.03, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'shirogane', 'kmh': 120, 'key_ms': 200, 'mode': 'assist', 'speed_stage': 3, 'peak_steer_deg': 1.1, 'frac_of_limit': 0.5, 'peak_yaw_deg_s': 6.1, 'peak_lat_g': 0.24, 'heading_change_deg': 1.4, 'lateral_m_3s': 2.21, 'peak_beta_deg': 0.4, 'peak_front_sy': 0.12, 'peak_rear_sy': 0.07, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'shirogane', 'kmh': 120, 'key_ms': 200, 'mode': 'assist', 'speed_stage': 5, 'peak_steer_deg': 2.21, 'frac_of_limit': 1.0, 'peak_yaw_deg_s': 12.8, 'peak_lat_g': 0.45, 'heading_change_deg': 3.4, 'lateral_m_3s': 5.18, 'peak_beta_deg': 0.9, 'peak_front_sy': 0.25, 'peak_rear_sy': 0.16, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'shirogane', 'kmh': 120, 'key_ms': 500, 'mode': 'raw', 'speed_stage': 3, 'peak_steer_deg': 28.65, 'frac_of_limit': 0.91, 'peak_yaw_deg_s': 28.4, 'peak_lat_g': 0.93, 'heading_change_deg': 21.4, 'lateral_m_3s': 26.98, 'peak_beta_deg': 4.6, 'peak_front_sy': 4.74, 'peak_rear_sy': 0.71, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'shirogane', 'kmh': 120, 'key_ms': 500, 'mode': 'assist', 'speed_stage': 1, 'peak_steer_deg': 2.17, 'frac_of_limit': 0.98, 'peak_yaw_deg_s': 16.7, 'peak_lat_g': 0.69, 'heading_change_deg': 8.6, 'lateral_m_3s': 11.49, 'peak_beta_deg': 1.8, 'peak_front_sy': 0.31, 'peak_rear_sy': 0.31, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'shirogane', 'kmh': 120, 'key_ms': 500, 'mode': 'assist', 'speed_stage': 3, 'peak_steer_deg': 2.21, 'frac_of_limit': 1.0, 'peak_yaw_deg_s': 19.3, 'peak_lat_g': 0.78, 'heading_change_deg': 10.4, 'lateral_m_3s': 14.01, 'peak_beta_deg': 2.3, 'peak_front_sy': 0.38, 'peak_rear_sy': 0.39, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'shirogane', 'kmh': 120, 'key_ms': 500, 'mode': 'assist', 'speed_stage': 5, 'peak_steer_deg': 2.21, 'frac_of_limit': 1.0, 'peak_yaw_deg_s': 20.2, 'peak_lat_g': 0.85, 'heading_change_deg': 11.5, 'lateral_m_3s': 15.79, 'peak_beta_deg': 2.6, 'peak_front_sy': 0.44, 'peak_rear_sy': 0.44, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'shirogane', 'kmh': 180, 'key_ms': 50, 'mode': 'raw', 'speed_stage': 3, 'peak_steer_deg': 2.86, 'frac_of_limit': 0.09, 'peak_yaw_deg_s': 8.7, 'peak_lat_g': 0.48, 'heading_change_deg': 1.7, 'lateral_m_3s': 4.01, 'peak_beta_deg': 0.6, 'peak_front_sy': 0.36, 'peak_rear_sy': 0.1, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'shirogane', 'kmh': 180, 'key_ms': 50, 'mode': 'assist', 'speed_stage': 1, 'peak_steer_deg': 0.06, 'frac_of_limit': 0.04, 'peak_yaw_deg_s': 0.2, 'peak_lat_g': 0.01, 'heading_change_deg': 0.0, 'lateral_m_3s': 0.06, 'peak_beta_deg': 0.0, 'peak_front_sy': 0.01, 'peak_rear_sy': 0.0, 'spin': False, 'final_yaw_rate': 0.0}
+{'car': 'shirogane', 'kmh': 180, 'key_ms': 50, 'mode': 'assist', 'speed_stage': 3, 'peak_steer_deg': 0.1, 'frac_of_limit': 0.07, 'peak_yaw_deg_s': 0.3, 'peak_lat_g': 0.02, 'heading_change_deg': 0.0, 'lateral_m_3s': 0.1, 'peak_beta_deg': 0.0, 'peak_front_sy': 0.01, 'peak_rear_sy': 0.0, 'spin': False, 'final_yaw_rate': 0.0}
+{'car': 'shirogane', 'kmh': 180, 'key_ms': 50, 'mode': 'assist', 'speed_stage': 5, 'peak_steer_deg': 0.19, 'frac_of_limit': 0.13, 'peak_yaw_deg_s': 0.5, 'peak_lat_g': 0.04, 'heading_change_deg': 0.1, 'lateral_m_3s': 0.18, 'peak_beta_deg': 0.0, 'peak_front_sy': 0.02, 'peak_rear_sy': 0.0, 'spin': False, 'final_yaw_rate': 0.0}
+{'car': 'shirogane', 'kmh': 180, 'key_ms': 100, 'mode': 'raw', 'speed_stage': 3, 'peak_steer_deg': 5.73, 'frac_of_limit': 0.18, 'peak_yaw_deg_s': 21.6, 'peak_lat_g': 0.81, 'heading_change_deg': 7.8, 'lateral_m_3s': 16.76, 'peak_beta_deg': 2.7, 'peak_front_sy': 0.73, 'peak_rear_sy': 0.4, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'shirogane', 'kmh': 180, 'key_ms': 100, 'mode': 'assist', 'speed_stage': 1, 'peak_steer_deg': 0.14, 'frac_of_limit': 0.1, 'peak_yaw_deg_s': 0.6, 'peak_lat_g': 0.03, 'heading_change_deg': 0.1, 'lateral_m_3s': 0.27, 'peak_beta_deg': 0.0, 'peak_front_sy': 0.02, 'peak_rear_sy': 0.01, 'spin': False, 'final_yaw_rate': 0.0}
+{'car': 'shirogane', 'kmh': 180, 'key_ms': 100, 'mode': 'assist', 'speed_stage': 3, 'peak_steer_deg': 0.26, 'frac_of_limit': 0.17, 'peak_yaw_deg_s': 1.1, 'peak_lat_g': 0.06, 'heading_change_deg': 0.2, 'lateral_m_3s': 0.48, 'peak_beta_deg': 0.1, 'peak_front_sy': 0.03, 'peak_rear_sy': 0.01, 'spin': False, 'final_yaw_rate': 0.0}
+{'car': 'shirogane', 'kmh': 180, 'key_ms': 100, 'mode': 'assist', 'speed_stage': 5, 'peak_steer_deg': 0.54, 'frac_of_limit': 0.36, 'peak_yaw_deg_s': 2.3, 'peak_lat_g': 0.12, 'heading_change_deg': 0.5, 'lateral_m_3s': 1.06, 'peak_beta_deg': 0.2, 'peak_front_sy': 0.07, 'peak_rear_sy': 0.03, 'spin': False, 'final_yaw_rate': 0.0}
+{'car': 'shirogane', 'kmh': 180, 'key_ms': 200, 'mode': 'raw', 'speed_stage': 3, 'peak_steer_deg': 11.46, 'frac_of_limit': 0.36, 'peak_yaw_deg_s': 28.7, 'peak_lat_g': 1.0, 'heading_change_deg': 44.5, 'lateral_m_3s': 37.71, 'peak_beta_deg': 18.8, 'peak_front_sy': 2.56, 'peak_rear_sy': 2.65, 'spin': False, 'final_yaw_rate': -0.009}
+{'car': 'shirogane', 'kmh': 180, 'key_ms': 200, 'mode': 'assist', 'speed_stage': 1, 'peak_steer_deg': 0.38, 'frac_of_limit': 0.25, 'peak_yaw_deg_s': 2.5, 'peak_lat_g': 0.11, 'heading_change_deg': 0.6, 'lateral_m_3s': 1.38, 'peak_beta_deg': 0.2, 'peak_front_sy': 0.05, 'peak_rear_sy': 0.03, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'shirogane', 'kmh': 180, 'key_ms': 200, 'mode': 'assist', 'speed_stage': 3, 'peak_steer_deg': 0.74, 'frac_of_limit': 0.5, 'peak_yaw_deg_s': 4.8, 'peak_lat_g': 0.2, 'heading_change_deg': 1.3, 'lateral_m_3s': 2.85, 'peak_beta_deg': 0.5, 'peak_front_sy': 0.1, 'peak_rear_sy': 0.07, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'shirogane', 'kmh': 180, 'key_ms': 200, 'mode': 'assist', 'speed_stage': 5, 'peak_steer_deg': 1.49, 'frac_of_limit': 1.0, 'peak_yaw_deg_s': 10.2, 'peak_lat_g': 0.42, 'heading_change_deg': 3.0, 'lateral_m_3s': 6.65, 'peak_beta_deg': 1.1, 'peak_front_sy': 0.2, 'peak_rear_sy': 0.16, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'shirogane', 'kmh': 180, 'key_ms': 500, 'mode': 'raw', 'speed_stage': 3, 'peak_steer_deg': 28.65, 'frac_of_limit': 0.91, 'peak_yaw_deg_s': 27.0, 'peak_lat_g': 0.98, 'heading_change_deg': 16.2, 'lateral_m_3s': 29.28, 'peak_beta_deg': 6.1, 'peak_front_sy': 5.08, 'peak_rear_sy': 0.85, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'shirogane', 'kmh': 180, 'key_ms': 500, 'mode': 'assist', 'speed_stage': 1, 'peak_steer_deg': 1.46, 'frac_of_limit': 0.99, 'peak_yaw_deg_s': 13.6, 'peak_lat_g': 0.75, 'heading_change_deg': 7.8, 'lateral_m_3s': 14.59, 'peak_beta_deg': 2.3, 'peak_front_sy': 0.3, 'peak_rear_sy': 0.34, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'shirogane', 'kmh': 180, 'key_ms': 500, 'mode': 'assist', 'speed_stage': 3, 'peak_steer_deg': 1.49, 'frac_of_limit': 1.0, 'peak_yaw_deg_s': 15.9, 'peak_lat_g': 0.84, 'heading_change_deg': 9.8, 'lateral_m_3s': 18.41, 'peak_beta_deg': 3.0, 'peak_front_sy': 0.37, 'peak_rear_sy': 0.44, 'spin': False, 'final_yaw_rate': -0.0}
+{'car': 'shirogane', 'kmh': 180, 'key_ms': 500, 'mode': 'assist', 'speed_stage': 5, 'peak_steer_deg': 1.49, 'frac_of_limit': 1.0, 'peak_yaw_deg_s': 16.8, 'peak_lat_g': 0.89, 'heading_change_deg': 11.3, 'lateral_m_3s': 21.24, 'peak_beta_deg': 3.4, 'peak_front_sy': 0.44, 'peak_rear_sy': 0.49, 'spin': False, 'final_yaw_rate': -0.0}
+--- digital hold: time to reach the limit ---
+{'steer_speed_stage': 1, 'kmh': 40, 'limit_deg': 10.41, 'frac_after_50ms': 0.04, 't50_s': 0.317, 't95_s': 0.5, 'release_to_5pct_s': 0.317, 'car_rate_limited': False}
+{'steer_speed_stage': 1, 'kmh': 120, 'limit_deg': 1.96, 'frac_after_50ms': 0.04, 't50_s': 0.317, 't95_s': 0.5, 'release_to_5pct_s': 0.317, 'car_rate_limited': False}
+{'steer_speed_stage': 2, 'kmh': 40, 'limit_deg': 10.41, 'frac_after_50ms': 0.052, 't50_s': 0.25, 't95_s': 0.4, 'release_to_5pct_s': 0.25, 'car_rate_limited': False}
+{'steer_speed_stage': 2, 'kmh': 120, 'limit_deg': 1.96, 'frac_after_50ms': 0.052, 't50_s': 0.25, 't95_s': 0.4, 'release_to_5pct_s': 0.25, 'car_rate_limited': False}
+{'steer_speed_stage': 3, 'kmh': 40, 'limit_deg': 10.41, 'frac_after_50ms': 0.067, 't50_s': 0.217, 't95_s': 0.317, 'release_to_5pct_s': 0.2, 'car_rate_limited': False}
+{'steer_speed_stage': 3, 'kmh': 120, 'limit_deg': 1.96, 'frac_after_50ms': 0.067, 't50_s': 0.217, 't95_s': 0.317, 'release_to_5pct_s': 0.2, 'car_rate_limited': False}
+{'steer_speed_stage': 4, 'kmh': 40, 'limit_deg': 10.41, 'frac_after_50ms': 0.091, 't50_s': 0.167, 't95_s': 0.25, 'release_to_5pct_s': 0.183, 'car_rate_limited': False}
+{'steer_speed_stage': 4, 'kmh': 120, 'limit_deg': 1.96, 'frac_after_50ms': 0.091, 't50_s': 0.167, 't95_s': 0.25, 'release_to_5pct_s': 0.167, 'car_rate_limited': False}
+{'steer_speed_stage': 5, 'kmh': 40, 'limit_deg': 10.41, 'frac_after_50ms': 0.128, 't50_s': 0.133, 't95_s': 0.217, 'release_to_5pct_s': 0.183, 'car_rate_limited': True}
+{'steer_speed_stage': 5, 'kmh': 120, 'limit_deg': 1.96, 'frac_after_50ms': 0.128, 't50_s': 0.133, 't95_s': 0.2, 'release_to_5pct_s': 0.133, 'car_rate_limited': False}
+wrote result_steer.json

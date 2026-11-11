@@ -1,0 +1,30 @@
+{
+ "asphalt": {
+  "simple": {
+   "points": 20000,
+   "max_err_forward_slope": 0.0444,
+   "max_err_lateral_slope": 0.046,
+   "mean_err_forward_slope": 0.00078
+  },
+  "with_twist": {
+   "points": 20000,
+   "max_err_forward_slope": 0.0064,
+   "max_err_lateral_slope": 0.0105,
+   "mean_err_forward_slope": 0.00013
+  }
+ },
+ "whole_corridor": {
+  "simple": {
+   "points": 20000,
+   "max_err_forward_slope": 0.1284,
+   "max_err_lateral_slope": 0.1277,
+   "mean_err_forward_slope": 0.00166
+  },
+  "with_twist": {
+   "points": 20000,
+   "max_err_forward_slope": 0.0192,
+   "max_err_lateral_slope": 0.031,
+   "mean_err_forward_slope": 0.00013
+  }
+ }
+}

@@ -1,0 +1,185 @@
+{
+ "url": "http://127.0.0.1:8765/apps/fail_missing_module.html",
+ "mirror": null,
+ "console": [
+  {
+   "t": 135,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 135,
+   "type": "log",
+   "text": "{command: play, name: fail_missing_module.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIAO4Oa10sYEvPCQAAAAcAAAAqAAAAZmFpbF9taX…tb2R1bGUvbWFpbi5weVBLBQYAAAAABAAEAD8BAAC9GAAAAAA=}"
+  },
+  {
+   "t": 1856,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 2100,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 2814,
+   "type": "log",
+   "text": "Attempting to fetch 'module_that_does_not_exist/__init__.py'"
+  },
+  {
+   "t": 2819,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 2820,
+   "type": "log",
+   "text": "Attempting to fetch 'module_that_does_not_exist.py'"
+  },
+  {
+   "t": 2821,
+   "type": "error",
+   "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 2826,
+   "type": "error",
+   "text": "Traceback (most recent call last):\n  File \"/lib/python314.zip/_pyodide/_base.py\", line 539, in eval_code\n    .run(globals, locals)\n     ~~~^^^^^^^^^^^^^^^^^\n  File \"/lib/python314.zip/_pyodide/_base.py\", line 366, in run\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 3, in <module>\n  File \"/lib/python3.14/site-packages/pyxel/cli.py\", line 166, in play_pyxel_app\n    runpy.run_path(startup_script_file, run_name=\"__main__\")\n    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/tmp/.pyxel/play/42_0d2e0451-4708-479d-8ee0-a5006ad9ce6a/fail_missing_module/main.py\", line 2, in <module>\n    import module_that_does_not_exist  # noqa: F401\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nModuleNotFoundError: No module named 'module_that_does_not_exist'\n"
+  }
+ ],
+ "failures": [
+  {
+   "t": 2818,
+   "kind": "http",
+   "detail": "404 http://127.0.0.1:8765/apps/module_that_does_not_exist/__init__.py"
+  },
+  {
+   "t": 2819,
+   "kind": "console.error",
+   "detail": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 2821,
+   "kind": "http",
+   "detail": "404 http://127.0.0.1:8765/apps/module_that_does_not_exist.py"
+  },
+  {
+   "t": 2821,
+   "kind": "console.error",
+   "detail": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  },
+  {
+   "t": 2826,
+   "kind": "console.error",
+   "detail": "Traceback (most recent call last):\n  File \"/lib/python314.zip/_pyodide/_base.py\", line 539, in eval_code\n    .run(globals, locals)\n     ~~~^^^^^^^^^^^^^^^^^\n  File \"/lib/python314.zip/_pyodide/_base.py\", line 366, in run\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 3, in <module>\n  File \"/lib/python3.14/site-packages/pyxel/cli.py\", line 166, in play_pyxel_app\n    runpy.run_path(startup_script_file, run_name=\"__main__\")\n    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/tmp/.pyxel/play/42_0d2e0451-4708-479d-8ee0-a5006ad9ce6a/fail_missing_module/main.py\", line 2, in <module>\n    import module_that_does_not_exist  # noqa: F401\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nModuleNotFoundError: No module named 'module_that_does_not_exist'\n"
+  },
+  {
+   "t": 3439,
+   "kind": "pyxel-error-overlay",
+   "detail": "Traceback (most recent call last):\n  File \"/lib/python314.zip/_pyodide/_base.py\", line 539, in eval_code\n    .run(globals, locals)\n     ~~~^^^^^^^^^^^^^^^^^\n  File \"/lib/python314.zip/_pyodide/_base.py\", line 366, in run\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 3, in <module>\n  File \"/lib/python3.14/site-packages/pyxel/cli.py\", line 166, in play_pyxel_app\n    runpy.run_path(startup_script_file, run_name=\"__main__\")\n    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/tmp/.pyxel/play/42_0d2e0451-4708-479d-8ee0-a5006ad9ce6a/fail_missing_module/main.py\", line 2, in <module>\n    import module_that_does_not_exist  # noqa: F401\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nModuleNotFoundError: No module named 'module_that_does_not_exist'\n"
+  },
+  {
+   "t": 3439,
+   "kind": "until-not-seen",
+   "detail": "no console line matched /^SPIKE_DONE/ within 20000 ms"
+  }
+ ],
+ "requests": [
+  {
+   "t": 120,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/apps/fail_missing_module.html"
+  },
+  {
+   "t": 133,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.js"
+  },
+  {
+   "t": 138,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.css"
+  },
+  {
+   "t": 139,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 199,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/import_hook.py"
+  },
+  {
+   "t": 199,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 208,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 226,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 226,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 227,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 252,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 1859,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 2144,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/click_to_start_114x14.png"
+  },
+  {
+   "t": 2818,
+   "status": 404,
+   "url": "http://127.0.0.1:8765/apps/module_that_does_not_exist/__init__.py"
+  },
+  {
+   "t": 2821,
+   "status": 404,
+   "url": "http://127.0.0.1:8765/apps/module_that_does_not_exist.py"
+  }
+ ],
+ "downloads": [],
+ "allowed": [],
+ "actions": [],
+ "filechoosers": [],
+ "passed": false,
+ "promptAt": 2584,
+ "clickedAt": 2591,
+ "state": {
+  "overlayText": "Traceback (most recent call last):\n  File \"/lib/python314.zip/_pyodide/_base.py\", line 539, in eval_code\n    .run(globals, locals)\n     ~~~^^^^^^^^^^^^^^^^^\n  File \"/lib/python314.zip/_pyodide/_base.py\", line 366, in run\n    coroutine = eval(self.code, globals, locals)\n  File \"<exec>\", line 3, in <module>\n  File \"/lib/python3.14/site-packages/pyxel/cli.py\", line 166, in play_pyxel_app\n    runpy.run_path(startup_script_file, run_name=\"__main__\")\n    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/tmp/.pyxel/play/42_0d2e0451-4708-479d-8ee0-a5006ad9ce6a/fail_missing_module/main.py\", line 2, in <module>\n    import module_that_does_not_exist  # noqa: F401\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nModuleNotFoundError: No module named 'module_that_does_not_exist'\n",
+  "hasFatalError": false,
+  "initialized": true,
+  "canvas": {
+   "width": 300,
+   "height": 150,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": null,
+ "elapsedMs": 3512
+}

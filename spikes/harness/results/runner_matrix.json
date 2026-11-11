@@ -1,0 +1,224 @@
+[
+ {
+  "case": "c_allskip",
+  "runner": "pytest",
+  "exit": 0,
+  "last_line": "1 skipped in 0.01s"
+ },
+ {
+  "case": "c_allskip",
+  "runner": "unittest",
+  "exit": 0,
+  "last_line": "OK (skipped=1)"
+ },
+ {
+  "case": "c_assert",
+  "runner": "pytest",
+  "exit": 1,
+  "last_line": "1 failed in 0.01s"
+ },
+ {
+  "case": "c_assert",
+  "runner": "unittest",
+  "exit": 1,
+  "last_line": "FAILED (failures=1)"
+ },
+ {
+  "case": "c_empty",
+  "runner": "pytest",
+  "exit": 5,
+  "last_line": "no tests ran in 0.00s"
+ },
+ {
+  "case": "c_empty",
+  "runner": "unittest",
+  "exit": 5,
+  "last_line": "NO TESTS RAN"
+ },
+ {
+  "case": "c_exc",
+  "runner": "pytest",
+  "exit": 1,
+  "last_line": "1 failed, 1 passed in 0.01s"
+ },
+ {
+  "case": "c_exc",
+  "runner": "unittest",
+  "exit": 1,
+  "last_line": "FAILED (errors=1)"
+ },
+ {
+  "case": "c_loadfail",
+  "runner": "pytest",
+  "exit": 2,
+  "last_line": "1 error in 0.09s"
+ },
+ {
+  "case": "c_loadfail",
+  "runner": "unittest",
+  "exit": 1,
+  "last_line": "FAILED (errors=1)"
+ },
+ {
+  "case": "c_misnamed",
+  "runner": "pytest",
+  "exit": 5,
+  "last_line": "no tests ran in 0.00s"
+ },
+ {
+  "case": "c_misnamed",
+  "runner": "unittest",
+  "exit": 5,
+  "last_line": "NO TESTS RAN"
+ },
+ {
+  "case": "c_ok",
+  "runner": "pytest",
+  "exit": 0,
+  "last_line": "2 passed in 0.01s"
+ },
+ {
+  "case": "c_ok",
+  "runner": "unittest",
+  "exit": 0,
+  "last_line": "OK"
+ },
+ {
+  "case": "c_osexit",
+  "runner": "pytest",
+  "exit": 0,
+  "last_line": ""
+ },
+ {
+  "case": "c_osexit",
+  "runner": "unittest",
+  "exit": 0,
+  "last_line": ""
+ },
+ {
+  "case": "c_setupfail",
+  "runner": "pytest",
+  "exit": 1,
+  "last_line": "1 error in 0.01s"
+ },
+ {
+  "case": "c_setupfail",
+  "runner": "unittest",
+  "exit": 1,
+  "last_line": "FAILED (errors=1)"
+ },
+ {
+  "case": "c_subtest",
+  "runner": "pytest",
+  "exit": 1,
+  "last_line": "1 failed, 1 passed, 2 subtests passed in 0.01s"
+ },
+ {
+  "case": "c_subtest",
+  "runner": "unittest",
+  "exit": 1,
+  "last_line": "FAILED (failures=1)"
+ },
+ {
+  "case": "c_syntax",
+  "runner": "pytest",
+  "exit": 2,
+  "last_line": "1 error in 0.14s"
+ },
+ {
+  "case": "c_syntax",
+  "runner": "unittest",
+  "exit": 1,
+  "last_line": "FAILED (errors=1)"
+ },
+ {
+  "case": "c_sysexit",
+  "runner": "pytest",
+  "exit": 1,
+  "last_line": "2 failed in 0.01s"
+ },
+ {
+  "case": "c_sysexit",
+  "runner": "unittest",
+  "exit": 1,
+  "last_line": "FAILED (failures=1, errors=1)"
+ },
+ {
+  "case": "c_thread",
+  "runner": "pytest",
+  "exit": 0,
+  "last_line": "1 passed, 1 warning in 0.01s"
+ },
+ {
+  "case": "c_thread",
+  "runner": "unittest",
+  "exit": 0,
+  "last_line": "OK"
+ },
+ {
+  "case": "c_ok",
+  "runner": "pytest -k nomatch",
+  "exit": 5,
+  "last_line": "2 deselected in 0.00s"
+ },
+ {
+  "case": "c_ok",
+  "runner": "unittest -k nomatch",
+  "exit": 5,
+  "last_line": "NO TESTS RAN"
+ },
+ {
+  "case": "c_ok",
+  "runner": "pytest -k 'one or typo'",
+  "exit": 0,
+  "last_line": "1 passed, 1 deselected in 0.00s"
+ },
+ {
+  "case": "c_ok",
+  "runner": "unittest -k one -k typo",
+  "exit": 0,
+  "last_line": "OK"
+ },
+ {
+  "case": "c_ok",
+  "runner": "pytest missing path",
+  "exit": 4,
+  "last_line": "ERROR: file or directory not found: no_such_dir"
+ },
+ {
+  "case": "c_ok",
+  "runner": "unittest missing module",
+  "exit": 1,
+  "last_line": "FAILED (errors=1)"
+ },
+ {
+  "case": "c_ok",
+  "runner": "unittest discover missing dir",
+  "exit": 1,
+  "last_line": "ImportError: Start directory is not importable: 'no_such_dir'"
+ },
+ {
+  "case": "c_ok",
+  "runner": "pytest bad -k syntax",
+  "exit": 4,
+  "last_line": "ERROR: Wrong expression passed to '-k': one or or: at column 8: expected not OR left parenthesis OR identifier"
+ },
+ {
+  "case": "c_loadfail",
+  "runner": "pytest -k one (loadfail in other file)",
+  "exit": 2,
+  "last_line": "1 deselected, 1 error in 0.07s"
+ },
+ {
+  "case": "c_loadfail",
+  "runner": "pytest --continue-on-collection-errors",
+  "exit": 1,
+  "last_line": "2 passed, 1 error in 0.01s"
+ },
+ {
+  "case": "c_loadfail",
+  "runner": "pytest test_b.py only (loadfail file not named)",
+  "exit": 0,
+  "last_line": "2 passed in 0.00s"
+ }
+]

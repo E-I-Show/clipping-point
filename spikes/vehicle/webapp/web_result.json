@@ -1,0 +1,334 @@
+{
+ "url": "file://<scratchpad>/spikes/vehicle/webapp/vehbench.html",
+ "mirror": "<scratchpad>/spikes/web/mirror",
+ "console": [
+  {
+   "t": 155,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 155,
+   "type": "log",
+   "text": "{command: play, name: vehbench.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIAEwUa10sYEvPCQAAAAcAAAAfAAAAdmVoYmVuY2…jaC92ZWhpY2xlLnB5UEsFBgAAAAAEAAQAEAEAAKEvAAAAAA==}"
+  },
+  {
+   "t": 2746,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 3171,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 3605,
+   "type": "warning",
+   "text": "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)"
+  },
+  {
+   "t": 3651,
+   "type": "warning",
+   "text": "[.WebGL-0x382c0717b600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3677,
+   "type": "warning",
+   "text": "[.WebGL-0x382c0717b600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3701,
+   "type": "warning",
+   "text": "[.WebGL-0x382c0717b600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3725,
+   "type": "warning",
+   "text": "[.WebGL-0x382c0717b600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  },
+  {
+   "t": 3778,
+   "type": "log",
+   "text": "RESULT_JSON env {\"python\": \"3.14.2 (main, Sep 14 2026, 03:03:51) [Clang 23.0.0git (https:/github.com/llvm/llvm-project e5927fecf8a6ce89e1a4eac5b8\", \"platform\": \"emscripten\"}"
+  },
+  {
+   "t": 3825,
+   "type": "log",
+   "text": "RESULT_JSON cold_first_second_ms 22.3"
+  },
+  {
+   "t": 6478,
+   "type": "log",
+   "text": "RESULT_JSON bench {\"lite\": false, \"substeps\": 1, \"reps\": 300, \"ms_per_game_second_6cars_median\": 7.9, \"ms_min\": 7.4, \"ms_p95\": 9.3, \"us_per_car_tick_median\": 21.944, \"ms_per_tick_6cars_median\": 0.13167, \"pct_of_16_7ms_tick\": 0.79, \"finite\": true, \"checksum\": \"7281.176916424473\"}"
+  },
+  {
+   "t": 9304,
+   "type": "log",
+   "text": "RESULT_JSON bench {\"lite\": false, \"substeps\": 2, \"reps\": 300, \"ms_per_game_second_6cars_median\": 8.6, \"ms_min\": 8.0, \"ms_p95\": 9.9, \"us_per_car_tick_median\": 23.889, \"ms_per_tick_6cars_median\": 0.14333, \"pct_of_16_7ms_tick\": 0.86, \"finite\": true, \"checksum\": \"8498.35594474668\"}"
+  },
+  {
+   "t": 13816,
+   "type": "log",
+   "text": "RESULT_JSON bench {\"lite\": false, \"substeps\": 4, \"reps\": 300, \"ms_per_game_second_6cars_median\": 13.2, \"ms_min\": 11.9, \"ms_p95\": 18.9, \"us_per_car_tick_median\": 36.667, \"ms_per_tick_6cars_median\": 0.22, \"pct_of_16_7ms_tick\": 1.32, \"finite\": true, \"checksum\": \"10302.402168717756\"}"
+  },
+  {
+   "t": 15150,
+   "type": "log",
+   "text": "RESULT_JSON bench {\"lite\": true, \"substeps\": 1, \"reps\": 300, \"ms_per_game_second_6cars_median\": 4.1, \"ms_min\": 3.7, \"ms_p95\": 4.8, \"us_per_car_tick_median\": 11.389, \"ms_per_tick_6cars_median\": 0.06833, \"pct_of_16_7ms_tick\": 0.41, \"finite\": true, \"checksum\": \"9622.056176474753\"}"
+  },
+  {
+   "t": 17132,
+   "type": "log",
+   "text": "RESULT_JSON bench {\"lite\": true, \"substeps\": 2, \"reps\": 300, \"ms_per_game_second_6cars_median\": 6.1, \"ms_min\": 5.4, \"ms_p95\": 7.4, \"us_per_car_tick_median\": 16.944, \"ms_per_tick_6cars_median\": 0.10167, \"pct_of_16_7ms_tick\": 0.61, \"finite\": true, \"checksum\": \"8217.270142922407\"}"
+  },
+  {
+   "t": 19905,
+   "type": "log",
+   "text": "RESULT_JSON bench_second_pass {\"lite\": false, \"substeps\": 2, \"reps\": 300, \"ms_per_game_second_6cars_median\": 8.8, \"ms_min\": 7.8, \"ms_p95\": 10.9, \"us_per_car_tick_median\": 24.444, \"ms_per_tick_6cars_median\": 0.14667, \"pct_of_16_7ms_tick\": 0.88, \"finite\": true, \"checksum\": \"7810.623647526152\"}"
+  },
+  {
+   "t": 21329,
+   "type": "log",
+   "text": "RESULT_JSON fingerprint {\"hash\": \"026ba0e3aaeaca9b34772454aaeb35f61b06c5dad338758eb93cdd149cd0de9f\", \"checkpoints\": [[1, \"305b135eca66489c\", \"16.13746637746041\", \"0.6\"], [10, \"b8b54ea7eb43aa42\", \"17.373564456010396\", \"0.603800425241011\"], [60, \"8464c707e34763d5\", \"24.49057373614753\", \"0.6802565553218826\"], [600, \"c02b4b30c117b307\", \"62.82789254742014\", \"0.32635987260083843\"], [3600, \"eab87cae442002b1\", \"146.4565764584732\", \"1.2820754705915005\"], [7200, \"71daf07ec9a4da10\", \"157.85822554955334\", \"1.0804339625445252\"]]}"
+  },
+  {
+   "t": 31327,
+   "type": "log",
+   "text": "RESULT_JSON inloop_tick_ms {\"n\": 600, \"median\": 0.3, \"p95\": 0.6, \"max\": 4.1, \"pct_of_16_7ms_median\": 1.8}"
+  },
+  {
+   "t": 31344,
+   "type": "log",
+   "text": "SPIKE_DONE frame=618"
+  },
+  {
+   "t": 31361,
+   "type": "log",
+   "text": "SPIKE_DONE frame=619"
+  },
+  {
+   "t": 31385,
+   "type": "log",
+   "text": "SPIKE_DONE frame=620"
+  },
+  {
+   "t": 31398,
+   "type": "log",
+   "text": "SPIKE_DONE frame=621"
+  },
+  {
+   "t": 31419,
+   "type": "log",
+   "text": "SPIKE_DONE frame=622"
+  },
+  {
+   "t": 31442,
+   "type": "log",
+   "text": "SPIKE_DONE frame=623"
+  },
+  {
+   "t": 31463,
+   "type": "log",
+   "text": "SPIKE_DONE frame=624"
+  },
+  {
+   "t": 31474,
+   "type": "log",
+   "text": "SPIKE_DONE frame=625"
+  },
+  {
+   "t": 31492,
+   "type": "log",
+   "text": "SPIKE_DONE frame=626"
+  },
+  {
+   "t": 31509,
+   "type": "log",
+   "text": "SPIKE_DONE frame=627"
+  },
+  {
+   "t": 31527,
+   "type": "log",
+   "text": "SPIKE_DONE frame=628"
+  },
+  {
+   "t": 31541,
+   "type": "log",
+   "text": "SPIKE_DONE frame=629"
+  },
+  {
+   "t": 31557,
+   "type": "log",
+   "text": "SPIKE_DONE frame=630"
+  },
+  {
+   "t": 31577,
+   "type": "log",
+   "text": "SPIKE_DONE frame=631"
+  },
+  {
+   "t": 31590,
+   "type": "log",
+   "text": "SPIKE_DONE frame=632"
+  },
+  {
+   "t": 31608,
+   "type": "log",
+   "text": "SPIKE_DONE frame=633"
+  },
+  {
+   "t": 31630,
+   "type": "log",
+   "text": "SPIKE_DONE frame=634"
+  },
+  {
+   "t": 31647,
+   "type": "log",
+   "text": "SPIKE_DONE frame=635"
+  },
+  {
+   "t": 31648,
+   "type": "log",
+   "text": "SPIKE_DONE frame=636"
+  },
+  {
+   "t": 31663,
+   "type": "log",
+   "text": "SPIKE_DONE frame=637"
+  },
+  {
+   "t": 31698,
+   "type": "log",
+   "text": "SPIKE_DONE frame=638"
+  },
+  {
+   "t": 31706,
+   "type": "log",
+   "text": "SPIKE_DONE frame=639"
+  },
+  {
+   "t": 31723,
+   "type": "log",
+   "text": "SPIKE_DONE frame=640"
+  },
+  {
+   "t": 31738,
+   "type": "log",
+   "text": "SPIKE_DONE frame=641"
+  },
+  {
+   "t": 31749,
+   "type": "log",
+   "text": "SPIKE_DONE frame=642"
+  },
+  {
+   "t": 31764,
+   "type": "log",
+   "text": "SPIKE_DONE frame=643"
+  },
+  {
+   "t": 31784,
+   "type": "log",
+   "text": "SPIKE_DONE frame=644"
+  },
+  {
+   "t": 31800,
+   "type": "log",
+   "text": "SPIKE_DONE frame=645"
+  },
+  {
+   "t": 31822,
+   "type": "log",
+   "text": "SPIKE_DONE frame=646"
+  }
+ ],
+ "failures": [],
+ "requests": [
+  {
+   "t": 136,
+   "status": 200,
+   "url": "file://<scratchpad>/spikes/vehicle/webapp/vehbench.html"
+  },
+  {
+   "t": 150,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel.js"
+  },
+  {
+   "t": 156,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel.css"
+  },
+  {
+   "t": 163,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 351,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 372,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/import_hook.py"
+  },
+  {
+   "t": 372,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 492,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 535,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 661,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 691,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 2863,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 3218,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/images/click_to_start_114x14.png"
+  }
+ ],
+ "downloads": [],
+ "allowed": [],
+ "actions": [],
+ "filechoosers": [],
+ "passed": true,
+ "promptAt": 3299,
+ "clickedAt": 3304,
+ "state": {
+  "overlayText": null,
+  "hasFatalError": false,
+  "initialized": true,
+  "canvas": {
+   "width": 960,
+   "height": 720,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": 31344,
+ "elapsedMs": 31868
+}

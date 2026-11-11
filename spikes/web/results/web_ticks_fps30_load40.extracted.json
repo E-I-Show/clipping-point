@@ -1,0 +1,57 @@
+{
+ "ticks": {
+  "params": {
+   "fps": 30,
+   "load": 40,
+   "skip": 0,
+   "n": 300,
+   "phys": 0
+  },
+  "span_s": 9.975,
+  "updates_per_s": 29.97,
+  "draw_calls_per_s": 20.35,
+  "draw_work_per_s": 20.35,
+  "update_interval_ms": {
+   "n": 299,
+   "mean": 33.363,
+   "median": 48.4,
+   "p05": 0.0,
+   "p95": 51.2,
+   "min": 0.0,
+   "max": 54.5
+  },
+  "draw_work_interval_ms": {
+   "n": 202,
+   "mean": 49.383,
+   "median": 49.4,
+   "p05": 47.7,
+   "p95": 51.7,
+   "min": 47.3,
+   "max": 54.6
+  },
+  "updates_between_draw_calls": {
+   "1": 110,
+   "2": 101
+  },
+  "frame_count_step_set": [
+   1
+  ],
+  "interval_histogram_ms": {
+   "0": 97,
+   "4": 0,
+   "8": 0,
+   "12": 0,
+   "16": 0,
+   "20": 0,
+   "24": 0,
+   "28": 0,
+   "32": 0,
+   "36": 0,
+   "40": 0,
+   "44": 24,
+   "48": 172,
+   "52": 6,
+   "56": 0
+  }
+ }
+}

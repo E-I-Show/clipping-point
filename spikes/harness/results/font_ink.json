@@ -1,0 +1,27 @@
+{
+ "max_ink_w": 3,
+ "max_ink_h": 6,
+ "glyphs_wider_than_3": [],
+ "glyphs_taller_than_5": [
+  "g",
+  "j",
+  "p",
+  "q",
+  "y"
+ ],
+ "two_line_ink_rows": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  6,
+  7,
+  8,
+  9,
+  10
+ ],
+ "non_ascii_ink_pixels": 0,
+ "FONT_WIDTH": 4,
+ "FONT_HEIGHT": 6
+}

@@ -1,0 +1,160 @@
+{
+ "url": "file://<scratchpad>/spikes/web/build/fail_api.html",
+ "mirror": "mirror",
+ "console": [
+  {
+   "t": 136,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 136,
+   "type": "log",
+   "text": "{command: play, name: fail_api.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIAO4Oa10sYEvPCQAAAAcAAAAfAAAAZmFpbF9hcG…haWxfYXBpL21haW4ucHlQSwUGAAAAAAQABAATAQAA+RgAAAAA}"
+  },
+  {
+   "t": 2077,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 2409,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 2824,
+   "type": "warning",
+   "text": "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)"
+  },
+  {
+   "t": 2855,
+   "type": "warning",
+   "text": "[.WebGL-0x3a6c06c7f600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 2869,
+   "type": "warning",
+   "text": "[.WebGL-0x3a6c06c7f600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 2887,
+   "type": "warning",
+   "text": "[.WebGL-0x3a6c06c7f600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 2917,
+   "type": "warning",
+   "text": "[.WebGL-0x3a6c06c7f600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  },
+  {
+   "t": 3544,
+   "type": "error",
+   "text": "Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_20088991-d9d2-461e-8dde-b95abd3ede25/fail_api/main.py\", line 10, in update\n    pyxel.no_such_function(1, 2)\n    ^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: module 'pyxel' has no attribute 'no_such_function'\n"
+  }
+ ],
+ "failures": [
+  {
+   "t": 3545,
+   "kind": "console.error",
+   "detail": "Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_20088991-d9d2-461e-8dde-b95abd3ede25/fail_api/main.py\", line 10, in update\n    pyxel.no_such_function(1, 2)\n    ^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: module 'pyxel' has no attribute 'no_such_function'\n"
+  },
+  {
+   "t": 4200,
+   "kind": "pyxel-error-overlay",
+   "detail": "Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_20088991-d9d2-461e-8dde-b95abd3ede25/fail_api/main.py\", line 10, in update\n    pyxel.no_such_function(1, 2)\n    ^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: module 'pyxel' has no attribute 'no_such_function'\n"
+  },
+  {
+   "t": 4200,
+   "kind": "until-not-seen",
+   "detail": "no console line matched /^SPIKE_DONE/ within 20000 ms"
+  }
+ ],
+ "requests": [
+  {
+   "t": 120,
+   "status": 200,
+   "url": "file://<scratchpad>/spikes/web/build/fail_api.html"
+  },
+  {
+   "t": 133,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel.js"
+  },
+  {
+   "t": 155,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel.css"
+  },
+  {
+   "t": 155,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 319,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 337,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/import_hook.py"
+  },
+  {
+   "t": 337,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 435,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 461,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 558,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 575,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 2170,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 2450,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/images/click_to_start_114x14.png"
+  }
+ ],
+ "downloads": [],
+ "allowed": [],
+ "actions": [],
+ "filechoosers": [],
+ "passed": false,
+ "promptAt": 2617,
+ "clickedAt": 2620,
+ "state": {
+  "overlayText": "Traceback (most recent call last):\n  File \"/tmp/.pyxel/play/42_20088991-d9d2-461e-8dde-b95abd3ede25/fail_api/main.py\", line 10, in update\n    pyxel.no_such_function(1, 2)\n    ^^^^^^^^^^^^^^^^^^^^^^\nAttributeError: module 'pyxel' has no attribute 'no_such_function'\n",
+  "hasFatalError": false,
+  "initialized": true,
+  "canvas": {
+   "width": 960,
+   "height": 720,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": null,
+ "elapsedMs": 4226
+}

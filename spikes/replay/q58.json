@@ -1,0 +1,247 @@
+{
+ "small_file_bytes": 2414,
+ "big_file_bytes": 150336,
+ "corrupt_small": {
+  "trials": 7242,
+  "codes": {
+   "E_NOT_CPR": 12,
+   "E_CORRUPT": 7205,
+   "E_TOO_NEW": 5,
+   "E_TRUNCATED": 20
+  },
+  "ms_per_load": 0.002333943109637329
+ },
+ "corrupt_big": {
+  "E_CORRUPT": 1500
+ },
+ "truncate_small": {
+  "E_NOT_CPR": 1,
+  "E_TRUNCATED": 2413
+ },
+ "without_crc": {
+  "accepted": 295,
+  "changed_content": 288,
+  "trials": 2410
+ },
+ "peek_ms_big": 0.10006542000041918,
+ "header_json_small": {
+  "app": "CLIPPING POINT",
+  "app_ver": "0.1.0",
+  "cars": [
+   {
+    "best_ms": 0,
+    "car": "tsubame_1600",
+    "color": 0,
+    "driver": "player",
+    "grid": 1,
+    "laps_ms": [],
+    "name": "YOU",
+    "setup": {
+     "assist": 1,
+     "brake": 2,
+     "gear": 2,
+     "lsd": 2,
+     "mt": 0,
+     "steer": 1,
+     "susp": 2,
+     "wing": 2
+    },
+    "total_ms": 0
+   }
+  ],
+  "content_crc": 1982588776,
+  "course": {
+   "data_ver": 1,
+   "id": "akane_short",
+   "layout": "normal"
+  },
+  "difficulty": "NORMAL",
+  "laps": 5,
+  "mode": "race",
+  "n_cars": 1,
+  "n_samples": 400,
+  "player_car": 0,
+  "quant": {
+   "origin_mm": [
+    -131840,
+    -10000,
+    -26309
+   ],
+   "pitch_step_urad": 2500,
+   "roll_step_urad": 2500,
+   "rpm_step": 40,
+   "steer_step_urad": 5000,
+   "step_um": [
+    7820,
+    306,
+    5730
+   ]
+  },
+  "result": {
+   "order": [
+    0
+   ]
+  },
+  "sample_div": 3,
+  "saved_at": "2026-11-11T02:30:00Z",
+  "start_tick": 0,
+  "tick_hz": 60,
+  "title": "TEST RACE"
+ },
+ "header_bytes_small": 692,
+ "header_bytes_big": 1837,
+ "golden": {
+  "file": "golden_v1_0.cpr",
+  "bytes": 2414,
+  "file_crc32": 558161692,
+  "content_crc": 1982588776,
+  "n_samples": 400
+ },
+ "checks": [
+  {
+   "name": "round trip exact: 1 car 20 s (samples, events, header)",
+   "ok": true,
+   "detail": "400 samples x 1 cars, 2 events, 2414 bytes"
+  },
+  {
+   "name": "re-saving the loaded replay gives byte-identical file: 1 car 20 s",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "base64 round trip: 1 car 20 s",
+   "ok": true,
+   "detail": "3220 chars for 2414 bytes (x1.334)"
+  },
+  {
+   "name": "round trip exact: 6 cars 5 min (samples, events, header)",
+   "ok": true,
+   "detail": "6000 samples x 6 cars, 81 events, 150336 bytes"
+  },
+  {
+   "name": "re-saving the loaded replay gives byte-identical file: 6 cars 5 min",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "base64 round trip: 6 cars 5 min",
+   "ok": true,
+   "detail": "200448 chars for 150336 bytes (x1.333)"
+  },
+  {
+   "name": "1 byte corrupted anywhere -> rejected (all 2414 positions x 3 masks of the small file)",
+   "ok": true,
+   "detail": "{'E_NOT_CPR': 12, 'E_CORRUPT': 7205, 'E_TOO_NEW': 5, 'E_TRUNCATED': 20}"
+  },
+  {
+   "name": "1 bit flipped at 1500 random positions of the 6-car file -> rejected",
+   "ok": true,
+   "detail": "{'E_CORRUPT': 1500}"
+  },
+  {
+   "name": "adjacent bytes swapped (500 tries) -> rejected",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "cut at every length 0..2413 -> rejected; E_TRUNCATED except the empty file",
+   "ok": true,
+   "detail": "{'E_NOT_CPR': 1, 'E_TRUNCATED': 2413}"
+  },
+  {
+   "name": "6-car file cut at 300 random lengths -> E_TRUNCATED",
+   "ok": true,
+   "detail": "{'E_TRUNCATED': 300}"
+  },
+  {
+   "name": "extra bytes after the checksum -> E_CORRUPT",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "empty, text, PNG, zip -> E_NOT_CPR",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "CRLF -> LF text-mode damage -> E_CORRUPT (signature damaged)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "major version newer than this build -> E_TOO_NEW (checked before length and CRC)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "same major, newer minor with an unknown header key and an unknown chunk -> loads, extras ignored",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "unknown sample codec id -> E_TOO_NEW",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "a major-1 file read by a (simulated) major-2 build goes through the upgrade function",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "13 kinds of invalid header -> E_BAD_HEADER",
+   "ok": true,
+   "detail": "{'missing course': 'E_BAD_HEADER', 'n_cars 0': 'E_BAD_HEADER', 'n_cars 2 but 1 car listed': 'E_BAD_HEADER', 'sample_div 0': 'E_BAD_HEADER', 'tick_hz 50': 'E_BAD_HEADER', 'float in header': 'E_BAD_HEADER', 'quant step 0': 'E_BAD_HEADER', 'quant origin not 3 ints': 'E_BAD_HEADER', 'title not ASCII': 'E_BAD_HEADER', 'title too long': 'E_BAD_HEADER', 'cars[0] without setup': 'E_BAD_HEADER', 'n_samples huge': 'E_BAD_HEADER', 'n_samples is a string': 'E_BAD_HEADER'}"
+  },
+  {
+   "name": "header that is not JSON -> E_BAD_HEADER",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "n_samples not matching the body -> E_CORRUPT",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "body without sample chunk -> E_CORRUPT",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "sample chunk inflating to 50 MB instead of 5600 bytes -> E_CORRUPT without inflating it all",
+   "ok": true,
+   "detail": "0.2 ms"
+  },
+  {
+   "name": "unknown course / layout / newer course data / unknown car / unknown mode -> E_UNKNOWN_CONTENT with a specific code",
+   "ok": true,
+   "detail": "{'unknown course': ('E_UNKNOWN_CONTENT', ['E_UNKNOWN_COURSE']), 'unknown layout': ('E_UNKNOWN_CONTENT', ['E_UNKNOWN_LAYOUT']), 'course data newer': ('E_UNKNOWN_CONTENT', ['E_COURSE_TOO_NEW']), 'unknown car': ('E_UNKNOWN_CONTENT', ['E_UNKNOWN_CAR']), 'unknown mode': ('E_UNKNOWN_CONTENT', ['E_UNKNOWN_MODE'])}"
+  },
+  {
+   "name": "course data older than the build -> plays, with warning W_COURSE_OLDER",
+   "ok": true,
+   "detail": "[('warn', 'W_COURSE_OLDER', 'akane_short v1 < v3')]"
+  },
+  {
+   "name": "without a catalog the file still loads (theatre list can show it greyed out)",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "invalid base64 text -> E_CORRUPT",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "name": "mutation check: without the file CRC32, single-bit damage gets through with changed content (so the CRC is what catches it)",
+   "ok": true,
+   "detail": "295 of 2410 damaged files accepted, 288 with changed content"
+  },
+  {
+   "name": "peek_cpr returns version + validated header without inflating",
+   "ok": true,
+   "detail": "0.100 ms for a 150336 byte file"
+  }
+ ]
+}

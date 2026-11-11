@@ -1,0 +1,158 @@
+{
+ "pad_step1": {
+  "pyxel": {
+   "btnv": {
+    "LEFTX": 0,
+    "LEFTY": 0,
+    "RIGHTX": 0,
+    "RIGHTY": 0,
+    "TRIGGERLEFT": 0,
+    "TRIGGERRIGHT": 0
+   },
+   "btn_pressed": []
+  },
+  "raw": {
+   "mapping": "standard",
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "lt": 0.0,
+   "rt": 0.0
+  },
+  "raw_read_ms": 0.05
+ },
+ "pad_step2": {
+  "pyxel": {
+   "btnv": {
+    "LEFTX": 0,
+    "LEFTY": 0,
+    "RIGHTX": 0,
+    "RIGHTY": 0,
+    "TRIGGERLEFT": 0,
+    "TRIGGERRIGHT": 0
+   },
+   "btn_pressed": []
+  },
+  "raw": {
+   "mapping": "standard",
+   "axes": [
+    0.01,
+    0.01,
+    0.01,
+    0.01
+   ],
+   "lt": 0.0,
+   "rt": 0.0
+  },
+  "raw_read_ms": 0.05
+ },
+ "pad_step3": {
+  "pyxel": {
+   "btnv": {
+    "LEFTX": 16383,
+    "LEFTY": -8191,
+    "RIGHTX": 32767,
+    "RIGHTY": -32767,
+    "TRIGGERLEFT": 0,
+    "TRIGGERRIGHT": 32767
+   },
+   "btn_pressed": [
+    "A"
+   ]
+  },
+  "raw": {
+   "mapping": "standard",
+   "axes": [
+    0.5,
+    -0.25,
+    1.0,
+    -1.0
+   ],
+   "lt": 0.05,
+   "rt": 0.4
+  },
+  "raw_read_ms": 0.05
+ },
+ "pad_step4": {
+  "pyxel": {
+   "btnv": {
+    "LEFTX": 983,
+    "LEFTY": -2621,
+    "RIGHTX": 4915,
+    "RIGHTY": 65,
+    "TRIGGERLEFT": 32767,
+    "TRIGGERRIGHT": 32767
+   },
+   "btn_pressed": [
+    "A",
+    "RIGHTSHOULDER",
+    "DPAD_UP"
+   ]
+  },
+  "raw": {
+   "mapping": "standard",
+   "axes": [
+    0.03,
+    -0.08,
+    0.15,
+    0.002
+   ],
+   "lt": 0.6,
+   "rt": 1.0
+  },
+  "raw_read_ms": 0.05
+ },
+ "pad_step5": {
+  "pyxel": {
+   "btnv": {
+    "LEFTX": -32767,
+    "LEFTY": 32767,
+    "RIGHTX": -16383,
+    "RIGHTY": 24575,
+    "TRIGGERLEFT": 0,
+    "TRIGGERRIGHT": 32767
+   },
+   "btn_pressed": []
+  },
+  "raw": {
+   "mapping": "standard",
+   "axes": [
+    -1.0,
+    1.0,
+    -0.5,
+    0.75
+   ],
+   "lt": 0.09,
+   "rt": 0.11
+  },
+  "raw_read_ms": 0.05
+ },
+ "pad_step6": {
+  "pyxel": {
+   "btnv": {
+    "LEFTX": 0,
+    "LEFTY": 0,
+    "RIGHTX": 0,
+    "RIGHTY": 0,
+    "TRIGGERLEFT": 0,
+    "TRIGGERRIGHT": 0
+   },
+   "btn_pressed": []
+  },
+  "raw": {
+   "mapping": "standard",
+   "axes": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "lt": 0.0,
+   "rt": 0.0
+  },
+  "raw_read_ms": 0.05
+ }
+}

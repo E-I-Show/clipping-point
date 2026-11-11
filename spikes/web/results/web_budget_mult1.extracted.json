@@ -1,0 +1,26 @@
+{
+ "budget": {
+  "params": {
+   "mult": 1,
+   "n": 900,
+   "render": 2
+  },
+  "updates_per_s": 60.0,
+  "renders_per_s": 29.97,
+  "update_ms": {
+   "n": 900,
+   "mean": 0.105,
+   "median": 0.1,
+   "p95": 0.2,
+   "max": 0.5
+  },
+  "render_ms": {
+   "n": 449,
+   "mean": 2.39,
+   "median": 2.3,
+   "p95": 3.2,
+   "max": 4.2
+  },
+  "first_60_ticks_excluded": true
+ }
+}

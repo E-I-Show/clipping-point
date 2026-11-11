@@ -1,0 +1,58 @@
+{
+ "url": "file://<scratchpad>/spikes/web/build/hello.html",
+ "mirror": null,
+ "console": [
+  {
+   "t": 317,
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  }
+ ],
+ "failures": [
+  {
+   "t": 317,
+   "kind": "requestfailed",
+   "detail": "https://kitao.dev/pyxel/3.0.1/pyxel.js net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "t": 317,
+   "kind": "console.error",
+   "detail": "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  },
+  {
+   "t": 318,
+   "kind": "pageerror",
+   "detail": "ReferenceError: launchPyxel is not defined\n    at file://<scratchpad>/spikes/web/build/hello.html:4:1"
+  },
+  {
+   "t": 8320,
+   "kind": "no-start-prompt",
+   "detail": "TimeoutError: page.waitForSelector: Timeout 8000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('img#pyxel-prompt')\u001b[22m\n"
+  },
+  {
+   "t": 16660,
+   "kind": "until-not-seen",
+   "detail": "no console line matched /^SPIKE_DONE/ within 8000 ms"
+  }
+ ],
+ "requests": [
+  {
+   "t": 97,
+   "status": 200,
+   "url": "file://<scratchpad>/spikes/web/build/hello.html"
+  }
+ ],
+ "downloads": [],
+ "allowed": [],
+ "actions": [],
+ "filechoosers": [],
+ "passed": false,
+ "state": {
+  "overlayText": null,
+  "hasFatalError": false,
+  "initialized": false,
+  "canvas": null
+ },
+ "untilAt": null,
+ "elapsedMs": 16701
+}

@@ -1,0 +1,742 @@
+{
+ "tsubame": {
+  "gear": {
+   "-2": {
+    "final": 4.928,
+    "t0_100": 6.9,
+    "t0_400m": 14.92,
+    "vmax_kmh": 201.0,
+    "top_gear": 5,
+    "top_rpm": 8200
+   },
+   "0": {
+    "final": 4.4,
+    "t0_100": 6.85,
+    "t0_400m": 14.93,
+    "vmax_kmh": 225.1,
+    "top_gear": 5,
+    "top_rpm": 8198
+   },
+   "2": {
+    "final": 3.872,
+    "t0_100": 6.67,
+    "t0_400m": 14.92,
+    "vmax_kmh": 228.1,
+    "top_gear": 5,
+    "top_rpm": 7310
+   }
+  },
+  "wing": {
+   "-2": {
+    "cla": 0.0,
+    "cda": 0.56,
+    "aero_front": 0.5,
+    "downforce_N_at_150": 0,
+    "vmax_kmh": 225.1,
+    "max_lat_g_R150": 0.832,
+    "fail_speed_kmh": 129.2,
+    "fail_mode": "understeer(front washes out)"
+   },
+   "0": {
+    "cla": 0.3,
+    "cda": 0.6,
+    "aero_front": 0.42,
+    "downforce_N_at_150": 312,
+    "vmax_kmh": 225.1,
+    "max_lat_g_R150": 0.841,
+    "fail_speed_kmh": 129.9,
+    "fail_mode": "understeer(front washes out)"
+   },
+   "2": {
+    "cla": 0.6,
+    "cda": 0.64,
+    "aero_front": 0.34,
+    "downforce_N_at_150": 625,
+    "vmax_kmh": 225.1,
+    "max_lat_g_R150": 0.846,
+    "fail_speed_kmh": 130.4,
+    "fail_mode": "understeer(front washes out)"
+   }
+  },
+  "suspension": {
+   "-2": {
+    "tau_load": 0.2,
+    "alpha_peak_deg": 8.4,
+    "step_t90_s": 0.233,
+    "step_overshoot_pct": 3.6,
+    "max_lat_g_smooth": 0.871,
+    "max_lat_g_bump1": 0.798
+   },
+   "0": {
+    "tau_load": 0.14,
+    "alpha_peak_deg": 7.5,
+    "step_t90_s": 0.217,
+    "step_overshoot_pct": 2.7,
+    "max_lat_g_smooth": 0.892,
+    "max_lat_g_bump1": 0.739
+   },
+   "2": {
+    "tau_load": 0.08,
+    "alpha_peak_deg": 6.6,
+    "step_t90_s": 0.2,
+    "step_overshoot_pct": 1.7,
+    "max_lat_g_smooth": 0.913,
+    "max_lat_g_bump1": 0.673
+   }
+  },
+  "brake_bias": {
+   "-2": {
+    "front_share": 0.895,
+    "first_lock": {
+     "axle": "front",
+     "pedal": 0.645,
+     "decel_g": 0.881
+    },
+    "dist100_full_m": 49.9,
+    "dist100_abs_m": 46.8,
+    "turn_brake0.3_curv_x_1s": 1.26,
+    "turn_brake0.3_beta_1s": -0.43,
+    "turn_brake0.5_curv_x_1s": 1.01,
+    "turn_brake0.5_peak_beta": 0.82
+   },
+   "0": {
+    "front_share": 0.835,
+    "first_lock": {
+     "axle": "front",
+     "pedal": 0.7,
+     "decel_g": 0.952
+    },
+    "dist100_full_m": 44.1,
+    "dist100_abs_m": 43.3,
+    "turn_brake0.3_curv_x_1s": 1.39,
+    "turn_brake0.3_beta_1s": -0.78,
+    "turn_brake0.5_curv_x_1s": 1.23,
+    "turn_brake0.5_peak_beta": 0.83
+   },
+   "2": {
+    "front_share": 0.775,
+    "first_lock": {
+     "axle": "rear",
+     "pedal": 0.76,
+     "decel_g": 1.025
+    },
+    "dist100_full_m": 42.5,
+    "dist100_abs_m": 40.8,
+    "turn_brake0.3_curv_x_1s": 1.7,
+    "turn_brake0.3_beta_1s": -1.68,
+    "turn_brake0.5_curv_x_1s": 2.46,
+    "turn_brake0.5_peak_beta": 3.91
+   }
+  },
+  "traction": {
+   "-2": {
+    "lsd_lock": 0.1,
+    "exit_full_dv_1.5s": 13.0,
+    "exit_full_peak_beta": 0.6,
+    "exit_full": "understeer / runs wide",
+    "exit_0.6_dv_1.5s": 8.2,
+    "exit_0.6_peak_beta": 0.6,
+    "exit_0.6_wide_m": 2.79,
+    "steady_extra_steer_deg_0.7g": 0.254,
+    "liftoff_curv_x_1s": 1.13
+   },
+   "0": {
+    "lsd_lock": 0.4,
+    "exit_full_dv_1.5s": 11.8,
+    "exit_full_peak_beta": 0.6,
+    "exit_full": "understeer / runs wide",
+    "exit_0.6_dv_1.5s": 8.3,
+    "exit_0.6_peak_beta": 0.8,
+    "exit_0.6_wide_m": 3.45,
+    "steady_extra_steer_deg_0.7g": 0.47,
+    "liftoff_curv_x_1s": 1.13
+   },
+   "2": {
+    "lsd_lock": 0.8,
+    "exit_full_dv_1.5s": 14.2,
+    "exit_full_peak_beta": 0.7,
+    "exit_full": "understeer / runs wide",
+    "exit_0.6_dv_1.5s": 8.2,
+    "exit_0.6_peak_beta": 0.9,
+    "exit_0.6_wide_m": 4.47,
+    "steady_extra_steer_deg_0.7g": 0.8,
+    "liftoff_curv_x_1s": 1.13
+   }
+  },
+  "steering": {
+   "-1": {
+    "steer_rate": 0.7,
+    "t_0_to_0.3rad_s": 0.433,
+    "step_t90_s": 0.25,
+    "overshoot_pct": 0.2
+   },
+   "0": {
+    "steer_rate": 1.0,
+    "t_0_to_0.3rad_s": 0.3,
+    "step_t90_s": 0.233,
+    "overshoot_pct": 0.2
+   },
+   "1": {
+    "steer_rate": 1.4,
+    "t_0_to_0.3rad_s": 0.217,
+    "step_t90_s": 0.233,
+    "overshoot_pct": 0.2
+   }
+  }
+ },
+ "kazane": {
+  "gear": {
+   "-2": {
+    "final": 4.816,
+    "t0_100": 6.58,
+    "t0_400m": 14.77,
+    "vmax_kmh": 190.1,
+    "top_gear": 5,
+    "top_rpm": 7200
+   },
+   "0": {
+    "final": 4.3,
+    "t0_100": 6.63,
+    "t0_400m": 14.77,
+    "vmax_kmh": 212.9,
+    "top_gear": 5,
+    "top_rpm": 7199
+   },
+   "2": {
+    "final": 3.784,
+    "t0_100": 6.37,
+    "t0_400m": 14.73,
+    "vmax_kmh": 219.5,
+    "top_gear": 5,
+    "top_rpm": 6534
+   }
+  },
+  "wing": {
+   "-2": {
+    "cla": 0.0,
+    "cda": 0.58,
+    "aero_front": 0.5,
+    "downforce_N_at_150": 0,
+    "vmax_kmh": 212.8,
+    "max_lat_g_R150": 0.895,
+    "fail_speed_kmh": 127.2,
+    "fail_mode": "understeer(front washes out)"
+   },
+   "0": {
+    "cla": 0.3,
+    "cda": 0.62,
+    "aero_front": 0.42,
+    "downforce_N_at_150": 312,
+    "vmax_kmh": 212.8,
+    "max_lat_g_R150": 0.91,
+    "fail_speed_kmh": 131.6,
+    "fail_mode": "understeer(front washes out)"
+   },
+   "2": {
+    "cla": 0.6,
+    "cda": 0.66,
+    "aero_front": 0.34,
+    "downforce_N_at_150": 625,
+    "vmax_kmh": 212.8,
+    "max_lat_g_R150": 0.912,
+    "fail_speed_kmh": 133.2,
+    "fail_mode": "understeer(front washes out)"
+   }
+  },
+  "suspension": {
+   "-2": {
+    "tau_load": 0.2,
+    "alpha_peak_deg": 8.4,
+    "step_t90_s": 0.217,
+    "step_overshoot_pct": 4.7,
+    "max_lat_g_smooth": 0.912,
+    "max_lat_g_bump1": 0.815
+   },
+   "0": {
+    "tau_load": 0.14,
+    "alpha_peak_deg": 7.5,
+    "step_t90_s": 0.2,
+    "step_overshoot_pct": 3.8,
+    "max_lat_g_smooth": 0.91,
+    "max_lat_g_bump1": 0.752
+   },
+   "2": {
+    "tau_load": 0.08,
+    "alpha_peak_deg": 6.6,
+    "step_t90_s": 0.2,
+    "step_overshoot_pct": 2.8,
+    "max_lat_g_smooth": 0.922,
+    "max_lat_g_bump1": 0.682
+   }
+  },
+  "brake_bias": {
+   "-2": {
+    "front_share": 0.793,
+    "first_lock": {
+     "axle": "front",
+     "pedal": 0.665,
+     "decel_g": 0.913
+    },
+    "dist100_full_m": 45.2,
+    "dist100_abs_m": 46.0,
+    "turn_brake0.3_curv_x_1s": 1.45,
+    "turn_brake0.3_beta_1s": -1.5,
+    "turn_brake0.5_curv_x_1s": 1.07,
+    "turn_brake0.5_peak_beta": 1.24
+   },
+   "0": {
+    "front_share": 0.733,
+    "first_lock": {
+     "axle": "front",
+     "pedal": 0.73,
+     "decel_g": 0.998
+    },
+    "dist100_full_m": 42.5,
+    "dist100_abs_m": 42.1,
+    "turn_brake0.3_curv_x_1s": 1.93,
+    "turn_brake0.3_beta_1s": -2.95,
+    "turn_brake0.5_curv_x_1s": 1.65,
+    "turn_brake0.5_peak_beta": 1.94
+   },
+   "2": {
+    "front_share": 0.673,
+    "first_lock": {
+     "axle": "rear",
+     "pedal": 0.705,
+     "decel_g": 0.966
+    },
+    "dist100_full_m": 42.3,
+    "dist100_abs_m": 42.0,
+    "turn_brake0.3_curv_x_1s": 2.91,
+    "turn_brake0.3_beta_1s": -6.39,
+    "turn_brake0.5_curv_x_1s": 4.25,
+    "turn_brake0.5_peak_beta": 12.29
+   }
+  },
+  "traction": {
+   "-2": {
+    "lsd_lock": 0.1,
+    "exit_full_dv_1.5s": -1.5,
+    "exit_full_peak_beta": 85.4,
+    "exit_full": "oversteer / spin",
+    "exit_0.6_dv_1.5s": 8.4,
+    "exit_0.6_peak_beta": 10.6,
+    "exit_0.6_wide_m": 1.17,
+    "steady_extra_steer_deg_0.7g": 0.19,
+    "liftoff_curv_x_1s": 1.11
+   },
+   "0": {
+    "lsd_lock": 0.4,
+    "exit_full_dv_1.5s": -2.2,
+    "exit_full_peak_beta": 85.4,
+    "exit_full": "oversteer / spin",
+    "exit_0.6_dv_1.5s": 5.5,
+    "exit_0.6_peak_beta": 22.2,
+    "exit_0.6_wide_m": 0.89,
+    "steady_extra_steer_deg_0.7g": 0.378,
+    "liftoff_curv_x_1s": 1.16
+   },
+   "2": {
+    "lsd_lock": 0.8,
+    "exit_full_dv_1.5s": -4.6,
+    "exit_full_peak_beta": 85.8,
+    "exit_full": "oversteer / spin",
+    "exit_0.6_dv_1.5s": 4.6,
+    "exit_0.6_peak_beta": 24.7,
+    "exit_0.6_wide_m": 0.66,
+    "steady_extra_steer_deg_0.7g": 0.617,
+    "liftoff_curv_x_1s": 1.21
+   }
+  },
+  "steering": {
+   "-1": {
+    "steer_rate": 0.7,
+    "t_0_to_0.3rad_s": 0.433,
+    "step_t90_s": 0.25,
+    "overshoot_pct": 0.1
+   },
+   "0": {
+    "steer_rate": 1.0,
+    "t_0_to_0.3rad_s": 0.3,
+    "step_t90_s": 0.233,
+    "overshoot_pct": 0.1
+   },
+   "1": {
+    "steer_rate": 1.4,
+    "t_0_to_0.3rad_s": 0.217,
+    "step_t90_s": 0.217,
+    "overshoot_pct": 0.1
+   }
+  }
+ },
+ "shirogane": {
+  "gear": {
+   "-2": {
+    "final": 4.604,
+    "t0_100": 5.95,
+    "t0_400m": 13.88,
+    "vmax_kmh": 228.8,
+    "top_gear": 5,
+    "top_rpm": 7200
+   },
+   "0": {
+    "final": 4.111,
+    "t0_100": 5.62,
+    "t0_400m": 13.87,
+    "vmax_kmh": 256.2,
+    "top_gear": 5,
+    "top_rpm": 7199
+   },
+   "2": {
+    "final": 3.618,
+    "t0_100": 5.77,
+    "t0_400m": 13.85,
+    "vmax_kmh": 264.0,
+    "top_gear": 5,
+    "top_rpm": 6529
+   }
+  },
+  "wing": {
+   "-2": {
+    "cla": 0.05,
+    "cda": 0.64,
+    "aero_front": 0.5,
+    "downforce_N_at_150": 52,
+    "vmax_kmh": 256.1,
+    "max_lat_g_R150": 0.943,
+    "fail_speed_kmh": 131.3,
+    "fail_mode": "understeer(front washes out)"
+   },
+   "0": {
+    "cla": 0.45,
+    "cda": 0.68,
+    "aero_front": 0.42,
+    "downforce_N_at_150": 469,
+    "vmax_kmh": 256.2,
+    "max_lat_g_R150": 0.956,
+    "fail_speed_kmh": 136.5,
+    "fail_mode": "understeer(front washes out)"
+   },
+   "2": {
+    "cla": 0.85,
+    "cda": 0.72,
+    "aero_front": 0.34,
+    "downforce_N_at_150": 885,
+    "vmax_kmh": 256.1,
+    "max_lat_g_R150": 0.958,
+    "fail_speed_kmh": 138.2,
+    "fail_mode": "understeer(front washes out)"
+   }
+  },
+  "suspension": {
+   "-2": {
+    "tau_load": 0.2,
+    "alpha_peak_deg": 8.4,
+    "step_t90_s": 0.25,
+    "step_overshoot_pct": 1.7,
+    "max_lat_g_smooth": 0.935,
+    "max_lat_g_bump1": 0.856
+   },
+   "0": {
+    "tau_load": 0.14,
+    "alpha_peak_deg": 7.5,
+    "step_t90_s": 0.233,
+    "step_overshoot_pct": 1.1,
+    "max_lat_g_smooth": 0.956,
+    "max_lat_g_bump1": 0.791
+   },
+   "2": {
+    "tau_load": 0.08,
+    "alpha_peak_deg": 6.6,
+    "step_t90_s": 0.217,
+    "step_overshoot_pct": 0.5,
+    "max_lat_g_smooth": 0.976,
+    "max_lat_g_bump1": 0.719
+   }
+  },
+  "brake_bias": {
+   "-2": {
+    "front_share": 0.807,
+    "first_lock": {
+     "axle": "front",
+     "pedal": 0.685,
+     "decel_g": 0.972
+    },
+    "dist100_full_m": 42.7,
+    "dist100_abs_m": 42.8,
+    "turn_brake0.3_curv_x_1s": 1.29,
+    "turn_brake0.3_beta_1s": -0.51,
+    "turn_brake0.5_curv_x_1s": 1.1,
+    "turn_brake0.5_peak_beta": 0.85
+   },
+   "0": {
+    "front_share": 0.747,
+    "first_lock": {
+     "axle": "front",
+     "pedal": 0.755,
+     "decel_g": 1.061
+    },
+    "dist100_full_m": 40.2,
+    "dist100_abs_m": 39.3,
+    "turn_brake0.3_curv_x_1s": 1.56,
+    "turn_brake0.3_beta_1s": -1.23,
+    "turn_brake0.5_curv_x_1s": 1.92,
+    "turn_brake0.5_peak_beta": 2.21
+   },
+   "2": {
+    "front_share": 0.687,
+    "first_lock": {
+     "axle": "rear",
+     "pedal": 0.705,
+     "decel_g": 0.997
+    },
+    "dist100_full_m": 39.9,
+    "dist100_abs_m": 40.7,
+    "turn_brake0.3_curv_x_1s": 2.38,
+    "turn_brake0.3_beta_1s": -3.69,
+    "turn_brake0.5_curv_x_1s": 3.81,
+    "turn_brake0.5_peak_beta": 10.63
+   }
+  },
+  "traction": {
+   "-2": {
+    "lsd_lock": 0.1,
+    "exit_full_dv_1.5s": 1.8,
+    "exit_full_peak_beta": 79.6,
+    "exit_full": "oversteer / spin",
+    "exit_0.6_dv_1.5s": 9.0,
+    "exit_0.6_peak_beta": 9.2,
+    "exit_0.6_wide_m": 1.16,
+    "steady_extra_steer_deg_0.7g": 0.208,
+    "liftoff_curv_x_1s": 1.12
+   },
+   "0": {
+    "lsd_lock": 0.4,
+    "exit_full_dv_1.5s": 1.9,
+    "exit_full_peak_beta": 85.4,
+    "exit_full": "oversteer / spin",
+    "exit_0.6_dv_1.5s": 7.2,
+    "exit_0.6_peak_beta": 13.2,
+    "exit_0.6_wide_m": 0.84,
+    "steady_extra_steer_deg_0.7g": 0.323,
+    "liftoff_curv_x_1s": 1.11
+   },
+   "2": {
+    "lsd_lock": 0.8,
+    "exit_full_dv_1.5s": -1.4,
+    "exit_full_peak_beta": 86.0,
+    "exit_full": "oversteer / spin",
+    "exit_0.6_dv_1.5s": 6.5,
+    "exit_0.6_peak_beta": 16.0,
+    "exit_0.6_wide_m": 0.46,
+    "steady_extra_steer_deg_0.7g": 0.465,
+    "liftoff_curv_x_1s": 1.09
+   }
+  },
+  "steering": {
+   "-1": {
+    "steer_rate": 0.7,
+    "t_0_to_0.3rad_s": 0.433,
+    "step_t90_s": 0.267,
+    "overshoot_pct": 0.3
+   },
+   "0": {
+    "steer_rate": 1.0,
+    "t_0_to_0.3rad_s": 0.3,
+    "step_t90_s": 0.25,
+    "overshoot_pct": 0.3
+   },
+   "1": {
+    "steer_rate": 1.4,
+    "t_0_to_0.3rad_s": 0.217,
+    "step_t90_s": 0.233,
+    "overshoot_pct": 0.3
+   }
+  }
+ },
+ "arashi": {
+  "gear": {
+   "-2": {
+    "final": 5.072,
+    "t0_100": 5.17,
+    "t0_400m": 13.45,
+    "vmax_kmh": 221.4,
+    "top_gear": 5,
+    "top_rpm": 7200
+   },
+   "0": {
+    "final": 4.529,
+    "t0_100": 5.33,
+    "t0_400m": 13.52,
+    "vmax_kmh": 248.1,
+    "top_gear": 5,
+    "top_rpm": 7199
+   },
+   "2": {
+    "final": 3.986,
+    "t0_100": 5.2,
+    "t0_400m": 13.65,
+    "vmax_kmh": 253.7,
+    "top_gear": 5,
+    "top_rpm": 6479
+   }
+  },
+  "wing": {
+   "-2": {
+    "cla": 0.05,
+    "cda": 0.7,
+    "aero_front": 0.5,
+    "downforce_N_at_150": 52,
+    "vmax_kmh": 248.0,
+    "max_lat_g_R150": 0.907,
+    "fail_speed_kmh": 134.8,
+    "fail_mode": "understeer(front washes out)"
+   },
+   "0": {
+    "cla": 0.45,
+    "cda": 0.74,
+    "aero_front": 0.42,
+    "downforce_N_at_150": 469,
+    "vmax_kmh": 248.1,
+    "max_lat_g_R150": 0.918,
+    "fail_speed_kmh": 135.7,
+    "fail_mode": "understeer(front washes out)"
+   },
+   "2": {
+    "cla": 0.85,
+    "cda": 0.78,
+    "aero_front": 0.34,
+    "downforce_N_at_150": 885,
+    "vmax_kmh": 246.5,
+    "max_lat_g_R150": 0.923,
+    "fail_speed_kmh": 136.2,
+    "fail_mode": "understeer(front washes out)"
+   }
+  },
+  "suspension": {
+   "-2": {
+    "tau_load": 0.2,
+    "alpha_peak_deg": 8.4,
+    "step_t90_s": 0.233,
+    "step_overshoot_pct": 3.1,
+    "max_lat_g_smooth": 0.923,
+    "max_lat_g_bump1": 0.845
+   },
+   "0": {
+    "tau_load": 0.14,
+    "alpha_peak_deg": 7.5,
+    "step_t90_s": 0.217,
+    "step_overshoot_pct": 2.3,
+    "max_lat_g_smooth": 0.944,
+    "max_lat_g_bump1": 0.781
+   },
+   "2": {
+    "tau_load": 0.08,
+    "alpha_peak_deg": 6.6,
+    "step_t90_s": 0.2,
+    "step_overshoot_pct": 1.5,
+    "max_lat_g_smooth": 0.964,
+    "max_lat_g_bump1": 0.709
+   }
+  },
+  "brake_bias": {
+   "-2": {
+    "front_share": 0.877,
+    "first_lock": {
+     "axle": "front",
+     "pedal": 0.675,
+     "decel_g": 0.948
+    },
+    "dist100_full_m": 45.8,
+    "dist100_abs_m": 43.5,
+    "turn_brake0.3_curv_x_1s": 1.4,
+    "turn_brake0.3_beta_1s": -0.78,
+    "turn_brake0.5_curv_x_1s": 1.12,
+    "turn_brake0.5_peak_beta": 0.75
+   },
+   "0": {
+    "front_share": 0.817,
+    "first_lock": {
+     "axle": "front",
+     "pedal": 0.735,
+     "decel_g": 1.028
+    },
+    "dist100_full_m": 41.4,
+    "dist100_abs_m": 40.2,
+    "turn_brake0.3_curv_x_1s": 1.73,
+    "turn_brake0.3_beta_1s": -1.68,
+    "turn_brake0.5_curv_x_1s": 1.81,
+    "turn_brake0.5_peak_beta": 1.7
+   },
+   "2": {
+    "front_share": 0.757,
+    "first_lock": {
+     "axle": "rear",
+     "pedal": 0.725,
+     "decel_g": 1.012
+    },
+    "dist100_full_m": 40.6,
+    "dist100_abs_m": 41.0,
+    "turn_brake0.3_curv_x_1s": 2.54,
+    "turn_brake0.3_beta_1s": -4.1,
+    "turn_brake0.5_curv_x_1s": 3.37,
+    "turn_brake0.5_peak_beta": 7.88
+   }
+  },
+  "traction": {
+   "-2": {
+    "lsd_lock": 0.1,
+    "exit_full_dv_1.5s": 23.5,
+    "exit_full_peak_beta": 1.3,
+    "exit_full": "understeer / runs wide",
+    "exit_0.6_dv_1.5s": 10.2,
+    "exit_0.6_peak_beta": 0.8,
+    "exit_0.6_wide_m": 2.21,
+    "steady_extra_steer_deg_0.7g": 0.202,
+    "liftoff_curv_x_1s": 1.11
+   },
+   "0": {
+    "lsd_lock": 0.4,
+    "exit_full_dv_1.5s": 21.8,
+    "exit_full_peak_beta": 1.1,
+    "exit_full": "understeer / runs wide",
+    "exit_0.6_dv_1.5s": 10.2,
+    "exit_0.6_peak_beta": 0.6,
+    "exit_0.6_wide_m": 2.64,
+    "steady_extra_steer_deg_0.7g": 0.417,
+    "liftoff_curv_x_1s": 1.1
+   },
+   "2": {
+    "lsd_lock": 0.8,
+    "exit_full_dv_1.5s": 21.8,
+    "exit_full_peak_beta": 1.2,
+    "exit_full": "understeer / runs wide",
+    "exit_0.6_dv_1.5s": 10.1,
+    "exit_0.6_peak_beta": 0.7,
+    "exit_0.6_wide_m": 3.18,
+    "steady_extra_steer_deg_0.7g": 0.711,
+    "liftoff_curv_x_1s": 1.12
+   }
+  },
+  "steering": {
+   "-1": {
+    "steer_rate": 0.7,
+    "t_0_to_0.3rad_s": 0.433,
+    "step_t90_s": 0.25,
+    "overshoot_pct": 0.2
+   },
+   "0": {
+    "steer_rate": 1.0,
+    "t_0_to_0.3rad_s": 0.3,
+    "step_t90_s": 0.233,
+    "overshoot_pct": 0.2
+   },
+   "1": {
+    "steer_rate": 1.4,
+    "t_0_to_0.3rad_s": 0.217,
+    "step_t90_s": 0.217,
+    "overshoot_pct": 0.2
+   }
+  }
+ }
+}

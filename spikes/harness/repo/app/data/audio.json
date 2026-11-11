@@ -1,0 +1,6 @@
+{"_note": "prototype data for the harness spike; every number is a placeholder",
+ "audio": [
+  {"id": "eng_na4", "kind": "engine", "channel": 0, "base_hz": 110},
+  {"id": "eng_turbo4", "kind": "engine", "channel": 0, "base_hz": 98},
+  {"id": "bgm_menu", "kind": "bgm", "channel": 0}
+ ]}

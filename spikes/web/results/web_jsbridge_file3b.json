@@ -1,0 +1,164 @@
+{
+ "url": "file://<scratchpad>/spikes/web/build/other_dir/renamed_copy.html",
+ "mirror": "mirror",
+ "console": [
+  {
+   "t": 150,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 150,
+   "type": "log",
+   "text": "{command: play, name: jsbridge.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIALIOa10sYEvPCQAAAAcAAAAfAAAAanNicmlkZ2…yaWRnZS9tYWluLnB5UEsFBgAAAAAEAAQAEwEAAKUrAAAAAA==}"
+  },
+  {
+   "t": 2265,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 2653,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 3044,
+   "type": "warning",
+   "text": "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)"
+  },
+  {
+   "t": 3073,
+   "type": "warning",
+   "text": "[.WebGL-0xa4c06b17600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3088,
+   "type": "warning",
+   "text": "[.WebGL-0xa4c06b17600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3113,
+   "type": "warning",
+   "text": "[.WebGL-0xa4c06b17600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3150,
+   "type": "warning",
+   "text": "[.WebGL-0xa4c06b17600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  },
+  {
+   "t": 3175,
+   "type": "log",
+   "text": "RESULT_JSON env {\"sys.platform\": \"emscripten\", \"python\": \"3.14.2\", \"import_js\": true, \"location.protocol\": \"file:\", \"location.origin\": \"file://\", \"userAgent\": \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36\", \"has_localStorage\": true, \"has_indexedDB\": true, \"crossOriginIsolated\": false, \"has_savePyxelFile\": true, \"userActivation\": {\"isActive\": true, \"hasBeenActive\": true}, \"pyodide.__version__\": \"314.0.7\", \"ffi_names\": [\"ConversionError\", \"IN_PYODIDE\", \"InternalError\", \"JsArray\", \"JsAsyncGenerator\", \"JsAsyncIterable\", \"JsAsyncIterator\", \"JsBigInt\", \"JsBuffer\", \"JsCallable\", \"JsCallableDoubleProxy\", \"JsDomElement\", \"JsDoubleProxy\", \"JsException\", \"JsFetchResponse\", \"JsGenerator\", \"JsIterable\", \"JsIterator\", \"JsMap\", \"JsMutableMap\", \"JsNull\", \"JsOnceCallable\", \"JsPromise\", \"JsProxy\", \"JsTypedArray\", \"JsWeakRef\", \"ToJsConverter\", \"can_run_sync\", \"create_once_callable\", \"create_proxy\", \"destroy_proxies\", \"jsnull\", \"register_js_module\", \"run_sync\", \"sys\", \"t\", \"to_js\", \"unregister_js_module\"]}"
+  },
+  {
+   "t": 3176,
+   "type": "log",
+   "text": "RESULT_JSON localstorage_basic {\"keys_before\": [\"cp_spike_persist\"], \"persist_marker_before\": \"written-in-run-1\", \"roundtrip\": true, \"missing_is_None\": false, \"missing_repr\": \"jsnull\", \"missing_type\": \"JsNull\", \"missing_is_falsy\": true, \"missing_is_jsnull\": true, \"undefined_attr_is_None\": \"hasattr False\", \"type_of_value\": \"str\", \"removed\": true}"
+  },
+  {
+   "t": 3176,
+   "type": "log",
+   "text": "RESULT_JSON persist_after_reload {\"value\": \"written-in-run-1\", \"keys\": [\"cp_spike_persist\"]}"
+  },
+  {
+   "t": 3177,
+   "type": "log",
+   "text": "SPIKE_DONE run=2"
+  },
+  {
+   "t": 3177,
+   "type": "log",
+   "text": "STAGE end"
+  }
+ ],
+ "failures": [],
+ "requests": [
+  {
+   "t": 135,
+   "status": 200,
+   "url": "file://<scratchpad>/spikes/web/build/other_dir/renamed_copy.html"
+  },
+  {
+   "t": 146,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel.js"
+  },
+  {
+   "t": 154,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel.css"
+  },
+  {
+   "t": 157,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 328,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 342,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/import_hook.py"
+  },
+  {
+   "t": 343,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 433,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 475,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 571,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 590,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 2373,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 2694,
+   "status": 200,
+   "url": "https://kitao.dev/pyxel/3.0.1/images/click_to_start_114x14.png"
+  }
+ ],
+ "downloads": [],
+ "allowed": [],
+ "actions": [],
+ "filechoosers": [],
+ "passed": true,
+ "promptAt": 2811,
+ "clickedAt": 2814,
+ "state": {
+  "overlayText": null,
+  "hasFatalError": false,
+  "initialized": true,
+  "canvas": {
+   "width": 960,
+   "height": 720,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": 3177,
+ "elapsedMs": 3588
+}

@@ -1,0 +1,80 @@
+[
+ {
+  "mutant": "m01_top_level_import",
+  "ast": "caught",
+  "runtime_sys_modules": "caught",
+  "runtime_block": "caught"
+ },
+ {
+  "mutant": "m02_from_import",
+  "ast": "caught",
+  "runtime_sys_modules": "caught",
+  "runtime_block": "caught"
+ },
+ {
+  "mutant": "m03_lazy_import_in_uncalled_function",
+  "ast": "caught",
+  "runtime_sys_modules": "MISSED",
+  "runtime_block": "MISSED"
+ },
+ {
+  "mutant": "m04_importlib_top_level",
+  "ast": "caught",
+  "runtime_sys_modules": "caught",
+  "runtime_block": "caught"
+ },
+ {
+  "mutant": "m05_dunder_import_built_name_top_level",
+  "ast": "caught",
+  "runtime_sys_modules": "caught",
+  "runtime_block": "caught"
+ },
+ {
+  "mutant": "m06_via_adapter_package",
+  "ast": "caught",
+  "runtime_sys_modules": "caught",
+  "runtime_block": "caught"
+ },
+ {
+  "mutant": "m07_guarded_optional_import",
+  "ast": "caught",
+  "runtime_sys_modules": "caught",
+  "runtime_block": "MISSED"
+ },
+ {
+  "mutant": "m08_new_module_nobody_imports",
+  "ast": "caught",
+  "runtime_sys_modules": "caught",
+  "runtime_block": "caught"
+ },
+ {
+  "mutant": "m09_exec_string",
+  "ast": "caught",
+  "runtime_sys_modules": "caught",
+  "runtime_block": "caught"
+ },
+ {
+  "mutant": "m10_getattr_builtins_in_uncalled_function",
+  "ast": "caught",
+  "runtime_sys_modules": "MISSED",
+  "runtime_block": "MISSED"
+ },
+ {
+  "mutant": "m11_ui_imports_adapter",
+  "ast": "caught",
+  "runtime_sys_modules": "caught",
+  "runtime_block": "caught"
+ },
+ {
+  "mutant": "m12_stdlib_random",
+  "ast": "caught",
+  "runtime_sys_modules": "MISSED",
+  "runtime_block": "MISSED"
+ },
+ {
+  "mutant": "m00_control_no_change",
+  "ast": "MISSED",
+  "runtime_sys_modules": "MISSED",
+  "runtime_block": "MISSED"
+ }
+]

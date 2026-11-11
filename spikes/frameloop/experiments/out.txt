@@ -1,0 +1,2 @@
+Failed to initialize audio device
+fps=60 updates=10 draws=9 frame_count=9 wall=0.150s -> 60.0 updates/s

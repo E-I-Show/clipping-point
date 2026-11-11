@@ -1,0 +1,4 @@
+{"assists": [
+  {"id": "standard", "steer_curve": 1.6, "throttle_curve": 1.0, "brake_curve": 1.3, "speed_steer_limit": 0.6, "countersteer_relief": 0.5},
+  {"id": "stable", "steer_curve": 2.0, "throttle_curve": 1.4, "brake_curve": 1.5, "speed_steer_limit": 0.45, "countersteer_relief": 0.7}
+ ]}

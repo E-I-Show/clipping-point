@@ -1,0 +1,353 @@
+{
+ "url": "http://127.0.0.1:8765/apps/bridge_demo.html",
+ "mirror": null,
+ "console": [
+  {
+   "t": 126,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 126,
+   "type": "log",
+   "text": "{command: play, name: bridge_demo.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIAMEQa10sYEvPCQAAAAcAAAAiAAAAYnJpZGdlX2…vL3dlYl9icmlkZ2UucHlQSwUGAAAAAAUABQBmAQAAiyoAAAAA}"
+  },
+  {
+   "t": 1900,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 2183,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 3715,
+   "type": "warning",
+   "text": "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)"
+  },
+  {
+   "t": 3749,
+   "type": "warning",
+   "text": "[.WebGL-0x32bc00e23e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3762,
+   "type": "warning",
+   "text": "[.WebGL-0x32bc00e23e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3775,
+   "type": "warning",
+   "text": "[.WebGL-0x32bc00e23e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+  },
+  {
+   "t": 3787,
+   "type": "warning",
+   "text": "[.WebGL-0x32bc00e23e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  },
+  {
+   "t": 3789,
+   "type": "log",
+   "text": "RESULT_JSON visit {\"visit\": 1, \"is_web\": true, \"keys\": []}"
+  },
+  {
+   "t": 3855,
+   "type": "log",
+   "text": "RESULT_JSON stored {\"count\": 12, \"used_chars\": 4000380, \"bytes\": 3000000, \"roundtrip_ok\": true}"
+  },
+  {
+   "t": 4164,
+   "type": "log",
+   "text": "RESULT_JSON quota {\"storage_full_raised\": true, \"extra_250kB_slots_that_fit\": 3, \"replays_still_ok\": true}"
+  },
+  {
+   "t": 4179,
+   "type": "log",
+   "text": "RESULT_JSON export {\"filename\": \"demo_export.cpr\", \"sha256\": \"f232a7e3800e21d22f2bb428e8cffba43e0504752b0901cae4a863cab1ac8f03\"}"
+  },
+  {
+   "t": 4179,
+   "type": "log",
+   "text": "STAGE press_o"
+  },
+  {
+   "t": 4253,
+   "type": "log",
+   "text": "STAGE wait_pick"
+  },
+  {
+   "t": 4285,
+   "type": "log",
+   "text": "RESULT_JSON picked {\"name\": \"sample upload (1).cpr\", \"size\": 150000, \"sha256\": \"5be63d443550bc3e9a269f47d3cdbf5a520b37a76d01422e8d380099b78d3df1\"}"
+  },
+  {
+   "t": 4285,
+   "type": "log",
+   "text": "STAGE drop"
+  },
+  {
+   "t": 4727,
+   "type": "log",
+   "text": "RESULT_JSON dropped {\"name\": \"drop_me.cpr\", \"size\": 90000, \"sha256\": \"55acdd8414e87db18a297822f21455b108d92975791f73049f41d06253e7d001\"}"
+  },
+  {
+   "t": 4727,
+   "type": "log",
+   "text": "STAGE pad"
+  },
+  {
+   "t": 4775,
+   "type": "log",
+   "text": "Connected 'Fake Standard Gamepad (STANDARD GAMEPAD Vendor: 045e Product: 028e)'"
+  },
+  {
+   "t": 4786,
+   "type": "log",
+   "text": "RESULT_JSON triggers {\"left\": 0.0, \"right\": 0.37, \"pyxel_trigger_right\": 32767}"
+  },
+  {
+   "t": 4786,
+   "type": "log",
+   "text": "SPIKE_DONE visit=1"
+  },
+  {
+   "t": 4786,
+   "type": "log",
+   "text": "STAGE end"
+  },
+  {
+   "t": 4848,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 4848,
+   "type": "log",
+   "text": "{command: play, name: bridge_demo.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIAMEQa10sYEvPCQAAAAcAAAAiAAAAYnJpZGdlX2…vL3dlYl9icmlkZ2UucHlQSwUGAAAAAAUABQBmAQAAiyoAAAAA}"
+  },
+  {
+   "t": 6151,
+   "type": "log",
+   "text": "Loading pyxel"
+  },
+  {
+   "t": 6390,
+   "type": "log",
+   "text": "Loaded pyxel"
+  },
+  {
+   "t": 7969,
+   "type": "warning",
+   "text": "The ScriptProcessorNode is deprecated. Use AudioWorkletNode instead. (https://bit.ly/audio-worklet)"
+  },
+  {
+   "t": 8037,
+   "type": "log",
+   "text": "RESULT_JSON visit {\"visit\": 2, \"is_web\": true, \"keys\": [\"replay.00\", \"replay.01\", \"replay.02\", \"replay.03\", \"replay.04\", \"replay.05\", \"replay.06\", \"replay.07\", \"replay.08\", \"replay.09\", \"replay.10\", \"replay.11\"]}"
+  },
+  {
+   "t": 8090,
+   "type": "log",
+   "text": "RESULT_JSON persisted {\"all_12_identical\": true, \"keys\": [\"replay.00\", \"replay.01\", \"replay.02\", \"replay.03\", \"replay.04\", \"replay.05\", \"replay.06\", \"replay.07\", \"replay.08\", \"replay.09\", \"replay.10\", \"replay.11\"], \"used_chars\": 4000380}"
+  },
+  {
+   "t": 8098,
+   "type": "log",
+   "text": "RESULT_JSON cleanup {\"keys_after_delete\": []}"
+  },
+  {
+   "t": 8098,
+   "type": "log",
+   "text": "SPIKE_DONE visit=2"
+  },
+  {
+   "t": 8098,
+   "type": "log",
+   "text": "STAGE end"
+  }
+ ],
+ "failures": [],
+ "requests": [
+  {
+   "t": 112,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/apps/bridge_demo.html"
+  },
+  {
+   "t": 123,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.js"
+  },
+  {
+   "t": 127,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.css"
+  },
+  {
+   "t": 131,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 185,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 185,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/import_hook.py"
+  },
+  {
+   "t": 191,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 200,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 201,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 201,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 245,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 1905,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 2223,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/click_to_start_114x14.png"
+  },
+  {
+   "t": 4832,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/apps/bridge_demo.html"
+  },
+  {
+   "t": 4846,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.js"
+  },
+  {
+   "t": 4848,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel.css"
+  },
+  {
+   "t": 4850,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 4902,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.js"
+  },
+  {
+   "t": 4904,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 4905,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 4905,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/import_hook.py"
+  },
+  {
+   "t": 4927,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide-lock.json"
+  },
+  {
+   "t": 4927,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/python_stdlib.zip"
+  },
+  {
+   "t": 4927,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/pyodide/v314.0.7/pyodide.asm.wasm"
+  },
+  {
+   "t": 6155,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl"
+  },
+  {
+   "t": 6421,
+   "status": 200,
+   "url": "http://127.0.0.1:8765/pyxel/local/images/click_to_start_114x14.png"
+  }
+ ],
+ "downloads": [
+  {
+   "t": 4174,
+   "name": "demo_export.cpr",
+   "path": "downloads/bridge_demo_http/demo_export.cpr",
+   "size": 250000
+  }
+ ],
+ "allowed": [],
+ "actions": [
+  {
+   "t": 4239,
+   "action": "key:o"
+  },
+  {
+   "t": 4365,
+   "action": "drop:fixtures/drop me.cpr"
+  },
+  {
+   "t": 4767,
+   "action": "eval:window.__padConnect(); window.__padSet(2,[0,0,0,0],{7:0.37})"
+  },
+  {
+   "t": 4826,
+   "action": "reload"
+  }
+ ],
+ "filechoosers": [
+  {
+   "t": 4261,
+   "answeredWith": "fixtures/sample upload (1).cpr"
+  }
+ ],
+ "passed": true,
+ "promptAt": 6871,
+ "clickedAt": 6877,
+ "state": {
+  "overlayText": null,
+  "hasFatalError": false,
+  "initialized": true,
+  "canvas": {
+   "width": 960,
+   "height": 720,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": 8098,
+ "elapsedMs": 8526
+}

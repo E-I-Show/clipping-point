@@ -1,0 +1,165 @@
+{
+ "url": "file://<scratchpad>/spikes/web/mirror/kitao.dev/apps/hello_rel.html",
+ "mirror": null,
+ "console": [
+  {
+   "t": 121,
+   "type": "log",
+   "text": "Launch Pyxel 3.0.1 with Pyodide 314.0.7"
+  },
+  {
+   "t": 121,
+   "type": "log",
+   "text": "{command: play, name: hello.pyxapp, gamepad: enabled, base64: UEsDBBQAAAAIAAINa10sYEvPCQAAAAcAAAAcAAAAaGVsbG8vLn…oZWxsby9tYWluLnB5UEsFBgAAAAACAAIAhQAAALIBAAAAAA==}"
+  },
+  {
+   "t": 174,
+   "type": "error",
+   "text": "Fetch API cannot load file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl. URL scheme \"file\" is not supported."
+  },
+  {
+   "t": 176,
+   "type": "error",
+   "text": "Fetch API cannot load file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/local/import_hook.py. URL scheme \"file\" is not supported."
+  },
+  {
+   "t": 180,
+   "type": "error",
+   "text": "Fetch API cannot load file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/pyodide/v314.0.7/pyodide-lock.json. URL scheme \"file\" is not supported."
+  },
+  {
+   "t": 181,
+   "type": "error",
+   "text": "Fetch API cannot load file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/pyodide/v314.0.7/python_stdlib.zip. URL scheme \"file\" is not supported."
+  },
+  {
+   "t": 181,
+   "type": "error",
+   "text": "Fetch API cannot load file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.wasm. URL scheme \"file\" is not supported."
+  },
+  {
+   "t": 183,
+   "type": "error",
+   "text": "Access to script at 'file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs' from origin 'null' has been blocked by CORS policy: Cross origin requests are only supported for protocol schemes: chrome, chrome-untrusted, data, http, https."
+  },
+  {
+   "t": 183,
+   "type": "error",
+   "text": "Failed to load resource: net::ERR_FAILED"
+  }
+ ],
+ "failures": [
+  {
+   "t": 175,
+   "kind": "console.error",
+   "detail": "Fetch API cannot load file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/local/pyxel-3.0.1-cp311-abi3-pyemscripten_2026_0_wasm32.whl. URL scheme \"file\" is not supported."
+  },
+  {
+   "t": 176,
+   "kind": "console.error",
+   "detail": "Fetch API cannot load file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/local/import_hook.py. URL scheme \"file\" is not supported."
+  },
+  {
+   "t": 180,
+   "kind": "console.error",
+   "detail": "Fetch API cannot load file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/pyodide/v314.0.7/pyodide-lock.json. URL scheme \"file\" is not supported."
+  },
+  {
+   "t": 181,
+   "kind": "console.error",
+   "detail": "Fetch API cannot load file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/pyodide/v314.0.7/python_stdlib.zip. URL scheme \"file\" is not supported."
+  },
+  {
+   "t": 181,
+   "kind": "console.error",
+   "detail": "Fetch API cannot load file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.wasm. URL scheme \"file\" is not supported."
+  },
+  {
+   "t": 182,
+   "kind": "pageerror",
+   "detail": "Uncaught (in promise) TypeError: Failed to fetch\n    at loadLockFile (file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js:2:4277)\n    at initializeConfiguration (file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js:2:12008)"
+  },
+  {
+   "t": 182,
+   "kind": "pageerror",
+   "detail": "Uncaught (in promise) TypeError: Failed to fetch\n    at browser_getBinaryResponse (file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js:2:3484)\n    at getInstantiateWasmFunc (file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js:2:11103)\n    at createSettings (file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js:2:9585)\n    at createEmscriptenSettings (file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js:2:12516)\n    at loadPyodide (file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js:2:14070)"
+  },
+  {
+   "t": 182,
+   "kind": "pageerror",
+   "detail": "Uncaught (in promise) TypeError: Failed to fetch\n    at browser_getBinaryResponse (file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js:2:3484)\n    at loadBinaryFile (file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js:2:3636)\n    at installStdlib (file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js:2:10325)\n    at getFileSystemInitializationFuncs (file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js:2:10931)\n    at createSettings (file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js:2:9411)\n    at createEmscriptenSettings (file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js:2:12516)\n    at loadPyodide (file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js:2:14070)"
+  },
+  {
+   "t": 183,
+   "kind": "console.error",
+   "detail": "Access to script at 'file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs' from origin 'null' has been blocked by CORS policy: Cross origin requests are only supported for protocol schemes: chrome, chrome-untrusted, data, http, https."
+  },
+  {
+   "t": 183,
+   "kind": "requestfailed",
+   "detail": "file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs net::ERR_FAILED"
+  },
+  {
+   "t": 183,
+   "kind": "console.error",
+   "detail": "Failed to load resource: net::ERR_FAILED"
+  },
+  {
+   "t": 183,
+   "kind": "pageerror",
+   "detail": "Uncaught (in promise) TypeError: Failed to fetch dynamically imported module: file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/pyodide/v314.0.7/pyodide.asm.mjs"
+  },
+  {
+   "t": 15126,
+   "kind": "no-start-prompt",
+   "detail": "TimeoutError: page.waitForSelector: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('img#pyxel-prompt')\u001b[22m\n"
+  },
+  {
+   "t": 30511,
+   "kind": "until-not-seen",
+   "detail": "no console line matched /^SPIKE_DONE/ within 15000 ms"
+  }
+ ],
+ "requests": [
+  {
+   "t": 110,
+   "status": 200,
+   "url": "file://<scratchpad>/spikes/web/mirror/kitao.dev/apps/hello_rel.html"
+  },
+  {
+   "t": 116,
+   "status": 200,
+   "url": "file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/local/pyxel.js"
+  },
+  {
+   "t": 122,
+   "status": 200,
+   "url": "file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/local/pyxel.css"
+  },
+  {
+   "t": 123,
+   "status": 200,
+   "url": "file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/local/images/pyxel_logo_76x32.png"
+  },
+  {
+   "t": 177,
+   "status": 200,
+   "url": "file://<scratchpad>/spikes/web/mirror/kitao.dev/pyxel/pyodide/v314.0.7/pyodide.js"
+  }
+ ],
+ "downloads": [],
+ "passed": false,
+ "state": {
+  "overlayText": null,
+  "hasFatalError": false,
+  "initialized": false,
+  "canvas": {
+   "width": 300,
+   "height": 150,
+   "cssW": 960,
+   "cssH": 720
+  }
+ },
+ "untilAt": null,
+ "elapsedMs": 30551
+}

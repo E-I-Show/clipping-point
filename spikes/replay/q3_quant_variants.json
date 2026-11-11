@@ -1,0 +1,17 @@
+{
+ "raw": 504000,
+ "sizes": {
+  "baseline (x 7.8mm, y 0.31mm, z 5.7mm, yaw 16bit, pitch/roll 2500urad)": 148066,
+  "y step 1000 um": 141373,
+  "y step 2000 um": 136666,
+  "y step 5000 um": 130891,
+  "y step 8000 um": 128534,
+  "x,y,z step 10000 um": 123309,
+  "x,y,z step 20000 um": 117433,
+  "pitch/roll step 1500 urad": 154341,
+  "pitch/roll step 4000 urad": 142685,
+  "yaw rounded to 14 bits (0.022 deg)": 140630,
+  "yaw rounded to 12 bits (0.088 deg)": 132073,
+  "y 5 mm + yaw 14 bits": 123322
+ }
+}
