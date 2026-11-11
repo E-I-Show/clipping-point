@@ -1,7 +1,7 @@
 """正本の見張り（tools/canon_guard.py）のテスト。
 
-正本（docs/canon/planning.md）がいまの写しと一致することと、見張りそのものが1文字の違いを拾うことを確かめる。
-正本は読むだけで、書き換えない。壊す確かめは一時の木の上で行う。
+正本（docs/canon/planning.md）が正本の要約値の写しと一致することと、見張りそのものが1文字の違いを拾うことを確かめる。
+正本は読むだけで、書き換えない。壊す確かめは、一時のディレクトリに作った見本の上で行う。
 """
 import hashlib
 import json
@@ -84,8 +84,11 @@ def test_canon_unreadable_snapshot_examines_nothing(tmp_path):
     assert canon_guard.check_canon(root)[0] == 0
 
 
-def test_canon_guard_has_no_way_to_rewrite_the_snapshot():
-    # 取り直す口は tools/claude/canon_digest.py だけに置く。見張りと check からは書けない。
-    for name in ("canon_guard.py", "check.py"):
-        source = (ROOT / "tools" / name).read_text(encoding="utf-8")
-        assert "write_text" not in source and "--update" not in source.replace("canon_digest.py --update", "")
+def test_canon_check_never_rewrites_the_snapshot(tmp_path):
+    # 見張りは照らすだけ。違いを見つけても、要約値の写しを合わせ直さない（取り直す口は tools/claude/canon_digest.py だけ）。
+    root = make_repo(tmp_path)
+    snapshot = root / "tests" / "snapshots" / "canon_digest.json"
+    before = snapshot.read_bytes()
+    (root / "docs" / "canon" / "planning.md").write_bytes("書き換えた正本\n".encode("utf-8"))
+    assert len(canon_guard.check_canon(root)[1]) == 1
+    assert snapshot.read_bytes() == before

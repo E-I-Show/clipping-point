@@ -1,4 +1,4 @@
-"""描画命令の記録（cp_ui.canvas）と、その実行（cp_app.canvas_pyxel）のテスト。Pyxelは使わない。"""
+"""描画命令をためる Canvas（cp_ui.canvas）と、その実行（cp_app.canvas_pyxel）のテスト。Pyxelは使わない。"""
 import dataclasses
 
 import pytest

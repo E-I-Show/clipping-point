@@ -35,7 +35,7 @@ COL_BACK, COL_BAR, COL_TEXT = 0, 1, 7
 
 @dataclass(frozen=True)
 class RunConfig:
-    """画面なしで回すときの設定。"""
+    """画面なしで回すときの指定（結果ファイル、tick数、回す経路）。"""
 
     result_path: str
     ticks: int
@@ -43,7 +43,7 @@ class RunConfig:
 
 
 def read_run_config(env) -> RunConfig | None:
-    """環境変数から、画面なしで回す設定を読む。CP_SMOKE が無ければ None（普通の起動）。"""
+    """環境変数から、画面なしで回す指定を読む。CP_SMOKE が無ければ None（普通の起動）。"""
     result_path = env.get("CP_SMOKE", "")
     if not result_path:
         return None

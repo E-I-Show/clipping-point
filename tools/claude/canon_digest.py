@@ -1,10 +1,10 @@
-"""正本の要約値の写し（tests/snapshots/canon_digest.json）を見る、取り直す。
+"""正本の要約値の写し（tests/snapshots/canon_digest.json）を見る、取り直す。作業用のスクリプト。
 
-  python3 tools/claude/canon_digest.py            いまの要約値と写しを並べて出す。0＝同じ、1＝違う、2＝写しが無い
-  python3 tools/claude/canon_digest.py --update   写しを取り直す
+  python3 tools/claude/canon_digest.py            いまの要約値と、要約値の写しを並べて出す。0＝同じ、1＝違う、2＝要約値の写しが無い
+  python3 tools/claude/canon_digest.py --update   要約値の写しを取り直す
 
 --update を使ってよいのは、人が採った改訂案を正本に当てる単独のコミットだけ。
-正本そのものは、この台本も書き換えない。見張りの本体は tools/canon_guard.py（check と守りのテストが使う）。
+正本そのものは、このスクリプトも書き換えない。見張りそのものは tools/canon_guard.py にある（check と守りのテストが使う）。
 """
 import argparse
 import json
@@ -28,7 +28,7 @@ def snapshot_text(digests: dict) -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="正本の要約値の写しを見る、取り直す")
-    ap.add_argument("--update", action="store_true", help="写しを取り直す（改訂案を当てる単独のコミットでだけ）")
+    ap.add_argument("--update", action="store_true", help="要約値の写しを取り直す（改訂案を当てる単独のコミットでだけ）")
     args = ap.parse_args()
     current = current_digests(ROOT)
     if args.update:

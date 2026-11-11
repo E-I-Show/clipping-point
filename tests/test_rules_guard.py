@@ -23,7 +23,7 @@ def rule_text(*targets):
 
 
 def make_repo(root):
-    """見張りを通る最小の木を作る。"""
+    """見張りを通る、最小の見本のリポジトリを作る。"""
     write(root / "CLAUDE.md", "# 見本\n\n" + INDEX + "| `.claude/rules/tools.md` | 道具 |\n| `.claude/rules/ui.md` | 画面 |\n")
     write(root / "docs" / "handoff.md", "控え\n")
     write(root / ".claude" / "rules" / "tools.md", rule_text("tools/**"))

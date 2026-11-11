@@ -16,9 +16,8 @@ import json
 import shutil
 import sys
 
-from _common import APP, FAIL, INCOMPLETE, OK, OUT, child_env, finish, load_budgets, run, tail
+from _common import APP, FAIL, INCOMPLETE, OK, OUT, child_env, finish, load_budgets, run, show_tail
 
-MIN_TICKS = 10  # これより短いと、実描画の回数の幅（前後3回）が判定にならない
 NOT_YET = ("fingerprint", "scene3d", "mirror", "save")  # 後の区切りで足す確かめ
 
 
@@ -30,10 +29,13 @@ def main() -> int:
     args = ap.parse_args()
     driver = "run" if args.realtime else "flip"
     head = f"driver={driver} ticks_wanted={args.ticks}"
-    if args.ticks < MIN_TICKS:
-        return finish("run", INCOMPLETE, f"{head} reason=too_few_ticks min={MIN_TICKS}")
-    timeout = args.timeout if args.timeout is not None else 30 + args.ticks / 20
     tolerance = load_budgets()["run_renders_tolerance"]
+    # 実描画が0回でも幅の中に入ってしまう短さでは、判定にならない。
+    min_ticks = 2 * (tolerance + 1)
+    if args.ticks < min_ticks:
+        return finish("run", INCOMPLETE, f"{head} reason=too_few_ticks min={min_ticks}")
+    # 実時間で回す分（tick数÷60秒）の3倍に、起動の分を足す。
+    timeout = args.timeout if args.timeout is not None else 30 + args.ticks / 20
 
     work = OUT / "run"
     shutil.rmtree(work, ignore_errors=True)
@@ -42,18 +44,20 @@ def main() -> int:
     env = child_env(CP_SMOKE=result_path, CP_SMOKE_TICKS=args.ticks, CP_SMOKE_DRIVER=driver)
     code, out, err = run([sys.executable, APP / "main.py"], timeout=timeout, env=env, cwd=work)
     if code is None:
-        print(tail(out + "\n" + err))
+        show_tail(out, err)
         return finish("run", INCOMPLETE, f"{head} reason=timeout timeout_s={timeout:g}")
     if code != 0:
-        print(tail(out + "\n" + err))
+        show_tail(out, err)
         return finish("run", FAIL, f"{head} reason=app_exit_code app_exit={code}")
     if not result_path.exists():
-        print(tail(out + "\n" + err))
+        show_tail(out, err)
         return finish("run", INCOMPLETE, f"{head} reason=no_result_file app_exit=0")
     try:
         data = json.loads(result_path.read_text(encoding="utf-8"))
-    except ValueError as exc:
-        return finish("run", FAIL, f"{head} reason=result_unreadable ({exc})")
+    except ValueError:
+        data = None
+    if not isinstance(data, dict):
+        return finish("run", FAIL, f"{head} reason=result_unreadable")
 
     want_renders = args.ticks // 2
     checks = {  # 名前: (合っているか, 合わないときの文)

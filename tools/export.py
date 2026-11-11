@@ -13,7 +13,7 @@ import re
 import sys
 import zipfile
 
-from _common import APP, DIST, FAIL, INCOMPLETE, OK, finish, load_budgets, run, tail
+from _common import APP, DIST, FAIL, INCOMPLETE, OK, finish, load_budgets, run, show_tail
 
 NAME = APP.name  # pyxel package は、対象ディレクトリの名前を .pyxapp の名前にする
 MUST_HAVE = (f"{NAME}/main.py",)  # 入口。直下に無いとパッケージをimportできない
@@ -21,7 +21,7 @@ MUST_HAVE = (f"{NAME}/main.py",)  # 入口。直下に無いとパッケージ�
 FORBIDDEN_DIRS = frozenset({"tests", "testpacks", "docs", "tools", "spikes", "out", "dist", "__pycache__"})
 # 入ってはいけないファイル名の形（テスト、文書、キャッシュ）。
 FORBIDDEN_FILES = ("test_*.py", "*_test.py", "conftest.py", "*.md", "*.pyc", "count_floor.txt")
-# 出荷物に入ってよいファイルの種類。初期版は画像やモデルのファイルを持たない。足すときはここに足す。
+# 出荷物に入ってよいファイルの種類。初期版は画像や3Dのモデルのファイルを持たない。足すときはここに足す。
 SHIP_SUFFIXES = (".py", ".json")
 STARTUP_MARKER = ".pyxapp_startup_script"  # pyxel package が自分で足す、入口の名前を書いたファイル
 
@@ -59,7 +59,7 @@ def main() -> int:
     for step, cmd in steps:
         code, out, err = run(cmd, cwd=DIST)  # どちらも、作業ディレクトリに出力を書く
         if code != 0:
-            print(tail(out + "\n" + err))
+            show_tail(out, err)
             return finish("export", INCOMPLETE, f"reason=pyxel_{step}_failed exit={code}")
     if not pyxapp.is_file() or not html.is_file():
         return finish("export", INCOMPLETE, "reason=output_missing")

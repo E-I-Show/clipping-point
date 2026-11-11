@@ -62,6 +62,13 @@ def tail(text: str, lines: int = 25) -> str:
     return "\n".join(kept[-lines:])
 
 
+def show_tail(out: str, err: str = "", lines: int = 25) -> None:
+    """子プロセスの出力の終わりを見せる。何も無ければ何も出さない。"""
+    text = tail(out + "\n" + err, lines)
+    if text:
+        print(text)
+
+
 def load_budgets() -> dict:
     """仮の上限の一覧（tools/budgets.json）。"""
     return json.loads(BUDGETS.read_text(encoding="utf-8"))

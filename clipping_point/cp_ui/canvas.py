@@ -1,8 +1,8 @@
-"""描画命令とその記録（純Python）。2Dの描画は必ずここを通す。
+"""描画命令と、その列をためる Canvas（純Python）。2Dの描画は必ずここを通す。
 
-Canvas は描画命令を呼ばれた順に記録するだけで、絵は描かない。記録した列を
+Canvas は描画命令を呼ばれた順にためるだけで、絵は描かない。ためた列を
 cp_app.canvas_pyxel が Pyxel で実行する。
-いまは最小版で、命令は text と rect だけ。はみ出しの検査、枠、線、画像は段0 区切り6で足す。
+いまは最小の形で、命令は text と rect だけ。はみ出しの検査、枠、線、画像は段0 区切り6で足す。
 """
 from dataclasses import dataclass
 
@@ -17,7 +17,7 @@ class TextCommand:
     y: int
     text: str
     col: int
-    kind = "text"  # 命令の種類。項目ではなく型ごとの定数
+    kind = "text"  # 命令の種類。項目ではなく、クラスごとの定数
 
 
 @dataclass(frozen=True)
@@ -29,7 +29,7 @@ class RectCommand:
     w: int
     h: int
     col: int
-    kind = "rect"  # 命令の種類。項目ではなく型ごとの定数
+    kind = "rect"  # 命令の種類。項目ではなく、クラスごとの定数
 
 
 def _require_int(command: str, **values) -> None:
@@ -40,7 +40,7 @@ def _require_int(command: str, **values) -> None:
 
 
 class Canvas:
-    """描画命令の記録。引数の並びは Pyxel の同名の関数と同じにする。"""
+    """描画命令を呼ばれた順にためる。引数の並びは Pyxel の同名の関数と同じにする。"""
 
     def __init__(self, w: int = SCREEN_W, h: int = SCREEN_H) -> None:
         self.w, self.h = w, h

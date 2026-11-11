@@ -62,7 +62,7 @@ def test_fixed_loop_never_starves_under_irregular_patterns(pattern):
 
 
 def test_fixed_loop_parity_gate_would_render_nothing_under_catch_up():
-    """落とし穴の記録：フレーム番号の偶奇で間引くと、追い付く間に1度も描かれない。"""
+    """落とし穴を残しておく：フレーム番号の偶奇で間引くと、追い付く間に1度も描かれない。"""
     frame_count = 0
     renders = 0
     # Pyxel：余分な更新のたびにフレーム番号が進み、最後の更新と描画は同じ番号を見る。

@@ -1,4 +1,4 @@
-"""ロジックのテストと守りのテストの共通部。
+"""テスト（ロジックのテストと守りのテスト）の共通部。
 
 このプロセスに pyxel を読み込ませない。pyxel.quit() は終了コード0で終わり、後ろの失敗を消すため。
 Pyxelを通す確かめは、tools/ の道具が別プロセスで回す。回すときは tools/test.py を通す。
@@ -8,7 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "clipping_point"))  # cp_core、cp_ui、cp_app を読めるようにする
-sys.path.append(str(ROOT / "tools"))  # 守りのテストが、見張りの本体を読めるようにする（標準ライブラリより後ろ）
+sys.path.append(str(ROOT / "tools"))  # 守りのテストが、見張りのモジュールを読めるようにする（標準ライブラリより後ろ）
 FORBIDDEN = ("pyxel",)
 
 
