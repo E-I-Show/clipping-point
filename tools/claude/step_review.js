@@ -7,8 +7,12 @@ export const meta = {
   ],
 }
 
+// 使い方は tools/claude/README.md。args の形：
+//   { step, targets, basis, note, lenses: [{ key, title, prompt }], agentType }
+// agentType は、サブエージェントの型の名（"reviewer"）。型が使えるセッションで渡す。省けば、既定のサブエージェントで回す。
 const A = args || {}
 const lenses = A.lenses || []
+const TYPE = A.agentType ? { agentType: A.agentType } : {}
 
 const FINDINGS = {
   type: 'object',
@@ -59,7 +63,8 @@ const rules = `共通の約束
 - リポジトリは /home/user/clipping-point（ブランチ dev）。日本語で作業し、日本語で報告する。
 - 読むだけ。ファイルを書き換えない。作らない。gitの状態を変えない。
 - 検証の道具（tools/ の下の .py）もテストも回さない。主のエージェントの検証と、出力先を取り合うため。
-- shellで使ってよいのは、読むだけの命令だけ：grep、wc、ls、cat、head、tail、git log、git diff、git show、git status。
+- shellを使えるときも、使ってよいのは読むだけの命令だけ：grep、wc、ls、cat、head、tail、git log、git diff、git show、git status。
+- out/、dist/、.cache/（生成物とランタイムの写し）は見ない。
 - サブエージェントは呼ばない。
 - 言葉は docs/glossary.md の意味で読む。`
 
@@ -123,11 +128,11 @@ ${list}
 
 const results = await pipeline(
   lenses,
-  lens => agent(reviewPrompt(lens), { label: `review:${lens.key}`, phase: 'レビュー', schema: FINDINGS }),
+  lens => agent(reviewPrompt(lens), { label: `review:${lens.key}`, phase: 'レビュー', schema: FINDINGS, ...TYPE }),
   (rev, lens) => {
     if (!rev) return { key: lens.key, review: null, refute: null }
     if (!rev.findings.length) return { key: lens.key, review: rev, refute: { verdicts: [], unevaluated: [] } }
-    return agent(refutePrompt(lens, rev), { label: `refute:${lens.key}`, phase: '反証', schema: VERDICTS })
+    return agent(refutePrompt(lens, rev), { label: `refute:${lens.key}`, phase: '反証', schema: VERDICTS, ...TYPE })
       .then(v => ({ key: lens.key, review: rev, refute: v }))
   }
 )

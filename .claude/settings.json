@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push -f *)",
+      "Bash(git push * --force*)",
+      "Bash(git push * -f)",
+      "Bash(git push * -f *)",
+      "Bash(git * push --force*)",
+      "Bash(git * push -f *)",
+      "Bash(git * push * --force*)",
+      "Bash(git * push * -f)",
+      "Bash(git * push * -f *)",
+      "Bash(git reset --hard*)",
+      "Bash(git * reset --hard*)",
+      "Bash(git clean *)",
+      "Bash(git * clean *)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "test -f \"${CLAUDE_PROJECT_DIR}/tools/claude/handoff_hook.py\" && python3 \"${CLAUDE_PROJECT_DIR}/tools/claude/handoff_hook.py\" || true",
+            "timeout": 20
+          }
+        ]
+      }
+    ]
+  }
+}

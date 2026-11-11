@@ -26,7 +26,8 @@
 
 | 文書 | 中身 | 状態 |
 | --- | --- | --- |
-| [requests/stage0-k3.md](requests/stage0-k3.md) | 段0の区切り3（環境とブラウザ版の煙テスト）を、実装役に頼む文 | 頼む前。再開したら、そのまま渡す |
+| [requests/README.md](requests/README.md) | 頼みの文のひな形と、置いてある頼みの文の一覧 | 区切りの頼みを足すたびに更新 |
+| [requests/stage0-k3.md](requests/stage0-k3.md) | 段0の区切り3（環境とブラウザ版の煙テスト）を、実装役に頼む文 | 実装済み |
 
 ## 調べ
 

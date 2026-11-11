@@ -138,6 +138,13 @@ Pyxel 3.0の3D機能（Pyxel Cube）で作る、初代PS時代風ローポリゴ
 - 強制push、`reset --hard`、`clean` は使わない。
 - PRは、人が求めたときだけ作る。
 
+## サブエージェントとレビュー
+
+- 型は3つ（`.claude/agents/`）：実装役 `implementer`、レビュー役 `reviewer`、読み手 `reader`。頼みの文は `docs/requests/` のひな形で書く。
+- 報告は鵜呑みにしない。主が道具を回し直し、採る前に1〜2件を自分で確かめる。
+- 区切りのレビューは `tools/claude/step_review.js`（観点ごとのレビュー役と反証役）で回し、結果を `python3 tools/claude/review_summary.py` で読む。結果を返さなかった役は未評価で、指摘0件に数えない。使い方は `tools/claude/README.md`。
+- コミットとpushは、主のエージェントだけが行う。
+
 ## 文書
 
 | 文書 | 場所 |
