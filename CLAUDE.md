@@ -62,17 +62,24 @@ Pyxel 3.0の3D機能（Pyxel Cube）で作る、初代PS時代風ローポリゴ
 
 | すること | コマンド |
 | --- | --- |
-| 静的な検査（構文、層の分離、規則ファイルの見張り、正本の見張り） | `python3 tools/check.py [--only syntax\|arch\|rules\|canon]` |
+| 全体の検証（約30秒。check → test → run → run --realtime → export → web-smoke） | `python3 tools/verify.py --all [--selftest]` |
+| 変更したファイルから触れた分野を引いて回す | `python3 tools/verify.py --touched [--base REV]` |
+| 分野ごとの組の表を出す | `python3 tools/verify.py --list` |
+| 静的な検査（構文、層の分離、規則ファイルの見張り、正本の見張り、分野の見張り） | `python3 tools/check.py [--only syntax\|arch\|rules\|canon\|areas]` |
 | テスト | `python3 tools/test.py [-k "語 or 語"]` |
 | 画面なしで回す（速い経路） | `python3 tools/run.py [--ticks N]` |
 | 画面なしで回す（本番と同じ経路） | `python3 tools/run.py --realtime [--ticks N]` |
 | 配布物のHTMLを作って検査する | `python3 tools/export.py` |
-| 道具をわざと壊して確かめる（約45秒） | `python3 tools/selftest_break.py [--only 名前の頭]` |
+| ブラウザ版の煙テスト（約25秒） | `python3 tools/web_smoke.py [--only shipped\|probe]` |
+| 道具をわざと壊して確かめる（約4分半） | `python3 tools/selftest_break.py [--only 名前の頭]` |
+| 環境のセットアップ（新しいコンテナで1度。環境に登録してある） | `bash tools/setup_env.sh` |
+| ランタイムの写しの取得と照合 | `python3 tools/web/fetch_runtime.py [--check]` |
 | テストの件数の下限を下げる | `python3 tools/test.py --update-floor` |
 | 正本の要約値の写しを取り直す（採られた改訂案を当てるコミットでだけ） | `python3 tools/claude/canon_digest.py --update` |
 
 - 終了コードは、0＝合格、1＝問題あり、2＝回り切れない・何も調べていない。報告には、各道具の最後の1行をそのまま写す。
-- どの区切りでも、check → test → run → run --realtime → export をこの順で回す。道具か検査の決まりに触れた区切りと、段の仕上げでは、selftest-break も回す。
+- どの区切りでも、`python3 tools/verify.py --all` を回す（全体の検証が3分を超えるまで）。道具か検査の決まりに触れた区切りと、段の仕上げでは、`--selftest` を付けて selftest-break も回す。
+- 分野ごとの組の表は、`tools/verify.py` の1か所にだけ持つ。出荷するコードかテストのファイルを足したら、その表に足す（足さないと check が落ちる）。
 
 ## ディレクトリ
 
@@ -82,7 +89,7 @@ Pyxel 3.0の3D機能（Pyxel Cube）で作る、初代PS時代風ローポリゴ
 | --- | --- |
 | `clipping_point/` | 出荷するアプリ。`main.py`、`cp_core/`（ロジック）、`cp_ui/`（2Dの画面の組み立て）、`cp_app/`（Pyxelとブラウザに触れる部分） |
 | `tests/` | テスト、守りのテスト、ふるまいの写し（`tests/snapshots/`）、件数の下限（`tests/count_floor.txt`） |
-| `tools/` | 検証の道具。`tools/claude/` は作業の補助。`tools/budgets.json` は道具の仮の上限 |
+| `tools/` | 検証の道具。`tools/web/` はブラウザ版の検証道具と照合用の一覧。`tools/claude/` は作業の補助。`tools/budgets.json` は道具の仮の上限 |
 | `.claude/rules/` | 分野ごとの規則ファイル |
 | `docs/` | 正本、設計、計画、改訂案、作業記録、控え、言葉の表、進捗レポート |
 | `spikes/` | 設計時の試作と実測の記録。出荷物の外。土台を組み直すときの参考にし、中は直さない |

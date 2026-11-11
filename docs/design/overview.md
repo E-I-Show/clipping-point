@@ -82,7 +82,8 @@
 | `cp_app` | `render` | Pyxel Cubeのシーン、モデル、カメラの反映 |
 | `cp_app` | `canvas_pyxel` | 描画命令の実行 |
 | `cp_app` | `audio` | チャンネルへの割り当てと再生 |
-| `cp_app` | `storage_web`、`web_bridge` | localStorage、ダウンロード、ファイル選択 |
+| `cp_app` | `storage_web`、`web_bridge` | localStorage、ダウンロード、ファイル選択。`web_bridge` は、ブラウザ版の煙テストが外から渡す値を読む所と、結果をコンソールへ出す所も持つ |
+| `cp_app` | `perf` | 更新1回と実描画1回の時間と、毎秒の回数を集める。測った値は世界へ渡さない |
 
 層の分離は、ソースを解析して許可した一覧と照らす検査で守ります。試作では、`cp_core` にpyxelを持ち込む12通りの書き方をこの検査がすべて検出しました。実行時にimportを見張るだけの方式は9通りしか検出できませんでした。
 
