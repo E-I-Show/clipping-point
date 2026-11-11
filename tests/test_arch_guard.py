@@ -38,6 +38,12 @@ CORE_VIOLATIONS = {
     "stdlib_datetime": "import datetime\n",
     "builtin_hash": "BAD = hash('x')\n",
     "module_not_on_the_list": "import socket\n",
+    # ファイル、環境、乱数に届く標準ライブラリ。許可した一覧に入れない。
+    "stdlib_os": "import os\n",
+    "stdlib_os_urandom_from": "from os import urandom\n",
+    "stdlib_os_path_submodule": "import os.path\n",
+    "stdlib_pathlib": "from pathlib import Path\n",
+    "stdlib_io": "import io\n",
 }
 
 # 許される書き方。1件も拾われないこと（何でも落とす検査になっていないことの確かめ）。

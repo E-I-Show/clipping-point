@@ -32,6 +32,15 @@ def read_floor():
         return None
 
 
+def name_parts(test_id: str) -> list:
+    """pytest の -k が語を当てる名前（ファイル名、クラス名、関数名）。ディレクトリの名は入らない。
+
+    pytest は語を名前1つずつに当てる。「tests/test_sim.py」のように「/」や「::」をまたぐ語は、どの名前にも当たらない。
+    """
+    parts = test_id.split("::")
+    return [parts[0].rsplit("/", 1)[-1].lower(), *(part.lower() for part in parts[1:])]
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="テスト（pytest）を回す")
     ap.add_argument("-k", default="", metavar="EXPR", help="テスト名で絞る式")
@@ -52,14 +61,17 @@ def main() -> int:
         return finish("test", INCOMPLETE, f"reason=timeout timeout_s={args.timeout}")
     if code not in (0, 5):
         show_tail(out, err)
-        return finish("test", FAIL, f"collected={len(ids)} reason=collection_error pytest_exit={code}")
+        # テストのファイルの頭で pyxel が読み込まれると、テスト名を集める段でここへ来る。
+        reason = "pyxel_loaded" if FORBIDDEN_MARK in out else "collection_error"
+        return finish("test", FAIL, f"collected={len(ids)} reason={reason} pytest_exit={code}")
     if not ids:
         show_tail(out, err)
         return finish("test", INCOMPLETE, f"collected=0 reason=no_tests pytest_exit={code}")
+    names = {name for test_id in ids for name in name_parts(test_id)}
     for word in re.findall(r"[^\s()]+", args.k):
         if word in ("and", "or", "not"):
             continue
-        if not any(word.lower() in test_id.lower() for test_id in ids):
+        if not any(word.lower() in name for name in names):
             return finish("test", INCOMPLETE, f"collected={len(ids)} k={args.k!r} reason=k_word_matches_nothing word={word!r}")
 
     cmd = [*PYTEST, "-q", "-rfEs", f"--junitxml={REPORT}", TESTS]

@@ -13,10 +13,11 @@ from pathlib import Path
 from _common import APP, FAIL, INCOMPLETE, OK, PURE_PACKAGES, finish
 
 # 純Pythonの層で使ってよい標準ライブラリ。ここに無いimportは全部違反にする。
-# 初めの一覧は試作の勧めのまま。足すときは、足した行の注に理由を書く。
+# 置くのは、計算とデータの形のためのものだけ。ファイル、環境、時刻、乱数に届くもの（os、pathlib、io など）は入れない。
+# 足すときは、足した行の注に、使う所と理由を書く。os を足すときは、使ってよい属性も縛る（os.urandom や os.environ に届くため）。
 STDLIB_ALLOWED = frozenset({
     "__future__", "array", "base64", "bisect", "collections", "dataclasses", "enum", "functools", "hashlib",
-    "heapq", "io", "itertools", "json", "math", "os", "pathlib", "struct", "typing", "zlib",
+    "heapq", "itertools", "json", "math", "struct", "typing", "zlib",
 })
 # 層ごとに、呼んでよい自前のパッケージ。依存は一方向（cp_app → cp_ui → cp_core）。
 LAYER_ALLOWED = {
@@ -36,6 +37,9 @@ REASONS = {
     "importlib": "動的なimportは使わない",
     "builtins": "動的なimportの抜け道になる",
     "sys": "読み込み済みのモジュールへの抜け道になる",
+    "os": "ファイル、環境、乱数（os.urandom）に届く。保存の口を作る区切りで、使う属性を縛って足す",
+    "pathlib": "ファイルに届く。定義データを読む区切りで、理由を書いて足す",
+    "io": "ファイルに届く。要る区切りで、理由を書いて足す",
 }
 # 使ってはいけない名前。呼び出しだけでなく、名前として読む所も違反にする（別名に入れて呼ぶ形を拾うため）。
 BANNED_NAMES = {

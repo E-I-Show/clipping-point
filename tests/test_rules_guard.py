@@ -75,6 +75,29 @@ def test_rules_unquoted_target_line_is_reported(tmp_path):
     assert len(problems) == 1 and "tools.md" in problems[0]
 
 
+def test_rules_comment_and_blank_lines_inside_paths_do_not_end_the_list():
+    text = '---\npaths:\n  - "tools/**"\n  # テスト\n\n  - "tests/test_x.py"\n---\n\n# 見本\n'
+    assert rules_guard.parse_paths(text) == (["tools/**", "tests/test_x.py"], [])
+
+
+def test_rules_other_line_inside_paths_is_reported_as_unreadable():
+    text = '---\npaths:\n  - "tools/**"\n  tests/test_x.py\n---\n\n# 見本\n'
+    assert rules_guard.parse_paths(text) == (["tools/**"], ["tests/test_x.py"])
+
+
+def test_rules_next_key_ends_the_paths_list():
+    text = '---\npaths:\n  - "tools/**"\nnotes: x\n  - "ignored/**"\n---\n\n# 見本\n'
+    assert rules_guard.parse_paths(text) == (["tools/**"], [])
+
+
+def test_rules_file_listed_twice_in_the_index_is_reported(tmp_path):
+    root = make_repo(tmp_path)
+    claude_md = root / "CLAUDE.md"
+    write(claude_md, claude_md.read_text(encoding="utf-8") + "| `.claude/rules/ui.md` | 画面（2度目） |\n")
+    problems = problems_of(root)
+    assert len(problems) == 1 and "2度" in problems[0]
+
+
 def test_rules_file_missing_from_the_index_is_reported(tmp_path):
     root = make_repo(tmp_path)
     write(root / ".claude" / "rules" / "extra.md", rule_text("tools/check.py"))

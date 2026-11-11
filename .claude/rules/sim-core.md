@@ -27,11 +27,13 @@ paths:
 - 世界の状態に項目を足したら、`Sim.summary()` と `tests/test_sim.py` に足す。
 - `Sim` の作り方や `step()` の引数を変えたら、`clipping_point/cp_app/app.py` の呼び出しと `python3 tools/run.py` を確かめる。
 
-## 守りのテスト
+## テストと道具
 
-- `tests/test_fixed_loop.py`：ふつうの進み方で毎秒30回。処理落ちから追い付く間も0回にならない。新しいtickが無ければ描き直さない。
-- `tests/test_sim.py`：1回の `step()` で1 tick。要約がJSONに書ける。
-- `tests/test_arch_guard.py`：層の分離の検査が、持ち込む書き方を拾う。
+- テスト `tests/test_fixed_loop.py`：ふつうの進み方で毎秒30回。処理落ちから追い付く間も0回にならない。新しいtickが無ければ描き直さない。実時間の決まりは、アプリと同じ既定の引数の `RenderGate()` で確かめる。
+- テスト `tests/test_sim.py`：1回の `step()` で1 tick。要約がJSONに書ける。
+- 守りのテスト `tests/test_arch_guard.py`：層の分離の検査が、持ち込む書き方を拾う。
+- 道具 `python3 tools/run.py`：世界のtickと実描画の回数を、画面なしで回して照らす。
+- アプリが実時間を `RenderGate` へ渡していること（実時間の決まりが実際に働くこと）は、デスクトップ版の道具では見えない。ブラウザ版の煙テストの実描画の回数で見る（段0 区切り3から）。
 
 ## 落とし穴
 

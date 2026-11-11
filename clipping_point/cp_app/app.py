@@ -2,7 +2,7 @@
 
 1回の周期：更新（1 tick）→ 描画の番なら裏画面に描く → 裏画面を画面へ写す（毎回）。
 Pyxelの描画関数を直に呼ぶのは、裏画面を消す、描画命令の実行、裏画面を画面へ写す、の3つだけ。
-2Dの絵は必ず cp_ui の描画命令（Canvas）を通す。
+2Dの絵は必ず cp_ui の描画命令（Canvas）を通し、画面の組み立ては cp_ui.screens に置く。
 ファイルを読むときは、必ず Path(__file__) を基準にする（pyxel.init が作業ディレクトリを変える）。
 
 画面なしで回す口（tools/run.py が使う）。環境変数が無ければ普通に起動する。ブラウザ版には環境変数が無い。
@@ -22,15 +22,13 @@ import pyxel
 from cp_core.fixed_loop import TICK_HZ, RenderGate
 from cp_core.sim import Sim
 from cp_ui.canvas import SCREEN_H, SCREEN_W, Canvas
+from cp_ui.screens import COL_BACK, TITLE, build_placeholder
 
 from .canvas_pyxel import execute
 
-TITLE = "CLIPPING POINT"
 DRIVERS = ("flip", "run")
 # 速い経路だけ、Pyxelの周期を上げて実時間の待ちを縮める。世界は fps を読まないので、結果は変わらない。
 FAST_FPS = 1000
-# 仮の値：Pyxelの既定パレットの番号（黒、紺、白）。パレットを決める区切り（段0 区切り10）で置き換える。
-COL_BACK, COL_BAR, COL_TEXT = 0, 1, 7
 
 
 @dataclass(frozen=True)
@@ -58,15 +56,6 @@ def read_run_config(env) -> RunConfig | None:
     return RunConfig(result_path, ticks, driver)
 
 
-def build_placeholder(canvas: Canvas, tick: int, renders: int) -> None:
-    """仮の表示。タイトル、tick数、実描画の回数。画面に出す文字は英数字のみ。"""
-    # 割り切り：仮の表示の組み立てを cp_app に置いている。段0 区切り6で cp_ui の画面の組み立てへ移す。
-    canvas.rect(0, 0, SCREEN_W, 12, COL_BAR)
-    canvas.text(4, 3, TITLE, COL_TEXT)
-    canvas.text(4, 20, f"TICK {tick}", COL_TEXT)
-    canvas.text(4, 28, f"RENDER {renders}", COL_TEXT)
-
-
 class App:
     def __init__(self, run_config: RunConfig | None = None) -> None:
         self.run_config = run_config
@@ -88,6 +77,7 @@ class App:
         self.ticks = 0  # 回した更新の数
         self.renders = 0  # 実描画の回数
         self.done = False
+        self.loop = ""  # 実際に入ったループ（"flip" か "run"）。結果ファイルに書く
         self.started_s = time.perf_counter()
 
     # --- 毎秒60回 ---
@@ -130,7 +120,7 @@ class App:
             "sim": self.sim.summary(),
             "back_ink": back_ink,
             "screen_diff": screen_diff,
-            "driver": config.driver,
+            "driver": self.loop,  # 指定された経路ではなく、実際に入ったループ
             "wall_s": round(time.perf_counter() - self.started_s, 3),
             "python": sys.version.split()[0],
             "pyxel": pyxel.VERSION,
@@ -148,11 +138,13 @@ class App:
         config = self.run_config
         if config is not None and config.driver == "flip":
             # 自前のループ。デスクトップ版だけで使う（ブラウザ版に pyxel.flip は無い）。
+            self.loop = "flip"
             while not self.done:
                 self.update()
                 self.draw()
                 pyxel.flip()
             return
+        self.loop = "run"
         pyxel.run(self.update, self.draw)
 
 

@@ -19,7 +19,7 @@ BUDGETS = TOOLS / "budgets.json"
 PURE_PACKAGES = ("cp_core", "cp_ui")  # 純Pythonの層
 OK, FAIL, INCOMPLETE = 0, 1, 2
 WORD = {OK: "OK", FAIL: "FAILED", INCOMPLETE: "INCOMPLETE"}
-NOISE = ("ALSA", "audio")  # 音の出口が無い環境でPyxelが標準エラーに出す行の目印
+NOISE_PREFIXES = ("ALSA lib ",)  # 音の出口が無い環境でPyxelが標準エラーに出す行の頭。行の途中の語では除かない
 
 
 def child_env(**extra) -> dict:
@@ -58,7 +58,7 @@ def _text(data) -> str:
 
 def tail(text: str, lines: int = 25) -> str:
     """出力の終わりの数行。Pyxelの音の出口の行は除く。"""
-    kept = [line for line in text.strip().splitlines() if not any(word in line for word in NOISE)]
+    kept = [line for line in text.strip().splitlines() if not line.startswith(NOISE_PREFIXES)]
     return "\n".join(kept[-lines:])
 
 

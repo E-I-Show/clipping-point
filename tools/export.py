@@ -24,6 +24,7 @@ FORBIDDEN_FILES = ("test_*.py", "*_test.py", "conftest.py", "*.md", "*.pyc", "co
 # 出荷物に入ってよいファイルの種類。初期版は画像や3Dのモデルのファイルを持たない。足すときはここに足す。
 SHIP_SUFFIXES = (".py", ".json")
 STARTUP_MARKER = ".pyxapp_startup_script"  # pyxel package が自分で足す、入口の名前を書いたファイル
+KINDS = ("missing", "outside", "forbidden", "unknown_type", "payload", "size")  # 検査の種類。最後の1行の failed= に出る語
 
 
 def inspect_names(names: list) -> list:
@@ -44,6 +45,12 @@ def inspect_names(names: list) -> list:
         elif not base.endswith(SHIP_SUFFIXES):
             problems.append(("unknown_type", f"知らない種類のファイルが入っている：{name}"))
     return problems
+
+
+def payload_matches(html_text: str, pyxapp_bytes: bytes) -> bool:
+    """HTMLに埋め込まれたデータが、.pyxapp のバイト列と同じか。データが見つからなければ False。"""
+    payload = re.search(r'base64: "([A-Za-z0-9+/=]+)"', html_text)
+    return bool(payload) and base64.b64decode(payload.group(1)) == pyxapp_bytes
 
 
 def main() -> int:
@@ -67,9 +74,7 @@ def main() -> int:
     with zipfile.ZipFile(pyxapp) as zf:
         names = zf.namelist()
     problems = inspect_names(names)
-    text = html.read_text(encoding="utf-8")
-    payload = re.search(r'base64: "([A-Za-z0-9+/=]+)"', text)
-    if not payload or base64.b64decode(payload.group(1)) != pyxapp.read_bytes():
+    if not payload_matches(html.read_text(encoding="utf-8"), pyxapp.read_bytes()):
         problems.append(("payload", "HTML内のデータが .pyxapp と一致しない"))
     html_bytes, pyxapp_bytes = html.stat().st_size, pyxapp.stat().st_size
     limit = budgets["html_max_bytes"]
@@ -79,7 +84,7 @@ def main() -> int:
         print(f"  export: {message}")
     summary = (
         f"files={len(names)} pyxapp_bytes={pyxapp_bytes} html_bytes={html_bytes} html_max_bytes={limit} "
-        f"checks=6 problems={len(problems)}"
+        f"checks={len(KINDS)} problems={len(problems)}"
     )
     if problems:
         summary += " failed=" + ",".join(sorted({kind for kind, _ in problems}))

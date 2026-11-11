@@ -66,16 +66,19 @@ def parse_paths(text: str):
         return None
     paths, bad, in_paths = [], [], False
     for line in m.group(1).splitlines():
-        if line.strip() == "paths:":
+        stripped = line.strip()
+        if line.rstrip() == "paths:":
             in_paths = True
-        elif in_paths and line.strip().startswith("-"):
+        elif not in_paths or not stripped or stripped.startswith("#"):
+            continue  # 並びの外の行と、並びの中の空行と注は読み飛ばす
+        elif re.match(r"[A-Za-z_][\w-]*:", line):
+            in_paths = False  # 字下げの無い「名前:」の行だけが、並びを閉じる
+        else:
             entry = re.fullmatch(r'\s*-\s*"([^"]+)"\s*', line)
             if entry:
                 paths.append(entry.group(1))
             else:
-                bad.append(line.strip())
-        elif line.strip():
-            in_paths = False
+                bad.append(stripped)  # 黙って落とさず、読めない行として報告する
     return paths, bad
 
 

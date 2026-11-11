@@ -1,6 +1,10 @@
 ---
 paths:
   - "tools/**"
+  - "tests/test_arch_guard.py"
+  - "tests/test_rules_guard.py"
+  - "tests/test_canon_guard.py"
+  - "tests/test_export_inspect.py"
 ---
 
 # 検証の道具（tools/）
@@ -27,13 +31,14 @@ paths:
 
 - 検査や失敗の条件を足したら、`tools/selftest_break.py` に壊す件を足す。
 - 道具を足したら、根の `CLAUDE.md` の「コマンド」の表に足す。
-- 純Pythonの層で新しい標準ライブラリを使うときは、許可した一覧に理由つきで足す。
+- 純Pythonの層で新しい標準ライブラリを使うときは、許可した一覧に理由つきで足す。ファイル、環境、時刻、乱数に届くもの（os、pathlib、io）は、使う所を1つに絞り、os は使う属性も縛る。
 - 出荷物に新しい種類のファイルを入れるときは、`tools/export.py` の `SHIP_SUFFIXES` に足す。
 
-## 守りのテスト
+## テストと道具
 
-- `tests/test_arch_guard.py`、`tests/test_rules_guard.py`、`tests/test_canon_guard.py`
-- 道具か検査の決まりに触れた区切りでは、`python3 tools/selftest_break.py` を回す。壊す件が1つでも落ちなければ不合格。
+- 守りのテスト `tests/test_arch_guard.py`、`tests/test_rules_guard.py`、`tests/test_canon_guard.py`：見張りが崩れを拾うことと、いまのリポジトリが見張りを通ること。
+- テスト `tests/test_export_inspect.py`：配布物の検査の関数（入ってはいけないもの、HTML内のデータの一致）。
+- 道具 selftest-break（`python3 tools/selftest_break.py`）：道具か検査の決まりに触れた区切りで回す。壊す件が1つでも落ちなければ不合格。古い結果ファイルを読んで合格にしないことも、ここで見る。
 
 ## 落とし穴
 

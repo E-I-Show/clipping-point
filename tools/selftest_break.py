@@ -34,6 +34,13 @@ SKIP_ALL_HOOK = (
     "\n\ndef pytest_collection_modifyitems(items):\n    import pytest\n\n"
     "    for item in items:\n        item.add_marker(pytest.mark.skip(reason='planted'))\n"
 )
+# 前回の実行が残した、合格の形の結果ファイル。道具が古い結果を読んで合格にしないことの確かめに置く。
+STALE_JUNIT = (
+    '<?xml version="1.0" encoding="utf-8"?><testsuites>'
+    '<testsuite name="pytest" errors="0" failures="0" skipped="0" tests="999"></testsuite></testsuites>\n'
+)
+STALE_RESULT = '{"ticks": 120, "renders": 60, "sim": {"tick": 120}, "back_ink": 3981, "screen_diff": 0, "driver": "flip"}\n'
+EXIT_0_TEST = "import os\n\n\ndef test_zz_exit():\n    os._exit(0)\n"
 
 
 # --- 壊し方 ---
@@ -76,6 +83,9 @@ def tool(name, *args):
 
 
 CHECK, TEST, RUN, RUN_RT, EXPORT = tool("check"), tool("test"), tool("run"), tool("run", "--realtime"), tool("export")
+# テストを1件、集められない名前に変える。件数だけが1つ減る。
+# テストのファイルを丸ごと消す形にしない（規則ファイルの当て先の空振りが先に落ちて、件数の下限まで届かない）。
+FEWER_TESTS = rep("tests/test_sim.py", "def test_sim_starts_at_tick_zero():", "def no_longer_collected():")
 IN_UPDATE = "        self.sim.step()\n"
 IN_DRAW = "        if self.gate.should_render(time.perf_counter() * 1000.0):\n"
 PRESENT = "        pyxel.blt(0, 0, self.back, 0, 0, SCREEN_W, SCREEN_H)\n"
@@ -89,7 +99,7 @@ CASES = [
     ("control_test", [], TEST, {0}, "test: OK"),
     ("control_test_k", [], tool("test", "-k", "sim or canvas"), {0}, "test: OK"),
     ("control_test_floor_rises", [add("tests/test_zz_more.py", "def test_zz_more():\n    assert True\n")], TEST, {0}, "floor_was="),
-    ("control_test_update_floor", [rm("tests/test_arch_guard.py")], tool("test", "--update-floor"), {0}, "floor_was="),
+    ("control_test_update_floor", [FEWER_TESTS], tool("test", "--update-floor"), {0}, "floor_was="),
     ("control_run", [], RUN, {0}, "run: OK"),
     ("control_run_realtime", [], RUN_RT, {0}, "run: OK"),
     ("control_export", [], EXPORT, {0}, "export: OK"),
@@ -114,6 +124,9 @@ CASES = [
     ("check_core_uses_random", [app(SIM_PY, "\nimport random\n")], CHECK, {1}, "failed=arch"),
     ("check_core_uses_time", [app(GATE_PY, "\nimport time\n")], CHECK, {1}, "failed=arch"),
     ("check_core_uses_builtin_hash", [app(SIM_PY, "\nBAD = hash('x')\n")], CHECK, {1}, "failed=arch"),
+    ("check_core_uses_os", [app(SIM_PY, "\nimport os\n")], CHECK, {1}, "failed=arch"),
+    ("check_core_uses_os_urandom", [app(SIM_PY, "\nfrom os import urandom\n")], CHECK, {1}, "failed=arch"),
+    ("check_core_uses_pathlib", [app(SIM_PY, "\nfrom pathlib import Path\n")], CHECK, {1}, "failed=arch"),
     ("check_no_pure_sources", [rm_glob("clipping_point/cp_core/*.py"), rm_glob("clipping_point/cp_ui/*.py")], CHECK, {2}, "empty=arch"),
     # --- check：規則ファイルの見張り ---
     ("check_rules_target_matches_nothing", [rep(UI_RULE, '"clipping_point/cp_ui/**"', '"clipping_point/cp_gui/**"')], CHECK, {1}, "failed=rules"),
@@ -138,11 +151,17 @@ CASES = [
     ("test_one_skipped", [rep("tests/test_sim.py", "def test_sim_starts_at_tick_zero():", "import pytest\n\n\n@pytest.mark.skip(reason='later')\ndef test_sim_starts_at_tick_zero():")], TEST, {1}, "reason=skipped"),
     ("test_k_matches_nothing", [], tool("test", "-k", "zzz"), {2}, "reason=k_word_matches_nothing"),
     ("test_k_one_word_is_a_typo", [], tool("test", "-k", "sim or canvsa"), {2}, "reason=k_word_matches_nothing"),
-    ("test_count_below_floor", [rm("tests/test_arch_guard.py")], TEST, {1}, "reason=below_floor"),
+    ("test_k_word_spans_a_path", [], tool("test", "-k", "canvas or tests/test_sim.py"), {2}, "reason=k_word_matches_nothing"),
+    ("test_pyxel_loaded_at_import_time", [app("clipping_point/cp_app/canvas_pyxel.py", "\nimport pyxel\n")], TEST, {1}, "reason=pyxel_loaded"),
+    ("test_stale_report_is_not_reused", [add("out/test/junit.xml", STALE_JUNIT), add("tests/test_zz_exit.py", EXIT_0_TEST)], TEST, {2}, "reason=no_report"),
+    ("test_gate_default_drops_the_time_rule", [rep(GATE_PY, "min_interval_ms: float | None = RENDER_MIN_INTERVAL_MS", "min_interval_ms: float | None = None")], TEST, {1}, "reason=failed"),
+    ("test_export_payload_check_disabled", [rep("tools/export.py", "    return bool(payload) and base64.b64decode(payload.group(1)) == pyxapp_bytes\n", "    return True\n")], TEST, {1}, "reason=failed"),
+    ("test_placeholder_text_not_ascii", [rep("clipping_point/cp_ui/screens.py", 'f"TICK {tick}"', 'f"ティック {tick}"')], TEST, {1}, "reason=failed"),
+    ("test_count_below_floor", [FEWER_TESTS], TEST, {1}, "reason=below_floor"),
     ("test_floor_file_deleted", [rm("tests/count_floor.txt")], TEST, {1}, "reason=floor_missing"),
     ("test_one_failing", [add("tests/test_zz_fail.py", "def test_zz_fail():\n    assert 1 == 2\n")], TEST, {1}, "reason=failed"),
     ("test_file_fails_to_load", [add("tests/test_zz_load.py", "import no_such_module_xyz\n\n\ndef test_zz_load():\n    pass\n")], TEST, {1}, "reason=collection_error"),
-    ("test_process_dies_with_exit_0", [add("tests/test_zz_exit.py", "import os\n\n\ndef test_zz_exit():\n    os._exit(0)\n")], TEST, {2}, "reason=no_report"),
+    ("test_process_dies_with_exit_0", [add("tests/test_zz_exit.py", EXIT_0_TEST)], TEST, {2}, "reason=no_report"),
     ("test_pyxel_loaded_in_test_process", [add("tests/test_zz_px.py", "def test_zz_px():\n    import pyxel\n\n    assert pyxel.VERSION\n")], TEST, {1}, "reason=pyxel_loaded"),
     ("test_exception_only_in_thread", [add("tests/test_zz_thread.py", "import threading\n\n\ndef test_zz_thread():\n    t = threading.Thread(target=lambda: 1 / 0)\n    t.start()\n    t.join()\n")], TEST, {1}, "reason=failed"),
     ("test_sim_steps_two_ticks", [rep(SIM_PY, "        self.tick += 1\n", "        self.tick += 2\n")], TEST, {1}, "reason=failed"),
@@ -162,12 +181,15 @@ CASES = [
     ("run_renders_every_tick", [rep(APP_PY, IN_DRAW, "        if True:\n")], RUN, {1}, "failed=renders"),
     ("run_back_buffer_blank", [rep(APP_PY, EXECUTE, "        len(canvas.commands)\n")], RUN, {1}, "failed=back_ink"),
     ("run_not_presented", [rep(APP_PY, PRESENT, "        pass\n")], RUN, {1}, "failed=screen_diff"),
+    ("run_stale_result_is_not_reused", [add("out/run/result.json", STALE_RESULT), rep(APP_PY, IN_UPDATE, QUIT_EARLY)], RUN, {2}, "reason=no_result_file"),
     ("run_too_few_ticks", [], tool("run", "--ticks", "3"), {2}, "reason=too_few_ticks"),
     # --- run：本番と同じ経路（pyxel.run） ---
     ("run_realtime_exception_in_update", [rep(APP_PY, IN_UPDATE, IN_UPDATE + "        if self.ticks == 5:\n            raise RuntimeError('planted')\n")], RUN_RT, {1}, "reason=app_exit_code"),
     ("run_realtime_quit_early_exit_0", [rep(APP_PY, IN_UPDATE, QUIT_EARLY)], RUN_RT, {2}, "reason=no_result_file"),
     ("run_realtime_zero_renders", [rep(APP_PY, IN_DRAW, "        if False:\n")], RUN_RT, {1}, "failed=renders"),
     ("run_realtime_takes_fast_path", [rep(APP_PY, 'driver = env.get("CP_SMOKE_DRIVER", "flip")', 'driver = "flip"')], RUN_RT, {1}, "failed=driver"),
+    # 指定は run のまま、自前のループへ入る。結果ファイルには、実際に入ったループが書かれる。
+    ("run_realtime_loop_ignores_driver", [rep(APP_PY, '        if config is not None and config.driver == "flip":\n', "        if config is not None:\n")], RUN_RT, {1}, "failed=driver"),
     # --- export ---
     ("export_tests_dir_mixed_in", [add("clipping_point/tests/test_zz.py", "def test_zz():\n    pass\n")], EXPORT, {1}, "failed=forbidden"),
     ("export_test_file_mixed_in", [add("clipping_point/cp_core/test_sim.py", "def test_zz():\n    pass\n")], EXPORT, {1}, "failed=forbidden"),

@@ -79,7 +79,7 @@ def test_fixed_loop_parity_gate_would_render_nothing_under_catch_up():
 def test_fixed_loop_time_rule_recovers_30fps_in_the_browser_lag_pattern():
     # ブラウザ版：遅れた周期は1つ後の呼び出しで知らされる。(呼び出しの時刻 ms, その回の更新の数)
     calls = [(0.0, 1), (33.3, 1), (66.7, 2), (100.0, 2), (133.3, 2)]
-    gate = RenderGate(2, 30.0)
+    gate = RenderGate()  # アプリと同じ、既定の引数で作る。既定から実時間の決まりが外れたら、ここで落ちる
     rendered = []
     for now_ms, ticks in calls:
         for _ in range(ticks):
@@ -129,7 +129,7 @@ def test_fixed_loop_uses_only_the_tick_rule_when_no_time_is_given():
 
 def test_fixed_loop_time_rule_needs_30ms_since_the_last_render():
     # 1 tickたっていても、前回の実描画から30 ms未満なら描かない。30 ms以上なら描く。
-    gate = RenderGate(2, 30.0)
+    gate = RenderGate()  # アプリと同じ、既定の引数で作る
     gate.on_tick()
     assert gate.should_render(100.0)
     gate.on_tick()
