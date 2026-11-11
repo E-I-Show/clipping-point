@@ -12,12 +12,15 @@
 import argparse
 import json
 import shutil
+import struct
 import sys
 import tempfile
 import time
+import zlib
 from pathlib import Path
 
 import input_reference
+import screen_check
 from _common import FAIL, INCOMPLETE, OK, OUT, ROOT, child_env, finish, run
 
 PY = sys.executable
@@ -43,6 +46,12 @@ WEB_INPUT_PY = "clipping_point/cp_app/input_web.py"
 TRACE_PY = "clipping_point/cp_app/input_trace.py"
 BUDGETS_JSON = "tools/budgets.json"
 SMOKE_SCRIPT_JSON = "tools/input_script_smoke.json"
+SCREENS_PY = "clipping_point/cp_ui/screens.py"
+FIXTURES_PY = "clipping_point/cp_ui/fixtures.py"
+FLOW_PY = "clipping_point/cp_core/flow.py"
+EXECUTE_PY = "clipping_point/cp_app/canvas_pyxel.py"
+TOUR_APP_PY = "clipping_point/cp_app/tour.py"
+TOUR_TOOL_PY = "tools/tour.py"
 SKIP_ALL_HOOK = (
     "\n\ndef pytest_collection_modifyitems(items):\n    import pytest\n\n"
     "    for item in items:\n        item.add_marker(pytest.mark.skip(reason='planted'))\n"
@@ -73,6 +82,34 @@ STALE_WEB_PAGE = json.dumps({
 }) + "\n"
 
 
+def stale_tour_result() -> str:
+    """前回の実行が残した、合格の形の、巡回の結果ファイル。命令の数は、いまの画面と見本データから数える（読まれたら合格になる形）。"""
+    screens, variants, build, canvas_type, _ = screen_check.load_ui()
+    shots = []
+    for screen, variant in screen_check.plan(screens, variants):
+        canvas, _ = screen_check.build_canvas(screens, build, canvas_type, screen, variant)
+        count = len(canvas.commands) if canvas is not None else 0
+        shots.append({
+            "screen": screen, "variant": variant, "file": f"{screen}_{variant}.png", "commands": count, "checked": count,
+            "margin_ink": 0, "screen_ink": 5000, "command_problems": [], "violations": [], "check_ms": 1.0,
+        })
+    return json.dumps({"shots": shots, "margin": 16, "scale": 2, "wall_s": 0.1}) + "\n"
+
+
+def blank_png(width: int, height: int) -> bytes:
+    """黒1色の、本物のPNG。前回の実行が残した画像の代わりに置く。"""
+    def chunk(name: bytes, data: bytes) -> bytes:
+        return struct.pack(">I", len(data)) + name + data + struct.pack(">I", zlib.crc32(name + data))
+
+    rows = (b"\x00" + b"\x00" * width) * height  # 行ごとに、フィルターの種類（0）と、8ビットの灰色の画素
+    head = struct.pack(">IIBBBBB", width, height, 8, 0, 0, 0, 0)
+    return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", head) + chunk(b"IDAT", zlib.compress(rows)) + chunk(b"IEND", b"")
+
+
+STALE_TOUR_RESULT = stale_tour_result()
+STALE_TOUR_PNG = blank_png(640, 480)
+
+
 # --- 壊し方 ---
 def rep(path, old, new):
     """old（ちょうど1か所にあること）を new に置き換える。"""
@@ -87,6 +124,11 @@ def app(path, text):
 def add(path, text):
     """新しいファイルを置く。"""
     return ("write", path, text)
+
+
+def add_bytes(path, data):
+    """新しいファイルを、バイト列のまま置く（画像など）。"""
+    return ("write_bytes", path, data)
 
 
 def rm(path):
@@ -153,7 +195,7 @@ DIRECT_READ = "self.triggers.read()\n"  # 直読みを、余分に1度呼ぶ文
 # 実在しないパスだと、アプリの絶対パスの検査が無くても、ファイルが見つからずに同じ落ち方になり、検査の有無を見分けられない。
 RELATIVE_SCRIPT = rep("tools/run.py", '        env["CP_SMOKE_SCRIPT"] = str(script_path)\n', f'        env["CP_SMOKE_SCRIPT"] = "../../{SMOKE_SCRIPT_JSON}"\n')
 ABS_SCRIPT_CHECK = "        if not os.path.isabs(script_path):\n"  # アプリの、台本の絶対パスの検査
-DRAW_FRAME = "        build_placeholder(canvas, self.sim.tick, self.renders, self.frame)\n"  # 仮の表示へ、入力フレームを渡す所
+DRAW_FRAME = "        view = PlaceholderView(self.sim.tick, self.renders, self.frame)\n"  # 仮の表示の、表示用の値へ、入力フレームを入れる所
 STEER_AXIS_READ = "steer_analog=_clamp(-btnv(self._steer_axis) / AXIS_MAX, -1.0, 1.0)"
 DIRECT_ANALOG = "            throttle_analog, brake_analog = _clamp(float(right), 0.0, 1.0), _clamp(float(left), 0.0, 1.0)\n"
 # 直読みができたtickにも、Pyxel経由の2値のトリガーをデジタル値へ入れる。
@@ -164,6 +206,35 @@ DIRECT_PLUS_DIGITAL = (
 )
 SKIP_EMPTY_SLOT = "        if is_empty_slot(pad):\n            continue\n"
 INT_TO_FLOAT = "    if type(value) is int:\n        value = float(value)\n"  # アナログ値の整数を、小数に直す所
+# はみ出しの検査と巡回。
+SCREEN, TOUR = tool("screen_check"), tool("tour")
+TICK_TEXT = 'f"TICK {view.tick}"'  # 仮の表示の、tick の文字
+RENDER_TEXT = 'f"RENDER {view.renders}"'  # 仮の表示の、実描画の回数の文字
+TITLE_TEXT = "canvas.text(4, 3, TITLE, COL_TEXT)"
+UNDER_BAR = "canvas.line(0, 12, SCREEN_W - 1, 12, COL_EDGE)"  # 帯の下の線
+SCREEN_HEAD = '    with canvas.box("title", 0, 0, SCREEN_W, 12):\n'  # 仮の表示の組み立ての頭
+# 文字を、囲み（status。幅64）より長くする。ふつうの値でも、極端な値でも、はみ出す。
+TEXT_TOO_LONG = rep(SCREENS_PY, TICK_TEXT, 'f"TICKS SINCE START {view.tick}"')
+# 極端な値のときだけ、はみ出す。ふつうの値（RENDER COUNT 60）は、囲みの内に収まる。
+TEXT_TOO_LONG_WHEN_EXTREME = rep(SCREENS_PY, RENDER_TEXT, 'f"RENDER COUNT {view.renders}"')
+TEXT_OFF_SCREEN = rep(SCREENS_PY, TITLE_TEXT, TITLE_TEXT.replace("(4, 3,", "(300, 3,"))
+TEXT_NOT_ASCII = rep(SCREENS_PY, TICK_TEXT, 'f"ティック {view.tick}"')
+NO_VARIANTS = rep(FIXTURES_PY, 'VARIANTS = ("typical", "extreme")', "VARIANTS = ()")
+# 見本データに無い画面を、画面の登録に足す。
+SCREEN_WITHOUT_FIXTURES = app(SCREENS_PY, '\nSCREENS["extra"] = build_placeholder\n')
+# 文字の幅の計算を、小さく間違える。ためた命令だけを調べる検査（screen_check）は通り、実物の画素と照らす巡回が拾う。
+FONT_TOO_NARROW = rep(CANVAS_PY, "FONT_W, FONT_H = 4, 6", "FONT_W, FONT_H = 3, 6")
+EXEC_TEXT = "            target.text(command.x + ox, command.y + oy, command.text, command.col)\n"
+EXEC_RECTB = "target.rectb(command.x + ox, command.y + oy, command.w, command.h, command.col)"
+EXEC_LINE = "target.line(command.x1 + ox, command.y1 + oy, command.x2 + ox, command.y2 + oy, command.col)"
+TOUR_VARIANTS = "        for variant in fixtures.VARIANTS:\n"  # 巡回が、変種を順に回す所
+TOUR_COMMANDS = "    for index, command in enumerate(commands):\n"  # 巡回が、命令を1つずつ照らす所
+TOUR_DRAW_WHOLE = "    execute(commands, whole, MARGIN, MARGIN)\n"  # 巡回が、全体の絵を描く所
+TOUR_SAVE = "    shot.save(path, SHOT_SCALE)\n"  # 巡回が、画像を保存する所
+TOUR_READY = "    check_reader(single)\n"  # 巡回が、Pyxelを始めた後、画面を回す前
+TOUR_ENV = "    env = child_env(CP_TOUR=result_path, CP_TOUR_DIR=WORK)\n"  # 道具が、巡回の口の環境変数を渡す所
+TOUR_RELATIVE_RESULT = rep(TOUR_TOOL_PY, TOUR_ENV, TOUR_ENV.replace("CP_TOUR=result_path", 'CP_TOUR="result.json"'))
+TOUR_BOTH_SWITCHES = rep(TOUR_TOOL_PY, TOUR_ENV, TOUR_ENV.replace("CP_TOUR_DIR=WORK", "CP_TOUR_DIR=WORK, CP_SMOKE=result_path"))
 
 # (名前, 壊し方の並び, 回す道具, 期待する終了コード, 最後の1行にあるはずの語)
 CASES = [
@@ -185,7 +256,13 @@ CASES = [
     ("control_web_smoke_short_probe", [], WEB_PROBE, {0}, "web_smoke: OK scenarios=1 probe=ok"),
     ("control_web_heavy_frame_keeps_30_renders", [rep(APP_PY, RENDER_COUNT, RENDER_COUNT + HEAVY_FRAME)], WEB_PROBE, {0}, "web_smoke: OK scenarios=1 probe=ok"),
     ("control_verify_list", [], tool("verify", "--list"), {0}, "verify: OK mode=list"),
-    ("control_verify_all", [], VERIFY_ALL, {0}, "verify: OK mode=all steps=6 ok=6 failed=0"),
+    ("control_verify_all", [], VERIFY_ALL, {0}, "verify: OK mode=all steps=8 ok=8 failed=0"),
+    ("control_screen_check", [], SCREEN, {0}, "screen_check: OK screens=2/2 violations=0 not_checked=0"),
+    ("control_screen_check_only_one_screen", [], tool("screen_check", "--only", "placeholder"), {0}, "screen_check: OK screens=2/2 violations=0 not_checked=0"),
+    ("control_tour", [], TOUR, {0}, "tour: OK shots=2/2 commands=16 problems=0"),
+    ("control_tour_only_one_screen", [], tool("tour", "--only", "placeholder"), {0}, "tour: OK shots=2/2 commands=16 problems=0"),
+    # 文字の幅の計算を小さく間違えても、ためた命令だけを調べる検査は通る（検査の穴。巡回が拾うことは tour_text_metrics_too_small）。
+    ("control_screen_check_passes_with_text_metrics_too_small", [FONT_TOO_NARROW], SCREEN, {0}, "screen_check: OK screens=2/2 violations=0 not_checked=0"),
     # --- check：構文 ---
     ("check_syntax_error_in_app", [rep(SIM_PY, "    def step(self, frame: InputFrame) -> None:\n", "    def step(self, frame: InputFrame) -> None\n")], CHECK, {1}, "failed=syntax"),
     ("check_syntax_error_in_test_file", [add("tests/test_zz_broken.py", "def test_zz(:\n    pass\n")], CHECK, {1}, "failed=syntax"),
@@ -238,7 +315,7 @@ CASES = [
     ("test_stale_report_is_not_reused", [add("out/test/junit.xml", STALE_JUNIT), add("tests/test_zz_exit.py", EXIT_0_TEST)], TEST, {2}, "reason=no_report"),
     ("test_gate_default_drops_the_time_rule", [rep(GATE_PY, "min_interval_ms: float | None = RENDER_MIN_INTERVAL_MS", "min_interval_ms: float | None = None")], TEST, {1}, "reason=failed"),
     ("test_export_payload_check_disabled", [rep("tools/export.py", "    return bool(payload) and base64.b64decode(payload.group(1)) == pyxapp_bytes\n", "    return True\n")], TEST, {1}, "reason=failed"),
-    ("test_placeholder_text_not_ascii", [rep("clipping_point/cp_ui/screens.py", 'f"TICK {tick}"', 'f"ティック {tick}"')], TEST, {1}, "reason=failed"),
+    ("test_placeholder_text_not_ascii", [TEXT_NOT_ASCII], TEST, {1}, "reason=failed"),
     ("test_count_below_floor", [FEWER_TESTS], TEST, {1}, "reason=below_floor"),
     ("test_floor_file_deleted", [rm("tests/count_floor.txt")], TEST, {1}, "reason=floor_missing"),
     ("test_one_failing", [add("tests/test_zz_fail.py", "def test_zz_fail():\n    assert 1 == 2\n")], TEST, {1}, "reason=failed"),
@@ -249,7 +326,7 @@ CASES = [
     ("test_sim_steps_two_ticks", [rep(SIM_PY, "        self.tick += 1\n", "        self.tick += 2\n")], TEST, {1}, "reason=failed"),
     ("test_gate_thins_too_much", [rep(GATE_PY, "due = self._ticks_since_render >= self.divisor", "due = self._ticks_since_render > self.divisor")], TEST, {1}, "reason=failed"),
     ("test_gate_redraws_without_new_tick", [rep(GATE_PY, "            and self._ticks_since_render >= 1  #", "            and self._ticks_since_render >= 0  #")], TEST, {1}, "reason=failed"),
-    ("test_canvas_drops_text", [rep(CANVAS_PY, "        self.commands.append(TextCommand(x, y, s, col))\n", "        pass\n")], TEST, {1}, "reason=failed"),
+    ("test_canvas_drops_text", [rep(CANVAS_PY, "        self.commands.append(TextCommand(x, y, s, col, self._open[-1]))\n", "        pass\n")], TEST, {1}, "reason=failed"),
     ("test_canvas_accepts_float", [rep(CANVAS_PY, "        if type(value) is not int:\n", "        if False:\n")], TEST, {1}, "reason=failed"),
     # --- run：速い経路 ---
     ("run_exception_in_update", [rep(APP_PY, IN_UPDATE, IN_UPDATE + "        if self.ticks == 5:\n            raise RuntimeError('planted')\n")], RUN, {1}, "reason=app_exit_code"),
@@ -326,9 +403,11 @@ CASES = [
     (
         "verify_one_step_fails",
         [rep("tests/test_sim.py", "    assert Sim().tick == 0\n", "    assert Sim().tick == 1\n")],
-        VERIFY_ALL, {1}, "steps=6 ok=5 failed=1 failed_steps=test",
+        VERIFY_ALL, {1}, "steps=8 ok=7 failed=1 failed_steps=test",
     ),
-    ("verify_step_cannot_run", [rm("tools/run.py")], VERIFY_ALL, {1}, "steps=6 ok=4 failed=2 failed_steps=run,run-realtime"),
+    ("verify_step_cannot_run", [rm("tools/run.py")], VERIFY_ALL, {1}, "steps=8 ok=6 failed=2 failed_steps=run,run-realtime"),
+    # 全体の検証の中で、screen-check と tour が落ちる（文字を、画面の外に置く。突き合わせのテストも落ちる）。
+    ("verify_screen_check_and_tour_fail", [TEXT_OFF_SCREEN], VERIFY_ALL, {1}, "steps=8 ok=5 failed=3 failed_steps=test,screen-check,tour"),
     ("verify_nothing_asked", [], tool("verify"), {2}, "reason=nothing_asked"),
     # 複製は、gitの作業ツリーの根でない（親のリポジトリの下にある）。親の変更を読んで回さない。
     ("verify_touched_outside_a_git_work_tree", [], tool("verify", "--touched"), {2}, "reason=git_failed"),
@@ -410,6 +489,86 @@ CASES = [
     ("web_pad_empty_slot_is_not_told_apart", [rep(WEB_INPUT_PY, SKIP_EMPTY_SLOT, "")], WEB_PAD, {1}, "failed=gamepad.input_warn"),
     # tick の印を置かない。偽のコントローラーが、予定を進められない。
     ("web_pad_tick_mark_is_not_set", [rep(APP_PY, "            web_bridge.mark_tick(self.js, self.ticks)\n", "            pass\n")], WEB_PAD, {1}, "failed=gamepad.pad_plan"),
+    # --- はみ出しの検査：screen-check（はみ出しがあれば1） ---
+    ("screen_text_longer_than_its_box", [TEXT_TOO_LONG], SCREEN, {1}, "violations=2 not_checked=0 failed=placeholder/typical,placeholder/extreme kinds=out_of_box"),
+    ("screen_text_off_screen", [TEXT_OFF_SCREEN], SCREEN, {1}, "failed=placeholder/typical,placeholder/extreme kinds=off_screen,out_of_box"),
+    ("screen_text_not_ascii", [TEXT_NOT_ASCII], SCREEN, {1}, "violations=2 not_checked=0 failed=placeholder/typical,placeholder/extreme kinds=bad_char"),
+    # 極端な値のときだけ、はみ出す。落ちるのは extreme だけ（ふつうの値だけを回す検査なら、通ってしまう）。
+    ("screen_overflow_only_in_extreme_variant", [TEXT_TOO_LONG_WHEN_EXTREME], SCREEN, {1}, "violations=1 not_checked=0 failed=placeholder/extreme kinds=out_of_box"),
+    # --- はみ出しの検査：screen-check（回り切れなければ2。合格にしない） ---
+    ("screen_raises", [rep(SCREENS_PY, SCREEN_HEAD, "    raise RuntimeError('planted')\n" + SCREEN_HEAD)], SCREEN, {2}, "screens=0/2 violations=0 not_checked=2"),
+    ("screen_draws_nothing", [rep(SCREENS_PY, SCREEN_HEAD, "    return\n" + SCREEN_HEAD)], SCREEN, {2}, "screens=0/2 violations=0 not_checked=2"),
+    ("screen_only_unknown_name", [], tool("screen_check", "--only", "nosuch"), {2}, "reason=unknown_screen"),
+    ("screen_no_variants", [NO_VARIANTS], SCREEN, {2}, "screens=0/0 violations=0 not_checked=0 reason=nothing_planned"),
+    ("screen_registered_without_fixtures", [SCREEN_WITHOUT_FIXTURES], SCREEN, {2}, "screens=2/4 violations=0 not_checked=2"),
+    # --- 画面の登録と配線：test（突き合わせのテストと、アプリから画面への配線の守りのテスト） ---
+    ("test_screen_registered_without_fixtures", [SCREEN_WITHOUT_FIXTURES], TEST, {1}, "reason=failed"),
+    ("test_logic_screen_without_registration", [rep(FLOW_PY, 'SCREEN_NAMES = ("placeholder",)', 'SCREEN_NAMES = ("placeholder", "title")')], TEST, {1}, "reason=failed"),
+    # アプリが、画面の状態のいまの画面の名を見ずに、決まった画面を描く。いまは画面が1つなので、道具は全部通る。守りのテストで拾う。
+    ("test_app_ignores_the_screen_of_the_flow", [rep(APP_PY, "SCREENS[self.flow.screen](canvas, view)", 'SCREENS["placeholder"](canvas, view)')], TEST, {1}, "reason=failed"),
+    # はみ出しの検査が、囲みの外を数えない。
+    ("test_overflow_check_ignores_the_boxes", [rep("clipping_point/cp_ui/check.py", "    if parent != SCREEN_BOX:\n", "    if False:\n")], TEST, {1}, "reason=failed"),
+    # --- 巡回：tour（実物の画素と照らす。問題があれば1） ---
+    # 文字の幅の計算を小さく間違える。screen_check は通る（control_screen_check_passes_with_text_metrics_too_small）。
+    ("tour_text_metrics_too_small", [FONT_TOO_NARROW], TOUR, {1}, "shots=2/2 commands=16 problems=10 failed=ink_outside"),
+    # 実行の側で、縁だけの矩形を、命令より2ピクセル広く描く。
+    ("tour_outline_drawn_wider_than_its_command", [rep(EXECUTE_PY, EXEC_RECTB, EXEC_RECTB.replace("command.w,", "command.w + 2,"))], TOUR, {1}, "shots=2/2 commands=16 problems=2 failed=ink_outside"),
+    # 実行の側で、文字の命令を描かない。全体の絵は空にならないので、命令ごとに照らさないと見えない。
+    ("tour_text_commands_not_drawn", [rep(EXECUTE_PY, EXEC_TEXT, "            pass\n")], TOUR, {1}, "shots=2/2 commands=16 problems=10 failed=no_ink"),
+    # 実行の側で、線を、命令より1ピクセル下に描く。
+    (
+        "tour_line_drawn_at_another_place",
+        [rep(EXECUTE_PY, EXEC_LINE, EXEC_LINE.replace("command.y1 + oy,", "command.y1 + oy + 1,").replace("command.y2 + oy,", "command.y2 + oy + 1,"))],
+        TOUR, {1}, "shots=2/2 commands=16 problems=4 failed=ink_outside,no_ink",
+    ),
+    # 画面が、余白へ描く（線が、画面の右へ4ピクセル出る）。はみ出しの検査も数える。
+    ("tour_screen_draws_into_the_margin", [rep(SCREENS_PY, UNDER_BAR, UNDER_BAR.replace("SCREEN_W - 1", "SCREEN_W + 3"))], TOUR, {1}, "problems=4 failed=margin_ink,violation"),
+    ("tour_overflow_only_in_extreme_variant", [TEXT_TOO_LONG_WHEN_EXTREME], TOUR, {1}, "shots=2/2 commands=16 problems=1 failed=violation"),
+    # --- 巡回：tour（回り切れなければ2。合格にしない） ---
+    ("tour_one_variant_skipped", [rep(TOUR_APP_PY, TOUR_VARIANTS, TOUR_VARIANTS.replace("VARIANTS:", "VARIANTS[1:]:"))], TOUR, {2}, "shots=1/2 commands=8 problems=0 incomplete=missing_shot"),
+    (
+        "tour_exception_midway",
+        [rep(TOUR_APP_PY, TOUR_VARIANTS, TOUR_VARIANTS + "            if variant == 'extreme':\n                raise RuntimeError('planted')\n")],
+        TOUR, {2}, "reason=app_exit_code",
+    ),
+    ("tour_only_unknown_name", [], tool("tour", "--only", "nosuch"), {2}, "reason=unknown_screen"),
+    ("tour_no_variants", [NO_VARIANTS], TOUR, {2}, "shots=0/0 commands=0 problems=0 reason=nothing_planned"),
+    ("tour_screen_registered_without_fixtures", [SCREEN_WITHOUT_FIXTURES], TOUR, {2}, "reason=cannot_build"),
+    # 巡回が、命令ごとの照合を飛ばす（1つ飛ばす。全部飛ばす）。照らした命令の数が、道具が組み立てた命令の数と合わない。
+    ("tour_one_command_not_checked", [rep(TOUR_APP_PY, TOUR_COMMANDS, TOUR_COMMANDS.replace("(commands)", "(commands[1:])"))], TOUR, {2}, "shots=0/2 commands=0 problems=0 incomplete=commands_checked"),
+    ("tour_no_command_checked", [rep(TOUR_APP_PY, TOUR_COMMANDS, TOUR_COMMANDS.replace("(commands)", "(commands[:0])"))], TOUR, {2}, "shots=0/2 commands=0 problems=0 incomplete=commands_checked"),
+    # 巡回が、全体の絵でない絵を保存する（余白ごとの大きさ）。画像を保存しない。全体の絵を描かない（画面が空）。
+    ("tour_saves_the_picture_with_its_margin", [rep(TOUR_APP_PY, TOUR_SAVE, "    whole.save(path, SHOT_SCALE)\n")], TOUR, {2}, "incomplete=image_size"),
+    ("tour_saves_no_picture", [rep(TOUR_APP_PY, TOUR_SAVE, "    pass\n")], TOUR, {2}, "incomplete=no_image"),
+    ("tour_whole_picture_is_blank", [rep(TOUR_APP_PY, TOUR_DRAW_WHOLE, "    len(commands)\n")], TOUR, {2}, "incomplete=blank_screen"),
+    # アプリが、何も回さずに終了コード0で終わる。前回の合格の形の結果ファイルと画像が残っていても、読まない。
+    (
+        "tour_stale_result_is_not_reused",
+        [
+            add("out/tour/result.json", STALE_TOUR_RESULT),
+            add_bytes("out/tour/placeholder_typical.png", STALE_TOUR_PNG),
+            add_bytes("out/tour/placeholder_extreme.png", STALE_TOUR_PNG),
+            rep(TOUR_APP_PY, TOUR_READY, TOUR_READY + "    pyxel.quit()\n"),
+        ],
+        TOUR, {2}, "reason=no_result_file",
+    ),
+    # 道具が、結果ファイルを相対パスで渡す。アプリは、起動時に例外にする（pyxel.init が作業ディレクトリを変えるため）。
+    ("tour_result_path_is_relative", [TOUR_RELATIVE_RESULT], TOUR, {2}, "reason=app_exit_code"),
+    # 上の件の対。同じ相対パスのまま、アプリの絶対パスの検査を外すと、アプリは終了コード0で終わるが、結果ファイルが
+    # 道具の見る所に無い。上の件が落ちる理由が、検査であることの確かめ（落ち方が変わること）。
+    (
+        "tour_relative_result_path_gets_lost_without_the_check",
+        [TOUR_RELATIVE_RESULT, rep(TOUR_APP_PY, "    if not os.path.isabs(result_path):\n", "    if False:\n")],
+        TOUR, {2}, "reason=no_result_file",
+    ),
+    # 画面なしで回す口と、巡回の口を、同時に開く。アプリは、起動時に例外にする。
+    ("tour_both_app_switches_at_once", [TOUR_BOTH_SWITCHES], TOUR, {2}, "reason=app_exit_code"),
+    # 上の件の対。同じ環境変数のまま、アプリの検査を外すと、巡回して通る（壊さない件と同じく、0で通ること）。
+    (
+        "control_tour_both_app_switches_pass_without_the_check",
+        [TOUR_BOTH_SWITCHES, rep(TOUR_APP_PY, '    if env.get("CP_SMOKE", ""):\n', "    if False:\n")],
+        TOUR, {0}, "tour: OK shots=2/2 commands=16 problems=0",
+    ),
 ]
 
 
@@ -429,6 +588,11 @@ def plant(work: Path, faults) -> None:
                 raise RuntimeError(f"{path}: 置くはずのファイルが既にある")
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(rest[0], encoding="utf-8")
+        elif kind == "write_bytes":
+            if target.exists():
+                raise RuntimeError(f"{path}: 置くはずのファイルが既にある")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(rest[0])
         elif kind == "delete":
             target.unlink()
         elif kind == "delete_glob":

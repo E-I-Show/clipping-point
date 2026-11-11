@@ -1,6 +1,7 @@
 """検証の道具を決まった順に、1本ずつ回して、表を1つ出す。分野ごとの組の表は、ここの AREAS だけに持つ。
 
-  python3 tools/verify.py --all [--selftest]                 全体の検証（check → test → run → run --realtime → export → web-smoke）
+  python3 tools/verify.py --all [--selftest]                 全体の検証（check → test → screen-check → run → run --realtime
+                                                             → tour → export → web-smoke）
   python3 tools/verify.py --touched [--base REV] [--selftest] 変更したファイルから触れた分野を引いて回す
   python3 tools/verify.py --list                             分野ごとの組の表を出す
 
@@ -39,15 +40,17 @@ SUMMARY_MAX = 400  # 表に出す、道具の最後の1行の長さの上限
 STEPS = {
     "check": [PY, TOOLS / "check.py"],
     "test": [PY, TOOLS / "test.py"],
+    "screen-check": [PY, TOOLS / "screen_check.py"],
     "run": [PY, TOOLS / "run.py"],
     "run-realtime": [PY, TOOLS / "run.py", "--realtime"],
+    "tour": [PY, TOOLS / "tour.py"],
     "export": [PY, TOOLS / "export.py"],
     "web-smoke": [PY, TOOLS / "web_smoke.py"],
 }
 SELFTEST = "selftest-break"
 SELFTEST_CMD = [PY, TOOLS / "selftest_break.py"]
 ALWAYS = ("check", "test")  # どの組でも、頭に回す手順
-NOT_YET = ("screen-check", "tour", "drive", "race-sim", "audio")  # 後の区切りで足す手順。いまは回さない
+NOT_YET = ("drive", "race-sim", "audio")  # 後の区切りで足す手順。いまは回さない
 # --touched の基点を選ぶときの、区切りのコミットの題の頭（根の CLAUDE.md の「gitの決まり」）。
 STEP_COMMIT = re.compile(r"段\d+ 区切り\d+：")
 MIDWAY_MARK = "（途中）"  # 区切りの途中のコミットの題にある印
@@ -70,7 +73,7 @@ class Area:
 # check の areas の節が落ち、そのファイルの分野を決めさせるため。
 AREAS = (
     Area(
-        # 並びは、計画の表の順（操作補正と入力 → 画面（2D）→ ブラウザ連携 → …）。
+        # 並びは、計画の表の順（操作補正と入力 → カメラと画面の状態 → 画面（2D）→ ブラウザ連携 → …）。
         "操作補正と入力",
         (
             "clipping_point/cp_core/input_frame.py", "clipping_point/cp_core/input_script.py",
@@ -84,14 +87,27 @@ AREAS = (
         ("run", "drive", "web-smoke"),
     ),
     Area(
+        # 計画の表の「カメラと画面の状態」。いまあるのは、画面の状態（cp_core/flow.py）の最小の形だけ。
+        "カメラと画面の状態",
+        ("clipping_point/cp_core/flow.py", "tests/test_flow.py"),
+        # 計画の表のテストの絞りは「カメラ、画面の状態、指紋」。カメラは段0 区切り10、指紋は段0 区切り7で作る。いまは、画面の状態のテストの語だけ。
+        "flow",
+        # 計画の表のとおり。
+        ("run", "screen-check"),
+    ),
+    Area(
         "画面（2D）",
+        # はみ出しの検査（check.py）と見本データ（fixtures.py）は、下の「検証の道具と検査の決まり」にも並べる。
         (
             "clipping_point/cp_ui/__init__.py", "clipping_point/cp_ui/canvas.py", "clipping_point/cp_ui/screens.py",
-            "clipping_point/cp_app/canvas_pyxel.py", "tests/test_canvas.py", "tests/test_screens.py",
+            "clipping_point/cp_ui/check.py", "clipping_point/cp_ui/fixtures.py",
+            "clipping_point/cp_app/canvas_pyxel.py", "clipping_point/cp_app/tour.py",
+            "tests/test_canvas.py", "tests/test_screens.py", "tests/test_ui_check.py", "tests/test_fixtures.py", "tests/test_tour.py",
         ),
-        "canvas or screens",
-        # 計画の表は screen-check と tour だけ。run を足した。いま実際の画素を見る道具は run だけのため
-        # （.claude/rules/ui.md の「テストと道具」）。screen-check と tour を作る段0 区切り6で見直す。
+        "canvas or screens or ui_check or fixtures or tour",
+        # 計画の表は screen-check と tour だけ。run を残した。tour は見本データで描くので、アプリが、画面の状態の名で
+        # 画面の登録を引いて、表示用の値を渡して描く道（app.py の render()）を通すのは、run だけのため。
+        # 入力で画面を進める巡回を作る段1で見直す。
         ("run", "screen-check", "tour"),
     ),
     Area(
@@ -117,12 +133,15 @@ AREAS = (
         ALL,
     ),
     Area(
-        # 計画の表の「検証の道具、検査の決まり」の行。道具そのもの（tools/**）は、まとめて当てる。
+        # 計画の表の「検証の道具、検査の決まり（はみ出しの検査、データの検査、見本データ）」の行。
+        # 道具そのもの（tools/**）は、まとめて当てる。はみ出しの検査と見本データは、「画面（2D）」にも並べてある。
         "検証の道具と検査の決まり",
         (
             "tools/**", "tests/conftest.py", "tests/count_floor.txt", "tests/snapshots/**", "tests/test_arch_guard.py",
             "tests/test_rules_guard.py", "tests/test_canon_guard.py", "tests/test_export_inspect.py", "tests/test_verify.py",
-            "tests/test_web_smoke.py", "tests/test_claude_tools.py", "pytest.ini", "requirements-dev.txt",
+            "tests/test_web_smoke.py", "tests/test_claude_tools.py", "tests/test_screen_tools.py",
+            "clipping_point/cp_ui/check.py", "clipping_point/cp_ui/fixtures.py", "tests/test_ui_check.py", "tests/test_fixtures.py",
+            "pytest.ini", "requirements-dev.txt",
         ),
         ALL,
         ALL,

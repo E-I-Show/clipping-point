@@ -135,6 +135,8 @@ def check_reader(image) -> None:
         raise RuntimeError("data_ptr() is not one byte per pixel in row order")
 
 
+# 割り切り：見本データで描くので、アプリが画面を描く道（cp_app/app.py の render()）は通らない。そこは、道具 run と、
+# 配線の守りのテスト（tests/test_screens.py）が見る。画面の状態を作る段1で、入力で画面を進める巡回を足す時に見直す。
 def shoot(screen: str, variant: str, whole, single, shot, shot_dir: str) -> dict:
     """画面1つ × 変種1つを描いて、照らして、画像を保存する。返すのは、結果ファイルに入れる1件。
 

@@ -18,6 +18,8 @@ from _common import APP, FAIL, INCOMPLETE, OK, finish
 
 def load_ui() -> tuple:
     """出荷するコードから、画面の登録、変種の並び、見本データを作る関数、Canvas、はみ出しの検査を読む。pyxel は読み込まない。"""
+    # 出荷するディレクトリ（clipping_point/）に __pycache__ を作らせない。子プロセスの PYTHONDONTWRITEBYTECODE と同じ扱い。
+    sys.dont_write_bytecode = True
     if str(APP) not in sys.path:
         sys.path.append(str(APP))  # 後ろに足す（標準ライブラリの名前を隠さないように）
     from cp_ui import fixtures

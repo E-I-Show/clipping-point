@@ -14,11 +14,13 @@ import verify
 from conftest import ROOT
 
 INPUT = "操作補正と入力"
+FLOW = "カメラと画面の状態"
 UI = "画面（2D）"
 WEB = "ブラウザ連携"
 LOOP = "メインループと世界の状態"
 TOOLS_AREA = "検証の道具と検査の決まり"
-FULL_STEPS = ["check", "test", "run", "run-realtime", "export", "web-smoke"]
+FULL_STEPS = ["check", "test", "screen-check", "run", "run-realtime", "tour", "export", "web-smoke"]
+UI_WORDS = "canvas or screens or ui_check or fixtures or tour"
 # どの分野にも当たらない見本。設計のモジュールの表に出てこない名前にする（本物のファイルと重ならないように）。
 NO_AREA_CODE = "clipping_point/cp_core/zz_no_area.py"
 NO_AREA_TEST = "tests/test_zz_no_area.py"
@@ -62,6 +64,43 @@ def test_verify_files_map_to_their_areas():
     assert names_of("clipping_point/cp_app/app.py") == [LOOP]
     assert names_of("tools/web/webrun.js") == [TOOLS_AREA]
     assert names_of("tests/snapshots/canon_digest.json") == [TOOLS_AREA]
+
+
+def test_verify_screen_files_map_to_the_ui_area_and_the_checks_also_to_the_tools_area():
+    # 描画命令の層、画面の組み立て、巡回の口は、画面（2D）。
+    for path in (
+        "clipping_point/cp_ui/canvas.py", "clipping_point/cp_ui/screens.py", "clipping_point/cp_app/canvas_pyxel.py",
+        "clipping_point/cp_app/tour.py", "tests/test_canvas.py", "tests/test_screens.py", "tests/test_tour.py",
+    ):
+        assert names_of(path) == [UI], path
+    # はみ出しの検査と見本データは、計画の表で selftest-break つきの分野（検査の決まり）でもある。
+    for path in ("clipping_point/cp_ui/check.py", "clipping_point/cp_ui/fixtures.py", "tests/test_ui_check.py", "tests/test_fixtures.py"):
+        assert names_of(path) == [UI, TOOLS_AREA], path
+    assert area(TOOLS_AREA).selftest is True and area(UI).selftest is False
+    # 道具の側（screen-check、tour と、その判定の関数のテスト）は、道具の分野。
+    for path in ("tools/screen_check.py", "tools/tour.py", "tests/test_screen_tools.py"):
+        assert names_of(path) == [TOOLS_AREA], path
+
+
+def test_verify_flow_files_map_to_the_camera_and_screen_state_area():
+    assert names_of("clipping_point/cp_core/flow.py") == [FLOW]
+    assert names_of("tests/test_flow.py") == [FLOW]
+    # 計画の表の「カメラと画面の状態」：run、screen-check。
+    plan, kind, not_yet = verify.plan_for([area(FLOW)], [], focused=True)
+    assert kind == "focused"
+    assert step_names(plan) == ["check", "test", "screen-check", "run"]
+    assert plan[1][1][-2:] == ["-k", "flow"]
+    assert not_yet == []
+
+
+def test_verify_touching_only_the_overflow_check_runs_selftest_break():
+    # はみ出しの検査か見本データの判定だけを変えた区切りでも、selftest-break が回る。
+    for path in ("clipping_point/cp_ui/check.py", "clipping_point/cp_ui/fixtures.py"):
+        areas, unknown = verify.areas_for([path])
+        assert unknown == []
+        assert step_names(verify.plan_for(areas, unknown)[0])[-1] == verify.SELFTEST
+    areas, _ = verify.areas_for(["clipping_point/cp_ui/screens.py"])
+    assert verify.SELFTEST not in step_names(verify.plan_for(areas, [])[0])
 
 
 def test_verify_input_files_map_to_the_input_area_and_the_direct_read_to_the_web_area():
@@ -171,16 +210,24 @@ def test_verify_any_area_runs_everything_while_focus_is_off():
 def test_verify_focused_plan_for_one_area():
     plan, kind, not_yet = verify.plan_for([area(UI)], [], focused=True)
     assert kind == "focused"
-    assert step_names(plan) == ["check", "test", "run"]
-    assert plan[1][1][-2:] == ["-k", "canvas or screens"]
-    assert not_yet == ["screen-check", "tour"]
+    # 手順は、全体の検証と同じ順に並ぶ（分野の行に書いた順ではない）。
+    assert step_names(plan) == ["check", "test", "screen-check", "run", "tour"]
+    assert plan[1][1][-2:] == ["-k", UI_WORDS]
+    assert not_yet == []
 
 
 def test_verify_focused_plan_joins_areas_in_the_fixed_order():
     plan, kind, _ = verify.plan_for([area(UI), area(WEB)], [], focused=True)
     assert kind == "focused"
-    assert step_names(plan) == ["check", "test", "run", "web-smoke"]
-    assert plan[1][1][-2:] == ["-k", "canvas or screens or web_bridge or input_web"]
+    assert step_names(plan) == ["check", "test", "screen-check", "run", "tour", "web-smoke"]
+    assert plan[1][1][-2:] == ["-k", f"{UI_WORDS} or web_bridge or input_web"]
+
+
+def test_verify_screen_check_and_tour_are_no_longer_waiting_to_be_built():
+    assert "screen-check" in verify.STEPS and "tour" in verify.STEPS
+    assert "screen-check" not in verify.NOT_YET and "tour" not in verify.NOT_YET
+    # 全体の検証での順：check → test → screen-check → run → run-realtime → tour → export → web-smoke。
+    assert list(verify.STEPS) == FULL_STEPS
 
 
 def test_verify_focused_plan_falls_back_to_everything():
