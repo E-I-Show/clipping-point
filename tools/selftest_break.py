@@ -23,7 +23,7 @@ PY = sys.executable
 SCRATCH = OUT / "selftest"
 # 複製するもの。道具、テスト、見張りが読むファイルの全部。足りなければ control の件が落ちる。
 COPY_ITEMS = ("clipping_point", "tools", "tests", ".claude/rules", "docs/canon", "docs/handoff.md", "CLAUDE.md", "pytest.ini")
-CASE_TIMEOUT_S = 180
+CASE_TIMEOUT_S = 180  # 1件の時間切れ（秒）。いちばん長い件（--realtime）でも数秒で終わる
 
 APP_PY = "clipping_point/cp_app/app.py"
 SIM_PY = "clipping_point/cp_core/sim.py"
@@ -118,7 +118,7 @@ CASES = [
     # --- check：規則ファイルの見張り ---
     ("check_rules_target_matches_nothing", [rep(UI_RULE, '"clipping_point/cp_ui/**"', '"clipping_point/cp_gui/**"')], CHECK, {1}, "failed=rules"),
     ("check_rules_target_hits_hub_file", [rep(UI_RULE, '"clipping_point/cp_app/canvas_pyxel.py"', '"clipping_point/cp_app/*.py"')], CHECK, {1}, "failed=rules"),
-    ("check_rules_file_not_in_index", [drop_line("CLAUDE.md", "`.claude/rules/ui.md`")], CHECK, {1}, "failed=rules"),
+    ("check_rules_file_not_in_index", [drop_line("CLAUDE.md", "| `.claude/rules/ui.md` |")], CHECK, {1}, "failed=rules"),
     ("check_rules_new_file_not_in_index", [add(".claude/rules/extra.md", '---\npaths:\n  - "tools/check.py"\n---\n\n# extra\n')], CHECK, {1}, "failed=rules"),
     ("check_rules_index_row_without_file", [rm(UI_RULE)], CHECK, {1}, "failed=rules"),
     ("check_rules_file_without_paths", [rep(UI_RULE, "---\npaths:\n", "---\nnotes:\n")], CHECK, {1}, "failed=rules"),
