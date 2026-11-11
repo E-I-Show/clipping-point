@@ -128,7 +128,11 @@ class App:
         return self.adapter.read(self.js is not None, self.triggers.read())
 
     def input_report(self) -> dict:
-        """結果に足す、入力の出どころ。指定ではなく、実際に読んだ所を書く。"""
+        """結果に足す、入力の出どころと、読んだ回数。指定ではなく、実際に読んだ所を書く。
+
+        adapter_reads は入力アダプタ、direct_reads は直読みを呼んだ回数。どちらも、台本のときは0、
+        入力アダプタから読むときは回したtickと同じになる（1 tickに1度）。
+        """
         adapter_reads = self.adapter.reads
         if self.script_reads and adapter_reads:
             source = "mixed"
@@ -136,7 +140,7 @@ class App:
             source = "script"
         else:
             source = "adapter" if adapter_reads else "none"
-        return {"input_source": source, "adapter_reads": adapter_reads}
+        return {"input_source": source, "adapter_reads": adapter_reads, "direct_reads": self.triggers.reads}
 
     # --- 毎秒60回 ---
     def update(self) -> None:

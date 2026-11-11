@@ -63,9 +63,13 @@ class TriggerReader:
     def __init__(self, js) -> None:
         self._js = js  # ブラウザの機能（js のモジュール）。デスクトップ版では None
         self.warned = False  # 警告を出したか。出すのは、最初の1度だけ
+        # read() を呼んだ回数。デスクトップ版でも数える。検証が、1 tickに1度だけ呼ばれていること
+        # （台本のときは呼ばれていないこと）を見るのに使う。
+        self.reads = 0
 
     def read(self):
         """(左トリガー, 右トリガー) か None。例外にしない。"""
+        self.reads += 1
         if self._js is None:
             return None
         try:

@@ -1,0 +1,81 @@
+区切り：段0 区切り5：入力の土台
+
+== fakepass
+■ fakepass-2 [低/確かめた] 所：/home/user/clipping-point/tools/web_smoke.py:170-205（judge_probe）
+   直し：judge_probe に、input_source が adapter であることと、adapter_reads が回したtickと同じであることを足す。tests/test_web_smoke.py の result() と、外れた値ごとのパラメータにも足す。
+   場合：probe は input_source と adapter_reads を見ない（input_checks を使うのは judge_script の242行と judge_gamepad の297行だけ）。ブラウザ版で、入力の跡を頼まれていないときだけ入力アダプタと直読みを呼ばない形（例：read_frame の頭で `sys.platform == 'emscripten' and self.trace is None and self.script is None` なら NEUTRAL を返す）にすると、probe の sim はデスクトップ版と同じ（どちらも何も押していない）で、時間の線は入力を読まない更新で通る。gamepad は入力の跡があるので通り、run --realtime はデスクトップ版なので通る。主の注のとおり、更新1回の時間の大半が入力の読み取り（0.1 → 0.4 ms）になったが、線が「入力を読んだ更新」の値であることを、どの確かめも縛っていない。selftest_break.py:62-66 の STALE_WEB_RESULT には input_source と adapter_reads が入っているが、判定は読んでいない。
+   反証：judge_probe は input_source も adapter_reads も読まず、通過条件の時間の線を見るのは probe だけなので、入力を読まない更新で測っても、どの確かめも落ちない（段0 区切り10で probe に台本を渡す形にすると、入力アダプタと直読みの時間が黙って抜ける）。直すときは input_checks を丸ごと足さず（platform と ticks が二重になる）2つだけを ticks の後ろに足せば、壊す件 web_probe_ticks_short の語（failed=probe.ticks）は当たったままになる。
+■ fakepass-4 [低/確かめた] 所：/home/user/clipping-point/tools/selftest_break.py:359-363（run_script_path_is_relative）、/home/user/clipping-point/clipping_point/cp_app/app.py:78-79
+   直し：件が渡す相対パスを、アプリの cwd から実在する形（`../../tools/input_script_smoke.json`）にする。検査があれば1、無ければ最後まで回って0になり、件が見分けられる。
+   場合：件は CP_SMOKE_SCRIPT に `tools/input_script_smoke.json` を渡し、終了コード1と `reason=app_exit_code` を期待する。アプリは run.py:74 の cwd（out/run）で起動するので、app.py:78-79 の絶対パスの検査を消しても、app.py:80 の open が FileNotFoundError で落ち、同じ終了コードと同じ最後の1行になる。件は ok のまま。read_run_config は pyxel をimportする app.py にあり、テストも無い（tests/ を Grep して0件）。この検査が消えても、どこも落ちない。
+   反証：main() は pyxel.init より前に read_run_config を呼び、作業ディレクトリは out/run のままなので、絶対パスの検査を消しても open が FileNotFoundError で落ち、同じ終了コード1と reason=app_exit_code になる。件は検査の有無を見分けられず、read_run_config のテストも無い。直し方の案（../../tools/input_script_smoke.json）は複製の tools/ に届き、検査があれば1、無ければ最後まで回って0になるので正しい（読んで追っただけで、動かしてはいない）。
+
+== design
+■ design-1 [中/確かめた] 所：/home/user/clipping-point/.claude/rules/controls.md:42、/home/user/clipping-point/tools/budgets.json:17-18、/home/user/clipping-point/tools/web_smoke.py:20,22,26,31,84-87,104-105,316,324,328 ほか（Grepで25行）、/home/user/clipping-point/tools/web/fake_gamepad.js:7,11-13,26,72、/home/user/clipping-point/tests/test_web_smoke.py、/home/user/clipping-point/tools/selftest_break.py:147
+   直し：偽のコントローラーの予定の1つずつの呼び名を言葉の表に決めて足す（別の語にするか、28行に「予定の段」を例外として書く）。別の語にするなら、web_smoke.py の注と出す文、fake_gamepad.js、budgets.json の注、controls.md:42、テストの注を置き換える。
+   場合：破る行：controls.md:42「段の長さと、判定しないtick数は `tools/budgets.json`」。budgets.json:17「予定の1段の長さ（tick）。9段で270 tick」。web_smoke.py:86「段6と段9（押したまま切断）は、Pyxel経由の値も全部0へ戻る」。web_smoke.py:324（道具が出す文）「段2〜4で、押した瞬間が立っている」。
+決まりの文：docs/glossary.md:28「| 段 | 開発の単位。段0（立ち上げ）… | 開発の段のほかには使わない。…量子化は「256刻み」と書く |」。同11行「「設定」と「段」は、表の意味だけに使います」。
+起きること：同じファイルに2つの意味が並ぶ。controls.md は24行「操作補正（段1）が決める」と42行、budgets.json は3行「段4（仕上げと公開）で合わせる」と17行。web-smoke が落ちたときの「段2〜4で…」が検証の報告や作業記録に写ると、開発の段2〜4と読める。出どころは頼みの文（docs/requests/stage0-k5.md:141「予定の段…下の9段」）で、実装役はそれに従っている。
+   反証：引用と行番号は実物どおりで、言葉の表が「段」を開発の段のほかに使わないと決めているのに、規則ファイル、道具の注と出す文、budgets.json の注、テストの注が、偽のコントローラーの予定の1つずつを「段」と呼んでいる。予定の段3、段4は開発の段の番号と重なり、同じファイルに両方の意味が並ぶので、読み違えが起きる。言葉の表に例外として足す道を採るなら、単独の「段N」（web_smoke.py:316,324,328 の出す文）も「予定の段N」の形にそろえないと紛れが残る。
+■ design-3 [低/確かめた] 所：/home/user/clipping-point/docs/glossary.md:108 と、/home/user/clipping-point/.claude/rules/controls.md:22、/home/user/clipping-point/clipping_point/cp_app/app.py:4-5,132
+   直し：glossary.md:108 を「`cp_app` の `input_pyxel`。ブラウザ版のトリガーは、直読み（`input_web`）の結果を受け取る」の形に直す。設計の表（overview.md:82）は、言葉の表の5章の読み方に足すか、そのままにする。
+   場合：言葉の表の文：glossary.md:108「| 入力アダプタ | 機器ごとの差を吸収して入力フレームを作る部分（`cp_app` の `input_pyxel`、`input_web`）」。直読み（input_web）も入力アダプタに入っている。
+実物の文：controls.md:22「台本のときは、入力アダプタも直読みも呼ばない」。app.py:4-5「無ければ入力アダプタ（cp_app/input_pyxel.py）から。ブラウザ版のトリガーは、直読み（cp_app/input_web.py）を先に試す」。app.py:132 の adapter_reads は PyxelInput.reads だけを数える。
+起きること：結果の「入力アダプタを呼んだ回数（adapter_reads）」に直読みが入るかどうかが、言葉の表からは逆に読める。直読みを1 tickに2度呼んでも、adapter_reads は変わらない。
+   反証：言葉の表の108行は入力アダプタの置き場に input_web を入れたままだが、この区切りの規則ファイル、頼みの文、モジュールの頭の注、CLAUDE.md の目次は、入力アダプタを input_pyxel だけ、直読みを input_web として別に数えており、adapter_reads も PyxelInput.reads だけを数える。言葉の表の意味で読むと「入力アダプタを呼んでいない」（adapter_reads が0）が直読みも呼んでいないことまで見ていると読めるので、108行を直す案は妥当（害は小さく、重さは低のまま。言葉の表の270行も、置き場が変われば表を直すと書いている）。
+
+== layers
+■ layers-1 [低/確かめた] 所：/home/user/clipping-point/tools/web_smoke.py:296（同じ形が /home/user/clipping-point/tests/test_web_smoke.py:374）
+   直し：web_smoke.py:302 の比べ方を、sim の tick と input_digest の2項目だけにする（要約の全体を手で組まない）。または sim-core.md の「Xを足したらYも」に judge_gamepad を足す。
+   場合：破る行：web_smoke.py:296「want_sim = None if rows is None else {"tick": ticks, "input_digest": input_reference.digest_of(rows)}」。世界の要約の形を、道具が手で組んでいる。決まりの文：.claude/rules/sim-core.md:24「世界の要約：`Sim.summary()`」、同26「台本から計算した、世界の要約の参照：`tools/input_reference.py` の `sim_summary()`」、同30「世界の状態に項目を足したら、`Sim.summary()` と `tests/test_sim.py` に足す」。起きる場合：後の区切り（sim.py:19〜20 の割り切りが名指す段0 区切り7、車を足す区切り9）で Sim.summary() に項目を1つ足す → gamepad の筋書きの sim_from_trace が必ず落ちる。出る文は「世界の要約が、入力の跡から計算し直した値と違う」で、入力が世界へ届いていないと読める。script と probe の筋書きは Sim を通した参照と比べるので落ちない。
+   反証：引用は行番号も文も実物どおり。judge_gamepad だけが世界の要約の形を手で組んで辞書ごと比べており（probe はデスクトップ版の要約、script と run は Sim を通した参照と比べる）、sim-core.md:30 のとおりに Sim.summary() へ項目を足すと、gamepad の筋書きだけが必ず落ちる。単体テストの見本（test_web_smoke.py:374）も同じ形を手で組むので、気付けるのはブラウザを開く web-smoke まで進んでから。害は小さい（落ち方は静かでなく、出る文に両方の辞書が出る）が、手戻りは確かに起きる。直し方の案の1つ目（tick と input_digest の2項目だけを比べる）は、頼みの文の「入力の跡から計算し直した入力の要約値が、世界の要約と同じ」（stage0-k5.md:152）と web_smoke.py:21 の注に合い、別の食い違いは生まない（sim が辞書でない場合の守りだけ要る。test_web_smoke.py:551〜554 の3件はそのまま通る形にできる）。
+
+== tests
+■ tests-1 [低/確かめた] 所：/home/user/clipping-point/clipping_point/cp_app/app.py:123-139、/home/user/clipping-point/clipping_point/cp_app/input_web.py:60-77、/home/user/clipping-point/tools/web_smoke.py:208-216、/home/user/clipping-point/tools/run.py:116-119、/home/user/clipping-point/tools/selftest_break.py:365
+   直し：TriggerReader に reads を持たせて結果に direct_reads を出し、web_smoke.py の input_checks と run.py で「台本なら0、入力アダプタなら回したtickと同じ」を見る。selftest_break.py に「直読みを1 tickに2度呼ぶ」「台本のときも直読みを呼ぶ」の件を足す。
+   場合：決まりの文：.claude/rules/controls.md:22「台本のときは、入力アダプタも直読みも呼ばない。」と、docs/requests/stage0-k5.md:115「1 tickに呼ぶのは1度だけ。」。見張っているのは入力アダプタの回数（adapter_reads）だけで、TriggerReader には回数が無く（input_web.py:63-65）、結果にも出ない（app.py:139）。この状態 → この結果：app.py の read_frame() の頭（125行の前）に `self.triggers.read()` を1行足す（台本のときも直読みを呼び、入力アダプタのときは1 tickに2度呼ぶ）→ デスクトップ版は None が返るだけ、ブラウザ版は getGamepads が余分に呼ばれるだけ。adapter_reads は0と回したtickのまま、偽のコントローラーの段の進み方（pad_plan）も変わらないので、test、run、run --realtime、web-smoke の4本が全部通る。壊す件も、入力アダプタの2度呼び（selftest_break.py:365）しか無い。害は、毎tickの余分な時間（設計の実測で1回約0.12 ms）と、決まりの後ろ半分に落ちる確かめが無いこと。
+   反証：引用はすべて実物と合い、read_frame() の頭に self.triggers.read() を足す壊し方は、adapter_reads も偽のコントローラーの段の進み方も変えず、app.py を動かすテストも無いので、test、run、run --realtime、web-smoke のどれにも落ちる確かめが無い（コードを追って確かめた。道具は回していない）。害は毎tick約0.12 msの時間だけでふるまいは変わらないので重さは低のままでよいが、同じ「1 tickに1度」を入力アダプタでは回数と壊す件で守っているのに、決まりの後ろ半分（直読み）だけ守りが無いのは事実。直し方の案（direct_reads を結果に出して照らす）で別の食い違いは生まれない。
+■ tests-2 [低/確かめた] 所：/home/user/clipping-point/clipping_point/cp_app/app.py:145、177、/home/user/clipping-point/tests/test_screens.py:16-19、/home/user/clipping-point/tools/run.py:106-110、/home/user/clipping-point/tools/web_smoke.py:145-152
+   直し：tests/test_fixed_loop.py:12-34 と同じ形の守りのテスト（app.py をASTで読み、update() に `self.frame = frame` があり、render() の build_placeholder の第4引数が `self.frame` であること）を足し、selftest_break.py に壊す件を1つ足す。段0 区切り6の tour で実際の画素と照らせるようになったら置き換える。
+   場合：この状態 → この結果：app.py:145 の `self.frame = frame` を消す、または 177行を `build_placeholder(canvas, self.sim.tick, self.renders, NEUTRAL)` にする → 仮の表示の2行は、いつも0と「HELD -」になる。test_screens.py は build_placeholder に入力フレームを直に渡すので通る。run は裏画面の画素が1個以上と、画面との一致だけ（run.py:106-110）。web-smoke が画面を見るのは shipped の canvas_ink>0 だけ（web_smoke.py:151）。世界へは正しい入力フレームが届くので、世界の要約も通る。全部合格のまま、実機では「コントローラーを動かしても値が動かない」表示になる。この2行は、頼みの文（stage0-k5.md:128）で「実機で、実物のコントローラーの値を見ていただくための表示」とされていて、実機の確かめは自動では回せない。配線の誤りは、入力が読めていないという読み違えになる。いまのコードは正しく、欠けているのは守りだけ。
+   反証：引用は実物と合い、app.py:145 を消すか 177行に NEUTRAL を渡しても、世界と入力の跡は局所変数の frame を使うので要約も跡も変わらず、画面を見る確かめは「背景と違う画素が1個以上」と「画面と裏画面の一致」だけなので、全部合格のまま仮の表示だけが0と「HELD -」で固まる（コードを追って確かめた。道具は回していない）。この2行は実機で人が値を見るための表示（stage0-k5.md:128）で、段0の残りの区切りで render() に手が入るので、守りが無いと「入力が読めていない」という読み違えにつながる。道具から見えない配線をASTの守りのテストで見る前例（tests/test_fixed_loop.py:12-34）もあり、案に食い違いは無い。
+
+== 退けた指摘
+□ fakepass-1 [低] 段8が左右対称で取り違えを見分けられないのは事実だが、コード側は単体テストが拾い、ランタイムは SHA256 で固定されていて、試作が右トリガーだけで TRIGGERRIGHT=32767、TRIGGERLEFT=0 を実測している（標準の並びでの値）。段8の形は頼みの文149行の指定どおりで、実物のコントローラーの並びは設計の856行で段1の試走へ回してあるので、放っておいても読み違えや手戻りは起きない。
+□ fakepass-3 [低] 直読みの回数をどこも数えていないのは事実だが、多く呼んでも値は変わらず、増えるのは1回約0.12 ms（線は4 ms）だけで、指摘自身もそう書いている。呼ばれない側は段3と段4が落とし、結果に出す値は頼みの文122行で input_source と adapter_reads に決めてあるので、読み違えも手戻りも生まない。
+□ fakepass-5 [低] ブラウザを開く件を絞るのは頼みの文166行で決めてあり、指摘も承知している。挙げた判定はどれも判定の関数のテストで落ちることを見ている。語を全部の並びにする案は、並びの見立ては合っているが、放っておいても害が無く、好みの域。
+□ fakepass-6 [低] FOCUS_ENABLED が False のいまは起きない場面で、足す手順は頼みの文165行と計画の表255行で「計画の表のとおり」と決めてある。絞った後も、定数の名前は run が実物のPyxelで引き（台本つきでも PyxelInput を作る）、キーとトリガーの軸の読み取りは web-smoke の probe と gamepad が通すので、残るのは単体テストのあるデスクトップ版の割り算の2行だけ。
+□ design-2 [低] 引用は6か所とも実物どおりだが、どの行も同じファイルのすぐ前後に「コントローラーの枠」があり、レースの枠や週の枠とは読めない（指摘も「読み違えは起きにくい」と認めている）。「tick の印」は、出る所のどれも window.CP_PROBE_TICK か TICK_NAME を添えた説明の言い回しで、同じ行に並ぶ「結果の行の頭」「外から渡す値」も言葉の表に行が無いまま通っている。害の無い言い回しの類。
+□ design-4 [低] 壊す件が無いことは事実だが、頼みの文の166行が「ブラウザを開く件は要るものに絞る」と決めており、そこに挙げた13の形は全部入っている。3つの確かめが落ちることは判定の関数のテストが見ていて、基点の時点の probe の確かめ（python、platform、measured_ticks など）にも名ごとの壊す件は無いので、tools.md:36 は確かめの名ごとに1件を求める決まりとしては運用されていない。
+□ layers-2 [低] 引用は実物どおりだが、起きない場面で、既に決めてある所でもある。台本の添字を世界のtickにするのは頼みの文が決めた細目（stage0-k5.md:71、119）で、「更新1回が1 tick」は設計（overview.md:94、106）、言葉の表（glossary.md:85、95）、sim-core.md:13 の決めであり、run.py:98〜101 が世界のtickと回した更新の数の一致を既に見張っている。指摘が成り立つのは、段1 区切り6でこの決めを外して世界のtickを止める形でポーズを作ったときだけで（指摘自身が「追い切れていない」と書いている）、そのときは run の sim_tick と sim がその場で落ちて、黙って通らない。overview.md:447 の行も、Sim.tick を止めるとは書いておらず、画面の状態はロジック側が入力を受けて進める（同648、664）、台本で画面の遷移を照らす（同716）という設計とも、世界のtickを止める読み方は合わない。
+□ tests-3 [低] 引用（偽のコントローラーがいつも枠0、枠1以降は偽の js のテストだけ）は実物どおりだが、害があるかどうかの中心（ランタイムが枠の番号とゲームパッド1をどう対応させるか）は指摘自身が追えておらず、こちらでも確かめられないので、「この入力 → この結果」が書けていない。実物のコントローラーでの入力は、設計の「見えなかったこと」で段1の試走で確かめると決めてあり（overview.md:856）、迷うので退ける。
+□ tests-4 [低] button_names() を呼ぶのがテストだけなのは事実（Grepで確かめた。件数も3本8件で合う）だが、button_bits の逆を返す7行の検査つきの関数で、破っている決まりが無く、残しても読み違えも手戻りも起きない。外すほうが件数の下限を下げる手間を生むので、好みの範囲として退ける。
+
+== 役が書いた、見られなかった所
+・fakepass（レビュー役）: 道具とテストは回していない（決まり）。指摘の「この壊し方でも通る」は、どれもコードの読みから導いたもので、実際に壊して回してはいない。
+・fakepass（レビュー役）: ランタイムの写し（.cache/）は見ていない。AXIS_NUDGE の原因（接続の後の最初の軸の変化が届かない理由）、実物の標準でない並びのコントローラーがPyxel経由でどう届くか、Pyxelの「ゲームパッド1」がコントローラーの枠のどれに当たるか（偽のコントローラーは常に枠0。fake_gamepad.js:74）は、確かめていない。
+・fakepass（レビュー役）: 差し込むスクリプトの中の例外（fake_gamepad.js:24 の throw）が、webrun.js の page_error として集まるかは、Playwrightのふるまいで、読みだけでは決まらない。集まらなくても完了の合図が出ず、2になるので、合格にはならない。
+・fakepass（レビュー役）: 軸のキーを btn で読んだときの落ち方（run_realtime_axis_key_read_with_btn の `reason=app_exit_code`）が、Pyxelの中の落ち方かどうかは、回せないので見ていない。
+・fakepass（レビュー役）: cp_ui/screens.py、tests/test_screens.py、tests/test_web_bridge.py の全文、docs/canon/planning.md、tools/check.py、tools/test.py、tools/export.py は読んでいない（この観点の外か、この区切りで変えていない）。
+・fakepass（レビュー役）: 実機（実物のコントローラー、実物のブラウザ、画面上パッド）。
+・design（レビュー役）: 基点 8715582 との差分そのもの。shellが無く git diff を引けなかった。「黙って変えた所」は作業ツリーと頼みの文の突き合わせで見たので、規則ファイルや CLAUDE.md のどの行がこの区切りで変わったかは見分けていない。
+・design（レビュー役）: 読んでいない所：tools/web/webrun.js、tools/check.py、tools/test.py、tools/_common.py、tools/export.py、tools/arch_check.py（許可した一覧の行だけ見た）、tools/selftest_break.py の181〜248行と440行より後、tests/test_web_smoke.py の76〜254行、tests/test_verify.py の40行より前と114行より後、tests/test_web_bridge.py の176行より後。
+・design（レビュー役）: 動かして確かめること全部。規則ファイルの大きさが上限の内か、CLAUDE.md と web.md の所要時間（約45秒、約50秒、約10分半）、実測に頼る文（ブラウザ版のランタイムが接続後の最初の軸の変化を届けない、切断の次のtickで0へ戻る、軸のキーを btn で読むと落ちる、短い押しでも btnp が真になる）。
+・design（レビュー役）: 「最初の軸の変化を届けない」原因。ランタイムのソースは、このリポジトリからは読めない。心当たりとして、SDL2 は軸の最初の値を始まりの値として覚え、そこから一定（最大値の80分の1ほど）を超えて動くまで送らない作りだったと記憶している。確かめていない。当たっていれば、AXIS_NUDGE を大きくすると Pyxel 経由で見えるようになる。
+・design（レビュー役）: 設計 overview.md:153 に足した「約0.05 ms、約0.12 ms」の出どころ。作業記録と調査の記録は見ない範囲なので、照らしていない。
+・design（レビュー役）: 実機（実物のコントローラー、実物のブラウザ、画面上パッド）での割り当てと直読み。
+・layers（レビュー役）: 基点のコミット 8715582 との差分。shellが無く git diff を回せないので、「直したファイル」の変更箇所と「ふるまいの写しは変えていない」を差分では確かめていない。tests/snapshots/ にあるのは canon_digest.json の1件だけ、という所までは見た。
+・layers（レビュー役）: ランタイム（Pyxel、SDL、Pyodide）の中のふるまい。.cache/ を見ない決まりで、動かしてもいない。空のコントローラーの枠が JsNull に見えること、接続の後の最初の軸の変化が届かない原因（AXIS_NUDGE の根拠）、切断の後に値が残る1 tick、btnp が短い押しで真になること、実物の navigator.getGamepads() の戻り値が添字で読めることは、コードの注と実装役の実測に頼っている。
+・layers（レビュー役）: コントローラーが2台以上のとき、直読みが見る「最初の空でないコントローラーの枠」と、Pyxelの「ゲームパッド1」が同じ機器かどうか。先につないだ1台を抜くと食い違いうるが、Pyxelの中の割り当てを読めないので、指摘にしていない。
+・layers（レビュー役）: 標準の並びでトリガーを踏んだまま切断する場面。直読みはすぐ None になり、Pyxel経由の2値のトリガーが残る1 tickだけ、デジタル値が1になる道がコード上はある（input_pyxel.py:91〜94）。偽のコントローラーの予定は、段5でトリガーを0に戻してから段6で切断するので、この場面を通していない。害は小さいと見て、指摘にしていない。
+・layers（レビュー役）: Python 3.14（Pyodide）での実行。round、json、dataclasses.replace のふるまいが3.13と同じことは、コードを読んで判断しただけ。
+・layers（レビュー役）: 実機（実物のコントローラー、実物のブラウザ、画面上パッド）。
+・layers（レビュー役）: 読んでいないファイル：tests/test_verify.py、tests/count_floor.txt、tests/test_web_smoke.py の1〜239行、tools/selftest_break.py の残り、tools/_common.py、tools/export.py、tools/check.py、docs/canon/planning.md の操作の表（割り当てと正本の突き合わせは、tests/test_input_pyxel.py の CANON_ROWS を読んだだけ）。観点の外か、この区切りで変えていないと見て後回しにした。
+・tests（レビュー役）: 消えたテスト・名前を変えたテストの一覧：gitを使えず、基点（コミット 8715582）のテストのファイルを読めない。件数の突き合わせ（scope の【件数の下限】）だけ行った。「1件消して同じ数だけ足す」形と名前の変更は、件数では見分けられない。触れていない8ファイルが基点と同じという前提も、頼みの文の一覧に頼っている。
+・tests（レビュー役）: tests/test_verify.py の「直した1行」と、ほかの直したテストで弱められた期待が無いか：差分を見られないので、いまの中身だけで判断した（183行は推定）。基点にあった assert が消えていても分からない。
+・tests（レビュー役）: テストと道具を回していないので、揺れは読んだ上での判断。全体の検証の中（負荷がある状態）で、偽のコントローラーの遅れが判定しないtick数（10）を超えないかは、実測できていない。
+・tests（レビュー役）: 偽の実装が実物と同じ形か（Pyodide の jsnull の型の名と属性の読み方、Pyxel で軸のキーを btn で読んだときの落ち方、ボタンのキーを btnv で読んだときの落ち方）：コードの注と、selftest-break の件があること（selftest_break.py:367、391）から読んだだけ。out/ の結果と spikes/ の実測は見ていない。ボタンのキーを btnv で読む誤りには、実物のPyxelで確かめる件が無い。
+・tests（レビュー役）: docs/plan.md の「検証の組」の表は、区切り5の行しか読んでいない。分野ごとのテストの絞り（tools/verify.py:82、105）が計画の表と合うかは、行の注を読んだだけ。
+・tests（レビュー役）: tests/test_claude_tools.py、test_arch_guard.py、test_rules_guard.py、test_canon_guard.py、test_export_inspect.py、test_perf.py、test_canvas.py、test_fixed_loop.py は、件数を数えるために parametrize の所だけ読んだ。中身は見ていない（この区切りで変えていないもの）。
+・tests（反証役）: tests-3：退けは「迷えば退ける」によるもので、反証ではない。ブラウザ版のランタイムが、コントローラーの枠の番号と Pyxel の「ゲームパッド1」をどう対応させるかは、ランタイムのソースが .cache/ の中（見ない決まり）で、道具も回せないので、確かめていない。枠1だけにつないだ形で舵とトリガーが同じコントローラーを指すかは、未確認のまま残っている。
+review_summary: OK lenses=4 findings=16 passed=7 rejected=9 unevaluated=0 role_notes=26

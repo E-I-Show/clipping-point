@@ -79,7 +79,8 @@
 | `cp_ui` | `check` | はみ出しの検査 |
 | `cp_ui` | `fixtures` | 検査用の見本データ（ふつうの値と極端な値） |
 | `cp_app` | `app` | 起動とメインループ |
-| `cp_app` | `input_pyxel`、`input_web` | Pyxelとブラウザの入力を入力フレームにする |
+| `cp_app` | `input_pyxel` | 入力アダプタ。Pyxelの入力を入力フレームにする |
+| `cp_app` | `input_web` | 直読み。ブラウザ版で、トリガーの値をブラウザから読む |
 | `cp_app` | `input_trace` | 検証のときに、入力フレームの変わり目を残す（入力の跡）。残した値は世界へ渡さない |
 | `cp_app` | `render` | Pyxel Cubeのシーン、モデル、カメラの反映 |
 | `cp_app` | `canvas_pyxel` | 描画命令の実行 |
