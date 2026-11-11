@@ -31,6 +31,7 @@
 | [requests/stage0-k5.md](requests/stage0-k5.md) | 段0の区切り5（入力の土台）を、実装役に頼む文。主が決めた細目17件の表つき | 実装済み |
 | [requests/stage0-k6.md](requests/stage0-k6.md) | 段0の区切り6（画面の検査と巡回）を、実装役に頼む文。主が決めた細目17件の表つき | 実装済み |
 | [requests/stage0-k7.md](requests/stage0-k7.md) | 段0の区切り7（保存と決定性の土台）を、実装役に頼む文。主が決めた細目23件の表と、区切りのレビューの直しの10項目つき | 実装済み |
+| [requests/stage0-k8.md](requests/stage0-k8.md) | 段0の区切り8（データの検査）を、実装役に頼む文。主が決めた細目20件の表つき | 頼む前（頼みの文のレビュー中） |
 
 ## 調べ
 
