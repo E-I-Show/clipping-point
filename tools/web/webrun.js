@@ -209,7 +209,8 @@ async function drive(browser, page, opt, result, env) {
     result.canvas = { ...box, ...(await countPixels(browser, png)), changed: !first.equals(png), changeGapMs: CHANGE_GAP_MS };
   }
 
-  // localStorage の中身。頼まれたときだけ読む。合否は決めない（保存の往復の値を照らすのは tools/web_smoke.py）。
+  // localStorage の中身。頼まれたときだけ読む。合否は決めない（筋書き probe で保存の往復の値を照らすのも、
+  // 筋書き shipped で鍵が1つも無いことを見るのも tools/web_smoke.py）。
   if (opt.localStorage) {
     result.localStorage = await ask(
       (prefix) => {

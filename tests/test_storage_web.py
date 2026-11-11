@@ -283,6 +283,17 @@ def test_storage_web_probe_on_working_storage_is_ok_and_leaves_nothing():
     assert storage.calls == ["setItem", "getItem", "removeItem"]  # 書いて、読んで、消す
 
 
+@pytest.mark.parametrize("left_over", [storage_web.PROBE_VALUE, "left over by another build", ""])
+def test_storage_web_probe_with_its_key_left_over_from_an_earlier_start_is_ok_and_removes_it(left_over):
+    # 前の起動が、試しの鍵を書いた後、消す前に止まった形。残っている値が何でも、書き直して、読んで、消す。
+    backend, storage = backend_with()
+    storage.items[PREFIX + storage_web.PROBE_KEY] = left_over
+    storage.items["clippingpoint/main.settings"] = "AAAA"
+    assert backend.probe() == (PROBE_OK, "")
+    assert storage.items == {"clippingpoint/main.settings": "AAAA"}  # 試しの鍵は、消えている。ほかの鍵は、そのまま
+    assert storage.calls == ["setItem", "getItem", "removeItem"]
+
+
 def test_storage_web_probe_key_cannot_collide_with_a_key_of_the_store():
     # 保存の口の鍵は「<名前空間>.<鍵>」で、必ず「.」を含む。
     assert "." not in storage_web.PROBE_KEY

@@ -84,8 +84,11 @@ def test_fingerprint_snapshot_carries_the_python_version_and_the_math_probes():
 
 def test_fingerprint_environment_differences_do_not_fail_the_world_comparison():
     recorded = snapshot()
-    other = {"python": "9.9.9", "math": {**recorded["environment"]["math"], "sin": "0" * 16}}
-    lines = fingerprint.environment_changed(other, fingerprint.environment())
+    # 比べる相手は、いまの環境の値から作る（Pythonの版と、sin だけを置き換える）。指紋の写しの環境の値からは作らない。
+    # 指紋の写しから作ると、指紋の写しといまの環境で、ほかの試し値（cos など）が違うだけで、返る行が増えて、ここが落ちる。
+    current = fingerprint.environment()
+    other = {"python": "9.9.9", "math": {**current["math"], "sin": "0" * 16}}
+    lines = fingerprint.environment_changed(other, current)
     assert len(lines) == 2 and "python" in lines[0] and "sin" in lines[1]
     # 環境の値は、筋書きの比べ方に入っていない。
     assert fingerprint.compare_scenarios(recorded["scenarios"], fingerprint.current_scenarios()) == []

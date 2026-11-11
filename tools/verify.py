@@ -148,11 +148,13 @@ AREAS = (
         # 計画の表の「検証の道具、検査の決まり（はみ出しの検査、データの検査、見本データ）」の行。
         # 道具そのもの（tools/**）は、まとめて当てる。はみ出しの検査と見本データは、「画面（2D）」にも並べてある。
         # 指紋のテスト（tests/test_fingerprint.py）は、道具 fingerprint の関数も見るので、「メインループと世界の状態」にも、ここにも並べる。
+        # 道具 run の、保存のファイルを読む関数のテスト（tests/test_run_tool.py）は、道具の側なので、ここに並べる。
         "検証の道具と検査の決まり",
         (
             "tools/**", "tests/conftest.py", "tests/count_floor.txt", "tests/snapshots/**", "tests/test_arch_guard.py",
             "tests/test_rules_guard.py", "tests/test_canon_guard.py", "tests/test_export_inspect.py", "tests/test_verify.py",
             "tests/test_web_smoke.py", "tests/test_claude_tools.py", "tests/test_screen_tools.py", "tests/test_fingerprint.py",
+            "tests/test_run_tool.py",
             "clipping_point/cp_ui/check.py", "clipping_point/cp_ui/fixtures.py", "tests/test_ui_check.py", "tests/test_fixtures.py",
             "pytest.ini", "requirements-dev.txt",
         ),

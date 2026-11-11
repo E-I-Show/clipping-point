@@ -23,7 +23,7 @@ from pathlib import Path
 import fingerprint
 import input_reference
 import screen_check
-from _common import FAIL, INCOMPLETE, OK, OUT, ROOT, child_env, finish, run
+from _common import FAIL, INCOMPLETE, OK, OUT, ROOT, child_env, finish, load_budgets, run
 
 from cp_core import profile, storage  # noqa: E402 - cp_core への道は、input_reference が足す
 
@@ -106,11 +106,15 @@ STALE_WEB_PAGE = json.dumps({
 
 
 def snapshot_with_another_environment() -> str:
-    """指紋の写しの、環境の値（Pythonの版と、数学関数の試し値の1つ）だけを変えたもの。写しが読めなければ、空の文字列。"""
+    """指紋の写しの、環境の値（Pythonの版と、数学関数の試し値の1つ）だけを変えたもの。写しが読めなければ、空の文字列。
+
+    変える試し値は cos。指紋のテストが、自分で置き換える試し値（sin）とは別の関数にする。同じ関数だと、テストが、
+    指紋の写しの環境の値に頼っていても（指紋の写しといまの環境で、ほかの試し値が違うと落ちる形でも）、壊さない件では見えない。
+    """
     try:
         data = json.loads((ROOT / FINGERPRINT_JSON).read_text(encoding="utf-8"))
         data["environment"]["python"] = "0.0.0"
-        data["environment"]["math"]["sin"] = "0" * 16
+        data["environment"]["math"]["cos"] = "0" * 16
     except (OSError, ValueError, KeyError, TypeError):
         return ""
     return json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
@@ -287,6 +291,11 @@ FINGERPRINT = tool("fingerprint")
 TEST_FINGERPRINT = tool("test", "-k", "fingerprint")
 # ハッシュの種を変えた別プロセスどうしを比べるテストだけに絞る（指紋の写しと比べるテストを入れない。集合の順に頼ったことだけで落ちる形にする）。
 TEST_HASH_SEED = tool("test", "-k", "fingerprint and hash_seed")
+# 保存する項目の一覧の写しのテスト1件だけに絞る。絞らないと、設定の項目と既定値を、数字と文字で固定しているテストが先に落ちて、
+# 一覧の写しのテストが効いているかを見られない。
+TEST_SCHEMA_SNAPSHOT = tool("test", "-k", "saved_item_list_matches_the_snapshot")
+# 退避の途中で、容量超過でない失敗が出る道のテストだけに絞る（ほかのテストは、読み込みが捕まえる型を狭めても通る）。
+TEST_SET_ASIDE_MIDWAY = tool("test", "-k", "set_aside_fails_midway")
 WEB_BLOCKED = tool("web_smoke", "--only", "storage_blocked")
 CHECKSUM_CHECK = "    if zlib.crc32(blob[:ENVELOPE.size + length]) != checksum:\n"  # 封筒のチェックサムを見る所
 NEWER_GUARD = "            if existing_version is not None and existing_version > version:\n"  # put の、新しい形式バージョンを上書きしない守り
@@ -316,6 +325,24 @@ RNG_FORMULA = rep(RNG_PY, "GAMMA = 0x9E3779B97F4A7C15", "GAMMA = 0x9E3779B97F4A7
 FILE_DROPS_LAST_BYTE = rep(FILE_STORAGE_PY, FILE_WRITE, "                f.write(data[:-1])\n")
 ROUND_TRIP_IN_MAIN = rep(PROFILE_PY, SELFCHECK_STORE, "        store = SaveStore(backend)\n")
 NO_PROBE = rep(SELECT_PY, PROBE_CALL, '        state = "ok"\n')
+SELFCHECK_PASSED = '    return True, ""\n'  # 保存の往復が、通ったと返す所
+# 保存の往復の終わりに、既定値で書き直す。封筒は読めて、アプリの申告（往復が通った）も合っている。本体だけが、往復の見本と違う。
+ROUND_TRIP_ENDS_WITH_DEFAULTS = rep(PROFILE_PY, SELFCHECK_PASSED, "    save_settings(store, Settings())\n" + SELFCHECK_PASSED)
+PROFILE_IMPORT_END = "    StorageError,\n)\n"  # 保存する項目のモジュールが、保存の口から読み込む名の並びの、終わり
+SET_ASIDE_CATCH = (  # 読み込みが、退避の失敗を捕まえる所
+    "    except StorageError:\n        return Loaded(Settings(), NOTICE_UNREADABLE, False)  # 退避できない。元の鍵に触れない\n"
+)
+# 読み込みが、退避の失敗のうち、容量超過（StorageFull）だけを捕まえる（名を読み込ませてから、捕まえる型を狭める）。
+SET_ASIDE_CATCHES_ONLY_FULL = [
+    rep(PROFILE_PY, PROFILE_IMPORT_END, "    StorageError,\n    StorageFull,\n)\n"),
+    rep(PROFILE_PY, SET_ASIDE_CATCH, SET_ASIDE_CATCH.replace("except StorageError:", "except StorageFull:")),
+]
+ROUND_TRIP_ON_EVERY_START = rep(APP_PY, SELFCHECK_CALL, "profile.selfcheck(selected.backend)")  # 検証の口でなくても、保存の往復を回す
+PROBE_READ_AND_REMOVE = "            back = storage.getItem(name)\n            storage.removeItem(name)\n"  # 試し書きが、試しの鍵を読んで、消す所
+PROBE_KEY_NOT_REMOVED = rep(WEB_STORAGE_PY, PROBE_READ_AND_REMOVE, "            back = storage.getItem(name)\n")  # 試しの鍵を、消さない
+# 規則ファイルの末尾に足す、上限（tools/budgets.json の rule_file_max_bytes）より大きい埋め草。上限の数字を、ここに直に書かない。
+RULE_FILLER_LINE = "- filler line\n"
+RULE_FILLER = RULE_FILLER_LINE * (load_budgets()["rule_file_max_bytes"] // len(RULE_FILLER_LINE) + 1)
 OTHER_ENVIRONMENT = [rm(FINGERPRINT_JSON), add(FINGERPRINT_JSON, OTHER_ENVIRONMENT_SNAPSHOT)]  # 指紋の写しの、環境の値だけを変える
 
 # (名前, 壊し方の並び, 回す道具, 期待する終了コード, 最後の1行にあるはずの語)
@@ -344,7 +371,9 @@ CASES = [
     # 命令の数は、ふつうの値で8つ、極端な値で9つ（知らせの1行）。
     ("control_tour", [], TOUR, {0}, "tour: OK shots=2/2 commands=17 problems=0"),
     ("control_tour_only_one_screen", [], tool("tour", "--only", "placeholder"), {0}, "tour: OK shots=2/2 commands=17 problems=0"),
-    ("control_fingerprint", [], FINGERPRINT, {0}, "fingerprint: OK scenarios=2 fields=6 problems=0 env=same"),
+    # 期待の語は `env=` で止める（下の、世界の式や設定の項目を変える件も同じ）。環境の値（Pythonの版、数学関数の試し値）が、
+    # 指紋の写しと違うだけで、この道具を落とさない。env=same になることは、一時の置き場で取り直して照らすテスト（tests/test_fingerprint.py）が見る。
+    ("control_fingerprint", [], FINGERPRINT, {0}, "fingerprint: OK scenarios=2 fields=6 problems=0 env="),
     # 環境の値（Pythonの版、数学関数の試し値）だけが、指紋の写しと違っても、合否は変えない。最後の1行に出すだけ。
     ("control_fingerprint_passes_when_only_the_environment_changed", OTHER_ENVIRONMENT, FINGERPRINT, {0}, "fingerprint: OK scenarios=2 fields=6 problems=0 env=changed"),
     ("control_test_fingerprint_passes_when_only_the_environment_changed", OTHER_ENVIRONMENT, TEST_FINGERPRINT, {0}, "test: OK"),
@@ -384,7 +413,7 @@ CASES = [
     ("check_rules_new_file_not_in_index", [add(".claude/rules/extra.md", '---\npaths:\n  - "tools/check.py"\n---\n\n# extra\n')], CHECK, {1}, "failed=rules"),
     ("check_rules_index_row_without_file", [rm(UI_RULE)], CHECK, {1}, "failed=rules"),
     ("check_rules_file_without_paths", [rep(UI_RULE, "---\npaths:\n", "---\nnotes:\n")], CHECK, {1}, "failed=rules"),
-    ("check_rules_file_too_big", [app(".claude/rules/tools.md", "- filler line\n" * 500)], CHECK, {1}, "failed=rules"),
+    ("check_rules_file_too_big", [app(".claude/rules/tools.md", RULE_FILLER)], CHECK, {1}, "failed=rules"),
     ("check_claude_md_too_long", [app("CLAUDE.md", "- filler\n" * 200)], CHECK, {1}, "failed=rules"),
     ("check_handoff_too_long", [app("docs/handoff.md", "- filler\n" * 30)], CHECK, {1}, "failed=rules"),
     ("check_no_rule_files", [rm_glob(".claude/rules/*.md")], CHECK, {2}, "empty=rules"),
@@ -499,7 +528,9 @@ CASES = [
         [rep("tests/test_sim.py", "    assert Sim().tick == 0\n", "    assert Sim().tick == 1\n")],
         VERIFY_ALL, {1}, "steps=9 ok=8 failed=1 failed_steps=test",
     ),
-    ("verify_step_cannot_run", [rm("tools/run.py")], VERIFY_ALL, {1}, "steps=9 ok=7 failed=2 failed_steps=run,run-realtime"),
+    # 道具 run のファイルを消す。run と run --realtime は、起動できない（回らなかった手順）。道具 run の関数のテスト
+    # （tests/test_run_tool.py）も、道具を読み込めずに落ちるので、test も落ちる。
+    ("verify_step_cannot_run", [rm("tools/run.py")], VERIFY_ALL, {1}, "steps=9 ok=6 failed=3 failed_steps=test,run,run-realtime"),
     # 全体の検証の中で、screen-check と tour が落ちる（文字を、画面の外に置く。突き合わせのテストも落ちる）。
     ("verify_screen_check_and_tour_fail", [TEXT_OFF_SCREEN], VERIFY_ALL, {1}, "steps=9 ok=6 failed=3 failed_steps=test,screen-check,tour"),
     # 全体の検証の中で、指紋の照合（fingerprint）が落ちる（世界の式を変える。指紋のテストと、run の指紋の確かめも落ちる）。
@@ -703,8 +734,8 @@ CASES = [
     ("test_file_backend_drops_the_last_byte", [FILE_DROPS_LAST_BYTE], TEST, {1}, "reason=failed"),
     # 設定の項目を1つ、保存の本体から落とす。
     ("test_settings_item_dropped_from_the_payload", [rep(PROFILE_PY, TO_PLAIN, TO_PLAIN.replace("(Settings)}", '(Settings) if name != "view"}'))], TEST, {1}, "reason=failed"),
-    # 設定に項目を足して、保存する項目の一覧の写しを直さない。
-    ("test_settings_item_added_without_the_snapshot", [rep(PROFILE_PY, LAST_SETTING, LAST_SETTING + "    hud_visible: bool = True\n")], TEST, {1}, "reason=failed"),
+    # 設定に項目を足して、保存する項目の一覧の写しを直さない。回すのは、一覧の写しのテスト1件だけ（道具の側は fingerprint_settings_item_added_without_the_snapshot）。
+    ("test_settings_item_added_without_the_snapshot", [rep(PROFILE_PY, LAST_SETTING, LAST_SETTING + "    hud_visible: bool = True\n")], TEST_SCHEMA_SNAPSHOT, {1}, "reason=failed"),
     # 保存しない項目の一覧に、無い項目の名を足す。
     ("test_not_saved_list_names_an_item_that_does_not_exist", [rep(PROFILE_PY, "NOT_SAVED = {}\n", 'NOT_SAVED = {"Settings.no_such_item": "planted: an item that does not exist"}\n')], TEST, {1}, "reason=failed"),
     # 新しい形式バージョンの値を、読み込みが退避して、既定値で上書きする。
@@ -713,6 +744,9 @@ CASES = [
     ("test_put_overwrites_a_newer_format_version", [rep(STORAGE_PY, NEWER_GUARD, "            if False:\n")], TEST, {1}, "reason=failed"),
     # 読み込みが、保存先の例外を外へ出す。
     ("test_load_lets_a_backend_error_out", [rep(PROFILE_PY, LOAD_UNREADABLE, "    except StorageError:\n        raise\n")], TEST, {1}, "reason=failed"),
+    # 読み込みが、退避の失敗のうち、容量超過（StorageFull）だけを捕まえる。退避の途中の、ほかの失敗（元の鍵の削除、退避のための読み直し）が
+    # 外へ出て、起動のたびに止まる。回すのは、その道のテストだけ（ほかのテストは、捕まえる型を狭めても通る）。
+    ("test_load_lets_a_set_aside_failure_that_is_not_full_out", SET_ASIDE_CATCHES_ONLY_FULL, TEST_SET_ASIDE_MIDWAY, {1}, "reason=failed"),
     # localStorage の保存先が、base64 として読めない値を例外にする。
     ("test_web_backend_raises_on_a_value_that_is_not_base64", [rep(WEB_STORAGE_PY, WEB_NOT_BASE64, "            raise\n")], TEST, {1}, "reason=failed"),
     # 知らせを、表示用の値へ渡さない。ふつうの起動では知らせが無いので、run も、web-smoke の probe も通る。守りのテストで拾う
@@ -725,15 +759,15 @@ CASES = [
     # --- 指紋：test（指紋のテストだけに絞る）、fingerprint、run ---
     # 世界の式を変える（入力の要約値の畳み込みの定数）。参照（いまのコードで計算し直す値）との確かめは通り、指紋の写しとの確かめだけが落ちる。
     ("test_world_formula_changed", [WORLD_FORMULA], TEST_FINGERPRINT, {1}, "reason=failed"),
-    ("fingerprint_world_formula_changed", [WORLD_FORMULA], FINGERPRINT, {1}, "scenarios=2 fields=6 problems=2 failed=world env=same"),
+    ("fingerprint_world_formula_changed", [WORLD_FORMULA], FINGERPRINT, {1}, "scenarios=2 fields=6 problems=2 failed=world env="),
     ("run_world_formula_changed", [WORLD_FORMULA], RUN, {1}, "failed=fingerprint not_yet="),
     ("run_realtime_world_formula_changed", [WORLD_FORMULA], RUN_RT, {1}, "failed=fingerprint not_yet="),
     # 乱数の式を変える。流れの状態（要約の rng_ai）が変わる。
-    ("fingerprint_rng_formula_changed", [RNG_FORMULA], FINGERPRINT, {1}, "problems=2 failed=world env=same"),
+    ("fingerprint_rng_formula_changed", [RNG_FORMULA], FINGERPRINT, {1}, "problems=2 failed=world env="),
     # 世界の式を変え、指紋の写しの環境の値も違う。環境が変わったことを、最後の1行に出す（退行とは限らない）。
     ("fingerprint_world_and_environment_changed", [WORLD_FORMULA, *OTHER_ENVIRONMENT], FINGERPRINT, {1}, "problems=2 failed=world env=changed"),
     # 設定に項目を足して、保存する項目の一覧の写しを直さない。
-    ("fingerprint_settings_item_added_without_the_snapshot", [rep(PROFILE_PY, LAST_SETTING, LAST_SETTING + "    hud_visible: bool = True\n")], FINGERPRINT, {1}, "problems=1 failed=schema env=same"),
+    ("fingerprint_settings_item_added_without_the_snapshot", [rep(PROFILE_PY, LAST_SETTING, LAST_SETTING + "    hud_visible: bool = True\n")], FINGERPRINT, {1}, "problems=1 failed=schema env="),
     # 指紋の写しを消す。黙って作り直さない。
     ("test_fingerprint_snapshot_deleted", [rm(FINGERPRINT_JSON)], TEST, {1}, "reason=failed"),
     ("fingerprint_snapshot_deleted", [rm(FINGERPRINT_JSON)], FINGERPRINT, {2}, "reason=no_snapshot missing=fingerprint.json"),
@@ -755,6 +789,9 @@ CASES = [
     ("run_round_trip_in_the_main_namespace", [ROUND_TRIP_IN_MAIN], RUN, {1}, "failed=save_file,save_main not_yet="),
     # アプリが、保存の往復を回さない。
     ("run_round_trip_is_not_run", [rep(APP_PY, SELFCHECK_CALL, "None")], RUN, {1}, "failed=save,save_file not_yet="),
+    # 保存の往復の終わりに、既定値で書き直す。ファイルはあり、封筒も読める。落ちるのは、道具が本体を往復の見本と比べる所だけ
+    # （ほかの save_file の件は、ファイルが無いか、封筒が読めないかで落ちる。「封筒が読めれば合格」の道具では、この件だけが通ってしまう）。
+    ("run_round_trip_ends_with_the_defaults", [ROUND_TRIP_ENDS_WITH_DEFAULTS], RUN, {1}, "save=file checks=16 problems=1 failed=save_file not_yet="),
     # デスクトップ版が、保存のファイルの置き場を読まない（メモリの保存先になる）。
     ("run_save_directory_is_ignored", [rep(SELECT_PY, SAVE_DIR_READ, '    directory = ""\n')], RUN, {1}, "save=memory checks=16 problems=2 failed=save,save_file not_yet="),
     # 道具が、置き場を相対パスで渡す。アプリは、起動時に例外にする（pyxel.init が作業ディレクトリを変えるため）。
@@ -766,6 +803,13 @@ CASES = [
     ("web_storage_read_drops_the_last_byte", [rep(WEB_STORAGE_PY, WEB_READ, WEB_READ.replace("validate=True)", "validate=True)[:-1]"))], WEB_PROBE, {1}, "failed=probe.storage_ok"),
     # 保存の往復を、名前空間 main で回す。アプリの申告は合っているので、道具が自分で読んだ localStorage の値で落とす。
     ("web_round_trip_in_the_main_namespace", [ROUND_TRIP_IN_MAIN], WEB_PROBE, {1}, "failed=probe.storage_value,probe.storage_main"),
+    # --- 保存：web-smoke の筋書き shipped（ふつうの起動の後の localStorage に、このアプリの鍵が1つも無い） ---
+    # 検証の口でなくても、保存の往復を回す。往復の鍵（clippingpoint/selfcheck.settings）が残る。run も、ほかの筋書きも通る。
+    ("web_shipped_round_trip_runs_on_a_plain_start", [ROUND_TRIP_ON_EVERY_START], WEB_SHIPPED, {1}, "problems=1 failed=shipped.storage_empty"),
+    # 試し書きが、試しの鍵（clippingpoint/storage-probe）を消さない。保存先は使えると判定されるので、ほかの筋書きは通る。
+    ("web_shipped_probe_key_is_not_removed", [PROBE_KEY_NOT_REMOVED], WEB_SHIPPED, {1}, "problems=1 failed=shipped.storage_empty"),
+    # ブラウザの実行役が、localStorage を読まない。鍵が0件で通す確かめなので、読めていないことを、鍵が無いことと取り違えて通さない。
+    ("web_shipped_local_storage_is_not_read", [rep(WEBRUN_JS, "  if (opt.localStorage) {\n", "  if (false) {\n")], WEB_SHIPPED, {1}, "problems=1 failed=shipped.storage_empty"),
     # --- 保存：web-smoke の筋書き storage_blocked（localStorage に触れると例外） ---
     # 試し書きをせずに、localStorage を使う。保存先が切り替わらない。
     ("web_blocked_storage_is_used_without_a_probe", [NO_PROBE], WEB_BLOCKED, {1}, "failed=storage_blocked.storage_backend,storage_blocked.storage_ok,storage_blocked.storage_notice"),

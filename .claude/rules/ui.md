@@ -27,6 +27,7 @@ paths:
 - `cp_ui` は pyxel、js、`cp_app`、`random`、`time` をimportしない。`cp_core` は呼んでよい。
 - 座標、大きさ、色の番号は整数。小数と bool は `TypeError`。引数の並びは、Pyxelの同名の関数と同じ。
 - 画面に出す文字は、印字できるASCII（文字の番号が32〜126）と改行だけ。
+- 仮の表示の知らせの1行：`PlaceholderView.notice` は省けない項目（無ければ空の文字列。渡し忘れると、作る時に落ちる）。空でないときだけ、囲み `notice` を作って1行で出す（収まるのは78字まで）。文は `cp_core/storage.py` の `NOTICES` に置く（決まりは `.claude/rules/save.md`）。
 - `cp_app/canvas_pyxel.py` と `cp_app/tour.py` は pyxel をimportしない。描く先とPyxelは引数で受ける。
 - 巡回の口は、デスクトップ版で、環境変数 `CP_TOUR` があるときだけ動く。結果ファイルは、全部の画面を回した後にだけ書く。合否は `tools/tour.py` が決める。
 
@@ -51,6 +52,7 @@ paths:
 - テスト：`test_canvas.py`（命令、囲み、文字の大きさ、ずらし）、`test_ui_check.py`（6種類、端に接する矩形、入れ子）、`test_screens.py` と `test_fixtures.py`（全画面×全変種が、はみ出し無し。突き合わせ）、`test_flow.py`、`test_tour.py`（画素を照らす関数。巡回の流れは偽の Pyxel で通す）、`test_screen_tools.py`（2本の道具の判定）。
 - 突き合わせ：ロジックの画面の名、`SCREENS` の鍵、見本データのある画面が、同じ集まり。
 - 守りのテスト（`tests/test_screens.py` が `app.py` のソースを読む）：仮の表示へ、世界へ渡したのと同じ入力フレームが、表示用の値に入って渡っていること。この配線は、道具からは見えない。画面の状態を作る段1で、入力で画面を進める巡回に置き換える。
+- 守りのテスト `test_screens_app_passes_the_notice_to_the_view_and_reports_it_from_the_view`（同じく `app.py` のソースを読む）：知らせが、表示用の値へ渡り、結果の知らせが、表示用の値から取られていること。渡し忘れは、道具では web-smoke の筋書き `storage_blocked` でしか落ちない。全部の文が囲みに収まることは、`tests/test_screens.py` と `tests/test_storage.py` が見る。
 - 道具 `python3 tools/screen_check.py [--only 名]`：全画面×全変種を、Pyxelなしで組み立て、はみ出しを数える。
 - 道具 `python3 tools/tour.py [--only 名]`：実物のPyxelで、命令を1つずつ描き、矩形の外の画素と、内に画素が無い命令を数える。余白の画素、画像の大きさ、照らした命令の数も見る。
 - 道具 `python3 tools/run.py`：アプリが描く道（`app.py` の `render()`）の画素を見る。

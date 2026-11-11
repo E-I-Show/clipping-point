@@ -4,6 +4,7 @@
 ネットワークも使わない。取得の道は、一時の置き場（tmp_path）と偽の取得の関数で通す。
 実物のブラウザを通した確かめは、道具 web-smoke と selftest-break が見る。
 """
+import argparse
 import base64
 import hashlib
 import http.client
@@ -71,6 +72,11 @@ def probe_page(**changes) -> dict:
     return page(**{"untilAt": 14000, "localStorage": local_storage(), **changes})
 
 
+def shipped_page(**changes) -> dict:
+    """問題の無い、shipped の筋書きの、ブラウザの実行役の結果。localStorage を読んであり、このアプリの鍵は1つも無い。"""
+    return page(**{"localStorage": local_storage({}), **changes})
+
+
 def result(**changes) -> dict:
     """問題の無い、アプリがコンソールへ出す結果。"""
     measured = {"updates": 600, "renders": MEASURED_RENDERS, "span_s": 9.983, "updates_per_s": 60.0, "renders_per_s": 30.05, "update_ms_p95": 0.1, "render_ms_p95": 0.2}
@@ -121,24 +127,24 @@ def last_line(capsys) -> str:
 
 # --- 何も渡さずに開く筋書き ---
 def test_web_smoke_clean_shipped_page_passes():
-    assert failed(web_smoke.judge_shipped(page(), SHA)) == []
+    assert failed(web_smoke.judge_shipped(shipped_page(), SHA)) == []
 
 
 def test_web_smoke_blank_canvas_fails():
-    assert failed(web_smoke.judge_shipped(page(canvas={"ink": 0}), SHA)) == ["canvas_ink"]
-    assert failed(web_smoke.judge_shipped(page(canvas=None), SHA)) == ["canvas_ink"]
+    assert failed(web_smoke.judge_shipped(shipped_page(canvas={"ink": 0}), SHA)) == ["canvas_ink"]
+    assert failed(web_smoke.judge_shipped(shipped_page(canvas=None), SHA)) == ["canvas_ink"]
 
 
 def test_web_smoke_page_that_never_started_fails():
-    assert "started" in failed(web_smoke.judge_shipped(page(clickedAt=None), SHA))
+    assert "started" in failed(web_smoke.judge_shipped(shipped_page(clickedAt=None), SHA))
     not_initialized = {"overlayText": None, "hasFatalError": False, "initialized": False}
-    assert failed(web_smoke.judge_shipped(page(state=not_initialized), SHA)) == ["started"]
-    assert failed(web_smoke.judge_shipped(page(state=None), SHA)) == ["started"]  # 状態を読めなかった
+    assert failed(web_smoke.judge_shipped(shipped_page(state=not_initialized), SHA)) == ["started"]
+    assert failed(web_smoke.judge_shipped(shipped_page(state=None), SHA)) == ["started"]  # 状態を読めなかった
 
 
 @pytest.mark.parametrize("kind", list(web_smoke.FAILURE_KINDS))
 def test_web_smoke_each_failure_kind_fails_under_its_own_name(kind):
-    bad = page(failures=[{"t": 5, "kind": kind, "detail": "Traceback (most recent call last):\nRuntimeError: planted"}])
+    bad = shipped_page(failures=[{"t": 5, "kind": kind, "detail": "Traceback (most recent call last):\nRuntimeError: planted"}])
     assert failed(web_smoke.judge_shipped(bad, SHA)) == [kind]
 
 
@@ -147,12 +153,82 @@ def test_web_smoke_unresponsive_page_is_a_failure_kind():
 
 
 def test_web_smoke_unknown_failure_kind_is_not_ignored():
-    bad = page(failures=[{"t": 5, "kind": "something_new", "detail": "x"}])
+    bad = shipped_page(failures=[{"t": 5, "kind": "something_new", "detail": "x"}])
     assert failed(web_smoke.judge_shipped(bad, SHA)) == ["other_failure"]
 
 
 def test_web_smoke_other_html_bytes_fail():
-    assert failed(web_smoke.judge_shipped(page(htmlSha256="b" * 64), SHA)) == ["html_bytes"]
+    assert failed(web_smoke.judge_shipped(shipped_page(htmlSha256="b" * 64), SHA)) == ["html_bytes"]
+
+
+# --- 保存（shipped の筋書き）：ふつうの起動の後の localStorage に、このアプリの鍵が1つも無い ---
+def test_web_smoke_shipped_storage_check_comes_last_and_only_once():
+    names = [name for name, _, _ in web_smoke.judge_shipped(shipped_page(), SHA)]
+    assert names[-3:] == ["started", "canvas_ink", "storage_empty"] and names.count("storage_empty") == 1
+    assert web_smoke.nothing_stored_check(shipped_page())[:2] == ("storage_empty", True)
+
+
+@pytest.mark.parametrize(
+    "entries",
+    [
+        {SELFCHECK_KEY: stored()},  # 検証の口でないのに、保存の往復を回した
+        {storage_web.PREFIX + storage_web.PROBE_KEY: storage_web.PROBE_VALUE},  # 試し書きの鍵を、消していない
+        {"clippingpoint/main.settings": stored()},  # 何も操作していないのに、設定を書いた
+        {"clippingpoint/main.settings.bad": "x"},
+        {"clippingpoint/": ""},
+        {SELFCHECK_KEY: stored(), "clippingpoint/storage-probe": "cp", "clippingpoint/main.settings": stored()},
+    ],
+)
+def test_web_smoke_shipped_any_key_of_the_app_left_in_local_storage_fails(entries):
+    checks = web_smoke.judge_shipped(shipped_page(localStorage=local_storage(entries)), SHA)
+    assert failed(checks) == ["storage_empty"]
+    message = next(text for name, _, text in checks if name == "storage_empty")
+    assert all(key in message for key in entries)  # 残っている鍵の名を出す
+
+
+@pytest.mark.parametrize(
+    "seen",
+    [
+        None,  # 頼んでいない（ブラウザの実行役へ --local-storage を渡していない）
+        {},
+        "entries",
+        local_storage(error="SecurityError: Access is denied"),  # 触れると例外
+        {"prefix": storage_web.PREFIX, "entries": [], "error": None},
+        {"prefix": "someone_else/", "entries": {}, "error": None},  # 別の頭の鍵を読んだ。空でも、何も見ていない
+        {"entries": {}, "error": None},
+    ],
+)
+def test_web_smoke_shipped_local_storage_that_was_not_read_is_not_a_pass(seen):
+    # 鍵が0件で通す確かめなので、読めていないことと、鍵が無いことを、取り違えない。
+    assert failed(web_smoke.judge_shipped(shipped_page(localStorage=seen), SHA)) == ["storage_empty"]
+    assert failed(web_smoke.judge_shipped(page(), SHA)) == ["storage_empty"]
+
+
+def test_web_smoke_shipped_keys_of_other_pages_are_not_counted():
+    # ブラウザの実行役は、鍵の頭で絞って読む。絞り漏れがあっても、このアプリの鍵でなければ数えない。
+    entries = {"someone_else": "x", "clippingpoint": "y", "other/clippingpoint/main.settings": "z"}
+    assert failed(web_smoke.judge_shipped(shipped_page(localStorage=local_storage(entries)), SHA)) == []
+
+
+def test_web_smoke_shipped_scenario_asks_the_browser_runner_for_the_local_storage(monkeypatch):
+    asked = []
+
+    def fake_open_page(name, timeout_s, extra):
+        asked.append((name, timeout_s, [str(part) for part in extra]))
+        return shipped_page()
+
+    monkeypatch.setattr(web_smoke, "open_page", fake_open_page)
+    args = argparse.Namespace(timeout=7.0)
+    checks, facts, reason = web_smoke.scenario_shipped(args, BUDGETS, SHA, {})
+    assert failed(checks) == [] and reason == "" and facts == ["canvas_ink=35000"]
+    (name, timeout_s, extra), = asked
+    assert (name, timeout_s) == ("shipped", 7.0)
+    at = extra.index("--local-storage")
+    assert extra[at + 1] == storage_web.PREFIX == "clippingpoint/"
+    assert extra[extra.index("--watch-ms") + 1] == str(int(BUDGETS["web_shipped_watch_s"] * 1000))
+    # ブラウザの実行役の結果が無ければ、回り切れない。
+    monkeypatch.setattr(web_smoke, "open_page", lambda name, timeout_s, extra: None)
+    assert web_smoke.scenario_shipped(args, BUDGETS, SHA, {}) == (None, [], "no_runner_result")
 
 
 def test_web_smoke_without_node_is_2_before_anything_is_touched(monkeypatch, capsys):
@@ -463,13 +539,13 @@ def test_web_smoke_scenarios_come_in_the_fixed_order():
 
 def test_web_smoke_input_warning_fails_the_shipped_and_the_probe_scenario():
     # 直読みは、読めないときに「未接続」と同じ値を返す。読み方の誤りは、警告の行でしか拾えない。
-    assert failed(web_smoke.judge_shipped(page(console=[WARN_LINE]), SHA)) == ["input_warn"]
+    assert failed(web_smoke.judge_shipped(shipped_page(console=[WARN_LINE]), SHA)) == ["input_warn"]
     assert probe_failed(result(), a_page=probe_page(console=[WARN_LINE])) == ["input_warn"]
 
 
 def test_web_smoke_other_console_lines_are_not_input_warnings():
     lines = [{"t": 1, "type": "warning", "text": "some other warning"}, {"t": 2, "type": "log", "text": "CP_PROBE_DONE"}]
-    assert failed(web_smoke.judge_shipped(page(console=lines), SHA)) == []
+    assert failed(web_smoke.judge_shipped(shipped_page(console=lines), SHA)) == []
 
 
 # --- 台本を渡して開く筋書き ---

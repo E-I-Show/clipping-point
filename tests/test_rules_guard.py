@@ -9,7 +9,10 @@ import pytest
 import rules_guard
 from conftest import ROOT
 
-BUDGETS = {"rule_file_max_bytes": 6000}
+# 見本のリポジトリで使う、規則ファイルの大きさの上限（バイト）。大きさのテストは、この数から見本を作る（数字を、文に直に書かない）。
+# 本物の上限（tools/budgets.json の rule_file_max_bytes）は、test_rules_this_repository_passes_the_guard が読む。
+LIMIT = 8000
+BUDGETS = {"rule_file_max_bytes": LIMIT}
 INDEX = "## 規則ファイルの目次\n\n| ファイル | 当たる所 |\n| --- | --- |\n"
 
 
@@ -139,9 +142,26 @@ def test_rules_missing_index_section_is_reported(tmp_path):
 
 def test_rules_file_over_the_size_limit_is_reported(tmp_path):
     root = make_repo(tmp_path)
-    write(root / ".claude" / "rules" / "tools.md", rule_text("tools/**") + "- 長い行。\n" * 600)
+    # 1行が15バイト（7字）の行を、上限を超えるまで並べる。字数で数えると上限の半分ほどなので、バイト数で数えていないと通ってしまう。
+    filler = "- 長い行。\n"
+    assert len(filler.encode("utf-8")) == 15 and len(filler) == 7
+    text = rule_text("tools/**") + filler * (LIMIT // 15 + 1)
+    assert len(text) < LIMIT < len(text.encode("utf-8"))
+    write(root / ".claude" / "rules" / "tools.md", text)
     problems = problems_of(root)
-    assert len(problems) == 1 and "上限 6000" in problems[0]
+    assert len(problems) == 1 and "tools.md" in problems[0] and f"上限 {LIMIT} バイト" in problems[0]
+
+
+def test_rules_file_of_exactly_the_size_limit_passes_and_one_more_byte_is_reported(tmp_path):
+    root = make_repo(tmp_path)
+    head = rule_text("tools/**")
+    room = LIMIT - len(head.encode("utf-8"))
+    assert room > 0
+    write(root / ".claude" / "rules" / "tools.md", head + "x" * room)  # ちょうど上限
+    assert problems_of(root) == []
+    write(root / ".claude" / "rules" / "tools.md", head + "x" * (room + 1))  # 上限より1バイト大きい
+    problems = problems_of(root)
+    assert len(problems) == 1 and f"{LIMIT + 1} バイト（上限 {LIMIT} バイト）" in problems[0]
 
 
 def test_rules_target_on_a_hub_file_is_reported(tmp_path):

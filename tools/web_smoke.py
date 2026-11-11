@@ -7,6 +7,9 @@
 筋書きは5本。順に、1本ずつ回す。どの筋書きでも、直読みの警告（cp_app/input_web.py の WARN_MARK の付いたコンソールの行）が0件であることを見る。
   shipped  何も渡さずに開く。見るもの：Pythonの例外が無い、エラー表示が無い、読み込みの失敗が無い、
            ランタイムの写しの外への要求が無い、開始のクリックの後の決めた秒数で画面が描かれている（背景と違う画素がある）。
+           保存：終わりの localStorage を、ブラウザの実行役に読ませ、このアプリの鍵（頭が clippingpoint/）が1つも無いことを見る。
+           ふつうの起動は、何も操作しなければ、localStorage に何も残さない（試し書きの鍵は消えている。保存の往復は、
+           検証の口のときだけ回す。設定は、読むだけで書かない）。読めていなければ、何も見ずに通さない。
   probe    ページを開く前に差し込むスクリプトで、回すtick数（window.CP_PROBE）を置いて開く。
            アプリがコンソールへ出す結果の1行と完了の合図を待つ。見るもの：上に加えて、回したtick、
            入力の出どころが入力アダプタで、入力アダプタと直読みを呼んだ回数が回したtickと同じ（時間の線が、入力を読んだ更新の値であること）、
@@ -168,7 +171,27 @@ def judge_shipped(page: dict, html_sha256: str) -> list:
     return page_checks(page, html_sha256) + [
         ("started", page.get("clickedAt") is not None and state.get("initialized") is True, "アプリが始まっていない"),
         ("canvas_ink", type(ink) is int and ink > 0, f"画面が描かれていない（背景と違う画素が {ink}）"),
+        nothing_stored_check(page),
     ]
+
+
+def nothing_stored_check(page: dict) -> tuple:
+    """ふつうの起動（何も渡さず、何も操作しない）の後の localStorage に、このアプリの鍵が1つも無いことの確かめ。読むのは、ブラウザの実行役。
+
+    試し書きの鍵は消えていて、保存の往復の鍵（検証の口のときだけ回す）も、ふつうの保存の鍵も無いはず。
+    ブラウザの実行役が読めていない（頼んでいない、触れると例外、読んだ鍵の頭が違う）ときは、何も見ずに通さない。
+    """
+    seen = page.get("localStorage") if isinstance(page.get("localStorage"), dict) else {}
+    entries = seen.get("entries")
+    if not isinstance(entries, dict) or seen.get("prefix") != storage_web.PREFIX:
+        unread = f"ブラウザの実行役が、localStorage の、頭が {storage_web.PREFIX!r} の鍵を読めていない（読んだ頭 {seen.get('prefix')!r}、理由 {seen.get('error')!r}）"
+        return "storage_empty", False, unread
+    keys = sorted(str(key) for key in entries if str(key).startswith(storage_web.PREFIX))
+    return (
+        "storage_empty",
+        not keys,
+        f"何も操作していないのに、localStorage に、このアプリの鍵が残っている：{keys}（ふつうの起動は、試し書きの鍵を消し、保存の往復を回さず、設定を書かない）",
+    )
 
 
 def read_probe_result(page: dict):
@@ -498,7 +521,9 @@ def desktop_reference(name: str, ticks: int, script_path=None):
 
 def scenario_shipped(args, budgets: dict, html_sha256: str, context: dict) -> tuple:
     """何も渡さずに開く。返すのは (確かめ, 最後の1行に出す値, 回り切れない理由)。回り切れなければ、確かめは None。"""
-    page = open_page("shipped", args.timeout, ["--watch-ms", int(budgets["web_shipped_watch_s"] * 1000)])
+    # 終わりの localStorage の中身（鍵の頭が合うもの）を、ブラウザの実行役に読ませる。何も残っていないことを、道具が自分で見る。
+    extra = ["--watch-ms", int(budgets["web_shipped_watch_s"] * 1000), "--local-storage", storage_web.PREFIX]
+    page = open_page("shipped", args.timeout, extra)
     if page is None:
         return None, [], "no_runner_result"
     return judge_shipped(page, html_sha256), [f"canvas_ink={(page.get('canvas') or {}).get('ink')}"], ""

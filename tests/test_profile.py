@@ -85,6 +85,32 @@ class UnreadableBackend(MemoryBackend):
         self.changes += 1
 
 
+class DeleteFailingBackend(MemoryBackend):
+    """削除が StorageError（容量超過ではない）になる保存先。読みと書き込みは通る。退避の書き込みの後の、元の鍵の削除で失敗する。"""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.deletes = 0
+
+    def delete(self, key) -> None:
+        self.deletes += 1
+        raise StorageError(f"{key}: cannot be deleted")
+
+
+class RereadFailingBackend(MemoryBackend):
+    """1度目の読みは通り、2度目からの読みが StorageError（容量超過ではない）になる保存先。退避のための読み直しで失敗する。"""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.reads = 0
+
+    def read(self, key):
+        self.reads += 1
+        if self.reads > 1:
+            raise StorageError(f"{key}: cannot be read again")
+        return super().read(key)
+
+
 # --- 往復 ---
 def test_profile_selfcheck_sample_differs_from_the_default_in_every_item():
     # 見本が既定値と同じ項目は、往復で落ちても拾えない。
@@ -162,8 +188,9 @@ def test_profile_schema_lists_the_saved_items_and_their_types():
 
 
 def test_profile_saved_item_list_matches_the_snapshot():
-    # 項目を足す、消す、名を変える、型を変えると、ここが落ちる。形式バージョンを上げて移行を書くか、NOT_SAVED に入れるかを
-    # 決めてから、単独のコミットで、理由を添えて、保存する項目の一覧の写しを取り直す（python3 tools/fingerprint.py --update）。
+    # 項目を足す、消す、名を変える、型を変えると、ここが落ちる。形式バージョンを上げるか（移行を書くのは、公開の後から）、
+    # NOT_SAVED に入れるかを決めてから、単独のコミットで、理由を添えて、保存する項目の一覧の写しを取り直す
+    # （python3 tools/fingerprint.py --update）。範囲と、選べる値の変更は、ここでは拾えない（cp_core/profile.py の schema() の割り切り）。
     recorded = fingerprint.read_schema_snapshot(ROOT)
     assert recorded is not None, f"保存する項目の一覧の写し（{fingerprint.SCHEMA_SNAPSHOT}）が無いか、読めない。黙って作らない"
     assert fingerprint.compare_schema(recorded, schema()) == []
@@ -357,6 +384,50 @@ def test_profile_load_row_6_corrupt_value_that_cannot_be_set_aside_is_left_alone
     assert backend.items == {MAIN_KEY: b"broken"}  # 元の鍵に触れていない
 
 
+# 退避の途中で、容量超過（StorageFull）でない StorageError が出る道。保存の口の quarantine が StorageFull に直すのは、退避の書き込みの
+# 失敗だけ。元の鍵の削除と、退避のための読み直しの StorageError は、そのまま出てくる。読み込みは、これも外へ出さない
+# （捕まえる型を StorageFull に狭めると、起動のたびに例外で止まる）。値は、封筒が読めないものと、本体が読めないもの。
+MIDWAY_VALUES = {"envelope_unreadable": b"broken", "payload_unreadable": raw(b"{not json")}
+
+
+@pytest.mark.parametrize("name", sorted(MIDWAY_VALUES))
+def test_profile_load_row_6_set_aside_fails_midway_when_the_old_key_cannot_be_deleted(name):
+    value = MIDWAY_VALUES[name]
+    # 先に、このテストが狙った道を通ることを確かめる：退避は、容量超過でない StorageError で終わる。
+    probe = DeleteFailingBackend()
+    probe.items[MAIN_KEY] = value
+    with pytest.raises(StorageError) as caught:
+        SaveStore(probe).quarantine(SETTINGS_KEY)
+    assert not isinstance(caught.value, StorageFull)
+    # 読み込みは、例外を出さない。既定値、読めないの文、書いてよくない。
+    backend = DeleteFailingBackend()
+    backend.items[MAIN_KEY] = value
+    store = SaveStore(backend)
+    assert load_settings(store) == Loaded(DEFAULTS, storage.NOTICE_UNREADABLE, False)
+    assert backend.deletes == 1
+    assert backend.items == {MAIN_KEY: value, BAD_KEY: value}  # 元の鍵は、そのまま。退避の鍵は、書かれている。既定値で書き直していない
+    assert load_settings(store) == Loaded(DEFAULTS, storage.NOTICE_UNREADABLE, False)  # 次の起動でも、同じ（例外で止まらない）
+    assert backend.items == {MAIN_KEY: value, BAD_KEY: value}
+
+
+@pytest.mark.parametrize("name", sorted(MIDWAY_VALUES))
+def test_profile_load_row_6_set_aside_fails_midway_when_the_value_cannot_be_read_again(name):
+    value = MIDWAY_VALUES[name]
+    # 先に、このテストが狙った道を通ることを確かめる：1度読んだ後の退避は、容量超過でない StorageError で終わる。
+    probe = RereadFailingBackend()
+    probe.items[MAIN_KEY] = value
+    assert probe.read(MAIN_KEY) == value
+    with pytest.raises(StorageError) as caught:
+        SaveStore(probe).quarantine(SETTINGS_KEY)
+    assert not isinstance(caught.value, StorageFull)
+    # 読み込みは、例外を出さない。既定値、読めないの文、書いてよくない。
+    backend = RereadFailingBackend()
+    backend.items[MAIN_KEY] = value
+    assert load_settings(SaveStore(backend)) == Loaded(DEFAULTS, storage.NOTICE_UNREADABLE, False)
+    assert backend.reads == 2  # 読み込みの読みと、退避のための読み直し
+    assert backend.items == {MAIN_KEY: value}  # 元の鍵に触れていない。退避の鍵も、できていない
+
+
 def test_profile_load_row_7_backend_that_cannot_be_read_gives_defaults_and_does_nothing():
     backend = UnreadableBackend()
     assert load_settings(SaveStore(backend)) == Loaded(DEFAULTS, storage.NOTICE_BACKEND_UNREADABLE, False)
@@ -385,8 +456,48 @@ def test_profile_the_four_notices_come_from_four_different_cases():
     assert set(notices) | {storage.NOTICE_MEMORY_FALLBACK} == set(storage.NOTICES)
 
 
-# --- 移行の表 ---
-def test_profile_migration_table_is_empty_until_an_old_version_exists():
+# --- 読み込みの表の4行目と5行目を、3つの保存先（メモリ、ファイル、偽の js の localStorage）で ---
+BACKEND_IDS = ("memory", "file", "localstorage")
+EVERY_BACKEND = pytest.mark.parametrize("index", range(len(BACKEND_IDS)), ids=BACKEND_IDS)
+
+
+def test_profile_backends_are_the_three_kinds_in_the_order_of_their_ids(tmp_path):
+    assert [type(backend).__name__ for backend in backends(tmp_path)] == ["MemoryBackend", "FileBackend", "WebStorageBackend"]
+    assert len(backends(tmp_path)) == len(BACKEND_IDS)
+
+
+@EVERY_BACKEND
+def test_profile_load_row_4_newer_version_is_not_touched_on_every_backend(tmp_path, index):
+    backend = backends(tmp_path)[index]
+    newer = raw({**plain(), "from_the_future": 1}, SETTINGS_VERSION + 1)
+    backend.write(MAIN_KEY, newer)  # 保存先へ、封筒つきのバイト列のまま置く
+    store = SaveStore(backend)
+    assert load_settings(store) == Loaded(DEFAULTS, storage.NOTICE_NEWER_VERSION, False)
+    with pytest.raises(NewerVersionError):
+        save_settings(store, SELFCHECK_SETTINGS)  # 保存の口の守り
+    assert backend.keys() == [MAIN_KEY] and backend.read(MAIN_KEY) == newer  # 退避も、上書きもしない
+
+
+@EVERY_BACKEND
+@pytest.mark.parametrize("name", ["envelope_cut_short", "payload_not_json", "empty"])
+def test_profile_load_row_5_corrupt_value_is_set_aside_on_every_backend(tmp_path, index, name):
+    # 封筒が読めない、本体が読めない、空の値。
+    backend = backends(tmp_path)[index]
+    value = CORRUPT_VALUES[name]
+    backend.write(MAIN_KEY, value)
+    store = SaveStore(backend)
+    assert load_settings(store) == Loaded(DEFAULTS, storage.NOTICE_UNREADABLE, True)
+    assert backend.keys() == [MAIN_KEY, BAD_KEY]
+    assert backend.read(BAD_KEY) == value  # 読めなかったバイト列を、そのまま退避してある
+    assert store.get(SETTINGS_KEY) == (SETTINGS_VERSION, encode(DEFAULTS))  # 既定値で書き直してある
+    assert load_settings(store) == Loaded(DEFAULTS, "", True)  # 次の起動では、知らせが出ない
+
+
+# --- 形式バージョンと、移行の表 ---
+def test_profile_format_version_is_1_and_the_migration_table_is_empty_before_the_html_is_handed_over():
+    # 形式バージョンを1のままにしてよいのは、人にHTMLを渡す前（段0の間）だけ。渡した後は、保存する項目、型、範囲、選べる値を
+    # 変えるたびに上げる（ここの 1 も直す）。移行の表は、公開までは空でよい。古い形式バージョンの値は、退避する
+    # （test_profile_load_row_5_old_version_without_a_migration_is_corrupt）。公開の後は、上げるたびに移行を書く。
     assert profile.MIGRATIONS == {} and SETTINGS_VERSION == 1
     assert SETTINGS_KEY == "settings"
 

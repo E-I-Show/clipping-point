@@ -7,6 +7,7 @@ paths:
   - "tests/test_export_inspect.py"
   - "tests/test_verify.py"
   - "tests/test_claude_tools.py"
+  - "tests/test_run_tool.py"
 ---
 
 # 検証の道具（tools/）
@@ -43,6 +44,7 @@ paths:
 
 - 守りのテスト `tests/test_arch_guard.py`、`tests/test_rules_guard.py`、`tests/test_canon_guard.py`：見張りが崩れを拾うことと、いまのリポジトリが見張りを通ること。
 - テスト `tests/test_export_inspect.py`：配布物の検査の関数（入ってはいけないもの、HTML内のデータの一致）。
+- テスト `tests/test_run_tool.py`：道具 run が、保存のファイルを自分で読む関数（往復の見本と同じ、違う値、違う形式バージョン、壊れた封筒、無い。名前空間 `main` のファイル）。
 - 守りのテスト `tests/test_verify.py`：ファイルから分野を引く所、表の手順とテストの語が実在すること、回す手順の決め方、落ちた手順の数え方、基点の選び方、変更したファイルをgitから読む所（一時のリポジトリで回す）。
 - 道具 verify（`python3 tools/verify.py --all [--selftest]`、`--touched [--base REV]`）：`--touched` の基点の既定は、直近の区切りのコミット（題が「段N 区切りM：」で始まり「（途中）」を含まない）。
 - テスト `tests/test_claude_tools.py`：作業の補助（`tools/claude/`）。控えの差し込み、レビューの集計の未評価、週の使用率の線、設定と型（`.claude/`）の見張り。使い方は `tools/claude/README.md`。
@@ -56,4 +58,4 @@ paths:
 - `pyxel package` は対象ディレクトリの中身をほぼ全部入れる。`clipping_point/` にテスト、文書、道具を置かない。
 - selftest-break は、件ごとにリポジトリを `out/selftest/` へ複製する。ランタイムの写し（`.cache/`）は複製せず、本物へのリンクを置く。複製の中で回す件に、`.cache/` へ書き込む道具（`--check` なしの `fetch_runtime.py`）を足さない。
 - selftest-break の複製は、gitの作業ツリーの根ではない。`verify --touched` は、そこでは2（`reason=git_failed`）で止まる。
-- テストのファイルを足して確かめる壊す件がある。いまのリポジトリの状態を見る守りのテストを足すときは、その件が別の理由で落ちないかを selftest-break で確かめる。
+- テストのファイルを足して確かめる壊す件がある。いまのリポジトリの状態を見る守りのテストを足すときは、その件が別の理由で落ちないかを selftest-break で確かめる。道具のファイルを消す件（`verify_step_cannot_run`）は、その道具をimportするテストも落とす。
