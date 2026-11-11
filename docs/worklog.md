@@ -69,6 +69,7 @@
 | 2026-11-11 18:07 | 段0 区切り6のレビューの後 | 59% | 49% | 約20% | 2026-11-17 08:00 | 18:01のイベントの値。レビュー6体（約117万トークン、約33分）で、約6ポイント進んだ。Claudeのモデルは決められたものと同じ。直しは、実装役に続けて頼んだ |
 | 2026-11-11 19:06 | 段0 区切り6のコミット | 61% | 51% | 約21% | 2026-11-17 08:00 | 18:54のイベントの値。直し（実装役、約10万トークン）と主の作業で、約2ポイント進んだ。区切り6の全部で約12ポイント（ほかに、区切り7の準備の読み手が約1ポイント）。このセッションの開始（30%）から31ポイント。Claudeのモデルは決められたものと同じ |
 | 2026-11-11 19:42 | 段0 区切り7の頼みの文のレビューの後 | 63% | 52% | 約21% | 2026-11-17 08:00 | 19:25のイベントの値。頼みの文のレビュー2体（約46万トークン、約25分）と主の作業で、約2ポイント進んだ。Claudeのモデルは決められたものと同じ |
+| 2026-11-11 21:26 | 段0 区切り7の実装の後（区切りのレビューの前） | 71% | 58% | 約22% | 2026-11-17 08:00 | 21:19のイベントの値。実装役（約68万トークン、約92分）と主の作業で、約7〜8ポイント進んだ（見込みの「実装役1体で約2ポイント」より重い。新しいファイル18、差分約4,400行）。区切りのレビュー（8体）の見込みを足して、81%前後。Claudeのモデルは決められたものと同じ |
 
 ---
 
@@ -468,6 +469,49 @@
   - 試作にあるもの：4つの口を持つ保存先（メモリ、ファイル、localStorage）と、封筒つきの保存の口。保存する項目の型と、往復、保存しない項目の一覧、項目の一覧の写しのテスト。splitmix64 の用途別の流れと、ハッシュの抽選。読める要約を写しと比べる指紋のテストと、ハッシュの種を変えた別プロセスのテスト。
   - 試作に無いもの（この区切りで決めて作る）：起動時の試し書きと、メモリへの切り替え。localStorage が使えないときの例外の実測と、それを起こす差し込むスクリプト。設定の移行の実物。新しい版を上書きしない扱い。デスクトップ版の保存の置き場の決め方。指紋の写しに、Pythonの版と数学関数の試し値を入れる形。
   - 試作の実測：localStorage の無い鍵は、`None` でなく `jsnull` で返る。1つの値の上限は約524万文字で、超えると例外（名は `QuotaExceededError`）。数学関数は、sin、cos、tan、atan2、exp などが、デスクトップ版とブラウザ版で1 ULP違うことがある（sqrt と四則は同じ）。
+- 実装（実装役。約68万トークン、約92分）。作ったもの：
+  - 保存の口（`cp_core/storage.py`）：封筒、鍵と名前空間の検査、メモリの保存先、`SaveStore`（新しい形式バージョンの値がある鍵へは、書かずに `NewerVersionError`。退避は、保存先のバイト列のまま `<鍵>.bad` へ写す）、知らせの文4つ。
+  - 保存先：ファイル（`cp_app/storage_file.py`。一時ファイルに書いて差し替える）、localStorage（`cp_app/storage_web.py`。試し書き、base64）、選ぶ関数（`cp_app/storage_select.py`）。
+  - 保存する項目（`cp_core/profile.py`）：設定6項目、読み込み（例外を外へ出さない。扱いは7通り）、保存、保存する項目の一覧、保存の往復（名前空間 `selfcheck`）。
+  - 乱数（`cp_core/rng.py`）：splitmix64 の用途別の流れと、ハッシュの抽選。世界は種を受けて、要約に `seed` と `rng_ai` を入れる。
+  - 道具 fingerprint（`tools/fingerprint.py`）と、ふるまいの写し2つ（指紋、保存する項目の一覧）。全体の検証の手順は9つ（test の後に fingerprint）。
+  - 道具 run は、保存のファイルを自分で読んで往復の見本と比べ、世界の要約を指紋の写しと照らす。web-smoke は、筋書き `storage_blocked`（`tools/web/block_storage.js`）を足し、`probe` で localStorage の値を自分で読む。
+  - 仮の表示に、知らせの1行（あるときだけ）。規則ファイル `save.md`。テストは1,138件から1,581件、壊す件は214件から262件。
+- 実装役が、頼みの文から変えた所（主が読んで、採った）：
+  - `PYTHONHASHSEED` のテストを2本に分けた（別プロセスどうしを比べるものと、指紋の写しと比べるもの）。壊す件の絞りは `-k "fingerprint and hash_seed"`。絞らないと、集合の順に関係なく、指紋の写しとの比べで落ちる。
+  - 道具 run は、指紋の筋書きに無い回し方でも、指紋の写しが無ければ2にする。
+  - 退避の書き込みが `StorageFull` のほかの `StorageError` で失敗しても、`StorageFull` に直して返す。
+  - 保存の往復の関数は `cp_core/profile.py` に置いた（`app.py` に置くと、テストから呼べない）。
+  - 差し込むスクリプトは、投げる `DOMException` に `stack` を付ける（無いと、Pyodide が別の `Error` に包み直して、名が変わる）。
+- 新しく足した割り切り（コードの印で引ける）：`SaveStore.put` は書くたびに読みが1回入る（段2で見直す）。デスクトップ版は `CP_SAVE_DIR` があるときだけファイル（段1）。試し書きが通らなかった理由を、画面にもコンソールにも出さない（段1）。世界の種は、いつも0（段3）。乱数の `below()` は、余りで取るので、ごくわずかに偏る。
+- 実測（実装役。Pyodide 314.0.7、Python 3.14.2、ヘッドレスのChromium、`file://`）：
+  - `localStorage` に触れると例外になるとき、Pythonからは `js.localStorage` を読んだ所で `JsException`。名は、`stack` を持つ `DOMException` なら `SecurityError`、持たなければ `Error`。値が `undefined` なら `None`、`null` なら `jsnull`、名前ごと無ければ `AttributeError`。切り替えの判定は、型にも名にも頼らず、「容量超過か、そのほかか」だけを見る形にした。
+  - 容量超過は `JsException` で、名は `QuotaExceededError`。読みは生きている。ランタイム自身は `localStorage` に触れない。
+  - 試し書きは1回 約0.03〜0.05 ms。`probe` の更新1回の時間（95%点）は、前後とも0.4 ms前後で、差は見えない。
+  - 乱数の `unit()` は、デスクトップ版0.49マイクロ秒、ブラウザ版1.1〜1.2マイクロ秒。ハッシュの抽選は、デスクトップ版1.6〜3.0マイクロ秒、ブラウザ版2.7〜8.9マイクロ秒。参照値は、デスクトップ版とブラウザ版で同じ。
+  - 全体の検証は約65秒（うち web-smoke が54秒）。selftest-break は約19分（262件。全体の検証を丸ごと回す件が6件）。
+- 主の検証（実装の後。21:18〜21:38 UTC）：`verify: OK mode=all steps=10 ok=10 failed=0 seconds=1174.4 not_yet=3(drive,race-sim,audio)`。
+  - `check: OK syntax=78 arch=14 rules=6 canon=1 areas=62 problems=0`
+  - `test: OK passed=1581 failed=0 errors=0 skipped=0 selected=1581 collected=1581 floor=1581`
+  - `fingerprint: OK scenarios=2 fields=6 problems=0 env=same`
+  - `screen_check: OK screens=2/2 violations=0 not_checked=0`
+  - `run: OK driver=flip input=script ticks=120 renders=60 back_ink=5307 screen_diff=0 wall_s=0.147 save=file checks=16 problems=0 not_yet=2(scene3d,mirror)`
+  - `run: OK driver=run input=adapter ticks=120 renders=60 back_ink=5307 screen_diff=0 wall_s=2.0 save=file checks=16 problems=0 not_yet=2(scene3d,mirror)`
+  - `tour: OK shots=2/2 commands=17 problems=0`
+  - `export: OK files=28 pyxapp_bytes=60636 html_bytes=81043 html_max_bytes=1000000 checks=6 problems=0`
+  - `web_smoke: OK scenarios=5 shipped=ok probe=ok script=ok gamepad=ok storage_blocked=ok canvas_ink=47826 ticks=660 renders=330 updates_per_s=60.0 renders_per_s=30.05 update_ms_p95=0.4 render_ms_p95=0.3 with_warmup=59.98/30.03/0.4/0.3 python=3.14.2 save=localstorage script_changes=23 pad_lag=1 blocked_save=memory checks=122 problems=0`
+  - `selftest_break: OK cases=262 planted=232 controls=30 wrong=0 plant_errors=0`（1,109.9秒）
+  - 画像は、主が4枚を見た（巡回の2枚、煙テストの `probe` と `storage_blocked`）。知らせの1行は、入力の囲みの下に出ていて、重なりは無い。知らせが無いときは、行ごと出ない。煙テストの残りの3枚（`shipped`、`script`、`gamepad`）は、見ていない。
+- 主が確かめたこと：
+  - 基点 `2a2020b` との差分：テストの関数の名は、名前を変えた1件（期待は足されている）のほかに消えていない。壊す件の名も消えていない。既存のテストの期待の書き換えは、項目と手順が増えた分だけ（要約の `seed` と `rng_ai`、表示用の値の `notice`、手順と筋書きの数）。
+  - コードを読んだ：保存の口、設定の読み書き、3つの保存先、選ぶ関数、乱数、道具 fingerprint、アプリの配線、道具 run の差分。読み込みの7通りの扱いは、頼みの文の表のとおり。結果の知らせは、表示用の値から取っている。
+- 区切りのレビュー（21:40 UTC に始めた。4観点、8体）。観点：
+  - 見かけの合格：足した確かめ（run の指紋と保存、web-smoke の保存、fingerprint の照合）と、足した壊す件が、狙いどおりに落ちるか。偽の js と実物の違い。古い結果や古い保存を読んで合格にしないか。
+  - 頼みの文・設計との食い違い：細目23件とやること1〜8、読み込みの扱いの表、設計の「決定性と保存」、規則ファイルの文、言葉の表。
+  - 詰みと、保存を失う道：起動を、保存先の状態ごとに追う（localStorage が無い・触れると例外・容量超過・読めない値・新しい形式バージョン、置き場が無い・書けない、など）。守りを外れて上書きする道。
+  - 層の分離、決定性、テストの揺れ：純Pythonの層、乱数の式、指紋と筋書き、`PYTHONHASHSEED` のテスト、ふるまいの写しの中身、別プロセスや環境変数に頼るテスト。
+- 確かめられていないこと（実装役の報告から）：ブラウザが自分で投げる本物の `SecurityError` の、Pythonからの見え方（見たのは、差し込むスクリプトの偽物だけ）。アプリを通した容量超過（偽の js のテストと、実験用の小さなアプリだけ）。再読み込みをまたいで保存が残ること（段1）。実機と、Chromium のほかのブラウザ。`PYTHONHASHSEED` のテストは、3つの種で集合を回した順が互いに違うことを前提にする（Python 3.13.18 では違った）。
+- 残した課題：規則ファイルが、上限（6,000バイト）の間際（`sim-core.md` 5,992、`ui.md` 5,957、`save.md` 5,953、`tools.md` 5,924、`web.md` 5,825）。`ui.md` には、知らせの1行の決まりを足せていない。上限は仮の値（「窮屈になった時に合わせる」）なので、区切り8の頭で、上げるか、分けるかを決める。selftest-break が約19分に伸びたことも、区切り8で扱う。
 
 ### 事後報告
 

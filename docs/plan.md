@@ -241,7 +241,7 @@ game-dev-pilotの初日のチェックリストは、次のように区切りへ
 |  | 絞った検証 | 全体の検証 |
 | --- | --- | --- |
 | いつ | ふつうの区切り | 段の仕上げ、土台に触れたとき、絞った検証を3回重ねたとき |
-| 中身 | check、触れた分野のテスト、その分野に決めた手順 | check、test、screen-check、run、tour、drive（短い版）、race-sim（短い版）、音の回帰、export、web-smokeを決まった順に全部。段の仕上げではselftest-breakも回す |
+| 中身 | check、触れた分野のテスト、その分野に決めた手順 | check、test、fingerprint、screen-check、run、tour、drive（短い版）、race-sim（短い版）、音の回帰、export、web-smokeを決まった順に全部。段の仕上げではselftest-breakも回す |
 | 報告 | 回したもの（各道具の最後の1行）と、回せなかったものを分けて書く | 同じ |
 
 運転役の周回（drive）とAIだけのレース（race-sim）には、短い版と長い版を持たせます。短い版は全体の検証に入れます。通過条件を測る長い版は、段の仕上げと、下の表で指定した分野に触れた区切りで回します。
