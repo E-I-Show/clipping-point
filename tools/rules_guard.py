@@ -90,7 +90,7 @@ def parse_index(claude_md: str):
     for line in lines[start + 1:]:
         if line.startswith("## "):
             break
-        row = re.match(r"\|\s*`\.claude/rules/([^`/]+\.md)`\s*\|", line)
+        row = re.match(r"\|\s*`\.claude/rules/([^`]+\.md)`\s*\|", line)
         if row:
             names.append(row.group(1))
     return names
@@ -100,8 +100,10 @@ def check_rules(root: Path, budgets: dict) -> tuple:
     """返すのは (調べた規則ファイルの数, 問題の一覧, 件数の要約)。"""
     root = Path(root)
     problems = []
-    rule_files = sorted((root / ".claude" / "rules").glob("*.md"))
-    present = [p.name for p in rule_files]
+    rules_dir = root / ".claude" / "rules"
+    rule_files = sorted(rules_dir.rglob("*.md"))  # 下のディレクトリに置いた規則ファイルも読み込まれるので、全部見る
+    names = {path: path.relative_to(rules_dir).as_posix() for path in rule_files}
+    present = list(names.values())
     max_bytes = budgets["rule_file_max_bytes"]
 
     claude_md = root / "CLAUDE.md"
@@ -136,25 +138,26 @@ def check_rules(root: Path, budgets: dict) -> tuple:
     files = list_files(root)
     targets = 0
     for path in rule_files:
+        name = names[path]
         text = path.read_text(encoding="utf-8")
         size = len(text.encode("utf-8"))
         if size > max_bytes:
-            problems.append(f"{path.name}: {size} バイト（上限 {max_bytes} バイト）")
+            problems.append(f"{name}: {size} バイト（上限 {max_bytes} バイト）")
         parsed = parse_paths(text)
         if parsed is None or not parsed[0] and not parsed[1]:
-            problems.append(f"{path.name}: 頭に paths: の当て先が無い")
+            problems.append(f"{name}: 頭に paths: の当て先が無い")
             continue
         for line in parsed[1]:
-            problems.append(f"{path.name}: paths: の行が読めない：{line}（- \"当て先\" の形で書く）")
+            problems.append(f"{name}: paths: の行が読めない：{line}（- \"当て先\" の形で書く）")
         for target in parsed[0]:
             targets += 1
             regex = glob_to_regex(target)
             hits = [f for f in files if regex.match(f)]
             if not hits:
-                problems.append(f"{path.name}: 当て先 {target!r} がどのファイルにも当たらない")
+                problems.append(f"{name}: 当て先 {target!r} がどのファイルにも当たらない")
             for hub in HUBS:
                 if hub in hits:
-                    problems.append(f"{path.name}: 当て先 {target!r} が、多くの分野が触る {hub} に当たっている")
+                    problems.append(f"{name}: 当て先 {target!r} が、多くの分野が触る {hub} に当たっている")
     detail = f"rule_files={len(rule_files)} targets={targets} claude_md_lines={claude_lines} handoff_lines={handoff_lines}"
     return len(rule_files), problems, detail
 

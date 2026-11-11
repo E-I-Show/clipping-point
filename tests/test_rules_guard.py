@@ -82,6 +82,17 @@ def test_rules_file_missing_from_the_index_is_reported(tmp_path):
     assert len(problems) == 1 and "extra.md" in problems[0]
 
 
+def test_rules_file_in_a_subdirectory_is_also_checked(tmp_path):
+    # 下のディレクトリに置いた規則ファイルも読み込まれるので、目次との対応を同じように見る。
+    root = make_repo(tmp_path)
+    write(root / ".claude" / "rules" / "sub" / "deep.md", rule_text("tools/check.py"))
+    problems = problems_of(root)
+    assert len(problems) == 1 and "sub/deep.md" in problems[0]
+    text = (root / "CLAUDE.md").read_text(encoding="utf-8")
+    write(root / "CLAUDE.md", text + "| `.claude/rules/sub/deep.md` | 下のディレクトリ |\n")
+    assert rules_guard.check_rules(root, BUDGETS)[:2] == (3, [])
+
+
 def test_rules_index_row_without_a_file_is_reported(tmp_path):
     root = make_repo(tmp_path)
     (root / ".claude" / "rules" / "ui.md").unlink()
