@@ -1,2 +1,6 @@
 __pycache__/
 *.pyc
+# 生成物とランタイムの写し。根の直下だけ（spikes/ の中の記録には当てない）
+/out/
+/dist/
+/.cache/

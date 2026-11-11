@@ -1,0 +1,6 @@
+{
+  "_notes": "正本（docs/canon/）の内容の要約値（sha256）の写し。check と守りのテストが照らす。取り直しは tools/claude/canon_digest.py --update。人が採った改訂案を当てる単独のコミットでだけ行う。",
+  "files": {
+    "docs/canon/planning.md": "246898f112d666193653f344b37bc2a7a6053c560a35bae3c79c211cf370c0a6"
+  }
+}
