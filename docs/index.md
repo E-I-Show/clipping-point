@@ -28,12 +28,13 @@
 | --- | --- | --- |
 | [requests/README.md](requests/README.md) | 頼みの文のひな形と、置いてある頼みの文の一覧 | 区切りの頼みを足すたびに更新 |
 | [requests/stage0-k3.md](requests/stage0-k3.md) | 段0の区切り3（環境とブラウザ版の煙テスト）を、実装役に頼む文 | 実装済み |
+| [requests/stage0-k5.md](requests/stage0-k5.md) | 段0の区切り5（入力の土台）を、実装役に頼む文。主が決めた細目17件の表つき | 実装中 |
 
 ## 調べ
 
 | 文書 | 中身 | 状態 |
 | --- | --- | --- |
-| [research/claude-code-config.md](research/claude-code-config.md) | Claude Codeの設定の書式（サブエージェントの型、規則ファイル、フック、禁止する操作） | 文書で調べただけ。段0の区切り4で、試してから使う |
+| [research/claude-code-config.md](research/claude-code-config.md) | Claude Codeの設定の書式（サブエージェントの型、規則ファイル、フック、禁止する操作） | 新しいセッションで確かめた（7点とも通った） |
 
 ## 進み具合と、済んだ作業の結果
 
@@ -42,7 +43,7 @@
 | [day1-checklist.md](day1-checklist.md) | 段0で置くものの進み具合 | 段0の間だけ更新 |
 | [reports/](reports/README.md) | 進捗レポート。およそ1時間ごと | 追記 |
 | [review/](review/README.md) | 着手前の設計に対する批評と確かめの記録 | 済。足さない |
-| `reviews/` | 区切りごとのレビューの結果（通った指摘、退けた指摘と理由、役が見られなかった所）。`tools/claude/review_summary.py --out` が書く | 区切りごとに1つ足す |
+| `reviews/` | 区切りごとのレビューの結果（通った指摘、退けた指摘と理由、役が見られなかった所）。`tools/claude/review_summary.py --out` が書く。実装の前に頼みの文を確かめたときは、`stageN-kM-request.txt` の名で置く | 区切りごとに1つ足す |
 | [img/](img/) | 文書の図と、試作の画面 | 設計時のもの |
 
 ## docsの外にあるもの

@@ -43,4 +43,4 @@
 | 文書 | 区切り | 状態 |
 | --- | --- | --- |
 | [stage0-k3.md](stage0-k3.md) | 段0 区切り3：環境とブラウザ版の煙テスト | 実装済み |
-| [stage0-k5.md](stage0-k5.md) | 段0 区切り5：入力の土台 | 頼む前（頼みの文のレビュー中） |
+| [stage0-k5.md](stage0-k5.md) | 段0 区切り5：入力の土台 | 実装中。頼みの文のレビューの結果は [stage0-k5-request.txt](../reviews/stage0-k5-request.txt) |

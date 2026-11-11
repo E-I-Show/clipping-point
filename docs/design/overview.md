@@ -62,6 +62,7 @@
 | `cp_core` | `fixed_loop` | 実描画するかどうかの判定 |
 | `cp_core` | `sim` | 世界の状態と1 tickの進行 |
 | `cp_core` | `flow` | 画面の状態と切り替え、表示用の値 |
+| `cp_core` | `input_frame`、`input_script` | 入力フレームとその量子化、台本 |
 | `cp_core` | `controls` | 操作補正 |
 | `cp_core` | `vehicle` | 車両モデル |
 | `cp_core` | `track` | コースの表、照会、メッシュ用の数値 |
@@ -79,6 +80,7 @@
 | `cp_ui` | `fixtures` | 検査用の見本データ（ふつうの値と極端な値） |
 | `cp_app` | `app` | 起動とメインループ |
 | `cp_app` | `input_pyxel`、`input_web` | Pyxelとブラウザの入力を入力フレームにする |
+| `cp_app` | `input_trace` | 検証のときに、入力フレームの変わり目を残す（入力の跡）。残した値は世界へ渡さない |
 | `cp_app` | `render` | Pyxel Cubeのシーン、モデル、カメラの反映 |
 | `cp_app` | `canvas_pyxel` | 描画命令の実行 |
 | `cp_app` | `audio` | チャンネルへの割り当てと再生 |

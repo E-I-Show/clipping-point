@@ -1,0 +1,48 @@
+区切り：段0 区切り5：入力の土台（実装の前に、実装役への頼みの文を確かめる）
+
+== request
+■ request-1 [中/確かめた] 所：/home/user/clipping-point/docs/requests/stage0-k5.md 55〜58行、66〜67行、120行、135行
+   直し：58行と66行に「アナログ値は bool でない整数も受けて小数に直す」と書き、tests/test_input_script.py にその件を足す。128行の道具の台本に 1.0 を1か所入れて、ブラウザ版の往復を通す。
+   場合：台本にアナログ値を 1.0（−1.0、0.0 も同じ）と書く → デスクトップ版は小数 1.0 で受けるが、ブラウザ版は整数 1 で受ける。道具は値を json.dumps でスクリプトに埋め（/home/user/clipping-point/tools/web_smoke.py 223行と同じ形）、アプリは js.JSON.stringify の文字列を json.loads で読む（/home/user/clipping-point/clipping_point/cp_app/web_bridge.py 47〜50行）。JavaScriptの数は1種類なので 1.0 は "1" になり、Pythonでは int になる。頼みの文は「steer_analog：小数」（55行）、「型、範囲、NaN、知らない名前を検査する」（58行）、「型の違い…は ValueError」（67行）としか書かず、アナログ値に整数を受けるかを決めていない。型を厳しく見る実装では、ブラウザ版の script の筋書きだけが起動時の ValueError で落ちる。道具の台本に切りのよい値が無ければその場では出ず、後の区切りの台本（巡回、指紋）で初めて出る。
+   反証：道具は json.dumps でスクリプトに埋め、アプリは JSON.stringify の文字列を json.loads で読むので、台本の 1.0 はブラウザ版でだけ int になる。頼みの文は「デジタル値に bool と小数を受けない」（58行）だけでアナログ値の整数の扱いを決めておらず、いまのコードの書き方（type(x) is not int）にそろえて厳しく見ると、ブラウザ版の script だけが落ちる。
+■ request-2 [中/推測] 所：/home/user/clipping-point/docs/requests/stage0-k5.md 109〜110行、146行、165行、178行
+   直し：109行に「値の読み取りまで含めて捕まえる」と書き、146行の見るものに「直読みの警告が0件」（結果の console の行から数える）を足す。178行のテストに「ボタンに value が無い（画面上パッドの形）」を足し、None を返すと決める。
+   場合：109行は「…のどれでも、例外を外へ出さずに None を返す。例外を捕まえたときは、最初の1度だけ console.warn で知らせる」と書くが、捕まえる範囲（getGamepads() の呼び出しだけか、値の読み取りまでか）を決めていない。広く捕まえる実装では、165行の壊す件「空の枠を見分けずに属性を読む」→ 段1・6・8で属性の読み取りが例外 → 捕まって None → 値は未接続と同じ全部0 → gamepad は合格し、壊しても落ちない（試作と同じく先頭にコントローラーを置く並びなら、接続の段でも差が出ない）。警告は console.warn で、ブラウザの実行役が失敗に数えるのは種類が error の行だけ（/home/user/clipping-point/tools/web/webrun.js 280行）。146行の見るものにも警告は無い。110行の「見分け方を…偽のコントローラーの筋書き…で確かめる」が果たせない。狭く捕まえる実装では壊す件は落ちるが、標準の並びでボタンに value が無い物が先頭に来ると、読み取りの例外が更新の外へ出て、エラー表示で止まる。追い切れていない所：コードがまだ無いので、どちらの実装になるかは決まっていない。Pyxelの画面上パッド（/home/user/clipping-point/docs/design/overview.md 149行）が navigator.getGamepads を差し替えて value の無いボタンを返す、というのは私の記憶で、ランタイムの写し（.cache/）は見ていない。
+   反証：109行は捕まえる範囲を決めておらず、広く捕まえると165行の壊す件は全段で値が同じになり（試作の並びは先頭にコントローラー）、警告は失敗に数えられず146行の見るものにも無いので、壊す件が落ちない。画面上パッドのボタンに value が無いという後半は確かめておらず根拠にしていない（先頭に空の枠を置く並びにしても、壊す件は落とせる）。
+■ request-3 [中/確かめた] 所：/home/user/clipping-point/docs/requests/stage0-k5.md 128行、135行、137行、147行、155行
+   直し：147行に「どの段も、判定するtickが1個以上あること。無ければ2（reason つき）」を足す。135行と131行に「回すtick数が台本の合計より短ければ2」を足し、157行の壊す件に1件ずつ入れる。
+   場合：段の長さ（137行）と、段の頭で判定しないtick数（147行）は、どちらも budgets.json の仮の値（155行）。段の長さ ≤ 判定しないtick数 の状態 → 147〜152行の段ごとの判定は、調べるtickが0個のまま全段が合格になる。Pyxel経由の遅れは未実測なので、実装役が除くtick数を増やす、または件の時間を縮めるために段を短くする（157行）と、この実装の中で起きうる。決まりの文は /home/user/clipping-point/.claude/rules/tools.md 17行「調べた件数が0なら2にする」。同じ守りの先例は /home/user/clipping-point/tools/run.py 33〜36行（reason=too_few_ticks）。頼みの文に、この守りが無い。同じ形で、script で回すtick数（155行）が台本の合計より短い状態 → 台本の後ろ（2度目の押しなど）が流れないまま合格する。176行のテストは、ファイルの中身しか見ない。
+   反証：段の長さと、段の頭で判定しないtick数は、どちらも budgets.json の仮の値（137、147、155行）で、頼みの文には、調べるtickが0個のときの守りも壊す件も無い。同じ形の守りと壊す件は先例がある（run と web-smoke の too_few_ticks）ので、書かなければそろわない。157行は「ブラウザを開く件を絞る」で「段を短くする」とは書いていないが、結論は変わらない。
+■ request-4 [中/推測] 所：/home/user/clipping-point/docs/requests/stage0-k5.md 144行、152〜154行、185行
+   直し：段7を「標準でない並びで接続（全部0）」と「ボタン6が0.6、ボタン7が1.0」の2段に分ける。154行に「値を変えたら timestamp を進める」「2つの合図に gamepad（index つき）を付ける」を足し、153行は「段7を除く」と書く。
+   場合：段7は、標準でない並びのコントローラーが、ボタン6＝0.6、ボタン7＝1.0 を持ったまま接続する（144行）。SDL2 の emscripten の joystick は、接続の合図のときの値を控え、その後は変わった分だけをボタンと軸の出来事にする（timestamp が変わったときだけ見る）。この状態 → 接続の時点で押されていた値は、Pyxel経由では段7の間ずっと0のままになる見込み。152行と185行の実測「標準でない並びが、Pyxel経由でどう届くか」が、並びのせいではなく予定の組み方のせいで「届かない」と出て、設計の「それ以外のコントローラーはデジタル」の読みを誤らせる。段8の「全部0」も、押したままの切断を試さないことになる。試作の偽のコントローラーは、全部0で接続してから値を変え、変えるたびに timestamp を進め、接続の合図に gamepad を付けていた（/home/user/clipping-point/spikes/web/tools/fake_gamepad.js 2、19、28行）。154行の説明には、timestamp と、合図に付ける gamepad が無い。また、153行「pressed に confirm が立つのは、段5の頭の1 tickだけ」は段7にも掛かり、152行「デジタル値と held は判定に入れず」と食い違う。追い切れていない所：SDL2 のソースはリポジトリに無く、記憶による（/home/user/clipping-point/spikes/frameloop/RESULT.json 94行が読んだと記すファイル）。道具は回していない。
+   反証：試作は、全部0で接続してから値を変え、変えるたびに timestamp を進め、接続の合図に gamepad を付けていた。段7だけが「押したまま接続」でこの手順から外れ、しかもPyxel経由の値を判定せずに実測として報告する段（152、185行）なので、予定の組み方のせいの0が、そのまま実測になる。153行が段7にも掛かって152行と食い違う点も、実物のとおり。
+■ request-5 [低/確かめた] 所：/home/user/clipping-point/docs/requests/stage0-k5.md 156行
+   直し：156行を「足す手順は run、drive、web-smoke（drive は NOT_YET のまま）。テストの絞りは、いまあるテストの語にし、計画の表との違いを AREAS の行の注に書く」に直す。
+   場合：破る行：156行「分野「操作補正と入力」を足す（…足す手順は run と web-smoke）」。決まりの文：/home/user/clipping-point/docs/plan.md 255行「| 操作補正と入力 | 操作補正、保存する項目、セッティングの順 | run、drive、web-smoke |」と、/home/user/clipping-point/tools/verify.py 18行「組の中身は docs/plan.md の「検証の組」の表を元にする。違えた所は、AREAS の行の注に書く」。まだ無い手順は NOT_YET にあれば表に書ける（同 79〜81行の「画面（2D）」が screen-check と tour を書いている）。drive を抜くと、drive を作る段1で、この分野に足すきっかけが無い。テストの絞りの語も、頼みの文に無い。
+   反証：計画の表は run、drive、web-smoke で、verify.py は「違えた所は AREAS の行の注に書く」と決め、まだ無い手順も NOT_YET にあれば書ける（画面（2D）の先例）。156行のとおりに作ると、注なしで drive が抜ける。害は小さい（FOCUS_ENABLED が False の間は、どの分野でも全体を回す）。
+■ request-6 [低/確かめた] 所：/home/user/clipping-point/docs/requests/stage0-k5.md 45行、196行
+   直し：ペダルの割り当ての切り替えを作る区切りを、4（読み方）と10（選ぶ画面と保存）に分けて書き、45行と196行を直す。
+   場合：破る行：45行「計画の段1 区切り4（入力と操作補正）で、操作設定と一緒に作る」、196行「操作補正、ペダルの割り当ての切り替え、操作設定（段1 区切り4）」。決まりの文：/home/user/clipping-point/docs/plan.md 153行「| 4 | 入力と操作補正 | 入力の取り込み、アナログとデジタルの補正、アシスト、後退。…」と、159行「| 10 | 操作設定 | 操作設定の画面と設定の保存 |」。操作設定は区切り10で、区切り4ではない。実装役が、割り切りの注や規則ファイルの「見直す時」に、どちらの区切りを書くかが決まらない。
+   反証：計画では操作設定は段1 区切り10で、割り当ての選択肢も「段1の操作設定の区切りで扱う」と書いてあり、頼みの文の「操作設定（段1 区切り4）」と合わない。起き方は「決まらない」ではなく、実装役がこの番号を割り切りの注と controls.md の見直す時にそのまま写すこと（段1の区切りは案なので、4と10に分けて書けば足りる）。
+■ request-7 [低/確かめた] 所：/home/user/clipping-point/docs/requests/stage0-k5.md 204行と、44、108〜110、138、143、165、178、184行
+   直し：主が言葉の表に語を足し（例：「レースの枠／週の枠」の行に「コントローラーの枠」を並べる）、頼みの文の「枠」をその形に直す。
+   場合：破る行：44行「直読みは、枠の先頭から見て、最初の空でない枠だけを見る」、110行「空の枠は、Pyodideでは…」ほか。決まりの文：/home/user/clipping-point/docs/glossary.md 11行「「写し」「補正」「モデル」「使用率」「枠」は単独で使わず、表の左の形で書きます」、45行「「枠」と単独で書かない」。頼みの文も204行で、実装役に「「写し」「記録」「枠」「モデル」は単独で使わない」と求めている。Gamepad API の並びの1つを指す語が言葉の表に無いので、実装役は controls.md、注、テストの名で「空の枠」と書く（決まりを破る）か、語を作る（言葉の表は範囲の外）しかない。
+   反証：言葉の表は「枠」を単独で使わないと決め、頼みの文も204行で実装役に同じことを求めるが、頼みの文自身が Gamepad API の並びの1つを「枠」「空の枠」と9か所で書き、言葉の表にその語が無い。実装役は docs/ を直せない（199行）ので、守る手が無い。機械の見張りは無く、ui.md 43行にも単独の「枠」があるので、害は小さい。
+■ request-8 [低/確かめた] 所：/home/user/clipping-point/docs/requests/stage0-k5.md 51行、63行、123行、199行
+   直し：主が、この区切りのコミットで設計の表に3行足す（input_frame、input_script、input_trace）。199行に、その旨を書く。
+   場合：破る行：51行 clipping_point/cp_core/input_frame.py、63行 clipping_point/cp_core/input_script.py、123行 clipping_point/cp_app/input_trace.py を新しく作る。決まりの文：/home/user/clipping-point/CLAUDE.md 87行「出荷するアプリ、テスト、道具の置き場は、docs/design/overview.md の「ディレクトリとモジュール」のとおりに作る」。その表（/home/user/clipping-point/docs/design/overview.md 60〜86行）に、この3つは無い（入力は81行の input_pyxel、input_web だけ。perf は86行に足してある）。199行は docs/ を実装役の範囲の外にし、主が足したと書くのは言葉の表だけ。
+   反証：CLAUDE.md 87行は置き場を設計の表のとおりに作ると決めていて、その表に input_frame、input_script、input_trace は無い。perf のときは同じ区切りで表に足した先例があり、頼みの文は、誰がいつ表に足すかを書いていない（199行が挙げるのは言葉の表だけ）。
+
+== 退けた指摘
+
+== 役が書いた、見られなかった所
+・request（レビュー役）: Pyxel 3.0.1 の定数の実在：pyxel を読み込めないので確かめていない。割り当ての表（86〜100行と103行）から数えた重複なしの名は24個で、主の注の「27個」と合わない。数え方の違いかどうかは分からない。
+・request（レビュー役）: ブラウザ版ランタイムの pyxel.js（画面上パッドの作り）と、SDL2 の emscripten の joystick のソース：リポジトリに無く、.cache/ は見ない決まりなので読んでいない。request-2 の画面上パッドの部分と request-4 は、記憶による推測。
+・request（レビュー役）: 偽のコントローラーを tick の印（window.CP_PROBE_TICK）で進める方式が実際に動くか、Pyxel経由の遅れが何tickか、切断の後にPyxel経由の値が0へ戻るか：道具を回さないので確かめていない。
+・request（レビュー役）: 規則ファイルの大きさ（web.md と tools.md が上限の6,000バイトに近いという細目15の前提）：バイト数を測っていない。
+・request（レビュー役）: /home/user/clipping-point/tests/test_web_smoke.py は関数の名だけ、/home/user/clipping-point/tests/test_verify.py は40〜129行だけを読んだ。/home/user/clipping-point/tests/test_rules_guard.py、/home/user/clipping-point/tests/test_arch_guard.py、/home/user/clipping-point/tools/export.py、/home/user/clipping-point/tools/test.py、/home/user/clipping-point/clipping_point/cp_app/canvas_pyxel.py は読んでいない。これらが頼みの文の形と合うかは未評価。
+・request（反証役）: request-4 のうち、SDL2 の emscripten 実装が接続時の値を控えて、変わった分だけを出来事にする（timestamp が変わったときだけ見る）という点：ソースがリポジトリに無く、確かめていない。verdict は、試作の手順との違いと、段7が判定なしの実測であることだけで付けた。
+・request（反証役）: request-2 のうち、Pyxelの画面上パッドが navigator.getGamepads を差し替えて value の無いボタンを返すという点：ランタイムの写し（.cache/）は見ない決まりなので、確かめていない。verdict の根拠にしていない。
+・request（反証役）: 道具とテストは回していない（読むだけの役のため）。git の履歴も見ていない（shell が無い）。request-8 の「perf を後から足した」は、作業記録の文で確かめた。
+review_summary: OK lenses=1 findings=8 passed=8 rejected=0 unevaluated=0 role_notes=8
