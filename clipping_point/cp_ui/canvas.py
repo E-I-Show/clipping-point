@@ -7,6 +7,8 @@ cp_app.canvas_pyxel が Pyxel で実行する。
 囲み（Canvas.box）は、描画命令をまとめる範囲。何も描かない。`with` の中で呼んだ命令は、その囲みの番号を持ち、
 囲みの内に収まっていなければ、はみ出しになる（数えるのは cp_ui.check）。囲みは Canvas.boxes に並べ、
 描く命令の列（Canvas.commands）には入れない。
+`with` を付けずに `canvas.box(...)` を呼ぶと、囲みは宣言されるだけで開かれず、後の命令は囲みに入らない。
+`with` で1度でも入った囲みの番号を Canvas.entered に残し、はみ出しの検査が、開かれなかった囲みを数える。
 どの命令も、矩形を返す口（bounds。左上と、幅、高さ）を持つ。文字の矩形は、インクの箱（text_size）。
 文字の大きさの式が実物の画素と合うことは、巡回（tools/tour.py）が毎回照らす。
 """
@@ -134,6 +136,7 @@ class _BoxScope:
 
     def __enter__(self) -> int:
         self._canvas._open.append(self.index)
+        self._canvas.entered.add(self.index)  # 中に何も描かなくても、入ったことは残す
         return self.index  # 囲みの番号
 
     def __exit__(self, *exc) -> bool:
@@ -148,10 +151,14 @@ class Canvas:
         self.w, self.h = w, h
         self.commands: list = []  # 呼ばれた順の描画命令
         self.boxes: list = []  # 宣言した順の囲み。命令の box と、囲みの parent は、ここの位置
+        self.entered: set = set()  # `with` で1度でも入った囲みの番号。ここに無い囲みは、開かれなかった囲み
         self._open: list = [SCREEN_BOX]  # いま開いている囲みの番号の積み重ね。底は画面
 
     def box(self, name: str, x: int, y: int, w: int, h: int) -> _BoxScope:
-        """囲みを宣言する。`with canvas.box(名, x, y, w, h):` の形で使う。入れ子にできる。何も描かない。"""
+        """囲みを宣言する。`with canvas.box(名, x, y, w, h):` の形で使う。入れ子にできる。何も描かない。
+
+        `with` を付けないと、囲みは開かれない（はみ出しの検査が、box_not_entered として数える）。
+        """
         if type(name) is not str:
             raise TypeError(f"box: name={name!r} must be str")
         _require_int("box", x=x, y=y, w=w, h=h)

@@ -9,9 +9,10 @@ import json
 import pytest
 
 from cp_app import tour
+from cp_app.canvas_pyxel import execute
 from cp_ui import fixtures
-from cp_ui.canvas import FONT_H, FONT_W, SCREEN_H, SCREEN_W, LineCommand, RectCommand, TextCommand
-from cp_ui.screens import COL_BACK
+from cp_ui.canvas import FONT_H, FONT_W, SCREEN_H, SCREEN_W, Canvas, LineCommand, RectCommand, TextCommand
+from cp_ui.screens import COL_BACK, SCREENS
 
 W, H = 12, 8  # 画素を照らす関数に与える、小さな絵の大きさ
 
@@ -266,6 +267,54 @@ def test_tour_run_saves_the_whole_picture_cut_to_the_screen_size(tmp_path):
     # 保存した絵は、全部の命令を描いた絵（最後の1つだけを描いた絵ではない）。背景と違う画素の数が、数えた値と同じ。
     for (_, _, pixels), entry in zip(shot.saved, result["shots"]):
         assert len(pixels) - pixels.count(COL_BACK) == entry["screen_ink"]
+
+
+def saved_pictures(pyxel) -> list:
+    """保存した絵の画素。保存した順。"""
+    return [pixels for _, _, pixels in pyxel.images[2].saved]
+
+
+def test_tour_run_clears_the_whole_picture_before_each_screen(tmp_path):
+    # 作った時に、全部の画素を別の色で埋めてある偽の画像で回す（前の件の絵が残っている状態に当たる）。
+    # 全体の絵を、描く前に消していれば、保存した絵も、数えた値も、きれいな画像で回したときと同じになる。
+    class Dirty(FakeImage):
+        def __init__(self, width: int, height: int) -> None:
+            super().__init__(width, height)
+            self.data[:] = bytes([9]) * len(self.data)  # 仮の表示が使わない色
+
+    clean, clean_result = run_tour(tmp_path)
+    dirty = FakePyxel()
+    dirty.image_type = Dirty
+    _, dirty_result = run_tour(tmp_path, dirty)
+    assert len(saved_pictures(clean)) == 2
+    assert saved_pictures(dirty) == saved_pictures(clean)
+    for clean_shot, dirty_shot in zip(clean_result["shots"], dirty_result["shots"]):
+        assert {**dirty_shot, "check_ms": 0} == {**clean_shot, "check_ms": 0}  # 時間のほかは同じ
+
+
+def test_tour_run_draws_each_variant_with_its_own_fixture(tmp_path):
+    # 変種を取り違えていないこと。極端な値の絵は、ふつうの値の絵と違い、画面の内の画素の数が多い（文字が長い）。
+    pyxel, result = run_tour(tmp_path)
+    typical, extreme = saved_pictures(pyxel)
+    assert typical != extreme
+    ink = {shot["variant"]: shot["screen_ink"] for shot in result["shots"]}
+    assert ink["extreme"] > ink["typical"] > 0
+
+
+@pytest.mark.parametrize("variant", fixtures.VARIANTS)
+def test_tour_run_saves_the_picture_of_the_variant_in_the_file_name(tmp_path, variant):
+    # 保存した絵が、その変種の見本データで、画面を1度だけ描いた絵と、同じ画素であること
+    # （前の件の絵が混ざっていない。別の変種の絵でもない）。
+    pyxel, result = run_tour(tmp_path)
+    index = [shot["variant"] for shot in result["shots"]].index(variant)
+    canvas = Canvas()
+    SCREENS["placeholder"](canvas, fixtures.build("placeholder", variant))
+    want = FakeImage(SCREEN_W, SCREEN_H)
+    want.cls(COL_BACK)
+    execute(canvas.commands, want)
+    path, _, pixels = pyxel.images[2].saved[index]
+    assert path == str(tmp_path / f"placeholder_{variant}.png")
+    assert pixels == bytes(want.data)
 
 
 def test_tour_run_can_be_limited_to_one_screen(tmp_path, monkeypatch):

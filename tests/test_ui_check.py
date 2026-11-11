@@ -1,6 +1,6 @@
 """はみ出しの検査（cp_ui.check）のテスト。Pyxelは使わない。
 
-5種類（空の矩形、画面の外、囲みの外、出せない文字、文字どうしの重なり）が、1つずつ出ること。
+6種類（空の矩形、画面の外、囲みの外、出せない文字、文字どうしの重なり、開かれなかった囲み）が、1つずつ出ること。
 端にちょうど接する矩形は、はみ出しにならないこと。囲みどうしの入れ子。
 """
 import pytest
@@ -13,8 +13,8 @@ def kinds(canvas: Canvas) -> list:
     return [violation.kind for violation in find_violations(canvas)]
 
 
-def test_ui_check_counts_five_kinds():
-    assert KINDS == ("empty", "off_screen", "out_of_box", "bad_char", "text_overlap")
+def test_ui_check_counts_six_kinds():
+    assert KINDS == ("empty", "off_screen", "out_of_box", "bad_char", "text_overlap", "box_not_entered")
 
 
 def test_ui_check_clean_canvas_has_no_violations():
@@ -273,6 +273,68 @@ def test_ui_check_reports_a_box_that_leaves_the_screen_or_has_no_area():
     found = find_violations(canvas)
     assert [violation.kind for violation in found] == ["off_screen", "empty"]
     assert "'wide'" in found[0].text and "'flat'" in found[1].text
+
+
+# --- 開かれなかった囲み ---
+def test_ui_check_reports_a_box_that_was_declared_without_with():
+    canvas = Canvas()
+    canvas.box("status", 2, 18, 64, 18)  # `with` の付け忘れ
+    canvas.text(4, 20, "TICK 120", 7)
+    found = find_violations(canvas)
+    assert [violation.kind for violation in found] == ["box_not_entered"]
+    assert "box #0 'status'" in found[0].text and "(2,18) 64x18" in found[0].text and "with" in found[0].text
+
+
+def test_ui_check_a_forgotten_with_no_longer_hides_a_text_that_leaves_the_box():
+    # 囲みより長い文字。`with` があれば、囲みの外（out_of_box）で数える。
+    canvas = Canvas()
+    with canvas.box("status", 2, 18, 64, 18):
+        canvas.text(4, 20, "TICKS SINCE START 9999999", 7)
+    assert kinds(canvas) == ["out_of_box"]
+    # `with` を付け忘れると、文字は囲みに入らず、囲みの外へ出たことは数えられない。開かれなかった囲みとして数える（0件にしない）。
+    canvas = Canvas()
+    canvas.box("status", 2, 18, 64, 18)
+    canvas.text(4, 20, "TICKS SINCE START 9999999", 7)
+    assert kinds(canvas) == ["box_not_entered"]
+
+
+def test_ui_check_a_box_entered_with_nothing_drawn_in_it_is_clean():
+    # 中身が0行の一覧など。入ったが、何も描かなかった囲みは、数えない。
+    canvas = Canvas()
+    with canvas.box("list", 10, 10, 200, 100):
+        for row in ():
+            canvas.text(12, 12, row, 7)
+    with canvas.box("panel", 10, 120, 200, 100):
+        with canvas.box("inner", 12, 122, 100, 10):
+            pass
+    assert find_violations(canvas) == []
+
+
+def test_ui_check_a_box_declared_first_and_entered_later_is_clean():
+    canvas = Canvas()
+    panel = canvas.box("panel", 10, 10, 200, 100)
+    assert kinds(canvas) == ["box_not_entered"]  # まだ入っていない
+    with panel:
+        canvas.text(12, 12, "PANEL", 7)
+    assert find_violations(canvas) == []
+
+
+def test_ui_check_reports_a_nested_box_that_was_not_entered():
+    canvas = Canvas()
+    with canvas.box("panel", 10, 10, 200, 100):
+        canvas.box("row", 12, 12, 100, 10)  # 入れ子の中の付け忘れ
+        canvas.text(14, 14, "ROW", 7)
+    found = find_violations(canvas)
+    assert [violation.kind for violation in found] == ["box_not_entered"]
+    assert "'row'" in found[0].text
+    assert canvas.commands[0].box == 0  # 文字は、外側の囲み（panel）に入っている
+
+
+def test_ui_check_a_box_that_was_not_entered_is_still_judged_for_its_placement():
+    canvas = Canvas()
+    canvas.box("wide", 0, 0, 321, 10)
+    canvas.box("flat", 0, 20, 100, 0)
+    assert kinds(canvas) == ["off_screen", "box_not_entered", "empty", "box_not_entered"]
 
 
 def test_ui_check_boxes_come_before_commands_and_overlaps_last():

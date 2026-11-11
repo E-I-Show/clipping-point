@@ -39,7 +39,7 @@ def test_canvas_screen_size_matches_the_design():
 
 def test_canvas_starts_empty():
     canvas = Canvas()
-    assert canvas.commands == [] and canvas.boxes == []
+    assert canvas.commands == [] and canvas.boxes == [] and canvas.entered == set()
 
 
 def test_canvas_records_text_and_rect_in_call_order():
@@ -76,7 +76,7 @@ def test_canvas_two_canvases_do_not_share_commands():
     a.text(1, 2, "A", 7)
     with a.box("panel", 0, 0, 10, 10):
         pass
-    assert b.commands == [] and b.boxes == []
+    assert b.commands == [] and b.boxes == [] and b.entered == set()
 
 
 @pytest.mark.parametrize(
@@ -156,6 +156,40 @@ def test_canvas_box_closes_even_when_the_block_raises():
             raise RuntimeError("inside the box")
     canvas.text(0, 0, "AFTER", 7)
     assert canvas.commands[0].box == SCREEN_BOX
+
+
+def test_canvas_remembers_which_boxes_were_entered():
+    canvas = Canvas()
+    with canvas.box("drawn_in", 0, 0, 100, 10) as drawn_in:
+        canvas.text(2, 2, "A", 7)
+    with canvas.box("left_blank", 0, 20, 100, 10) as left_blank:
+        pass  # 中に何も描かなくても、入ったことは残る（中身が0行の一覧など）
+    assert canvas.entered == {drawn_in, left_blank} == {0, 1}
+
+
+def test_canvas_box_without_with_is_declared_but_not_opened():
+    # `with` の付け忘れ。囲みは並ぶが、開かれない。後の命令は、囲みに入らない（はみ出しの検査が、開かれなかった囲みを数える）。
+    canvas = Canvas()
+    canvas.box("status", 2, 18, 64, 18)
+    canvas.text(4, 20, "TICK 120", 7)
+    assert [box.name for box in canvas.boxes] == ["status"]
+    assert canvas.entered == set()
+    assert canvas.commands[0].box == SCREEN_BOX
+
+
+def test_canvas_box_can_be_declared_first_and_entered_later():
+    canvas = Canvas()
+    panel = canvas.box("panel", 0, 0, 100, 100)
+    assert canvas.entered == set()
+    with panel as index:
+        canvas.text(2, 2, "A", 7)
+        inner = canvas.box("inner", 0, 50, 100, 10)  # 入れ子の中でも、`with` が無ければ開かれない
+        canvas.text(2, 52, "B", 7)
+    with panel:  # 同じ囲みへ、もう1度入ってもよい
+        canvas.text(2, 20, "C", 7)
+    assert canvas.entered == {index} == {0}
+    assert inner.index == 1 and canvas.boxes[1].parent == index
+    assert [command.box for command in canvas.commands] == [0, 0, 0]
 
 
 # --- 文字の大きさと、命令の矩形 ---

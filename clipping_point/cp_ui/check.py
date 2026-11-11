@@ -1,11 +1,14 @@
 """はみ出しの検査（純Python）。Canvas にためた描画命令と囲みから、はみ出しを数える。Pyxelは使わない。
 
-数えるのは5種類（KINDS）。
-  empty         空の矩形（幅か高さが0以下）。この命令や囲みは、ほかの判定をしない
-  off_screen    矩形が、画面（canvas.w × canvas.h）の内に収まっていない。端にちょうど接するのは、内
-  out_of_box    命令か囲みが、親の囲みの内に収まっていない
-  bad_char      文字の命令に、印字できるASCII（文字の番号が32〜126）と改行のほかの字がある。内蔵フォントは、黙って描かない
-  text_overlap  文字の命令どうしの矩形が、重なっている（囲みは問わない）
+数えるのは6種類（KINDS）。
+  empty            空の矩形（幅か高さが0以下）。この命令や囲みは、置き場と文字の判定（下の4つ）をしない
+  off_screen       矩形が、画面（canvas.w × canvas.h）の内に収まっていない。端にちょうど接するのは、内
+  out_of_box       命令か囲みが、親の囲みの内に収まっていない
+  bad_char         文字の命令に、印字できるASCII（文字の番号が32〜126）と改行のほかの字がある。内蔵フォントは、黙って描かない
+  text_overlap     文字の命令どうしの矩形が、重なっている（囲みは問わない）
+  box_not_entered  開かれなかった囲み。宣言したのに、`with` で1度も入っていない（`with` を付けずに canvas.box(...) を呼んだ）。
+                   後の命令は囲みに入らず、囲みの外へ出ても数えられないので、ここで数える。
+                   `with` で入って、中に何も描かなかった囲み（中身が0行の一覧など）は、数えない
 文字と矩形、矩形どうしの重なりは数えない（下地の上に文字を置くため）。
 文字数の上限は、ここでは見ない（定義データの読み込み検査の側に置く。段0 区切り8）。
 描く順の誤り（文字が、後から描いた下地に隠れる）も、ここでは拾えない。巡回が保存した画像を、目で見る。
@@ -15,7 +18,8 @@ from dataclasses import dataclass
 
 from cp_ui.canvas import SCREEN_BOX, Canvas
 
-KINDS = ("empty", "off_screen", "out_of_box", "bad_char", "text_overlap")  # はみ出しの種類。並びは、判定の順
+# はみ出しの種類。並びは、言葉の表（docs/glossary.md の「はみ出し」）の順。
+KINDS = ("empty", "off_screen", "out_of_box", "bad_char", "text_overlap", "box_not_entered")
 PRINTABLE_FIRST, PRINTABLE_LAST = 32, 126  # 内蔵フォントで出せる字の、文字の番号の範囲（印字できるASCII）
 
 
@@ -79,7 +83,10 @@ def find_violations(canvas: Canvas) -> list:
     """canvas のはみ出しの列を返す（空なら、問題なし）。並びは、囲み、命令、文字どうしの重なりの順。"""
     found = []
     for index, box in enumerate(canvas.boxes):
-        found += _placement(_box_label(index, box), box.bounds, box.parent, canvas)
+        label = _box_label(index, box)
+        found += _placement(label, box.bounds, box.parent, canvas)
+        if index not in canvas.entered:
+            found.append(Violation("box_not_entered", f"{label} was declared but never entered (write `with canvas.box(...):`; the commands after it are not in it)"))
     texts = []  # 重なりを見る文字の命令。(番号, 命令)。空の矩形のものは入れない
     for index, command in enumerate(canvas.commands):
         label = _command_label(index, command)

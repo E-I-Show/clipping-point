@@ -235,6 +235,15 @@ TOUR_READY = "    check_reader(single)\n"  # 巡回が、Pyxelを始めた後、
 TOUR_ENV = "    env = child_env(CP_TOUR=result_path, CP_TOUR_DIR=WORK)\n"  # 道具が、巡回の口の環境変数を渡す所
 TOUR_RELATIVE_RESULT = rep(TOUR_TOOL_PY, TOUR_ENV, TOUR_ENV.replace("CP_TOUR=result_path", 'CP_TOUR="result.json"'))
 TOUR_BOTH_SWITCHES = rep(TOUR_TOOL_PY, TOUR_ENV, TOUR_ENV.replace("CP_TOUR_DIR=WORK", "CP_TOUR_DIR=WORK, CP_SMOKE=result_path"))
+TOUR_CLEAR_WHOLE = "    whole.cls(COL_BACK)\n"  # 巡回が、全体の絵を、描く前に消す所
+TOUR_BUILD = "fixtures.build(screen, variant)"  # 巡回が、見本データを作る所
+TOUR_WRITE_RESULT = "        json.dump(result, f, indent=1, sort_keys=True)\n"  # 巡回が、結果ファイルの中身を書く所
+RENDER_TEXT_AT = 'canvas.text(4, 28, f"RENDER {view.renders}", COL_TEXT)'  # 仮の表示の、実描画の回数の文字を置く所
+BAR_RECT = "canvas.rect(0, 0, SCREEN_W, 12, COL_BAR)"  # 仮の表示の、タイトルの帯
+STATUS_BOX = '    with canvas.box("status", 2, 18, 64, 18):\n'  # 仮の表示の、状態の2行の囲み
+SCREEN_DEF = "def build_placeholder(canvas: Canvas, view: PlaceholderView) -> None:\n"
+# 画面の組み立てのモジュールに、構文の誤りを入れる（行末の「:」を落とす）。道具は、画面の登録を読み込めない。
+SCREENS_SYNTAX_ERROR = rep(SCREENS_PY, SCREEN_DEF, SCREEN_DEF.replace(" -> None:\n", " -> None\n"))
 
 # (名前, 壊し方の並び, 回す道具, 期待する終了コード, 最後の1行にあるはずの語)
 CASES = [
@@ -495,12 +504,24 @@ CASES = [
     ("screen_text_not_ascii", [TEXT_NOT_ASCII], SCREEN, {1}, "violations=2 not_checked=0 failed=placeholder/typical,placeholder/extreme kinds=bad_char"),
     # 極端な値のときだけ、はみ出す。落ちるのは extreme だけ（ふつうの値だけを回す検査なら、通ってしまう）。
     ("screen_overflow_only_in_extreme_variant", [TEXT_TOO_LONG_WHEN_EXTREME], SCREEN, {1}, "violations=1 not_checked=0 failed=placeholder/extreme kinds=out_of_box"),
+    # 文字を2つ、同じ位置に置く（文字どうしの重なり）。
+    ("screen_two_texts_at_the_same_place", [rep(SCREENS_PY, RENDER_TEXT_AT, RENDER_TEXT_AT.replace("(4, 28,", "(4, 20,"))], SCREEN, {1}, "violations=2 not_checked=0 failed=placeholder/typical,placeholder/extreme kinds=text_overlap"),
+    # 矩形の幅を0にする（空の矩形）。
+    ("screen_rectangle_without_width", [rep(SCREENS_PY, BAR_RECT, BAR_RECT.replace("SCREEN_W, 12", "0, 12"))], SCREEN, {1}, "violations=2 not_checked=0 failed=placeholder/typical,placeholder/extreme kinds=empty"),
+    # 囲みの1つから `with` を外す（開かれなかった囲み）。中の文字は囲みに入らないので、囲みの外へ出ても数えられなくなる。
+    (
+        "screen_box_declared_without_with",
+        [rep(SCREENS_PY, STATUS_BOX, STATUS_BOX.replace("    with canvas.box(", "    canvas.box(").replace("):\n", ")\n    if True:\n"))],
+        SCREEN, {1}, "violations=2 not_checked=0 failed=placeholder/typical,placeholder/extreme kinds=box_not_entered",
+    ),
     # --- はみ出しの検査：screen-check（回り切れなければ2。合格にしない） ---
     ("screen_raises", [rep(SCREENS_PY, SCREEN_HEAD, "    raise RuntimeError('planted')\n" + SCREEN_HEAD)], SCREEN, {2}, "screens=0/2 violations=0 not_checked=2"),
     ("screen_draws_nothing", [rep(SCREENS_PY, SCREEN_HEAD, "    return\n" + SCREEN_HEAD)], SCREEN, {2}, "screens=0/2 violations=0 not_checked=2"),
     ("screen_only_unknown_name", [], tool("screen_check", "--only", "nosuch"), {2}, "reason=unknown_screen"),
     ("screen_no_variants", [NO_VARIANTS], SCREEN, {2}, "screens=0/0 violations=0 not_checked=0 reason=nothing_planned"),
     ("screen_registered_without_fixtures", [SCREEN_WITHOUT_FIXTURES], SCREEN, {2}, "screens=2/4 violations=0 not_checked=2"),
+    # 画面の組み立てのモジュールが、読み込めない（構文の誤り）。例外で終わらせず（終了コード1）、回り切れない（2）にする。
+    ("screen_module_cannot_be_loaded", [SCREENS_SYNTAX_ERROR], SCREEN, {2}, "screens=0/0 violations=0 not_checked=0 reason=cannot_load"),
     # --- 画面の登録と配線：test（突き合わせのテストと、アプリから画面への配線の守りのテスト） ---
     ("test_screen_registered_without_fixtures", [SCREEN_WITHOUT_FIXTURES], TEST, {1}, "reason=failed"),
     ("test_logic_screen_without_registration", [rep(FLOW_PY, 'SCREEN_NAMES = ("placeholder",)', 'SCREEN_NAMES = ("placeholder", "title")')], TEST, {1}, "reason=failed"),
@@ -508,6 +529,15 @@ CASES = [
     ("test_app_ignores_the_screen_of_the_flow", [rep(APP_PY, "SCREENS[self.flow.screen](canvas, view)", 'SCREENS["placeholder"](canvas, view)')], TEST, {1}, "reason=failed"),
     # はみ出しの検査が、囲みの外を数えない。
     ("test_overflow_check_ignores_the_boxes", [rep("clipping_point/cp_ui/check.py", "    if parent != SCREEN_BOX:\n", "    if False:\n")], TEST, {1}, "reason=failed"),
+    # はみ出しの検査が、開かれなかった囲みを数えない。
+    ("test_overflow_check_ignores_boxes_that_were_not_entered", [rep("clipping_point/cp_ui/check.py", "        if index not in canvas.entered:\n", "        if False:\n")], TEST, {1}, "reason=failed"),
+    # 分野「カメラと画面の状態」のテストの絞りが、突き合わせのテストに当たらない（絞りを flow だけに戻す）。
+    ("test_flow_area_does_not_select_the_registry_tests", [rep("tools/verify.py", '"flow or fixtures or screens"', '"flow"')], TEST, {1}, "reason=failed"),
+    # --- 巡回の口：test（保存する絵の中身。道具 tour は、画像の大きさまでしか見ない） ---
+    # 全体の絵を、描く前に消さない。前の件の絵が残る。命令の数も、画面が空でないことも変わらないので、道具は通る。
+    ("test_tour_whole_picture_is_not_cleared", [rep(TOUR_APP_PY, TOUR_CLEAR_WHOLE, "    pass\n")], TEST, {1}, "reason=failed"),
+    # 見本データの変種を取り違える（どの変種でも、ふつうの値で描く）。極端な値の名の画像が、ふつうの値の絵になる。
+    ("test_tour_draws_the_typical_values_for_every_variant", [rep(TOUR_APP_PY, TOUR_BUILD, 'fixtures.build(screen, "typical")')], TEST, {1}, "reason=failed"),
     # --- 巡回：tour（実物の画素と照らす。問題があれば1） ---
     # 文字の幅の計算を小さく間違える。screen_check は通る（control_screen_check_passes_with_text_metrics_too_small）。
     ("tour_text_metrics_too_small", [FONT_TOO_NARROW], TOUR, {1}, "shots=2/2 commands=16 problems=10 failed=ink_outside"),
@@ -534,6 +564,12 @@ CASES = [
     ("tour_only_unknown_name", [], tool("tour", "--only", "nosuch"), {2}, "reason=unknown_screen"),
     ("tour_no_variants", [NO_VARIANTS], TOUR, {2}, "shots=0/0 commands=0 problems=0 reason=nothing_planned"),
     ("tour_screen_registered_without_fixtures", [SCREEN_WITHOUT_FIXTURES], TOUR, {2}, "reason=cannot_build"),
+    # 画面の組み立てのモジュールが、読み込めない（構文の誤り）。アプリを回す前に、道具が止まる。
+    ("tour_screen_module_cannot_be_loaded", [SCREENS_SYNTAX_ERROR], TOUR, {2}, "shots=0/0 commands=0 problems=0 reason=cannot_load"),
+    # 巡回の口が、画面を回す前に止まる。時間切れ。
+    ("tour_stall_hits_timeout", [rep(TOUR_APP_PY, TOUR_READY, TOUR_READY + "    time.sleep(3600)\n")], tool("tour", "--timeout", "4"), {2}, "reason=timeout timeout_s=4"),
+    # 巡回の口が、結果ファイルに、JSONでない字を書く。
+    ("tour_result_file_is_not_json", [rep(TOUR_APP_PY, TOUR_WRITE_RESULT, "        f.write('not json')\n")], TOUR, {2}, "reason=result_unreadable"),
     # 巡回が、命令ごとの照合を飛ばす（1つ飛ばす。全部飛ばす）。照らした命令の数が、道具が組み立てた命令の数と合わない。
     ("tour_one_command_not_checked", [rep(TOUR_APP_PY, TOUR_COMMANDS, TOUR_COMMANDS.replace("(commands)", "(commands[1:])"))], TOUR, {2}, "shots=0/2 commands=0 problems=0 incomplete=commands_checked"),
     ("tour_no_command_checked", [rep(TOUR_APP_PY, TOUR_COMMANDS, TOUR_COMMANDS.replace("(commands)", "(commands[:0])"))], TOUR, {2}, "shots=0/2 commands=0 problems=0 incomplete=commands_checked"),

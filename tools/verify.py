@@ -90,8 +90,12 @@ AREAS = (
         # 計画の表の「カメラと画面の状態」。いまあるのは、画面の状態（cp_core/flow.py）の最小の形だけ。
         "カメラと画面の状態",
         ("clipping_point/cp_core/flow.py", "tests/test_flow.py"),
-        # 計画の表のテストの絞りは「カメラ、画面の状態、指紋」。カメラは段0 区切り10、指紋は段0 区切り7で作る。いまは、画面の状態のテストの語だけ。
-        "flow",
+        # 計画の表のテストの絞りは「カメラ、画面の状態、指紋」。カメラは段0 区切り10、指紋は段0 区切り7で作る。
+        # 計画の表に無い fixtures と screens を足した。突き合わせのテスト（ロジックが持つ画面の名、画面の登録、見本データが
+        # 同じ集まりであること。tests/test_fixtures.py と tests/test_screens.py）は、名に flow を含まない。flow だけでは、
+        # flow.py にだけ画面の名を足して、登録と見本データへ足し忘れても、絞った検証が通ってしまう（screen-check は、
+        # 画面の登録から予定を作る）。この式が、画面の名を見るテストに当たることは、tests/test_verify.py が見る。
+        "flow or fixtures or screens",
         # 計画の表のとおり。
         ("run", "screen-check"),
     ),

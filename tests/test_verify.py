@@ -4,6 +4,7 @@
 道具を実際に順に回すこと（1本落ちると verify が1になること）は、道具 selftest-break が見る。
 gitを使うテストは、一時のリポジトリ（tmp_path）の中だけで回す。ネットワークは使わない。
 """
+import ast
 import os
 import re
 import subprocess
@@ -21,6 +22,7 @@ LOOP = "メインループと世界の状態"
 TOOLS_AREA = "検証の道具と検査の決まり"
 FULL_STEPS = ["check", "test", "screen-check", "run", "run-realtime", "tour", "export", "web-smoke"]
 UI_WORDS = "canvas or screens or ui_check or fixtures or tour"
+FLOW_WORDS = "flow or fixtures or screens"
 # どの分野にも当たらない見本。設計のモジュールの表に出てこない名前にする（本物のファイルと重ならないように）。
 NO_AREA_CODE = "clipping_point/cp_core/zz_no_area.py"
 NO_AREA_TEST = "tests/test_zz_no_area.py"
@@ -89,8 +91,44 @@ def test_verify_flow_files_map_to_the_camera_and_screen_state_area():
     plan, kind, not_yet = verify.plan_for([area(FLOW)], [], focused=True)
     assert kind == "focused"
     assert step_names(plan) == ["check", "test", "screen-check", "run"]
-    assert plan[1][1][-2:] == ["-k", "flow"]
+    # 計画の表に無い fixtures と screens を足してある（突き合わせのテストを選ぶため。理由は AREAS の行の注）。
+    assert plan[1][1][-2:] == ["-k", FLOW_WORDS]
     assert not_yet == []
+
+
+def readers_of(needle: str) -> list:
+    """tests/ のテストのうち、関数の中に needle が出てくるもの。返すのは (ファイルの名, 関数の名) の一覧。"""
+    found = []
+    for path in sorted((ROOT / "tests").glob("test_*.py")):
+        text = path.read_text(encoding="utf-8")
+        for node in ast.walk(ast.parse(text)):
+            if isinstance(node, ast.FunctionDef) and node.name.startswith("test_") and needle in ast.get_source_segment(text, node):
+                found.append((path.name, node.name))
+    return found
+
+
+def selected_by(expression: str, file_name: str, test_name: str) -> bool:
+    """`-k` の式（語を or でつないだ形）が、テストに当たるか。pytest は、語を、ファイルの名と関数の名に、部分一致で当てる。"""
+    return any(word.lower() in file_name.lower() or word.lower() in test_name.lower() for word in expression.split(" or "))
+
+
+def test_verify_flow_area_selects_the_tests_that_compare_the_screen_names():
+    # flow.py だけに触れたときの、絞った検証の `-k` の式。ロジックが持つ画面の名（cp_core.flow の、画面の名の並び）を見る
+    # テストは、どれも選ばれること。選ばれないと、flow.py にだけ画面の名を足して、画面の登録と見本データへ足し忘れても、通る。
+    areas, unknown = verify.areas_for(["clipping_point/cp_core/flow.py"])
+    assert [a.name for a in areas] == [FLOW] and unknown == []
+    plan, kind, _ = verify.plan_for(areas, unknown, focused=True)
+    assert kind == "focused" and plan[1][1][-2] == "-k"
+    expression = plan[1][1][-1]
+    readers = readers_of("SCREEN" + "_NAMES")  # 名を割って書く。このテスト自身を、読むテストに数えないため
+    # 突き合わせのテスト（画面の登録と見本データを、ロジックの画面の名と照らす）が、読むテストの中にあること。
+    assert ("test_fixtures.py", "test_fixtures_logic_screens_registry_and_fixtures_name_the_same_screens") in readers
+    assert ("test_screens.py", "test_screens_registry_has_the_same_names_as_the_logic") in readers
+    missed = [f"{file_name}::{test_name}" for file_name, test_name in readers if not selected_by(expression, file_name, test_name)]
+    assert missed == [], f"`-k {expression!r}` が当たらない：{missed}"
+    # 語が flow だけだと、突き合わせのテストは選ばれない（この守りが、何でも通す形でないことの確かめ）。
+    assert not selected_by("flow", "test_fixtures.py", "test_fixtures_logic_screens_registry_and_fixtures_name_the_same_screens")
+    assert not selected_by("flow", "test_screens.py", "test_screens_registry_has_the_same_names_as_the_logic")
 
 
 def test_verify_touching_only_the_overflow_check_runs_selftest_break():

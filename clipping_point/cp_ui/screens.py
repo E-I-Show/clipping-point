@@ -3,6 +3,7 @@
 画面は、(canvas, 表示用の値) を受ける関数。SCREENS = {画面の名: 関数} に登録する。
 画面の名は cp_core.flow の SCREEN_NAMES、表示用の値の型も cp_core.flow に置く。見本データは cp_ui.fixtures。
 パネル、一覧の行、HUDのまとまりは、囲み（canvas.box）にする。囲みにしないと、囲みの外へ出たことを数えられない。
+囲みは `with canvas.box(...):` の形で書く。`with` を付けないと開かれず、はみ出しの検査が、開かれなかった囲みとして数える。
 いまは起動時の仮の表示だけ。
 """
 from cp_core.flow import PlaceholderView
