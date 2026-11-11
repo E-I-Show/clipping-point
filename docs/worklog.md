@@ -32,7 +32,7 @@
 
 確かめ方：Claude Codeの道具 `get_session`（引数なし）で、`configured_model`、`session_context.model`、`last_served_model` が同じであることを見る。次に `list_events`（このセッションのid、kinds に `rate_limit_event`、limit 100）で最後のイベントを読む。`unifiedWindows` の `seven_day` と `seven_day_overage_included` の `utilization` が、2つの週の枠の値。高いほうを「週の使用率」として下の表に書く。`resetsAt` が、週の枠の切り替わる時刻。週の経過は、（いまの時刻 − 切り替わりの7日前）÷ 7日。
 
-- セッションのログファイルには値が入っていないので、スクリプトでは得られない。区切りごとに主のエージェントが読んで、ここに付ける。
+- セッションのログファイルには値が入っていないので、スクリプトでは得られない。区切りごとに主のエージェントが読んで、ここに付ける。読んだ値は `python3 tools/claude/usage_row.py --seven-day … --overage-included … --resets-at … --label …` に渡し、出た1行を下の表に足して、最後の1行の verdict に従う。
 - イベントは、値が動いたときにだけ出る。最後の100件に無ければ、返ってきた `first_id` を `before_id` に渡して、前のページを読む。
 - 読めなかったときは、その区切りで使った量（サブエージェントのトークン数）を備考に書き、節目で人に伺う。
 

@@ -6,15 +6,20 @@
       "Bash(git push * --force*)",
       "Bash(git push * -f)",
       "Bash(git push * -f *)",
-      "Bash(git * push --force*)",
-      "Bash(git * push -f *)",
-      "Bash(git * push * --force*)",
-      "Bash(git * push * -f)",
-      "Bash(git * push * -f *)",
+      "Bash(git push * +*)",
+      "Bash(git -C * push --force*)",
+      "Bash(git -C * push -f)",
+      "Bash(git -C * push -f *)",
+      "Bash(git -C * push * --force*)",
+      "Bash(git -C * push * -f)",
+      "Bash(git -C * push * -f *)",
+      "Bash(git -C * push * +*)",
       "Bash(git reset --hard*)",
-      "Bash(git * reset --hard*)",
+      "Bash(git reset * --hard*)",
+      "Bash(git -C * reset --hard*)",
+      "Bash(git -C * reset * --hard*)",
       "Bash(git clean *)",
-      "Bash(git * clean *)"
+      "Bash(git -C * clean *)"
     ]
   },
   "hooks": {

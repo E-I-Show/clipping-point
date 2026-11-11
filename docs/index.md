@@ -42,6 +42,7 @@
 | [day1-checklist.md](day1-checklist.md) | 段0で置くものの進み具合 | 段0の間だけ更新 |
 | [reports/](reports/README.md) | 進捗レポート。およそ1時間ごと | 追記 |
 | [review/](review/README.md) | 着手前の設計に対する批評と確かめの記録 | 済。足さない |
+| `reviews/` | 区切りごとのレビューの結果（通った指摘、退けた指摘と理由、役が見られなかった所）。`tools/claude/review_summary.py --out` が書く | 区切りごとに1つ足す |
 | [img/](img/) | 文書の図と、試作の画面 | 設計時のもの |
 
 ## docsの外にあるもの

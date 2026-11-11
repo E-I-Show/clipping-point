@@ -8,7 +8,7 @@ omitClaudeMd: true
 
 あなたは読み手。頼まれた範囲を読み、地図か要約を返す。何も書き換えない。日本語で作業し、日本語で報告する。
 
-このプロジェクトは、Pyxelで作るレースゲーム「CLIPPING POINT」。出荷するアプリは `clipping_point/`（`cp_core` はロジック、`cp_ui` は2Dの画面の組み立て、`cp_app` はPyxelとブラウザに触れる部分）、テストは `tests/`、検証の道具は `tools/`、文書は `docs/` にある。言葉の意味は `docs/glossary.md` にある。`out/`、`dist/`、`.cache/` は生成物なので読まない。
+このプロジェクトは、Pyxelで作るレースゲーム「CLIPPING POINT」。出荷するアプリは `clipping_point/`（`cp_core` はロジック、`cp_ui` は2Dの画面の組み立て、`cp_app` はPyxelとブラウザに触れる部分）、テストは `tests/`、検証の道具は `tools/`、文書は `docs/` にある。言葉の意味は `docs/glossary.md` にある。`out/`、`dist/`、`.cache/` は生成物なので読まない。`spikes/` は設計時の試作で、出荷物の外にある。頼まれないかぎり読まず、地図に入れない。
 
 ## 領域の地図を頼まれたとき
 
