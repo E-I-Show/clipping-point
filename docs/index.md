@@ -6,7 +6,7 @@
 
 | 文書 | 中身 | 状態 |
 | --- | --- | --- |
-| [handoff.md](handoff.md) | 作業の控え。25行まで。再開のとき最初に読む | 区切りごとに上書き |
+| [handoff.md](handoff.md) | 作業の控え。25行まで。再開のとき最初に読む | 区切りのコミット、途中のコミット、止める前に上書き |
 | [worklog.md](worklog.md) | 作業記録。状態の表、次の手、決めた細目、検証の行、事後報告 | 区切りごとに追記 |
 | [plan.md](plan.md) | 開発計画。段の並び、区切り、通過条件、検証の組、文書とClaude Codeの構成 | 確定（2026-11-11）。段の区切りは、その段の設計で確定させる |
 | [standing-policy.md](standing-policy.md) | 常設の方針。伺いの回答を、方法と理由の形で書いたもの | 確定（2026-11-11）。指示をいただいたら足す |
@@ -17,7 +17,7 @@
 | 文書 | 中身 | 状態 |
 | --- | --- | --- |
 | [canon/planning.md](canon/planning.md) | 企画書。正本。Claudeは書き換えない | 確定（2026-11-11） |
-| [proposals/](proposals/README.md) | 改訂案。正本とのずれと、方向を決める材料 | 0001が未決 |
+| [proposals/](proposals/README.md) | 改訂案。正本とのずれと、方向を決める材料 | 1件ごとの状態は `proposals/README.md` の一覧 |
 | [design/overview.md](design/overview.md) | 実装設計。全体の設計 | 確定（2026-11-11）。批評と確かめを反映済み |
 
 段ごとの設計と批評は、段の開始時に `design/` へ足します。
