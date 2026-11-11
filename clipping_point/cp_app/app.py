@@ -5,6 +5,7 @@
 ブラウザ版のトリガーは、直読み（cp_app/input_web.py）を先に試す。台本があるときは、入力アダプタも直読みも呼ばない。
 Pyxelの描画関数を直に呼ぶのは、裏画面を消す、描画命令の実行、裏画面を画面へ写す、の3つだけ。
 2Dの絵は必ず cp_ui の描画命令（Canvas）を通し、画面の組み立ては cp_ui.screens に置く。
+描く画面は、画面の状態（cp_core.flow）のいまの画面の名で、画面の登録（cp_ui.screens の SCREENS）を引いて決める。
 ファイルを読むときは、必ず Path(__file__) を基準にする（pyxel.init が作業ディレクトリを変える）。
 
 画面なしで回す口（tools/run.py が使う）。環境変数が無ければ普通に起動する。ブラウザ版には環境変数が無い。
@@ -14,6 +15,10 @@ Pyxelの描画関数を直に呼ぶのは、裏画面を消す、描画命令の
   CP_SMOKE_SCRIPT=<台本（JSON）の絶対パス>    あれば、入力フレームを台本から作る。CP_SMOKE があるときだけ読む
 結果ファイルは全tickの後にだけ書く。終了コードが0でも、結果ファイルが無ければ回り切っていない。
 台本のパスが相対パス、ファイルが読めない、台本の形が違う、のどれでも、起動時に例外にする。
+
+巡回の口（tools/tour.py が使う）。デスクトップ版で、環境変数 CP_TOUR があるときだけ動く。読む所と形は cp_app/tour.py。
+  CP_TOUR、CP_TOUR_DIR、CP_TOUR_ONLY
+あれば、メインループへ入らずに、見本データで画面を描いて照らし、結果ファイルを書いて終わる。CP_SMOKE とは一緒に使えない。
 
 ブラウザ版で外から渡す値（tools/web_smoke.py が使う）。読む所と形は cp_app/web_bridge.py。
   window.CP_PROBE = {ticks, warmup_ticks, script, trace_max}
@@ -32,12 +37,13 @@ import pyxel
 
 from cp_core import input_script
 from cp_core.fixed_loop import TICK_HZ, RenderGate
+from cp_core.flow import Flow, PlaceholderView
 from cp_core.input_frame import NEUTRAL, InputFrame, quantize
 from cp_core.sim import Sim
 from cp_ui.canvas import SCREEN_H, SCREEN_W, Canvas
-from cp_ui.screens import COL_BACK, TITLE, build_placeholder
+from cp_ui.screens import COL_BACK, SCREENS, TITLE
 
-from . import web_bridge
+from . import tour, web_bridge
 from .canvas_pyxel import execute
 from .input_pyxel import PyxelInput
 from .input_trace import InputTrace
@@ -110,6 +116,7 @@ class App:
         self.adapter = PyxelInput(pyxel)  # 入力アダプタ。割り当ての表の名前を、ここ（起動時）で全部引く
         self.triggers = TriggerReader(js)  # 直読み。デスクトップ版では、いつも None を返す
         self.sim = Sim()
+        self.flow = Flow()  # 画面の状態。いまの画面の名を持つ
         self.gate = RenderGate()
         self.back = pyxel.Image(SCREEN_W, SCREEN_H)  # 裏画面。3DとHUDに当たる絵はここへ描く
         self.back.cls(COL_BACK)
@@ -178,7 +185,9 @@ class App:
 
     def render(self) -> None:
         canvas = Canvas()
-        build_placeholder(canvas, self.sim.tick, self.renders, self.frame)
+        # 表示用の値。実描画の回数は、表示にだけ使う（世界へは渡さない）。
+        view = PlaceholderView(self.sim.tick, self.renders, self.frame)
+        SCREENS[self.flow.screen](canvas, view)
         self.back.cls(COL_BACK)
         execute(canvas.commands, self.back)
 
@@ -248,4 +257,10 @@ class App:
 
 def main() -> None:
     js = web_bridge.browser_js(sys.platform)  # デスクトップ版では None
+    # 巡回の口。デスクトップ版で、CP_TOUR があるときだけ。ブラウザ版では読まない。
+    tour_config = tour.read_config(os.environ) if js is None else None
+    if tour_config is not None:
+        tour.run(pyxel, tour_config)
+        # pyxel.quit() は常に終了コード0で終わり、失敗を消すので使わない。
+        sys.exit(0)
     App(read_run_config(os.environ), web_bridge.read_probe(js), js).run()

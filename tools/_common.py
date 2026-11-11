@@ -20,11 +20,13 @@ PURE_PACKAGES = ("cp_core", "cp_ui")  # 純Pythonの層
 OK, FAIL, INCOMPLETE = 0, 1, 2
 WORD = {OK: "OK", FAIL: "FAILED", INCOMPLETE: "INCOMPLETE"}
 NOISE_PREFIXES = ("ALSA lib ",)  # 音の出口が無い環境でPyxelが標準エラーに出す行の頭。行の途中の語では除かない
+# アプリの口を開く環境変数の名の頭（画面なしで回す口と、巡回の口）。外から入ったものは、子プロセスへ渡さない。
+APP_ENV_PREFIXES = ("CP_SMOKE", "CP_TOUR")
 
 
 def child_env(**extra) -> dict:
-    """子プロセスの環境。外から入った CP_SMOKE* を除き、__pycache__ を作らせない。"""
-    env = {k: v for k, v in os.environ.items() if not k.startswith("CP_SMOKE")}
+    """子プロセスの環境。外から入った CP_SMOKE* と CP_TOUR* を除き、__pycache__ を作らせない。"""
+    env = {k: v for k, v in os.environ.items() if not k.startswith(APP_ENV_PREFIXES)}
     env.pop("PYTHONUNBUFFERED", None)
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     env["PYTHONIOENCODING"] = "utf-8"
