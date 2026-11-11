@@ -28,7 +28,7 @@
 | --- | --- | --- |
 | [requests/README.md](requests/README.md) | 頼みの文のひな形と、置いてある頼みの文の一覧 | 区切りの頼みを足すたびに更新 |
 | [requests/stage0-k3.md](requests/stage0-k3.md) | 段0の区切り3（環境とブラウザ版の煙テスト）を、実装役に頼む文 | 実装済み |
-| [requests/stage0-k5.md](requests/stage0-k5.md) | 段0の区切り5（入力の土台）を、実装役に頼む文。主が決めた細目17件の表つき | 実装中 |
+| [requests/stage0-k5.md](requests/stage0-k5.md) | 段0の区切り5（入力の土台）を、実装役に頼む文。主が決めた細目17件の表つき | 実装済み |
 
 ## 調べ
 

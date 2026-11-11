@@ -52,16 +52,16 @@ STALE_JUNIT = (
     '<?xml version="1.0" encoding="utf-8"?><testsuites>'
     '<testsuite name="pytest" errors="0" failures="0" skipped="0" tests="999"></testsuite></testsuites>\n'
 )
-# いまの結果の形に合わせる（入力の出どころ、入力アダプタを呼んだ回数、入力の要約値つきの世界の要約）。読まれたら合格になる形。
+# いまの結果の形に合わせる（入力の出どころ、入力アダプタと直読みを呼んだ回数、入力の要約値つきの世界の要約）。読まれたら合格になる形。
 STALE_RESULT = json.dumps({
     "ticks": 120, "renders": 60, "sim": input_reference.sim_summary(input_reference.load_script(input_reference.SMOKE_SCRIPT)[1], 120),
-    "back_ink": 4321, "screen_diff": 0, "driver": "flip", "input_source": "script", "adapter_reads": 0,
+    "back_ink": 4321, "screen_diff": 0, "driver": "flip", "input_source": "script", "adapter_reads": 0, "direct_reads": 0,
 }) + "\n"
 EXIT_0_TEST = "import os\n\n\ndef test_zz_exit():\n    os._exit(0)\n"
 # 前回の実行が残した、合格の形の、ブラウザの実行役の結果（240 tickの probe。入力アダプタから、何も押していない入力を読んだ形）。
 STALE_WEB_RESULT = {
     "ticks": 240, "renders": 120, "sim": input_reference.sim_summary(None, 240), "platform": "emscripten", "python": "3.14.2",
-    "input_source": "adapter", "adapter_reads": 240, "warmup_ticks": 60,
+    "input_source": "adapter", "adapter_reads": 240, "direct_reads": 240, "warmup_ticks": 60,
     "perf": {"updates": 180, "renders": 90, "updates_per_s": 60.0, "renders_per_s": 30.0, "update_ms_p95": 0.1, "render_ms_p95": 0.2},
 }
 STALE_WEB_PAGE = json.dumps({
@@ -144,10 +144,16 @@ RENDER_HEAD = "        canvas = Canvas()\n"  # render() の頭
 METER_RENDER = "                self.meter.on_render(started_s, time.perf_counter())\n"
 # 実描画のある周期を20 ms重くする（測る区間の外に置く。更新と実描画の時間の線には掛からない）。
 HEAVY_FRAME = busy_on_web(20, indent="            ")
-# 入力の土台。台本を渡す筋書きと、偽のコントローラーの筋書きは、1本ずつ回す（段の長さは縮めない）。
+# 入力の土台。台本を渡す筋書きと、偽のコントローラーの筋書きは、1本ずつ回す（偽のコントローラーの予定の区間の長さは縮めない）。
 WEB_SCRIPT, WEB_PAD = tool("web_smoke", "--only", "script"), tool("web_smoke", "--only", "gamepad")
 FROM_SCRIPT = "            return self.script.frame_at(self.sim.tick)\n"  # 台本から入力フレームを作る所
 FROM_ADAPTER = "        return self.adapter.read(self.js is not None, self.triggers.read())\n"  # 入力アダプタから作る所
+DIRECT_READ = "self.triggers.read()\n"  # 直読みを、余分に1度呼ぶ文
+# 道具が、台本を相対パスで渡す。パスは、アプリの作業ディレクトリ（out/run）から見て実在する形にする。
+# 実在しないパスだと、アプリの絶対パスの検査が無くても、ファイルが見つからずに同じ落ち方になり、検査の有無を見分けられない。
+RELATIVE_SCRIPT = rep("tools/run.py", '        env["CP_SMOKE_SCRIPT"] = str(script_path)\n', f'        env["CP_SMOKE_SCRIPT"] = "../../{SMOKE_SCRIPT_JSON}"\n')
+ABS_SCRIPT_CHECK = "        if not os.path.isabs(script_path):\n"  # アプリの、台本の絶対パスの検査
+DRAW_FRAME = "        build_placeholder(canvas, self.sim.tick, self.renders, self.frame)\n"  # 仮の表示へ、入力フレームを渡す所
 STEER_AXIS_READ = "steer_analog=_clamp(-btnv(self._steer_axis) / AXIS_MAX, -1.0, 1.0)"
 DIRECT_ANALOG = "            throttle_analog, brake_analog = _clamp(float(right), 0.0, 1.0), _clamp(float(left), 0.0, 1.0)\n"
 # 直読みができたtickにも、Pyxel経由の2値のトリガーをデジタル値へ入れる。
@@ -345,32 +351,45 @@ CASES = [
         TEST, {1}, "reason=failed",
     ),
     ("test_trace_keeps_every_tick", [rep(TRACE_PY, "        if self.truncated or values == self._last:\n", "        if self.truncated:\n")], TEST, {1}, "reason=failed"),
+    # 仮の表示へ、何も押していない入力フレームを渡す。世界へは正しい入力フレームが届くので、道具は全部通る。守りのテストで拾う。
+    ("test_app_draws_a_neutral_frame_on_the_placeholder", [rep(APP_PY, DRAW_FRAME, DRAW_FRAME.replace("self.frame)", "NEUTRAL)"))], TEST, {1}, "reason=failed"),
     # --- 入力の土台：run（速い経路。台本を渡して回す） ---
     # アプリが、入力フレームの代わりに、何も押していない入力フレームを世界へ渡す。
     ("run_world_gets_neutral_instead_of_the_frame", [rep(APP_PY, IN_UPDATE, "        self.sim.step(NEUTRAL)\n")], RUN, {1}, "failed=sim not_yet="),
     # 台本を1 tickずらして読む。
     ("run_script_read_one_tick_off", [rep(APP_PY, FROM_SCRIPT, FROM_SCRIPT.replace("self.sim.tick", "self.sim.tick + 1"))], RUN, {1}, "failed=sim not_yet="),
     # 台本があるのに、入力アダプタから読む。
-    ("run_script_is_ignored", [rep(APP_PY, "        if self.script is not None:\n", "        if False:\n")], RUN, {1}, "failed=input_source,adapter_reads,sim"),
+    ("run_script_is_ignored", [rep(APP_PY, "        if self.script is not None:\n", "        if False:\n")], RUN, {1}, "failed=input_source,adapter_reads,direct_reads,sim"),
+    # 台本のときも、直読みを呼ぶ。値は変わらないので、呼んだ回数でしか見えない。
+    ("run_direct_read_called_with_a_script", [rep(APP_PY, FROM_SCRIPT, "            " + DIRECT_READ + FROM_SCRIPT)], RUN, {1}, "failed=direct_reads not_yet="),
     ("run_ticks_shorter_than_the_script", [], tool("run", "--ticks", "60"), {2}, "reason=ticks_shorter_than_script"),
     ("run_script_file_is_not_a_script", [], tool("run", "--script", BUDGETS_JSON), {2}, "reason=script_unreadable"),
     ("run_script_file_is_missing", [], tool("run", "--script", "tools/no_such_script.json"), {2}, "reason=script_unreadable"),
     # 道具が、台本を相対パスで渡す。アプリは、起動時に例外にする（pyxel.init が作業ディレクトリを変えるため）。
+    ("run_script_path_is_relative", [RELATIVE_SCRIPT], RUN, {1}, "reason=app_exit_code"),
+    # 上の件の対。同じ相対パスのまま、アプリの絶対パスの検査を外すと、最後まで回って通る。
+    # 上の件が落ちる理由が、ファイルが見つからないことではなく、検査であることの確かめ（壊さない件と同じく、0で通ること）。
     (
-        "run_script_path_is_relative",
-        [rep("tools/run.py", '        env["CP_SMOKE_SCRIPT"] = str(script_path)\n', f'        env["CP_SMOKE_SCRIPT"] = "{SMOKE_SCRIPT_JSON}"\n')],
-        RUN, {1}, "reason=app_exit_code",
+        "control_run_relative_script_path_passes_without_the_check",
+        [RELATIVE_SCRIPT, rep(APP_PY, ABS_SCRIPT_CHECK, "        if False:\n")],
+        RUN, {0}, "run: OK driver=flip input=script",
     ),
     # --- 入力の土台：run --realtime（台本を渡さず、入力アダプタを実物のPyxelで毎tick呼ぶ） ---
-    ("run_realtime_adapter_read_twice_per_tick", [rep(APP_PY, FROM_ADAPTER, "        self.adapter.read(self.js is not None, None)\n" + FROM_ADAPTER)], RUN_RT, {1}, "failed=adapter_reads"),
+    ("run_realtime_adapter_read_twice_per_tick", [rep(APP_PY, FROM_ADAPTER, "        self.adapter.read(self.js is not None, None)\n" + FROM_ADAPTER)], RUN_RT, {1}, "failed=adapter_reads not_yet="),
+    # 直読みを、1 tickに2度呼ぶ。デスクトップ版では値を返さないが、呼んだ回数は数える。
+    ("run_realtime_direct_read_twice_per_tick", [rep(APP_PY, FROM_ADAPTER, "        " + DIRECT_READ + FROM_ADAPTER)], RUN_RT, {1}, "failed=direct_reads not_yet="),
     # 軸のキーを btn で読む。実物のPyxelの中で落ちる。
     ("run_realtime_axis_key_read_with_btn", [rep(PYXEL_INPUT_PY, STEER_AXIS_READ, STEER_AXIS_READ.replace("-btnv", "-btn"))], RUN_RT, {1}, "reason=app_exit_code"),
+    # ボタンのキーを btnv で読む（舵の軸の名を、十字キーの名に取り違える）。これも、実物のPyxelの中で落ちる。
+    ("run_realtime_button_key_read_with_btnv", [rep(PYXEL_INPUT_PY, 'STEER_AXIS = "GAMEPAD1_AXIS_LEFTX"', 'STEER_AXIS = "GAMEPAD1_BUTTON_DPAD_LEFT"')], RUN_RT, {1}, "reason=app_exit_code"),
     # 割り当ての表に、Pyxelに無い定数の名前がある。起動時に落ちる（押されるまで分からない形にしない）。
     ("run_realtime_unknown_pyxel_constant", [rep(PYXEL_INPUT_PY, '"shift_up": ("KEY_S", ', '"shift_up": ("KEY_NO_SUCH", ')], RUN_RT, {1}, "reason=app_exit_code"),
     # --- 入力の土台：web-smoke（回り切れない。2。何も開かない） ---
     ("web_pad_stage_has_no_tick_to_judge", [rep(BUDGETS_JSON, '"web_pad_settle_ticks": 10', '"web_pad_settle_ticks": 30')], WEB_PAD, {2}, "reason=pad_stage_too_short"),
     ("web_script_ticks_shorter_than_the_script", [rep(BUDGETS_JSON, '"web_script_ticks": 120', '"web_script_ticks": 40')], WEB_SCRIPT, {2}, "reason=ticks_shorter_than_script"),
     ("web_script_file_is_not_a_script", [rep(SMOKE_SCRIPT_JSON, '"segments"', '"parts"')], WEB_SCRIPT, {2}, "reason=script_unreadable"),
+    # 偽のコントローラーのスクリプトが無い。例外で終わらせず（終了コード1）、回り切れない（2）にする。
+    ("web_fake_gamepad_script_is_missing", [rm("tools/web/fake_gamepad.js")], WEB_PAD, {2}, "reason=no_fake_gamepad"),
     # --- 入力の土台：web-smoke の筋書き script（台本を渡して開く）。どれも、デスクトップ版の道具（run）は通る ---
     # ブラウザ版でだけ、台本を読まずに入力アダプタから読む。
     (

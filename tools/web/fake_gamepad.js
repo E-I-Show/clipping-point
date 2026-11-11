@@ -3,14 +3,15 @@
 // 元は spikes/web/tools/fake_gamepad.js。
 //
 // 予定は、このスクリプトの前につなぐ1行で置く。予定と、判定に使う値は tools/web_smoke.py の1か所（PAD_STAGES）に持つ。
+// 予定は、区間（同じ値が続くひと続き）を順に並べたもの。下の stage と index は、この予定の区間の番号。
 //   window.CP_FAKE_PAD_PLAN = [{until: 30, pad: null}, {until: 60, pad: {mapping: "standard", axes: [0, 0, 0, 0], buttons: {"7": 0.3}}}, …]
-//     until  この段が終わるtick（この値は、段に入らない）。最後の段は、その後も続く
+//     until  この区間が終わるtick（この値は、区間に入らない）。最後の区間は、その後も続く
 //     pad    null なら未接続（コントローラーの枠が全部空）。そうでなければ、接続中のコントローラー。
 //            mapping は Gamepad API の mapping。axes は4個の軸の値。buttons は、0でないボタンの「番号: 値」
 // 予定は、実時間では進めない。getGamepads が呼ばれるたびに、アプリが置く tick の印（window.CP_PROBE_TICK。無ければ0）を見て、
-// 段を選ぶ。開始のクリックからアプリが動き始めるまでの時間が、決まらないため。
-// 段へ入るたびに、コンソールへ「CP_FAKE_PAD stage=<段の番号。1始まり> tick=<そのときの tick の印>」を出す。
-// 段が替わったら、timestamp を進める（ランタイムは、timestamp が変わったときだけ、値を読み直す）。
+// 区間を選ぶ。開始のクリックからアプリが動き始めるまでの時間が、決まらないため。
+// 区間へ入るたびに、コンソールへ「CP_FAKE_PAD stage=<区間の番号。1始まり> tick=<そのときの tick の印>」を出す。
+// 区間が替わったら、timestamp を進める（ランタイムは、timestamp が変わったときだけ、値を読み直す）。
 // 空から接続へ変わったら gamepadconnected、接続から空へ変わったら gamepaddisconnected を、window へ送る。合図には gamepad を付ける。
 // 合図は、getGamepads の中から直に送らず、後回しにして送る（呼んでいるのが、アプリの更新の途中のことがあるため）。
 // コントローラーには、Gamepad API の形を全部持たせる（ボタン17個、軸4個）。欠けていると、ランタイムが全部の枠を読む所で落ちる（実測）。
@@ -23,7 +24,7 @@
   const plan = window.CP_FAKE_PAD_PLAN;
   if (!Array.isArray(plan) || plan.length === 0) throw new Error("fake_gamepad: window.CP_FAKE_PAD_PLAN is missing or empty");
 
-  let stage = -1; // いまの段の番号（0始まり）。まだどの段にも入っていなければ −1
+  let stage = -1; // いまの区間の番号（0始まり）。まだどの区間にも入っていなければ −1
   let pad = null; // いま見せているコントローラー。未接続なら null
   let stamp = 0;
 
@@ -69,7 +70,7 @@
     const tick = window.CP_PROBE_TICK || 0;
     let index = plan.findIndex((entry) => tick < entry.until);
     if (index < 0) index = plan.length - 1;
-    while (stage < index) enter(stage + 1, tick); // 段を飛ばさずに、順に入る
+    while (stage < index) enter(stage + 1, tick); // 区間を飛ばさずに、順に入る
     const slots = Array.from({ length: SLOTS }, () => null);
     if (pad !== null) slots[0] = pad;
     return slots;

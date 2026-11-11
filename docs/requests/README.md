@@ -43,4 +43,4 @@
 | 文書 | 区切り | 状態 |
 | --- | --- | --- |
 | [stage0-k3.md](stage0-k3.md) | 段0 区切り3：環境とブラウザ版の煙テスト | 実装済み |
-| [stage0-k5.md](stage0-k5.md) | 段0 区切り5：入力の土台 | 実装中。頼みの文のレビューの結果は [stage0-k5-request.txt](../reviews/stage0-k5-request.txt) |
+| [stage0-k5.md](stage0-k5.md) | 段0 区切り5：入力の土台 | 実装済み。頼みの文のレビューの結果は [stage0-k5-request.txt](../reviews/stage0-k5-request.txt)、区切りのレビューの結果は [stage0-k5.txt](../reviews/stage0-k5.txt)。偽のコントローラーの予定の「段」は、実装の後で「予定の区間」に呼び替えた（この文の中は、頼んだ時のまま） |

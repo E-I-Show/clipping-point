@@ -240,6 +240,25 @@ def test_input_web_one_read_asks_the_browser_once():
         assert js.navigator.calls == expected
 
 
+def test_input_web_counts_its_reads_whatever_the_result_is():
+    # 検証が「1 tickに1度」「台本のときは呼ばない」を見るための回数。値が読めても、未接続でも、例外でも数える。
+    for slots in ([FakePad(left=0.6, right=0.3)], EMPTY4, [FakePad(mapping="")], RuntimeError("no gamepad access")):
+        reader = TriggerReader(FakeJs(slots))
+        assert reader.reads == 0
+        for expected in (1, 2, 3):
+            reader.read()
+            assert reader.reads == expected
+
+
+def test_input_web_counts_its_reads_on_the_desktop_too():
+    # デスクトップ版（js が None）は、値を返さないが、呼んだ回数は数える。道具 run が、この回数を照らす。
+    reader = TriggerReader(None)
+    assert reader.reads == 0
+    for expected in (1, 2, 3):
+        assert reader.read() is None
+        assert reader.reads == expected
+
+
 def test_input_web_warn_mark_is_a_plain_ascii_word():
     # 印は、道具（tools/web_smoke.py）がコンソールの行から探す。
     assert input_web.WARN_MARK == "CP_INPUT_WARN"

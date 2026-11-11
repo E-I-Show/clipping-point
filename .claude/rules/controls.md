@@ -39,7 +39,8 @@ paths:
 - 直読みの警告の印：`cp_app/input_web.py` の `WARN_MARK`
 - 入力の跡の形と戻し方：`cp_app/input_trace.py` の頭の注と `expand()`
 - 台本からの参照（世界の要約、tickごとの値）：`tools/input_reference.py`
-- 偽のコントローラーの予定と、判定に使う値：`tools/web_smoke.py` の `PAD_STAGES`。段の長さと、判定しないtick数は `tools/budgets.json`
+- 偽のコントローラーの予定と、判定に使う値：`tools/web_smoke.py` の `PAD_STAGES`。予定の区間の長さと、判定しないtick数は `tools/budgets.json`
+- 結果に出す入力の値（`input_source`、`adapter_reads`、`direct_reads`）：`cp_app/app.py` の `input_report()`。2つの回数は、台本なら0、入力アダプタなら回したtickと同じ
 
 ## Xを足したらYも
 
@@ -63,3 +64,4 @@ paths:
 - ブラウザ版のランタイムは、接続の後の最初の軸の変化を、Pyxelへ届けない。偽のコントローラーは、先に軸をわずかに動かす。
 - 偽のコントローラーには、Gamepad APIの形を全部持たせる。欠けると、ランタイムが落ちる。
 - 切断すると、Pyxel経由の値は、次のtickで0へ戻る。
+- コントローラーを1台だけつないだときは、どのコントローラーの枠に入っても、直読みとPyxel経由が同じ機器を見る（偽のコントローラーを2番目の枠に置いた実測）。2台以上つないだときは、確かめていない。

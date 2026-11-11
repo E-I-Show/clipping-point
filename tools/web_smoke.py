@@ -9,27 +9,31 @@
            ランタイムの写しの外への要求が無い、開始のクリックの後の決めた秒数で画面が描かれている（背景と違う画素がある）。
   probe    ページを開く前に差し込むスクリプトで、回すtick数（window.CP_PROBE）を置いて開く。
            アプリがコンソールへ出す結果の1行と完了の合図を待つ。見るもの：上に加えて、回したtick、
+           入力の出どころが入力アダプタで、入力アダプタと直読みを呼んだ回数が回したtickと同じ（時間の線が、入力を読んだ更新の値であること）、
            世界の要約がデスクトップ版と同じ、実描画の回数、更新と実描画の毎秒の回数、更新1回と実描画1回の時間（95%点）、
            ブラウザ版であること（sys.platform が emscripten）、Pythonの版。線は tools/budgets.json。
   script   window.CP_PROBE に、回すtick数、道具の台本（tools/input_script_smoke.json）、入力の跡の件数の上限を置いて開く。
-           見るもの：ブラウザ版であること、回したtick、入力の出どころが台本で、入力アダプタを呼んでいない、
+           見るもの：ブラウザ版であること、回したtick、入力の出どころが台本で、入力アダプタも直読みも呼んでいない、
            世界の要約がデスクトップ版（同じ台本を渡して回した）と同じで、参照（tools/input_reference.py）とも同じ、
            入力の跡が打ち切られていない、入力の跡が、台本を入力フレームへ直して量子化した列と、全tickで同じ。
   gamepad  偽のコントローラー（tools/web/fake_gamepad.js）を差し込んで開く。台本は渡さない。予定と、判定に使う値は PAD_STAGES。
-           見るもの：ブラウザ版であること、回したtick、入力の出どころが入力アダプタで、呼んだ回数が回したtickと同じ、
-           偽のコントローラーが予定の段を境目のtickで通った、入力の跡が打ち切られていない、
+           見るもの：ブラウザ版であること、回したtick、入力の出どころが入力アダプタで、入力アダプタと直読みを呼んだ回数が回したtickと同じ、
+           偽のコントローラーが予定の区間を境目のtickで通った、入力の跡が打ち切られていない、
            入力の跡から計算し直した入力の要約値が世界の要約と同じ（アプリが読んだ入力フレームが、そのまま世界へ渡っている）、
-           段ごとに、頭の判定しないtickを除いた全tickで、入力の跡から戻した値が PAD_STAGES のとおり、押した瞬間の立ち方。
+           予定の区間ごとに、頭の判定しないtickを除いた全tickで、入力の跡から戻した値が PAD_STAGES のとおり、押した瞬間の立ち方。
 script と gamepad は、処理時間と回数の線を見ない（見るのは probe）。慣らしは0。
 終了コード：0＝合格、1＝問題あり、2＝回り切れない（ランタイムの写しが無い・照合が合わない、node が無い、
 ビルドできない、デスクトップ版の参照が取れない、ブラウザの実行役の結果が無い、完了の合図が出ない、台本が読めない、
-回すtick数が台本の合計より短い、偽のコントローラーの段に判定するtickが無い）。2を合格にしない。
+回すtick数が台本の合計より短い、偽のコントローラーの予定の区間に判定するtickが無い、偽のコントローラーのスクリプトが読めない）。
+2を合格にしない。
 ページが返らない（Pythonが主スレッドを握ったまま。失敗の種類 unresponsive）は、1にする。
 線の判定に使うのは、慣らし（頭の測らないtick）を除いた値。慣らしを入れた値は、最後の1行の with_warmup= に
 「更新の毎秒の回数/実描画の毎秒の回数/更新1回のms/実描画1回のms」の順で出す（判定には使わない）。
 最後の1行の script_changes= は、台本の筋書きの入力の跡の件数。pad_lag= は、偽のコントローラーの筋書きで、
-見えるはずの値が、段の境目から何tick遅れて見えたかの最大（判定しないtick数の余裕を見るための値）。
+見えるはずの値が、予定の区間の境目から何tick遅れて見えたかの最大（判定しないtick数の余裕を見るための値）。
 結果は out/web_smoke/ に書く。前回の結果は、回す前に消す。
+言葉：偽のコントローラーの予定の、同じ値が続くひと続きは「予定の区間」と呼ぶ（番号を付けるときは「区間3」。1始まり）。
+英語の名前（PAD_STAGES、PadStage、stage_ticks、判定の名 pad_stage_N、コンソールの行の stage=）は、この予定の区間のこと。
 """
 import argparse
 import hashlib
@@ -59,20 +63,20 @@ FAKE_PAD_JS = TOOLS / "web" / "fake_gamepad.js"
 SCENARIOS = ("shipped", "probe", "script", "gamepad")
 MIN_MEASURED_TICKS = 60  # 慣らしの後に測るtick数の下限。これより短いと、毎秒の回数が1回の揺れで線を外れる
 PAD_PLAN_NAME = "CP_FAKE_PAD_PLAN"  # 偽のコントローラーの予定を置く、window の値の名前（fake_gamepad.js と同じ）
-PAD_LOG = re.compile(r"CP_FAKE_PAD stage=(\d+) tick=(\d+)")  # 偽のコントローラーが、段へ入るたびにコンソールへ出す行
+PAD_LOG = re.compile(r"CP_FAKE_PAD stage=(\d+) tick=(\d+)")  # 偽のコントローラーが、予定の区間へ入るたびにコンソールへ出す行
 STANDARD, NOT_STANDARD = "standard", ""  # Gamepad API の mapping。標準の並びと、標準でない並び
 # 左スティックを、先にわずかに動かしておく値。ブラウザ版のランタイム（SDL）は、接続の後の最初の軸の変化を、その軸の
-# 始まりの値として覚えるだけで、Pyxelへは届けない（実測。試作も、値を動かす前に0.01の段を挟んでいた）。
+# 始まりの値として覚えるだけで、Pyxelへは届けない（実測。試作も、値を動かす前に、軸を0.01にする手順を挟んでいた）。
 # 0からいきなり −1 へ動かすだけだと、Pyxel経由の値は0のままになる。この値そのものは、Pyxel経由では見えない。
 AXIS_NUDGE = 0.01
 
 
 @dataclass(frozen=True)
 class PadStage:
-    """偽のコントローラーの予定の1段と、その段で見えるはずの値。"""
+    """偽のコントローラーの予定の区間の1つと、その区間で見えるはずの値。"""
 
     name: str
-    pad: object  # 段の頭で、偽のコントローラーが見せる状態（fake_pad() の辞書）。None は未接続（コントローラーの枠が全部空）
+    pad: object  # 区間の頭で、偽のコントローラーが見せる状態（fake_pad() の辞書）。None は未接続（コントローラーの枠が全部空）
     expect: dict  # 入力の跡から戻した値（QUANTIZED_FIELDS の名: 値）。書いていない名は0
 
 
@@ -81,10 +85,11 @@ def fake_pad(mapping: str, axes: tuple = (0, 0, 0, 0), buttons: dict | None = No
     return {"mapping": mapping, "axes": list(axes), "buttons": {str(index): value for index, value in (buttons or {}).items()}}
 
 
-# 偽のコントローラーの予定と、判定に使う値。ここ1か所に持つ。1段の長さと、段の頭で判定しないtick数は tools/budgets.json。
-# 接続するときは、全部0で接続し、値は次の段で変える（試作と同じ手順）。
-# expect は、この環境での実測を元に置いた。段6と段9（押したまま切断）は、Pyxel経由の値も全部0へ戻る。
-# 段8（標準でない並び）は、直読みをせず、Pyxel経由の2値のトリガーをデジタル値へ入れる。
+# 偽のコントローラーの予定（区間1〜9）と、判定に使う値。ここ1か所に持つ。
+# 予定の区間の長さと、区間の頭で判定しないtick数は tools/budgets.json。
+# 接続するときは、全部0で接続し、値は次の区間で変える（試作と同じ手順）。
+# expect は、この環境での実測を元に置いた。区間6と区間9（押したまま切断）は、Pyxel経由の値も全部0へ戻る。
+# 区間8（標準でない並び）は、直読みをせず、Pyxel経由の2値のトリガーをデジタル値へ入れる。
 PAD_STAGES = (
     PadStage("unplugged", None, {}),
     PadStage("standard", fake_pad(STANDARD), {}),
@@ -101,8 +106,8 @@ PAD_STAGES = (
     PadStage("not_standard_triggers", fake_pad(NOT_STANDARD, buttons={6: 0.6, 7: 1.0}), {"throttle_digital": 1, "brake_digital": 1}),
     PadStage("unplugged_again", None, {}),
 )
-PAD_QUIET_STAGES = (1, 2, 3)  # 段2〜4（0始まりの番号）。どのtickでも、押した瞬間は空
-PAD_PRESS_STAGE = 4  # 段5（0始まりの番号）。頭の、判定しないtickの中の1 tickだけ、押した瞬間に PAD_PRESS_BUTTON が立つ
+PAD_QUIET_STAGES = (1, 2, 3)  # 区間2〜4（ここは0始まりの番号）。どのtickでも、押した瞬間は空
+PAD_PRESS_STAGE = 4  # 区間5（ここは0始まりの番号）。頭の、判定しないtickの中の1 tickだけ、押した瞬間に PAD_PRESS_BUTTON が立つ
 PAD_PRESS_BUTTON = "confirm"
 PRESSED_AT = QUANTIZED_FIELDS.index("pressed")
 # tools/web/webrun.js が集める失敗の種類と、その読み方。並びは、最後の1行の failed= に出す順。
@@ -181,6 +186,8 @@ def judge_probe(page: dict, html_sha256: str, result: dict, desktop_sim, ticks: 
         ("platform", result.get("platform") == web_bridge.WEB_PLATFORM, f"ブラウザ版でない（sys.platform が {result.get('platform')!r}）"),
         ("python", python.startswith(fetch_runtime.WEB_PYTHON + "."), f"Pythonの版が {python!r}（{fetch_runtime.WEB_PYTHON} のはず）"),
         ("ticks", result.get("ticks") == ticks, f"回したtickが {result.get('ticks')}（{ticks} のはず）"),
+        # 時間の線が、入力を読んだ更新の値であること。入力アダプタと直読みを呼ばない更新で測っても、ほかの確かめは通ってしまう。
+        *source_checks(result, ticks, "adapter"),
         (
             "measured_ticks",
             perf.get("updates") == ticks - warmup_ticks,
@@ -205,14 +212,26 @@ def judge_probe(page: dict, html_sha256: str, result: dict, desktop_sim, ticks: 
     ]
 
 
+def source_checks(result: dict, ticks: int, source: str) -> list:
+    """入力の出どころと、読んだ回数の確かめ。source は "script" か "adapter"。回したtickの確かめ（ticks）の後ろに置く。
+
+    入力アダプタと直読みは、台本なら呼ばない（0回）。入力アダプタから読むなら、どちらも1 tickに1度（回したtickと同じ）。
+    """
+    adapter_reads, direct_reads = result.get("adapter_reads"), result.get("direct_reads")
+    want_reads = ticks if source == "adapter" else 0
+    return [
+        ("input_source", result.get("input_source") == source, f"入力の出どころが {result.get('input_source')!r}（{source!r} のはず）"),
+        ("adapter_reads", adapter_reads == want_reads, f"入力アダプタを呼んだ回数が {adapter_reads}（{want_reads} のはず）"),
+        ("direct_reads", direct_reads == want_reads, f"直読みを呼んだ回数が {direct_reads}（{want_reads} のはず）"),
+    ]
+
+
 def input_checks(result: dict, ticks: int, source: str) -> list:
     """入力に関わる筋書き（script、gamepad）で、どちらでも見ること。source は "script" か "adapter"。"""
-    reads, want_reads = result.get("adapter_reads"), ticks if source == "adapter" else 0
     return [
         ("platform", result.get("platform") == web_bridge.WEB_PLATFORM, f"ブラウザ版でない（sys.platform が {result.get('platform')!r}）"),
         ("ticks", result.get("ticks") == ticks, f"回したtickが {result.get('ticks')}（{ticks} のはず）"),
-        ("input_source", result.get("input_source") == source, f"入力の出どころが {result.get('input_source')!r}（{source!r} のはず）"),
-        ("adapter_reads", reads == want_reads, f"入力アダプタを呼んだ回数が {reads}（{want_reads} のはず）"),
+        *source_checks(result, ticks, source),
     ]
 
 
@@ -253,7 +272,7 @@ def pad_plan(stage_ticks: int) -> list:
 
 
 def pad_ticks(stage_ticks: int) -> int:
-    """偽のコントローラーの筋書きで回すtick数。最後の段の終わりまで。"""
+    """偽のコントローラーの筋書きで回すtick数。予定の最後の区間の終わりまで。"""
     return stage_ticks * len(PAD_STAGES)
 
 
@@ -265,15 +284,15 @@ def pad_expected_row(stage: PadStage) -> tuple:
 
 
 def read_pad_log(page: dict) -> list:
-    """偽のコントローラーが段へ入った跡。[(段の番号（1始まり）, そのときの tick の印), …]"""
+    """偽のコントローラーが予定の区間へ入った跡。[(区間の番号（1始まり）, そのときの tick の印), …]"""
     hits = (PAD_LOG.fullmatch(str(c.get("text", ""))) for c in page.get("console") or [])
     return [(int(hit.group(1)), int(hit.group(2))) for hit in hits if hit]
 
 
 def pad_lag(rows: list, stage_ticks: int):
-    """見えるはずの値が、段の境目から何tick遅れて見えたかの、全部の段での最大。どこかの段で1度も見えなければ None。
+    """見えるはずの値が、予定の区間の境目から何tick遅れて見えたかの、全部の区間での最大。どこかの区間で1度も見えなければ None。
 
-    押した瞬間は比べない（見えた最初のtickにだけ立つので、入れると、その段がいつも1 tick遅れに見える）。
+    押した瞬間は比べない（見えた最初のtickにだけ立つので、入れると、その区間がいつも1 tick遅れに見える）。
     """
     worst = 0
     for index, stage in enumerate(PAD_STAGES):
@@ -286,21 +305,27 @@ def pad_lag(rows: list, stage_ticks: int):
 
 
 def judge_gamepad(page: dict, html_sha256: str, result: dict, stage_ticks: int, settle_ticks: int) -> list:
-    """偽のコントローラーを差し込んで開く筋書きの確かめ。settle_ticks は、段の頭で判定しないtick数。"""
+    """偽のコントローラーを差し込んで開く筋書きの確かめ。settle_ticks は、予定の区間の頭で判定しないtick数。"""
     ticks = pad_ticks(stage_ticks)
     rows, why = read_trace(result, ticks)
     no_trace = "入力の跡が使えないので、見られない"
     want_log = [(index + 1, index * stage_ticks) for index in range(len(PAD_STAGES))]
     log = read_pad_log(page)
+    # 世界の要約からは、tick と入力の要約値の2項目だけを比べる。要約の形を、ここで手で組まない
+    # （Sim.summary() に項目が足されても、この確かめが落ちないように）。
     sim = result.get("sim")
-    want_sim = None if rows is None else {"tick": ticks, "input_digest": input_reference.digest_of(rows)}
+    sim_tick, sim_digest = (sim.get("tick"), sim.get("input_digest")) if isinstance(sim, dict) else (None, None)
+    want_digest = None if rows is None else input_reference.digest_of(rows)
     checks = page_checks(page, html_sha256) + input_checks(result, ticks, "adapter") + [
-        ("pad_plan", log == want_log, f"偽のコントローラーが、予定の段を境目のtickで通っていない（通った跡 {log}。tick の印が置かれていない、など）"),
+        ("pad_plan", log == want_log, f"偽のコントローラーが、予定の区間を境目のtickで通っていない（通った跡 {log}。tick の印が置かれていない、など）"),
         ("trace_complete", rows is not None, f"入力の跡が使えない（{why}）"),
         (
             "sim_from_trace",
-            rows is not None and sim == want_sim,
-            f"世界の要約が、入力の跡から計算し直した値と違う（世界 {sim}、入力の跡から {want_sim}）" if rows is not None else no_trace,
+            rows is not None and sim_tick == ticks and sim_digest == want_digest,
+            (
+                f"世界の要約の tick と入力の要約値が、入力の跡から計算し直した値と違う"
+                f"（世界は tick {sim_tick}、入力の要約値 {sim_digest}。入力の跡からは tick {ticks}、入力の要約値 {want_digest}）"
+            ) if rows is not None else no_trace,
         ),
     ]
     for index, stage in enumerate(PAD_STAGES):
@@ -313,7 +338,7 @@ def judge_gamepad(page: dict, html_sha256: str, result: dict, stage_ticks: int, 
         seen = rows[bad[0]] if bad else want
         checks.append((
             name, not bad,
-            f"段{index + 1}（{stage.name}）の tick {bad[0] if bad else '-'} が {seen}（{want} のはず。並びは {QUANTIZED_FIELDS}。違うtickが {len(bad)} 個）",
+            f"区間{index + 1}（{stage.name}）の tick {bad[0] if bad else '-'} が {seen}（{want} のはず。並びは {QUANTIZED_FIELDS}。違うtickが {len(bad)} 個）",
         ))
     if rows is None:
         return checks + [("pad_pressed_quiet", False, no_trace), ("pad_pressed_once", False, no_trace)]
@@ -321,11 +346,11 @@ def judge_gamepad(page: dict, html_sha256: str, result: dict, stage_ticks: int, 
     press_start, bit = PAD_PRESS_STAGE * stage_ticks, 1 << BUTTONS.index(PAD_PRESS_BUTTON)
     presses = [tick for tick in range(press_start, press_start + stage_ticks) if rows[tick][PRESSED_AT] & bit]
     return checks + [
-        ("pad_pressed_quiet", not quiet, f"段2〜4で、押した瞬間が立っている（tick {quiet[:5]}）"),
+        ("pad_pressed_quiet", not quiet, f"区間2〜4で、押した瞬間が立っている（tick {quiet[:5]}）"),
         (
             "pad_pressed_once",
             len(presses) == 1 and presses[0] < press_start + settle_ticks,
-            f"段5で、押した瞬間の {PAD_PRESS_BUTTON} が立ったtickが {presses}（段の頭の {settle_ticks} tickの中の、1 tickだけのはず）",
+            f"区間5で、押した瞬間の {PAD_PRESS_BUTTON} が立ったtickが {presses}（区間の頭の {settle_ticks} tickの中の、1 tickだけのはず）",
         ),
     ]
 
@@ -442,10 +467,9 @@ def scenario_script(args, budgets: dict, html_sha256: str, context: dict) -> tup
 
 
 def scenario_gamepad(args, budgets: dict, html_sha256: str, context: dict) -> tuple:
-    """偽のコントローラーを差し込んで開く。"""
+    """偽のコントローラーを差し込んで開く。差し込むスクリプトは、main() が先に組んだもの。"""
     stage_ticks, settle_ticks = budgets["web_pad_stage_ticks"], budgets["web_pad_settle_ticks"]
-    init_script = pad_init_script(stage_ticks, budgets["web_input_trace_max"])
-    page, result, checks, reason = open_with_probe("gamepad", args.timeout, init_script, html_sha256)
+    page, result, checks, reason = open_with_probe("gamepad", args.timeout, context["pad_init_script"], html_sha256)
     if result is None:
         return checks, [], reason
     rows, _ = read_trace(result, pad_ticks(stage_ticks))
@@ -480,10 +504,16 @@ def main() -> int:
         if script_ticks < total:
             return finish("web_smoke", INCOMPLETE, f"scenarios=0 reason=ticks_shorter_than_script ticks={script_ticks} script_ticks={total}")
     if "gamepad" in names:
-        # どの段にも、判定するtickが1個以上あること。無ければ、何も見ずに合格になる。
+        # 予定のどの区間にも、判定するtickが1個以上あること。無ければ、何も見ずに合格になる。
         stage_ticks, settle_ticks = budgets["web_pad_stage_ticks"], budgets["web_pad_settle_ticks"]
         if not 0 <= settle_ticks < stage_ticks:
             return finish("web_smoke", INCOMPLETE, f"scenarios=0 reason=pad_stage_too_short stage_ticks={stage_ticks} settle_ticks={settle_ticks}")
+        # 差し込むスクリプトを、先に組む。偽のコントローラーのスクリプトが読めなければ、回り切れない（例外で終わらせない）。
+        try:
+            context["pad_init_script"] = pad_init_script(stage_ticks, budgets["web_input_trace_max"])
+        except (OSError, ValueError) as exc:  # 無い、読めない、UTF-8でない
+            print(f"  web_smoke: 偽のコントローラーのスクリプト（{FAKE_PAD_JS.name}）が読めない：{type(exc).__name__}: {exc}")
+            return finish("web_smoke", INCOMPLETE, "scenarios=0 reason=no_fake_gamepad")
     if not shutil.which("node"):
         return finish("web_smoke", INCOMPLETE, "scenarios=0 reason=no_node")
     try:
