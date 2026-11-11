@@ -22,7 +22,7 @@ from _common import FAIL, INCOMPLETE, OK, OUT, ROOT, child_env, finish, run
 PY = sys.executable
 SCRATCH = OUT / "selftest"
 # 複製するもの。道具、テスト、見張りが読むファイルの全部。足りなければ control の件が落ちる。
-COPY_ITEMS = ("clipping_point", "tools", "tests", ".claude/rules", "docs/canon", "docs/handoff.md", "CLAUDE.md", "pytest.ini")
+COPY_ITEMS = ("clipping_point", "tools", "tests", ".claude/rules", ".claude/agents", ".claude/settings.json","docs/canon", "docs/handoff.md", "CLAUDE.md", "pytest.ini")
 CASE_TIMEOUT_S = 180  # 1件の時間切れ（秒）。いちばん長い件（verify --all。ブラウザ版の煙テストを含む）で約40秒
 
 RUNTIME_CACHE = ".cache"  # ランタイムの写しの置き場。複製には、ここへのリンクだけを置く（中身は書き換えない）

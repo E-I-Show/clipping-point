@@ -1,0 +1,185 @@
+区切り：段0 区切り3：環境とブラウザ版の煙テスト
+
+== fakepass
+■ fakepass-1 [中/確かめた] 所：tools/verify.py:185-198（changed_files）、221行（--base の既定）、147行（selftest-break を足す条件）
+   直し：基点の既定を「題が `段N 区切りM：` で始まる、途中でない直近のコミット」にし、git diff に --no-renames を付け、最後の1行に基点の短いハッシュを出す。一時のgitリポジトリで changed_files() を通すテスト（途中のコミットの後、名前の変更、削除、未追跡）を tests/test_verify.py に足す。
+   場合：破る行：221行 `ap.add_argument("--base", default="HEAD", …)` と190行 `git diff --name-only -z <基点>`。決まりの文：CLAUDE.md:75「道具か検査の決まりに触れた区切りと、段の仕上げでは、selftest-break も回す」、docs/plan.md:249「触れた分野は申告ではなく、変更したファイルから tools/verify が引きます」。起きる場合：区切りの途中のコミット（CLAUDE.md:123 で認めていて、区切り3だけで3回ある）の後は、HEAD との差に、途中のコミットへ入った変更が出ない。いまの状態（HEAD=c75d0a2 が tools/ の変更を全部含む）で、レビューの直しとして tests/test_perf.py だけを直して `python3 tools/verify.py --touched` を回すと、files=1、分野は「メインループと世界の状態」だけになり、selftest-break は足されずに `verify: OK mode=touched(full) base=HEAD files=1 areas=1 … steps=6` で終わる。道具に触れた区切りなのに、道具の分野が引かれない。FOCUS_ENABLED を True にした後は、テストの絞りと手順も同じ理由で減る。同じ関数の別の取りこぼし：`git mv` で動かしたファイルは、git の既定（名前の変更の検出）では新しい名前しか出ない（--no-renames が無い）ので、tools/ から外へ動かすと道具の分野が引かれない（この部分は実行して確かめていない）。changed_files() を通すテストも壊す件も無い。
+   反証：基点の既定が HEAD なので、途中のコミットの後は、その中の変更が分野に引かれず、道具に触れた区切りでも selftest-break が足されない。基点の決めはどの文書にも無く、changed_files() を通すテストも壊す件も無い。案は成り立つが、当たるコミットが見つからないときは HEAD に戻さず2にすること（浅い複製では履歴が切れる）。
+■ fakepass-6 [低/確かめた] 所：tools/web/fetch_runtime.py:109-114（download）、130行と135行（store）、181-185行、190行（build_mirror）
+   直し：download() で http.client.HTTPException も FetchError にし、main の取得と組み立てを `except (FetchError, OSError)` で2にする。download を差し替えたテスト（取得の失敗で2、違うバイト列で1）を足せば、実装役が通せなかった2つの経路をネットワークなしで通せる。
+   場合：破る行：download() が捕まえるのは `(urllib.error.URLError, OSError, ValueError)`、main が捕まえるのは FetchError だけ。決まりの文：同じファイルの13行「2＝取得できない」、.claude/rules/tools.md:15「最後に件数つきの1行を `_common.finish()` で出す」。入力：取得の途中で接続が切れ、`response.read()` が http.client.IncompleteRead を出す（HTTPException の子で、OSError ではない。標準ライブラリの http/client.py で確かめた）。捕まえられずにトレースバックで終わり、終了コードは1（この道具では「照合が合わない」の意味）、最後の1行は出ない。store() と build_mirror() の OSError（書き込めない）も同じ形になる。合格にはならないが、1と2の読み分けが崩れる。
+   反証：IncompleteRead は HTTPException の子で OSError ではなく、長さつきの read() は途中で切れるとこれを出す。download() も main も捕まえないので、トレースバックと終了コード1（この道具では「照合が合わない」の意味）で終わり、最後の1行も出ない。store と build_mirror の OSError も同じ形で、案（捕まえる例外を足す、download を差し替えたテスト）は成り立つ。
+■ fakepass-9 [低/確かめた] 所：tools/verify.py:62-67（分野「画面（2D）」の当て先 `clipping_point/cp_ui/**`）
+   直し：cp_ui も `__init__.py`、`canvas.py`、`screens.py` を1つずつ並べ、新しいファイルで check が落ちるようにする。
+   場合：破る行：64行 `("clipping_point/cp_ui/**", …)`。決まりの文：docs/plan.md:265「検証の道具、検査の決まり（はみ出しの検査、データの検査、見本データ）｜全部｜全体の検証とselftest-break」、verify.py:15「分野の行は、その分野の最初のファイルを作る区切りで足す（足さないと check が落ちる）」。起きる場合：区切り6で cp_ui/check.py（はみ出しの検査）と cp_ui/fixtures.py（見本データ。overview.md:78-79）を足すと、先に `cp_ui/**` に当たるので areas の節は落ちず、分野は「画面（2D）」だけになる。--touched は selftest-break を足さず、絞った検証では全体を回さない。cp_core は1ファイルずつ並べてあり、足すと check が落ちて分野を決めさせる形になっている。
+   反証：cp_ui/** が、設計で cp_ui に置くと決めた check（はみ出しの検査）と fixtures（見本データ）を先に受けるので、区切り6で areas の節が落ちず、計画の「全体の検証とselftest-break」の分野に入れ忘れても気付けない。cp_core は1ファイルずつ並べてあり、cp_ui はいま3ファイルなので、並べる案は成り立つ。
+■ fakepass-10 [低/推測] 所：clipping_point/cp_app/app.py:113、.claude/rules/sim-core.md:36
+   直し：app.py をASTで読み、draw() の中の should_render の呼び出しが引数を1つ持つことを見る守りのテストを足す（pyxel を読み込まずに回せる）。重い表示が入る区切り10で、web-smoke の実描画の回数で見える形に置き換える。
+   場合：実装役が挙げた(1)と同じ穴で、塞ぎ方の案。入力：app.py:113 を `if self.gate.should_render():` にする（実時間を渡さない）。check、test、run、run --realtime、export は通る（fixed_loop.py:42-58 の (1) の決まりだけで ticks/2 回になる）。web-smoke も、いまの軽い表示では差が出ない（budgets.json の注の実測による。自分では追えていない）。sim-core.md:36 は「ブラウザ版の煙テストの実描画の回数で見る」と書くが、verify --all では見えない。拾うのは selftest_break だけ（IN_DRAW の文字列が当たらず COULD NOT PLANT で2）。
+   反証：実装役が挙げた(1)と同じ穴で、事実は合っている（sim-core.md の「煙テストの実描画の回数で見る」は、いまは壊す件の中でしか成り立たない）。ASTの守りのテストは pyxel なしで回せて害は無いが、見るのは「引数がある」ことだけなので、区切り10までのつなぎと書いておくこと。
+■ fakepass-11 [低/確かめた] 所：tools/selftest_break.py の CASES（レビューの頼みの文の「35件足した」）
+   直し：作業記録と報告には「26件足して120件（壊す件105、壊さない件15）」と書く。35の出どころ（実装役の報告）を確かめる。
+   場合：基点 00a7805 の CASES は94件、いまは120件で、足したのは26件（壊さない件6、壊す件20。差分の名前を1件ずつ数えた）。頼みの文の「35件」と合わない。決まりの文：CLAUDE.md:36「検証の報告は『回したもの（件数つき）』と…に分ける」。このまま作業記録に35件と書くと、件数が合わなくなる。
+   反証：基点 00a7805 の CASES は94件、いまは120件で、差分で足した名前は26件（壊さない件6、壊す件20）、消した件は0。「35件」は実物と合わないので、作業記録には26件足して120件（壊す件105、壊さない件15）と書く。
+
+== design
+■ design-1 [中/確かめた] 所：CLAUDE.md:63-75（「コマンド」の節）、.claude/rules/tools.md:3-7 と 22-28
+   直し：主のエージェントが「コマンド」の表に `python3 tools/verify.py --all [--selftest]`、`--touched [--base REV]`、`--list`、`python3 tools/web_smoke.py [--only shipped|probe]`、`bash tools/setup_env.sh` の行を足し、65行に areas、70行の秒数、75行の順（verify --all に置き換える）を直す。tools.md の paths に tests/test_verify.py を、「値を読む口」に verify.py の AREAS を足す。
+   場合：破る行：CLAUDE.md の「コマンド」の表（63〜72行）に verify、web-smoke、tools/setup_env.sh が無い。65行は `--only syntax|arch|rules|canon` のままで areas が無い。70行は selftest-break を「約45秒」と書くが、ブラウザを開く件が14件足され、verify --all を回す件は1件で約40秒かかる（selftest_break.py:26）。75行は「どの区切りでも、check → test → run → run --realtime → export をこの順で回す」で、web-smoke が入っていない。tools.md は paths（3〜7行）に tests/test_verify.py が無く、「値を読む口」に分野ごとの組の表（verify.py の AREAS）が無い。
+決まりの文：tools.md:33「道具を足したら、根の CLAUDE.md の「コマンド」の表に足す。」、plan.md:267「CLAUDE.mdには表を出すコマンドだけを書き」、plan.md:244（全体の検証の中身に web-smoke）。
+このままコミットすると、新しいセッションは CLAUDE.md:75 の5本だけを回し、ブラウザ版の煙テストを回さない。test_verify.py を直すときに tools.md が読み込まれない。頼みの文は、この表を実装役に直させていない（報告の案を主が当てる段取り）ので、主の手が残っている。
+   反証：引用は指摘の時点（c75d0a2）の実物と合っていたが、CLAUDE.md の分（verify・web-smoke・setup_env の行、areas、秒数、回す順）は、確かめの間に入ったコミット 0602cb7 で直っている。残るのは tools.md だけで、paths に tests/test_verify.py が無く、「値を読む口」と「テストと道具」にも verify の AREAS と test_verify.py が無いので、そのテストを直すときに規則ファイルが読み込まれない（控えには「tools.md の追記」とあるが、木にはまだ無い）。
+■ design-3 [中/確かめた] 所：tools/verify.py:140-146（plan_for の絞る側）、:30-31、:221、tests/test_verify.py
+   直し：tests/test_verify.py に「全 Area の steps の名が STEPS か NOT_YET にある」「tests の語が、tests/ のテストのファイル名か関数名のどれかに当たる」を足し、plan_for は知らない手順の名を例外にする。基点の使い方（区切りの途中のコミットがあるときは、前の区切りのコミットを --base に渡す）を CLAUDE.md のコマンドの行に書く。
+   場合：FOCUS_ENABLED が False の間、AREAS の各行の tests と steps は1度も使われない（plan_for は全体の側だけを通る）。行は区切りごとに足していく（verify.py:15）のに、行の中身を確かめるテストが無い。主の注(5)の穴の、具体の形と塞ぎ方として書く。
+起きる場合(1)：行の steps に、STEPS にも NOT_YET にも無い名（例："web_smoke"）を書く → 絞る側では、その手順が黙って落ちる（:145）。:146 が「まだ無い手順」として not_yet=1(web_smoke) に出し、終了コードは0。
+起きる場合(2)：tests の語の打ち間違いは、絞った検証に切り替えた日に、何行分もまとめて test の2（k_word_matches_nothing）として出る。
+起きる場合(3)：基点の既定が HEAD（:221）なので、区切りの途中のコミット（CLAUDE.md:123 で許されている。この環境はターンの終わりごとにコミットを促す）の後は、コミット済みの分の分野が引かれない。
+決まりの文：plan.md:249「触れた分野は申告ではなく、変更したファイルから tools/verify が引きます」、plan.md:336「何も調べずに合格で終われる道具になっていないか」。いまは全体を回すので害は出ないが、切り替えた時に一度に出る。
+   反証：plan_for の絞る側は、STEPS に無い手順の名を黙って落とし、NOT_YET とも照らさずに not_yet に出して終了コード0のままで、全行の steps と tests を確かめるテストは無い（test_verify.py が形を固めているのは「画面（2D）」と「ブラウザ連携」の2行だけ）。基点の既定が HEAD なので、この区切りのように途中のコミット（8fe5c1e、c75d0a2、0602cb7）があると --touched はコミット済みの分野を引かず、いまの CLAUDE.md のコマンドの行にも基点の使い方は書かれていない。
+■ design-5 [低/確かめた] 所：tools/verify.py:30-32、tools/budgets.json:6-7
+   直し：FULL_LIMIT_S を budgets.json へ移し、_notes に「仮の値：設計の『全体の検証を絞り始める目安 3分』。検証が重くなった時に合わせる」と書く。verify.py:30 は印を外して、ふつうの注にする。budgets.json:6-7 の注は「計画の通過条件の線。動かすのは計画を見直す時」と書き分ける。
+   場合：破る行：verify.py:32「FULL_LIMIT_S = 180  # …（計画の決まり。仮の値ではない）」。
+決まりの文：overview.md:828 は、仮の値の表に「全体の検証を絞り始める目安 | 3分 | 検証が重くなった時」を挙げている。CLAUDE.md:108「道具の値は tools/budgets.json に出す」。設計が仮の値とした値が、コードの中に「仮の値ではない」と書かれて置かれている。
+verify.py:30 の「# 割り切り：」は、計画の決まり（plan.md:239）どおりの動きに付いている。割り切りの一覧を grep で引くと、設計の割り切りの表（overview.md:832-844）に無い行が出る。
+逆に budgets.json:6-7 は、計画の通過条件の線（毎秒59回、29回。plan.md:106）に「仮の値：…段0 区切り10で合わせる」と書いていて、動かしてよい値に読める。設計が仮の値とするのは4 msと12 msだけ（overview.md:825）。
+   反証：verify.py:32 の「計画の決まり。仮の値ではない」は、設計の仮の値の表（全体の検証を絞り始める目安 3分、合わせる時は検証が重くなった時）と食い違い、CLAUDE.md の「道具の値は tools/budgets.json に出す」にも合わない。budgets.json:6-7 が計画の通過条件の線（毎秒59回、29回）を「仮の値：…区切り10で合わせる」と書いているのも事実で、動かしてよい値に読める。ただし verify.py:30 の「割り切り：」は限りと見直す時を持つ書式どおりで、設計の割り切りの表に無いこと自体は決まりを破らないので、印を外す案は要らない。
+■ design-6 [低/確かめた] 所：tools/web_smoke.py:15,39,114,130,143,167、tools/budgets.json:10、tools/selftest_break.py:49,107,249、tests/test_web_smoke.py:3,22、tests/test_perf.py:38、clipping_point/cp_app/web_bridge.py:1、tests/test_web_bridge.py:1、.claude/rules/web.md:10、CLAUDE.md:159、tools/verify.py:132
+   直し：言葉の表の「検証」の節に「慣らし」と「完了の合図」を足す。「実行役」は「ブラウザを開くスクリプト（webrun.js）」に、「ブラウザとの橋」は「ブラウザ連携」に書き換える。verify.py:132 は「FOCUS_ENABLED が False のとき」と書く。
+   場合：決まりの文：CLAUDE.md:106「新しい語を使うときは、先に表へ足す」。glossary.md:11「「設定」と「段」は、表の意味だけに使います」。
+破る行：言葉の表に無い語が、コードの注、道具の出力、規則ファイルに出ている。
+- 「慣らし」（web_smoke.py:39,114,167、budgets.json:10、selftest_break.py:107、test_perf.py:38）。:114 は道具の出力。
+- 「実行役」（web_smoke.py:15,130,143、selftest_break.py:49,249、test_web_smoke.py:3,22）。サブエージェントの型の「実装役」、道具の「運転役」と紛れる。
+- 「ブラウザとの橋」（web_bridge.py:1、test_web_bridge.py:1、web.md:10、CLAUDE.md:159）。同じ物を verify.py:69 と plan.md:263,317 は「ブラウザ連携」と呼ぶ。
+- 「完了の合図」。設計（overview.md:770）にある語だが、表に無い。
+- verify.py:132「絞らない設定のとき」は、道具の切り替えを「設定」と書いている。
+   反証：「慣らし」「完了の合図」「ブラウザの実行役」は、確かめの間に入った 0602cb7 で言葉の表に足されたので、その分は済み。残るのは、表に無い「ブラウザとの橋」（計画と verify.py:69 は同じ物を「ブラウザ連携」と呼ぶ）、verify.py:132 の「絞らない設定のとき」（「設定」は表の意味だけに使う決まり）、表の語「ブラウザの実行役」をコードが「実行役」と略している点で、「実行役」を書き換える案は、表に足した語にそろえる形に替えるのがよい。
+■ design-7 [低/確かめた] 所：clipping_point/cp_app/perf.py:38,44、tools/budgets.json:11,24
+   直し：細目として作業記録の事後報告に書く。あわせて、結果の1行に、慣らしを入れた値（全tickの95%点と毎秒の回数）も出しておき、区切り10で通過条件を測るときに両方を報告できるようにする。
+   場合：決まりの文：plan.md:106「走行の場面を600 tick以上回し、更新が毎秒59回以上、実描画が毎秒29回以上、更新1回が4 ms以内、実描画1回が12 ms以内（95%点）」。測らない区間の定めは無い。
+破る行：PerfMeter は、頭の warmup_ticks（60 tick＝1秒）の更新と実描画を、4本の線のどれにも入れない。根拠に挙げた試作の実測（spikes/web/RESULT.json:26,29）は「最初の1回は3.1〜4.5倍」で、推奨は「遅い前提で予算を立てる」。測らない、とは言っていない。
+起きる場合：区切り10で走行の場面を測るとき、最初の1秒に線を外れる更新や実描画が続いても、通過条件は合格と出る。いまの仮の表示では差は出ない。
+   反証：PerfMeter は頭の60 tickの更新と実描画を4本の線の全部から外していて、計画の通過条件には測らない区間の定めが無い。根拠に挙げた試作は「最初の1回は3.1〜4.5倍」「遅い前提で予算を立てる」で、外すとは言っておらず、区切り10で頭の1秒の引っ掛かりが通過条件に出なくなるのに、作業記録にはこの細目の記載がまだ無い（言葉の表に「慣らし」が入っただけ）。
+■ design-8 [低/確かめた] 所：tools/verify.py:62-73、tests/test_verify.py:89、clipping_point/cp_app/perf.py（新しいファイル）
+   直し：作業記録の事後報告に、3点と理由を書く。verify.py の AREAS の2行には、計画の表との違いを注で1行ずつ添える。
+   場合：計画と設計の表と違えた細目が3つある。どれも頼みの文（stage0-k3.md:43-44）には合っていて、害は無い。次の区切りが、表とコードのどちらに合わせて行を足すかで迷う。
+(a) 決まりの文 plan.md:261「画面（2D） | 画面 | screen-check、tour」。破る行 verify.py:66 は ("run", "screen-check", "tour")。test_verify.py:89 がこの形を固めている。run を足すのは厳しい側。
+(b) 決まりの文 plan.md:263「ブラウザ連携… | 保存 | web-smoke」。破る行 verify.py:71 のテストの絞りは "web_bridge"。verify.py:16 は自分で「組の中身は docs/plan.md の「検証の組」の表に合わせる」と書いている。
+(c) 決まりの文 CLAUDE.md:79「…置き場は、docs/design/overview.md の「ディレクトリとモジュール」のとおりに作る」。cp_app/perf.py は表（overview.md:80-85）に無い。web_bridge の役割も、表は「localStorage、ダウンロード、ファイル選択」で、いまは外から渡す値の読み取りと結果の出力。
+   反証：(c) は 0602cb7 で設計のモジュールの表に perf と web_bridge の役割が足されたので済み。(a)(b) は残っていて、verify.py:16 が「組の中身は計画の表に合わせる」と書きながら、66行（run を足した）と71行（テストの絞りが web_bridge）が計画の表と違い、注が無い。この2点は頼みの文の43-44行が決めたことではなく実装役の細目なので、注と事後報告が要る（重さは低のまま）。
+■ design-9 [低/確かめた] 所：.claude/rules/sim-core.md:36、tools/selftest_break.py:262-269、tools/verify.py:74-83
+   直し：sim-core.md:36 を「web-smoke 単体では見えない。selftest-break の web_gate_gets_no_real_time と control_web_heavy_frame_keeps_30_renders で見る」に直す。あわせて、app.py をASTで読んで「should_render の呼び出しに引数が1つある」ことを見る守りのテストを足す（pyxel を読み込まずに、毎回の test で拾える）。
+   場合：破る行：sim-core.md:36「アプリが実時間を RenderGate へ渡していること…は、デスクトップ版の道具では見えない。ブラウザ版の煙テストの実描画の回数で見る（段0 区切り3から）。」
+実際：selftest_break.py:263「差が出るのは、実描画のある周期が1周期（16.7 ms）に収まらないときだけ」。web-smoke を単体で回しても、実時間を渡さない app.py は合格する（主の注(1)）。
+起きる場合：規則ファイルの文を信じて app.py の draw を直す区切り。app.py の分野（verify.py:74-83）は全体の検証だけで、selftest-break は回らない。実時間の引数を落としても、その区切りの検証は全部通る。
+主の注(1)の穴の、塞ぎ方の案として書く。
+   反証：sim-core.md:36 は「ブラウザ版の煙テストの実描画の回数で見る」と書くが、実時間を渡さない app.py は web-smoke 単体では通り、落ちるのは重い周期を足した壊す件だけ（selftest_break.py:262-269 の注）。app.py の分野は selftest を回さない行なので、引数を落としても全体の検証は通る。should_render の引数は既定が None で落としても例外にならないので、ASTで呼び出しの引数を見る守りのテストの案は成り立つ（控えにある「sim-core.md の追記」は、木にはまだ無い）。
+■ design-10 [低/確かめた] 所：tools/selftest_break.py:240-261、tests/test_web_smoke.py:163-201
+   直し：壊す件に「render() の中に15 msの空回し → probe.render_ms_p95」「update に20 msの空回し → probe.updates_per_s」を足す。fetch_runtime は、テストで download と VENDOR・MIRROR・CACHE を偽の関数と一時ディレクトリに差し替え、main() が2（FetchError）と1（合わないバイト列）を返すことを見る。
+   場合：決まりの文：tools.md:32「検査や失敗の条件を足したら、tools/selftest_break.py に壊す件を足す。」、plan.md:271「新しい検証を足す区切りでは、わざと壊して落ちる件を一緒に足す。」
+破る行(1)：通過条件の4本の線のうち、ブラウザを通して落ちることを確かめる件は update_ms_p95 の1本だけ（selftest_break.py:261）。render_ms_p95、updates_per_s、renders_per_s は、判定の関数に偽の値を渡すテストだけ。app.py の測る位置がずれて値がいつも小さく出る崩れ（例：実描画の started_s を self.render() の後ろで取る）は、どこでも落ちない。
+破る行(2)：fetch_runtime.py の「取得できない→2」「取得の後も合わない→1」（stage0-k3.md:28）は、--check の2件（:241-242）と check_files のテストだけで、main() の取得の道を通していない（主の注(3)の穴）。
+   反証：通過条件の4本の線のうち、ブラウザを通して落ちることを見る壊す件は update_ms_p95 の1本だけで、app.py の測る位置の崩れ（実描画の時間、毎秒の回数）は、判定の関数に偽の値を渡すテストでは拾えない。fetch_runtime の main() の取得の道（2と1）も、--check の2件と check_files のテストでは通らない。案のテストでは、1を出すには中身だけ違う本物のtgzを返す偽の download が要ること（壊れたtgzは FetchError で2になる）と、read_sums と check_mirror の既定の引数は定数の差し替えでは変わらないことに注意が要る。
+
+== bridge
+■ bridge-1 [中/確かめた] 所：tools/web/fetch_runtime.py:113（download の except）、147（tgz を解く所の except）、183（main の except）
+   直し：113行に http.client.HTTPException を、147行に EOFError と zlib.error を足す（または main で fetch_vendor を包む網を広げ、reason=fetch_failed の2にする）。通していない2つの経路は、download と置き場（VENDOR、MIRROR）を引数で受ける形にして、tmp_path と偽の download を渡すテストで通す。check_mirror と read_sums の既定引数は定義時に決まるので、monkeypatch では差し替わらない。selftest-break の複製は .cache/ が本物へのリンクなので、--check なしの件はそちらに足さない。
+   場合：取得の途中で接続が切れる（本文が Content-Length に届かない）→ 112行の response.read() が http.client.IncompleteRead を上げる。これは HTTPException（Exception の直下。Python 3.13 の http/client.py:1532、1554、505-513）で、113行の `except (urllib.error.URLError, OSError, ValueError)` に掛からない。FetchError にならないので183行も通り抜け、トレースバックで終了コード1になり、最後の1行（`fetch_runtime: …`）は出ない。長さの頭が無い応答が途中で切れた場合は、半端な tgz が135行で置かれ、140〜146行で解く所で EOFError（gzip.py:568、633。tarfile の gzopen と next() は包まない）が上がる。147行の `except (tarfile.TarError, KeyError, OSError)` に掛からず、同じ結果になる。決まりの文：docs/requests/stage0-k3.md:28「照合が合わなければ1、取得できなければ2」、.claude/rules/tools.md:15「最後に件数つきの1行を `_common.finish()` で出す」。setup_env.sh からは「照合が合わない（1）」に見える。
+   反証：112行の read() が本文不足で上げる IncompleteRead は HTTPException（Exception の直下）で113行にも183行にも掛からず、gzip の EOFError も tarfile の gzopen／next() と147行を素通りするので、取得の失敗がトレースバックの終了コード1（＝照合が合わない）になり、最後の1行も出ない。既知の(3)「通していない」を超えて、読むだけで分かる抜けと塞ぎ方を示しており、案（網を広げる、置き場と download を引数にしてテスト、既定引数は monkeypatch で替わらない）にも食い違いは無い。2つ目（長さの頭が無い応答の途切れ）は起きにくいが、1つ目だけで成り立つ。
+■ bridge-2 [中/推測] 所：tools/web/webrun.js:200、206、222、228（時間切れの無い page.evaluate）、tools/web_smoke.py:136
+   直し：page.evaluate を、時間切れまでの Promise.race で包む。返らなければ失敗の種類 unresponsive を記し、集めた分のJSONを書いてから browser.close()（返らなければ process.exit）する。web_smoke.py の FAILURE_KINDS に足し、emscripten でだけ `while True: pass` に入る壊す件を、--timeout を短くして足す。
+   場合：ブラウザ版でPythonが主スレッドを握ったまま返らない（例：update の中の終わらない while）→ 222行の `await overlayShown()`（page.evaluate。時間切れが無い）が返らず、219行の `Date.now() < deadline` を二度と見ない。--timeout-ms を過ぎても終わらず、web_smoke.py:136 の `timeout_s + 60` 秒で node が強制終了される。264行の finally も268行のJSONの書き出しも走らないので、集めたコンソールの行は残らない。出るのは「実行役の結果が無い（実行役の終了コード None）」と `incomplete=<筋書き>.no_runner_result` だけで、実行役が壊れた場合と見分けが付かない。既定の値では筋書き1本に150秒かかり、2本で selftest-break の1件の時間切れ（tools/selftest_break.py:26 の180秒）を超える。完了の合図が出ない件（selftest_break.py:248）はあるが、主スレッドが止まる件は無い。追い切れていない所：page.evaluate が主スレッドの詰まりで本当に返らないことと、強制終了の後にChromiumが自分で終わることは、道具を回せないので確かめていない。
+   反証：読みは指摘どおり：page.evaluate に時間切れが無く、実行役が返らなければ web_smoke.py:136 の外側の時間切れ（90+60＝150秒）で殺され、JSONもコンソールの行も残らず、最後の1行は実行役が何も書かずに終わった場合と同じ no_runner_result になる。この殺される経路を通す壊す件が無い（run には run_stall_hits_timeout があり、試作の「無応答」は完了の合図が出ない型だけ）ので通すが、結果は2で見かけの合格にはならず重さは低が妥当で、「見分けが付かない」は上の行に終了コード None が出る分だけ言い過ぎ。案の unresponsive を失敗の種類（1）にすると、デスクトップ版の止まり（run は reason=timeout で2）と扱いが割れるので、incomplete の理由を分ける形とも比べること。
+
+== tests
+■ tests-2 [中/確かめた] 所：clipping_point/cp_app/app.py:113-118、tools/web_smoke.py:122-125、tools/selftest_break.py:261
+   直し：壊す件 web_render_over_the_time_line を足す（render() の頭に、ブラウザ版だけ14 msの空回りを置く。期待は1と「probe.render_ms_p95」）。判定に「perf の renders が (ticks - warmup_ticks) // 2 の前後 web_renders_tolerance 回に入る」を足すと、数える所の付け間違いも拾える。
+   場合：app.py:115 の `started_s = time.perf_counter()` を `self.render()` の後ろへ動かす → 実描画1回の時間は常に0.0 ms → `render_ms_p95 <= 12` を通る → pytest 231件（app.py は読み込まない）、verify --all、selftest-break 120件が全部通る。
+`self.meter.on_render(...)` を if の外へ出して、毎回の描画で呼んでも同じ。renders_per_s は約60になるが、線は下だけで、perf の renders は判定に使っていない。
+足した線4本のうち、ブラウザを通す壊す件があるのは update_ms_p95 だけ。決まりの文は .claude/rules/tools.md:32「検査や失敗の条件を足したら、`tools/selftest_break.py` に壊す件を足す。」。
+html_bytes（同じバイト列を開く約束）、started、measured_ticks、not_in_mirror も、判定の関数のテストだけで、壊す件は無い。
+   反証：app.py:115 の計り始めを render() の後ろへ動かすと render_ms_p95 は0で線を通り、pytest は app.py を読み込まず、壊す件でブラウザを通して時間の線を見るのは update_ms_p95（selftest_break.py:261）だけなので、どこも落ちない。段0の通過条件（実描画1回12 ms以内）を測る口が空のまま合格で終われる穴で、tools.md:32 の決まりにも当たる。直し方の案（render() に14 msの空回りを置く件、perf の renders の判定）に、別の食い違いは見当たらない。
+■ tests-3 [中/確かめた] 所：tools/verify.py:185-198、tests/test_verify.py（全体）、tools/selftest_break.py:270-277
+   直し：changed_files の中の、gitの出力を読む所を純関数に分け、削除、空白、新しいファイル、名前の変更の入ったNUL区切りの文字列でテストする。壊す件に「複製の中で verify --touched → 2、reason=git_failed」を1件足し、`git diff` に `--no-renames` を付ける。
+   場合：`verify --touched` の道（changed_files → areas_for → plan_for）を通すものが、テストにも壊す件にも無い。テストは areas_of と areas_for に手書きのパスを渡すだけで、changed_files を呼ばない。壊す件の verify は --all、--list、引数なしの3通りだけ。
+確かめていない入力：削除したファイル、名前に空白のあるファイル（-z の区切りと `entry[3:]` の切り出し）、gitの管理に入っていない新しいファイル、複製の中（作業ツリーの根でない所）で None を返す守り、1つのファイルが2つの分野に当たる場合（areas= を渡すテストが無い）。
+例：verify.py:197 の `entry[3:]` を `entry[2:]` に書き違える → 新しいファイルが、頭に空白の付いた名前になり、どの分野にも当たらない → いまは全体を回すので見えず、FOCUS_ENABLED を True にした後も、pytest と selftest-break は通る。
+なお、`git mv` で分野をまたいで動かしたファイルは、`git diff --name-only` が新しい名前しか出さず、元の分野が触れた分野に入らないはず（ここだけは git の既定の動きからの推測で、回していない）。
+   反証：changed_files を呼ぶテストも、--touched を回す壊す件も無く（壊す件の verify は --all、--list、引数なしだけ）、2で終わる reason=git_failed と no_changes の経路も通していない。git は2.43で diff.renames が未設定（既定で有効）、--name-only は新しい名前だけを出すので、git mv で分野をまたぐと元の分野が落ちるという推測も当たっている。例の entry[2:] は多くは「全部」へ倒れるが、tools/ の新しいファイルでは selftest-break が足されなくなるので、いまでも害がある。
+■ tests-4 [中/確かめた] 所：tests/test_verify.py:48-53、63-69、tools/selftest_break.py:238
+   直し：見本の名前を、設計のモジュールの表に出てこない名前（例：`clipping_point/cp_core/zz_no_area.py`、`tests/test_zz_no_area.py`）に変える。
+   場合：「どの分野にも当たらないファイル」の見本に、`clipping_point/cp_core/vehicle.py` と `tests/test_vehicle.py` を使っている。設計のモジュールの表は、`cp_core` に `vehicle`（車両モデル）を置く（docs/design/overview.md:66）。
+段0 区切り9で本物の vehicle.py を作り、check の areas を通すために AREAS へ車両の分野を足す → test_verify.py:49-53 と 69 の期待（[]、unknown、problems が1件）が落ちる。selftest-break の check_shipped_file_in_no_area は、「置くはずのファイルが既にある」（selftest_break.py:293-294）で COULD NOT PLANT になり、道具が2で終わる。
+区切り9の実装役は、分野を1行足すだけの変更で、落ちたテストと壊す件を書き換えることになる。
+   反証：見本の名前は設計のモジュールの表にある vehicle で、車両の分野を AREAS に足した時点で test_verify.py:49-50 と69の期待が落ち、selftest_break.py:238 は「置くはずのファイルが既にある」で COULD NOT PLANT（道具が2）になる。重さは小さいが必ず起き、いま表に出てこない名前へ変えるだけで済む。
+■ tests-6 [低/確かめた] 所：tests/test_web_smoke.py:77-78、126-128、132
+   直し：パラメータに `with_perf(renders_per_s=28.9)`、実描画が「330 ± (BUDGETS の web_renders_tolerance + 1)」の2件、`result(ticks=TICKS + 1)` を足し、線の上の件に「330 ± web_renders_tolerance」を足す。judge_shipped に、initialized が False の件を足す。
+   場合：線のちょうど下を見ていない値がある。
+renders_per_s は20.0と29だけ → tools/budgets.json の web_renders_per_s_min を21〜29のどれに書き違えても、231件は通る（updates_per_s は58.9と59、update_ms_p95 は4と4.1、render_ms_p95 は12と12.1で挟んである）。
+renders は220、660、None だけ → web_renders_tolerance は0〜109のどれでも通る。
+ticks は1つ足りない側だけで、1つ多い側が無い。
+started は clickedAt が無い場合だけ → web_smoke.py:78 の `state.get("initialized") is True` を消しても通る。
+   反証：renders_per_s だけ線のすぐ下の値が無く（20.0と29。ほかの3本は58.9と59、4と4.1、12と12.1で挟んである）、started の initialized の側を見る件はテストにも壊す件にも無い。引用はどれも実物どおり。ただし「330 ± 許す幅」を足す案は、判定もテストも budgets.json の同じ値を読むので、値そのもの（0〜109）は縛らず、境目の向きだけを縛る。
+■ tests-9 [低/確かめた] 所：tests/test_verify.py:86-91、tools/verify.py:63-67
+   直し：run を残すなら、AREAS のその行に理由の注を置き、作業記録の「設計からのずれ」に書く。計画どおりにするなら、AREAS とテストの期待から run を外す。
+   場合：絞った検証の期待が、計画の表でなく実装に合わせてある。
+決まりの文：docs/plan.md:261「| 画面（2D） | 画面 | screen-check、tour |」。verify.py:16「組の中身は docs/plan.md の「検証の組」の表に合わせる」。
+破る行：verify.py:66 `("run", "screen-check", "tour")`。テスト（test_verify.py:89）は `["check", "test", "run"]` を期待する。
+run を足した理由（screen-check と tour がまだ無い間の代わり、など）は、コードにも注にも無い。
+   反証：plan.md:261 は「screen-check、tour」、verify.py:66 は run を足していて、verify.py:16 の「計画の表に合わせる」と食い違ったまま、理由の注がどこにも無い（試作の表の ui にも run は無い）。ui.md:37 が run を画素を見る道具に挙げているので、run を残して注と作業記録の「設計からのずれ」に書く側が合う。「ブラウザ連携」のテストの絞り（計画は「保存」、実装は web_bridge）も同じ形のずれ。
+■ tests-10 [低/確かめた] 所：tests/test_web_smoke.py:175-177、tools/web/fetch_runtime.py:55・104・167-203、tools/web_smoke.py:175-176
+   直し：main() に置き場（一覧、vendor、mirror）を引数で渡せる形にし、tmp_path と偽の download で4件足す：そろっていれば download が0回、取得の失敗で2、取得の後の不一致で1、呼ばれたURLが2つの取得元の頭で始まる。node が無い場合は、`web_smoke.shutil.which` と `sys.argv` を差し替えて、`web_smoke.main()` が2と「reason=no_node」を返すテストで塞げる（out/ に触れる前に戻る）。
+   場合：test_fetch_runtime_sources_are_only_github_and_npm は、定数2つの文字列を見るだけ。名前の「only」（ほかの取得元へ行かない）と、頼みの文の「既にそろっていて照合が通れば、取得し直さない」（docs/requests/stage0-k3.md:28）は、どのテストも壊す件も見ていない。fetch_vendor、build_mirror、main() の分岐（実装役が挙げた2と1の経路を含む）も同じ。
+これらは pytest の中で塞げる。download を差し替えれば、ネットワークなしで通せる。
+ただし、`read_sums(path=SUMS)` と `check_mirror(sums, mirror=MIRROR)` は、置き場を定義の時に既定の引数として固める。テストが `fetch_runtime.MIRROR` を差し替えても、main() の中の check_mirror は本物の .cache を読む。
+   反証：テストが見るのは定数2つだけで、取得元がその2つだけであること（web.md の約束）、そろっていれば取得し直さないこと、main() の2と1の経路は、テストも壊す件も通していない（壊す件は --check の3件だけ）。read_sums と check_mirror の置き場が既定の引数で固まる点と、web_smoke.main() が node の確かめで out/ に触れる前に戻る点も実物どおりで、案はそのまま使える。中身は実装役の(3)(4)と重なるが、塞ぎ方の具体の案になっている。
+
+== 退けた指摘
+□ fakepass-2 [中] 線が「以上」だけなのは、計画の通過条件と頼みの文の決めどおり。例に挙げた取り違えでは fps が1000になり、設計の「処理落ち」の行の読みでは描画1回あたりの更新が増えて実描画の回数の確かめで落ちるので、通るのは120とじかに書いた場合だけ。Infinity は perf.report() から出ない（区間が0なら None）。
+□ fakepass-3 [低] shipped が見るものは頼みの文の決めどおりで、止まったループは既定の2本では probe が2になり合格にならない（指摘も認めている）。(c) は、エラー表示も致命的なエラーも console.error を通るので console_error で拾える。(a) は initialized がアプリの実行より前に立つ点は事実だが、文の言い方だけで合否を誤らせない。
+□ fakepass-4 [低] アプリもランタイム（pyxel.js）も WebSocket を使っておらず、通信を持たないゲームに js.WebSocket を足す場面は起きない。実行で確かめていない推測で、この環境では console_error で落ちる見込みと指摘自身が書いている。
+□ fakepass-5 [低] build_mirror は照合が合わないたびに mirror/ を丸ごと消して一覧のファイルだけを置くので、版を上げたときの残りは残らない（指摘の「別の版の残りが残り続ける」は実物と違う）。残る道は .cache/ へ手で置くことだけで、根の決まりが禁じており、コンテナも一時的。
+□ fakepass-7 [低] いまの道具は全部 sys.exit(main()) で終わり、finish() は語と終了コードを同じ値から作るので、この経路は無い（指摘も認めている）。道具の末尾を壊す変更は道具に触れる区切りで、そこで必ず回す selftest-break が、終了コードと最後の1行を道具ごとに照らしている。
+□ fakepass-8 [低] 語が renders_per_s にも当たるのは事実だが、どちらで落ちても「実時間を渡さない崩れを web-smoke が1で拾う」ことは確かめられる。renders の確かめそのものは、テストが名前つきで守っているので、害が無い。
+□ design-2 [中] 設計の「無応答」は、試作では「動き続けるが完了の合図を出さない」形（spikes/web/apps/fail_hang が until-not-seen で落ちる）で、いまは probe の no_done_signal（2）と壊す件 web_no_done_signal が拾っている。sys.exit は試作の実測でエラー表示になって error_overlay で落ち、数tickの後に止まる形は probe が完了の合図を得られず2になるので、合格で通るのは「完了の合図の後に止まる」「shipped の道でだけ止まる」だけで、pyxel.quit がブラウザ版で黙って止まるという前提も確かめられていない（canvas.changed が判定に使われていないことは事実）。
+□ design-4 [中] いまの要約は {"tick": n} だけで、丸ごと同じを求める照合は頼みの文41行どおりであり、食い違いは無い。浮動小数から作る値が要約に入るのは車を足した後で、probe は入力を渡さない筋書き（台本つきの筋書きは区切り5で別に作る）なので境目をまたぐ場面は推測にとどまり、起きても probe.sim が両方の値つきで落ちて黙っては通らず、許容差で比べる前提は overview.md:19、CLAUDE.md の土台の方針、sim-core.md:42 に既にある。
+□ bridge-3 [低] 置いて解いてから186行で照合する順は実物どおりだが、照合を通らないものが mirror/ に入る道は無いと指摘自身が認めており、「取得し、ハッシュ値で照合」の決まりは満たしている。害はHTTPSの取得元が改ざんされたときのメモリの使い切りだけで、download() 自体が上限なしに全部を読み、同じ setup_env.sh が直前にハッシュ無しで pip install をするので、案を入れても守りは増えない（好みの範囲）。引用の行は807ではなく808。
+□ bridge-4 [低] 層の分離の決まりの対象は cp_core と cp_ui で、cp_app は実時間とPyxelに触れてよい層なので、perf.py の頭の注は検査で守ると決めた決まりではなく、tools.md:19 もこの2つの層の話。pyxel を pytest のプロセスに入れない狙いは conftest の見張りが直に見ていて、呼ばれない関数の中のimportでは狙いが崩れず、PerfMeter が自分で時計を読む形に変えれば、実時間を引数で渡して値を照らす test_perf.py が先に落ちる。新しい検査の提案であって、いまの食い違いではない。
+□ bridge-5 [低] 47-49行の読みは指摘どおり（関数やSymbolは stringify が undefined を返し「無い」と読まれる）だが、CP_PROBE を置くのは web_smoke.py:212 の json.dumps だけで、そこから関数やSymbolは出ないので、起きない場面。起きても完了の合図を待って2（no_done_signal）で止まり、合格にはならない。
+□ bridge-6 [低] いまの文字列は約60バイトで起きないと指摘自身が認めており、区切り5で渡す値の大きさは未定（試作の偽のコントローラーは1,058バイトで、上限の131,072バイトに遠い）。届いても OSError で道具がその場で落ちて気付けるので、渡し方は区切り5の設計で決めれば足りる。
+□ bridge-7 [低] 2か所にあるのは事実だが、2行の呼び方と定数1つで、ずれれば probe.sim か outside_mirror で道具がすぐ落ちると指摘自身が認めている。環境変数の名前の出どころは app.py の頭の注の1か所に決めてあり、共通の関数にまとめるかは好みの範囲で、いま食い違いは無い。
+□ tests-1 [中] 件数と余裕の数え方（6件、区間に87回以上、遅れ50 msまで、660 tickで9〜10回と169 ms）は実物と合うが、落ちる場面（混んだ機械で100 msの止まり）は指摘自身が「推測」「追い切れていない」と書くとおり示せていない。道具は1本ずつ回す決まりで、線だけの外れは「単独で1度回し直す」と決めてあり、selftest-break も --only で1件だけ回し直せる（verify にも自動の回し直しは無く、扱いはそろっている）。なお引用の fixed_loop.py:13 は実際は12行目。補足のASTのテストは、実装役の(1)の穴の塞ぎ方として別に採れる。
+□ tests-5 [中] 引用の「CLAUDE.md:70 は約45秒のまま」は、いまの実物（HEAD 0602cb7）では直っていて、74行目が「約4分半」、81行目が「verify --all を回す（全体の検証が3分を超えるまで）。…--selftest を付けて selftest-break も回す」と書き分けてあり、3分の線に selftest-break を数えない読みは既に決まっている。180秒の判定は合否ではなく知らせの1行で、同じ出力に出て終了コードも変えないので、最後の1行に語を足すかどうかは害の無い好みの範囲。
+□ tests-7 [低] 数え方（P95 が0.90〜0.99でも8件が通る、90個なら上の4個が除かれる）は合うが、P95 は名前つきの定数で動かす予定が無く、位置の式の違いは順位1つ分で、線の判定には効かない。95%点の出し方を決めた文書も無く、指摘も害を挙げていないので、好みの範囲。
+□ tests-8 [低] 偽の JSON.stringify が600.0を小数のまま返すことは実物どおりだが、指摘自身が「害は無い」と書いている。小数を弾く枝は warmup_ticks=1.5（76行目）で、ブラウザでも起きる形として見ており、600.0の件が誤った合格や見落としを生むことは無い。
+
+== 役が書いた、見られなかった所
+・fakepass（レビュー役）: 道具とテストは回していない（レビュー役の決まり）。fakepass-2、3、4、10 の「起きる」は、実行では確かめていない。
+・fakepass（レビュー役）: Pyxel本体（Rustの側）が、更新や描画の中の例外と SystemExit を、ブラウザ版でどう標準エラーへ出すか。ランタイムの pyxel.js（517行）は、頭が「Traceback」でない標準エラーの行を捨てる。Traceback で始まらない形の異常（SystemExit、ExceptionGroup など）が、エラー表示にもコンソールにも出ない場合があり得るが、追えていない。
+・fakepass（レビュー役）: dist/ のHTMLの中身と out/ の結果は見ていない（見ない決まり）。HTMLが実際に要求するURLの一覧は確かめていない。
+・fakepass（レビュー役）: Playwright の本体（playwright-core）のソースは環境に見つからなかった。route が拾う要求の種類（WebSocket、ワーカーからの要求、file:// の要求）は、読んで確かめていない。
+・fakepass（レビュー役）: tools/setup_env.sh を新しいコンテナで回した場合と、node や Playwright が無い環境でのふるまいは、コードを読んだだけ。
+・fakepass（レビュー役）: 区切り2までに済んだ道具（export.py、run.py、test.py、rules_guard.py）は、突き合わせに要る所だけ読んだ。今回直していない所の穴は見ていない。
+・design（レビュー役）: 実装役の報告（「設計からのずれ」「推奨の案で決めた細目」）は渡されていない。design-7 と design-8 の細目が、報告に既に書かれているかは見ていない。
+・design（レビュー役）: 道具を回していないので、実際の出力は見ていない。selftest-break の今の所要時間、web-smoke の最後の1行、ブラウザ版のランタイムが pyxel.quit や sys.exit のときにコンソールへ何を出すか（design-2 の推測の元）。
+・design（レビュー役）: out/、dist/、.cache/ は見ていない。出荷するHTMLが要求するURLと、ランタイムの写しの並び（kitao.dev/pyxel/3.0.1/、pyodide/v314.0.7/）が実際に合うことは、主の回し直しの結果（web_smoke OK）に頼っている。
+・design（レビュー役）: webrun.js が require する Playwright が、複製の中（out/selftest/）からも引けるか（Node のモジュールの探し方）は、環境に依るので見ていない。
+・design（レビュー役）: 試作の spikes/web/tools/webrun.js、fetch_runtime.sh、build_mirror.sh との行ごとの突き合わせはしていない。試作で読んだのは spikes/harness/repo/tools の verify.py と web_smoke.py、RESULT.json の recommendations だけ。
+・design（レビュー役）: docs/ の文書（作業記録、作業の控え）は対象外。CLAUDE.md の「コマンド」に足す予定が作業記録にあるかを、grep で2行見ただけ。
+・design（レビュー役）: tools/test.py、arch_check.py、canon_guard.py は今回直していないので、頭の注のほかは読んでいない。絞った検証で `-k` を渡したときの test の動きは追っていない。
+・bridge（レビュー役）: 道具とテストを回していないので、実物でのふるまいは読みからの推測にとどまる：Pyodide での read_probe（関数、BigInt、循環する物）、主スレッドが止まったときの Playwright の page.evaluate、node を強制終了した後のChromiumと一時プロファイルの後始末。
+・bridge（レビュー役）: 新しいコンテナでの tools/setup_env.sh。この環境には /usr/local/bin/python3（3.13）と /usr/bin/python3（3.13。site-packages が別）があり、/usr/lib/python3.12 には EXTERNALLY-MANAGED がある。セットアップの時の PATH で python3 がどれに当たるかは見られない。setup_env.sh は python3 の版を確かめていない（頭で `python3 --version` を出し、3.13 でなければ止める案がある）。pip が落ちると、set -e で fetch_runtime.py は回らない。
+・bridge（レビュー役）: fetch_runtime.py の urllib が、この環境の代理とCAの束を通って取得できるか。.cache/ は見ない決まりなので、いまのランタイムの写しがこの道具の取得で出来たものかは確かめていない。urllib は転送（リダイレクト）に従うので、取得元が別のホストへ転送した場合の扱いも見ていない（中身は照合される）。
+・bridge（レビュー役）: Playwright の route を通らない通信（WebSocket など）が「ランタイムの写しの外への要求」に数えられるか。いまのアプリは使っていないので起きないが、webrun.js の作りでは拾えない見込み。
+・bridge（レビュー役）: 外から渡す値に、段0 区切り5（台本、偽のコントローラー）と区切り7（保存）で項目を足したときに、保存データや設定と混ざるかどうか。まだコードが無い。いまの規則ファイル（web.md）には「外から渡す値で動く間の保存先」についての約束が無いので、足す区切りで決める必要がある。
+・bridge（レビュー役）: tests/test_verify.py の60行より後ろと、tools/verify.py の中身の正しさ（分野の表、手順の決め方）。観点の外なので、読んだだけで突き合わせていない。
+・bridge（レビュー役）: out/、dist/、.cache/、spikes/ の中身（指示どおり見ていない。spikes/ は webrun.js と自己検査の該当部だけを参考に読んだ）。
+・bridge（反証役）: bridge-2（一部。判定は付けた）：主スレッドが止まったときに page.evaluate が本当に返らないことと、node を強制終了した後にChromiumが自分で終わること（subprocess.run が戻ること）は、道具を回せないので実測していない。試作の記録にも、この型の実測は無い。判定は、コードの読みと、Playwrightの evaluate に時間切れが無いという一般の知識による。
+・tests（レビュー役）: 壊す件ごとの実測値（短い probe と重い周期の件の、実描画の回数と毎秒の回数）。out/selftest/break_results.json は「見ないもの」なので読んでいない。tests-1 の余裕は、コードと budgets.json からの計算だけ。
+・tests（レビュー役）: 本物のブラウザ（Pyodide 314.0.7）での、null を置いた場合と、形が違う値を置いた場合のふるまい。道具を回していないので、試作の実測（spikes/web/results）と読み合わせただけ。
+・tests（レビュー役）: pytest が実際に集める件数と、空のパラメータがスキップになること。テストを回していないので、ファイルを数えた値（新しい4ファイルで87件）と pytest の既定のふるまいから書いた。
+・tests（レビュー役）: `git diff --name-only` が、名前を変えたファイルの新しい名前だけを出すこと（tests-3 の末尾）。gitの状態を変えられないので、試していない。
+・tests（レビュー役）: Pyxelのブラウザ版が、遅れた周期を何回の更新として数えるか。ランタイムのソースは読んでいない。壊す件 web_gate_gets_no_real_time が、別の機械やChromiumの版でも88回前後に落ち着くかは分からない。
+・tests（レビュー役）: 区切り2までのテスト（test_fixed_loop.py、test_sim.py、test_canvas.py、test_screens.py、守りのテスト3本、test_export_inspect.py）と、tools/run.py、tools/export.py、arch_check.py、canon_guard.py。今回直していない所なので、中身は見ていない。
+・tests（レビュー役）: spikes/harness/repo/tools の web_smoke.py と verify.py との突き合わせ。参考なので読んでいない。
+review_summary: OK lenses=4 findings=38 passed=21 rejected=17 unevaluated=0 role_notes=28

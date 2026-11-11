@@ -1,0 +1,157 @@
+区切り：段0 区切り2：骨組みと道具
+
+== fakepass
+■ fakepass-1 [中/確かめた] 所：tools/run.py:80、clipping_point/cp_app/app.py:133 と 147-156、tools/selftest_break.py:170
+   直し：App.run() で実際に入った枝（自前のループか pyxel.run か）を控えて結果ファイルに書き、run.py はその値を照らす。selftest_break に「CP_SMOKE_DRIVER=run なのに自前のループへ入る」件を足す。
+   場合：run の「driver」の確かめは、実際に回った経路を見ていない。app.py:133 が結果ファイルに書くのは config.driver（環境変数を読んだ値）で、run.py:80 は自分が渡した値と比べるだけ。状態：app.py:149 の条件が崩れて `if config is not None:` になる → `run.py --realtime` でも自前のループに入り、fps=60 で120 tick回って finish_run の sys.exit(0) で終わる → 結果は driver="run"、ticks=120、renders=60 → 「run: OK driver=run」。pyxel.run は1度も通っていない。selftest_break の run_realtime_takes_fast_path は環境変数の読み方を壊す件なので、この崩れには気づけない。wall_s は記録するだけで照らしていない（前回の記録では、この件で wall_s=0.148 のまま driver の語だけで落ちている）。
+   反証：app.py:133 は読んだ設定の値をそのまま書き、run.py:80 は自分が渡した値と比べるだけなので、app.py:149 の枝が崩れて --realtime が自前のループに入っても ticks=120、renders=60、driver=run で合格になる（fps は app.py:73-78 で別に決まるので wall_s でも見分けられない）。「本番と同じ経路も1本回す」手当て（overview.md:771）の確かめが、経路については落ちようが無い形になっており、入った枝を控えて照らす案は妥当。
+■ fakepass-2 [中/確かめた] 所：tools/selftest_break.py:25（COPY_ITEMS）、tools/test.py:46、tools/run.py:41、tools/export.py:53-54
+   直し：複製の中へ合格の形の古い結果ファイルを先に置いてから壊す件を足す（out/test/junit.xml＋os._exit(0) で reason=no_report、out/run/result.json＋早すぎる終了で reason=no_result_file、dist/ に古い .pyxapp と .html）。
+   場合：古い結果ファイルを消す手当てを、どの壊す件も確かめていない。複製するものに out/ と dist/ が無いので、どの件も「前回の結果ファイルが残っている」状態から始まらない。状態：test.py:46 の REPORT.unlink を消す → selftest_break は83件とも通る → 実際の作業ツリーでは out/test/junit.xml（前回の116件合格）が残っているので、pytest が途中で終了コード0のまま消えると、古い報告を読んで「test: OK passed=116」になる。run.py:41 の rmtree を外した場合も同じで、早すぎる pyxel.quit() の後に前回の result.json を読んで「run: OK」になる。決まり：.claude/rules/tools.md:28「検査や失敗の条件を足したら、tools/selftest_break.py に壊す件を足す」。
+   反証：COPY_ITEMS（25行）に out/ と dist/ が無く、どの件も古い結果ファイルの無い状態から始まるので、test.py:46 の unlink が消えても壊す件は全部通り、古い junit.xml がいつも残る実際の作業ツリーでは「途中で消えたのに test: OK passed=116」になりうる。ただし run.py は42行の mkdir(parents=True) が既にあるディレクトリで FileExistsError になるので、「41行を外すだけで run: OK になる」という部分は誤り（複製に古い結果ファイルを置いてから壊す、という案そのものは run にも妥当）。
+■ fakepass-4 [中/確かめた] 所：tools/test.py:59-63
+   直し：語を、IDを「::」で割った各部分（ファイルは basename、関数名は [ ] つき）ごとに当てる。selftest_break に、この入力が2（reason=k_word_matches_nothing）で終わる件を足す。
+   場合：-k の語の確かめが、pytest の当て方と違う。test.py:62 は語を `tests/test_sim.py::test_…` というIDの文字列全体に当てる。pytest 9.2.0 は語を名前1つずつ（test_sim.py、関数名、マーカー名）に当て、根のディレクトリ名は除く（_pytest/mark/__init__.py:193-225）。「/」や「::」をまたぐ語は道具を通るが、pytest ではどのテストにも当たらない。入力：`python3 tools/test.py -k "canvas or tests/test_sim.py"` → 62行は通る → pytest は canvas のテストだけ選ぶ → 「test: OK」。sim のテストは回っていない。docstring 4行の「式のどの語も、どれかのテスト名に当たること」と .claude/rules/tools.md:41 の穴が、この形で残っている。
+   反証：pytest 9.2.0 は語をノード名1つずつ（test_sim.py、関数名、マーカー名）に当て、根の tests は除くのに対し、test.py:62 は「tests/test_sim.py::…」というIDの全体に当てるので、「/」や「::」をまたぐ語は道具を通って pytest では空振りし、or の相手が当たれば合格で終わる（「/」と「:」は -k の語として通るので使い方の誤りにもならない）。道具がふさぐと書いた穴（test.py:4、tools.md:41）がこの形で残っており、IDを割った各部分に当てる案は落ちる側に倒れるので妥当。
+■ fakepass-9 [低/確かめた] 所：tools/_common.py:22 と 61
+   直し：NOISE を、Pyxelが実際に出す行の頭（例：「ALSA lib」で始まる行）だけに絞り、「audio」の部分一致をやめる。
+   場合：子プロセスの出力の終わりを見せるとき、`audio` を含む行を全部捨てる（NOISE = ("ALSA", "audio")）。設計には cp_app/audio.py と cp_core/audio_model.py がある（overview.md:72、84）。状態：tests/test_audio_model.py のテストが落ちる → 「FAILED tests/test_audio_model.py::…」の行と traceback の `File ".../audio.py"` の行が画面に出ない → 最後の1行は「test: FAILED」で正しいが、どのテストが落ちたかが見えない。run.py の show_tail でも同じ。終了コードと理由の判定は生の出力を使うので、合否は変わらない。
+   反証：_common.py:61 は「audio」を含む行を全部捨てるので、設計が名前を決めている audio_model と audio（overview.md:72、84）を作った後は、落ちたテストの FAILED の行、traceback の File の行、例外の文が test.py と run.py の表示から消え、原因を追い直す手戻りが出る。ただし Pyxel は「Failed to initialize audio device」を標準出力に出す（spikes/audio/RESULT.json:94）ので、「audio」の一致をただやめる案だとこの行が表示に混ざる。この文の行と「ALSA lib」で始まる行に絞る形にする。
+
+== design
+■ design-1 [中/確かめた] 所：/home/user/clipping-point/clipping_point/cp_app/app.py:61-67（印は63行）
+   直し：build_placeholder と TITLE、色の3つを cp_ui（たとえば cp_ui/screens.py）へ移し、app.py は呼ぶだけにする。割り切りの印の行を消し、tests/ に組み立てのテストを1つ足す。
+   場合：破る行：app.py:63「# 割り切り：仮の表示の組み立てを cp_app に置いている。段0 区切り6で cp_ui の画面の組み立てへ移す。」と、その関数 build_placeholder（61〜67行）。画面の文字と位置を cp_app で組み立てている。
+決まりの文：/home/user/clipping-point/CLAUDE.md:81「限りを承知で残すコードには…の注を付ける。決まりを外す書き方には使わない。」、/home/user/clipping-point/docs/design/overview.md:30「2Dの画面は `cp_ui` が描画命令の列に組み立て、`cp_app` がそれをPyxelで実行します。」、同77行「| `cp_ui` | `screens` | 画面ごとの組み立て |」。
+層の置き場の決まりを外した所に、割り切りの印を使っている。
+実害：app.py は20行で pyxel をimportする。pytest には pyxel を読み込ませない決まり（/home/user/clipping-point/tests/conftest.py:12-20）なので、build_placeholder はテストから読めない。画面に出す文字と位置のテストが置けず、app.py は多くの分野が触るファイルなので ui.md も当たらない。
+   反証：app.py:63 の注は、画面の組み立てを設計の置き場（overview.md:30、77。CLAUDE.md:61「置き場は…のとおりに作る」）の外に置いたことを割り切りの印で断っていて、CLAUDE.md:85「決まりを外す書き方には使わない」に当たる。5つの層の決まり（overview.md:34-38）は破っておらず仮の表示なので重さは低だが、多くの分野が読む app.py に印の使い方の悪い見本が残る。直し方の案に別の食い違いは見当たらない（足すテストは ui.md の paths: にも足すこと）。
+■ design-2 [中/確かめた] 所：/home/user/clipping-point/tools/arch_check.py:15-20（STDLIB_ALLOWED）
+   直し：STDLIB_ALLOWED を、いま使うものと理由を書けるものだけに絞る。少なくとも os を外して要る区切りで理由つきで足し、test_arch_guard.py と selftest_break.py に `import os` の件を足す。
+   場合：入力：cp_core/sim.py に `import os` と `SEED = os.urandom(4)`（または `os.times()`、`os.environ.get(...)`）を足す。
+結果：check は OK のまま。check_source は Import の 'os' を、STDLIB_ALLOWED にあるので通す（76〜80行）。`os.urandom` は Attribute で、BANNED_NAMES の照合（74行）は ast.Name だけを見るので掛からない。/home/user/clipping-point/tests/test_arch_guard.py の CORE_VIOLATIONS にも selftest_break.py にも os の件は無い。
+決まりの文：/home/user/clipping-point/docs/design/overview.md:34「使ってよい標準ライブラリを一覧で決め、それ以外のimportはソースの検査で落とす。乱数と時刻の標準ライブラリも使わない。」、/home/user/clipping-point/CLAUDE.md:26「…Pyxelもブラウザも実時間も参照しない。」。
+一覧の19個のうち、いま純Pythonの層が使うのは dataclasses だけ。残り18個（os、pathlib、io など）は理由なしで先に許している。arch_check.py:16「足すときは、足した行の注に理由を書く」と、/home/user/clipping-point/.claude/rules/tools.md:30「許可した一覧に理由つきで足す」にも合わない。
+   反証：コードを追って確かめた。'os' は STDLIB_ALLOWED にあり、os.urandom や os.times は Attribute なので BANNED_NAMES の照合（ast.Name だけ）に掛からず、random、time、hash() を落としている検査の目的（同じ入力から同じ結果）に穴がある。ただし「理由つきで足す」は足すときの決まりで、初めの一覧は試作の勧めのまま（arch_check.py:16、spikes/harness/RESULT.json:110）なので、そこは食い違いではなく、重さは低め。os を外すだけだと、保存の口（区切り7。試作は cp_core/storage.py で os.replace を使う）で足し直すときに穴が戻るので、そのとき属性を見る検査が要る。一覧を dataclasses だけに絞る案は、test_arch_guard.py:46、50 の通る件（math、json、hashlib）を落とす。
+■ design-3 [中/確かめた] 所：/home/user/clipping-point/tools/export.py:71-73、/home/user/clipping-point/tools/selftest_break.py:172-178
+   直し：export.py の照合を関数に分け、tests/ に「データが違う」「見つからない」のテストを足す。または、複製の export.py に照合の前でHTMLを書き換える行を差して failed=payload を期待する件を selftest_break.py に足す。目次の重複は tests/test_rules_guard.py に1件足す。
+   場合：破る行：export.py:71-73 の「HTML内のデータが .pyxapp と一致しない」（failed=payload）に、壊す件が無い。selftest_break.py の export の件（172〜178行）は forbidden 4件、unknown_type、size、pyxel_package_failed だけ。tests/ に export のテストも無い。設計が手順3で挙げる3つの検査（/home/user/clipping-point/docs/design/overview.md:793）のうち、これだけ落ちる所を1度も見ていない。
+同じく、壊す件もテストも無い条件：
+- /home/user/clipping-point/tools/rules_guard.py:126-127（目次に同じ規則ファイルが2度ある）
+- /home/user/clipping-point/tools/run.py:59-60（reason=result_unreadable）
+- export.py:32-34（missing）と38-39（outside）。missing は、main.py を消すと pyxel package が先に落ちて reason=pyxel_package_failed になる（selftest_break.py:178）ので、いまの道筋では届かない。
+決まりの文：/home/user/clipping-point/.claude/rules/tools.md:28「検査や失敗の条件を足したら、`tools/selftest_break.py` に壊す件を足す。」、/home/user/clipping-point/docs/plan.md:271「新しい検証を足す区切りでは、わざと壊して落ちる件を一緒に足す。」
+   反証：export.py:71-73（payload）、rules_guard.py:126-127（目次の重複）、run.py:59-60（result_unreadable）、export.py:32-34 と 38-39 のどれにも、selftest_break.py の壊す件も tests/ のテストも無いことを確かめた。tools.md:28 と plan.md:271 の決まりに、同じ区切りのコードが合っていない。設計の手順3の3つの検査（overview.md:793）のうち、落ちる所を見ていないのは payload だけ、という点も合っている。
+■ design-4 [中/確かめた] 所：/home/user/clipping-point/.claude/rules/sim-core.md:30-34、/home/user/clipping-point/.claude/rules/ui.md:29-32、/home/user/clipping-point/.claude/rules/tools.md:33-36
+   直し：3つの規則ファイルの見出しを「## テストと見張り」などに替え、中をロジックのテスト、守りのテスト、道具に分けて書く。名詞の「確かめ」は「確かめる件」などに言い換えるか、言葉の表にふつうの名詞として使える旨を足す。
+   場合：破る行：見出し「## 守りのテスト」の下に、守りのテストでないものを挙げている。sim-core.md:32-33 は tests/test_fixed_loop.py と tests/test_sim.py。ui.md:31-32 は tests/test_canvas.py と tools/run.py。tools.md:36 は selftest_break.py。
+決まりの文：/home/user/clipping-point/docs/glossary.md:183「守りのテスト | 決まりが崩れていないことを見張るテスト。層の分離、指紋、保存する項目の一覧、規則ファイルの見張り」、同38行「テスト | …ロジックのテストと守りのテスト」、/home/user/clipping-point/docs/design/overview.md:778-779。
+間引き、世界、Canvas のテストはロジックのテストで、run と selftest_break は道具。/home/user/clipping-point/docs/worklog.md の「テストの件数の推移」は「ロジック」と「守り」を分けて付ける表なので、116件の分け方が規則ファイルと言葉の表で食い違う。この見出しは、これから足す規則ファイル11個の見本にもなる。
+同じ原因でもう1語：名詞の「確かめ」を、段の手順（glossary.md:39）でない意味で7か所使っている。tools.md:13 と 42、/home/user/clipping-point/tools/run.py:21、/home/user/clipping-point/tools/selftest_break.py:8、/home/user/clipping-point/tests/conftest.py:4、/home/user/clipping-point/tests/test_arch_guard.py:43、/home/user/clipping-point/tests/test_canon_guard.py:4。
+   反証：見出し「守りのテスト」の下に、言葉の表（glossary.md:184、38）の意味では守りのテストでない test_fixed_loop.py、test_sim.py、test_canvas.py と、道具（run、selftest_break）が並ぶのは事実で、これから足す規則ファイル11個の見本になる（CLAUDE.md:84「言葉は言葉の表の意味で使う」）。ただし害として挙げた作業記録の表は、いまは「検証の件数の推移」の「テスト（pytest）」1列で、ロジックと守りを分けていないので、重さは低。名詞の「確かめ」7か所は実在するが、段の手順と読み違える場面が無く、設計の文（overview.md:767、771）の写しでもあるので、直すかは任意。
+■ design-5 [低/確かめた] 所：/home/user/clipping-point/tools/budgets.json:3
+   直し：注の合わせる時を「段4（区切り5：ブラウザとスマホの確認）」に直す。
+   場合：破る行：budgets.json:3「仮の値：…全部入りのビルドができた時（段1の仕上げ）に合わせる。」
+決まりの文：/home/user/clipping-point/docs/design/overview.md:826「| HTMLの大きさの上限 | 1 MB | 段4 |」、/home/user/clipping-point/docs/plan.md:226（段4 区切り5「…HTMLの大きさ」）。
+合わせる時が、設計と計画は段4、注は段1の仕上げ。段1の時点は車1台とコース1本で、全部入りにならない。
+   反証：budgets.json:3 の合わせる時は「段1の仕上げ」で、設計の仮の値の表（overview.md:826）の段4、計画（plan.md:226）、CLAUDE.md:47「段4で一度に合わせる」と違う。段1は車1台とコース1本で「全部入り」にもならない。直し方は「段4」だけでも足りる（段4の区切りは案で、設計の後に確定する：plan.md:142）。
+
+== layers
+■ layers-1 [中/確かめた] 所：tools/arch_check.py 17〜20行（STDLIB_ALLOWED の os）、70〜71行、74行、77〜78行
+   直し：check_source で、level 0 の ImportFrom の alias.name と、ast.Attribute の attr を、禁止の一覧（urandom、getrandom、times、environ、getpid、sys、bltns、modules、st_mtime など）と照らす。os は「使ってよい属性（fsync、replace、path）」で縛るとより確実。足した形を test_arch_guard.py の CORE_VIOLATIONS と selftest_break.py に入れる。
+   場合：許可は、import文の頭のモジュール名だけで決まる。71行は node.module だけを見て、取り込む名前（alias.name）を見ない。74行は ast.Name の6語だけを見て、属性（ast.Attribute）を見ない。
+
+(a) 乱数、実時間、環境が os から届く。
+- 入力：cp_core/x.py に `import os` と `SEED = os.urandom(8)`。
+- 結果：68行で names=['os']、78行で 'os' は許可の中、74行の Name('os') は BANNED_NAMES に無い。違反0件。
+- 同じ追い方で、`from os import urandom`、`os.times()`、`os.stat(p).st_mtime`（実時間）、`os.environ`、`os.name`、`os.getpid()`（環境）も0件。
+
+(b) sys と builtins が、許可したモジュールの属性として届く。
+- 入力：`from os import sys` と `px = sys.modules.get('pyxel')`。
+- 結果：71行で names=['os']。違反0件。
+- `os.sys.modules['time']`、`from enum import bltns` と `bltns.__import__('pyxel')`、`dataclasses.sys`、`typing.sys` も同じ。os.py 26行の `import sys`、enum.py 1〜2行の `import sys` と `import builtins as bltns` を読んで確かめた。
+- test_arch_guard.py 28行の sys_modules の件は、`import sys` の形しか見ていない。
+
+決まりの文：
+- overview.md 34行「乱数と時刻の標準ライブラリも使わない」
+- arch_check.py 37〜38行の理由「builtins：動的なimportの抜け道になる」「sys：読み込み済みのモジュールへの抜け道になる」
+
+起きやすい時：os は区切り7の保存で初めて要る（試作の storage.py は os.fsync と os.replace を使う）。そこで日時や「ブラウザかどうか」の見分けが要ると、time と sys は落ちるが、os なら check を通る。
+   反証：引用と追い方は実物どおりで、許可した一覧の os（いまは cp_core と cp_ui のどこも使っていない）から os.urandom、os.times、os.stat().st_mtime が違反0件で届き、`import random` と `import time` を落とす見張りの狙い（overview 34行）が素通しになる。ただし (b) の `from os import sys` などはわざと書く形で重みは低く、直し方の案のうち属性名の禁止一覧（times、modules、sys）は自前の属性（ラップの times など）を誤って落とすので、os を区切り7まで一覧から外すか、os の使ってよい属性だけを許す形のほうがよい（pathlib の stat と home も同じ類）。
+■ layers-4 [低/確かめた] 所：tools/test.py 49〜55行と96行、tests/conftest.py 15〜20行
+   直し：test.py 53行の分岐で、FORBIDDEN_MARK が out にあれば reason=pyxel_loaded にする。selftest_break.py に、canvas_pyxel.py の頭へ `import pyxel` を足す件を入れる。
+   場合：テストのファイルが、モジュールの頭で pyxel を読み込む場合。
+
+入力は次のどちらか。
+- cp_app/canvas_pyxel.py に `import pyxel` が入る。ui.md 18行「cp_app/canvas_pyxel.py は pyxel をimportしない」の破れ。tests/test_canvas.py 6行が、頭でこのモジュールをimportしている。
+- 新しいテストが、頭で `from cp_app.app import read_run_config` と書く。app.py 20行が pyxel を読む。
+
+結果：
+- test.py 49行の --collect-only のプロセスで pyxel が読み込まれる。
+- conftest.py 20行が終了コードを1にする（pytest の main.py 366〜376行で、フックの後の session.exitstatus が返る）。
+- test.py 53〜55行が `test: FAILED … reason=collection_error pytest_exit=1` で終わる。96行の reason=pyxel_loaded には届かない。
+
+落ちはするが、最後の1行の理由の語が違う。selftest_break.py 146行の件は、関数の中でimportするので、この道を通らない。ui.md 18行の決まりを壊す件も selftest_break.py に無い。
+   反証：追い方は実物どおりで、モジュールの頭で pyxel が読み込まれると --collect-only の側で conftest が終了コードを1にし（pytest 9.2.0 の main.py 366〜376行）、test.py 53〜55行が reason=collection_error で終わるので、決めてある語 pyxel_loaded（96行）に届かない。ui.md 18行の決まりを守るのはこの道だけ（arch は cp_app を見ない）で、selftest_break の146行は関数の中の import しか試しておらず、道具が「落ちた理由が違う」を誤りとして扱う基準に照らして、最後の1行だけを読む報告で読み違えが起きる。
+
+== tests
+■ tests-1 [中/確かめた] 所：tests/test_fixed_loop.py 82・104・113・122・132行（既定で作るのは35・44行だけ）／clipping_point/cp_core/fixed_loop.py 30行／clipping_point/cp_app/app.py 85・105行
+   直し：79行と130行のテストを、アプリと同じ `RenderGate()`（既定の引数）で作る形に変え、selftest_break に「既定の min_interval_ms を None にする」件を足す。app.py が時刻を渡していることは区切り3の web-smoke の実描画の回数で見る、と規則ファイル sim-core.md に書いておく。
+   場合：実時間の決まり（1 tick以上かつ30 ms以上）を確かめるテストは、どれも `RenderGate(2, 30.0)` と引数を明示して作っている。既定の引数で作るのは35行（毎秒60回の進み方）と44行（時刻なし）だけで、どちらも実時間の決まりが働かない場面。入力：fixed_loop.py 30行の既定を `min_interval_ms=None` に変える、または app.py 105行が時刻を渡さなくなる → 結果：テスト116件は全部通る（35行の件は2 tickの決まりだけで30回になる）。run も両経路で renders=60 のまま通る（デスクトップ版は2 tickの決まりだけで足りる）。アプリは app.py 85行で `RenderGate()` を既定で作るので、docs/design/overview.md 104行の決まりの後半がアプリから外れても区切り2の検査は全部通り、ブラウザ版で毎秒20回に落ちる形で後から出る。selftest_break の間引きの件（149〜150行）も、この壊し方を持たない。
+   反証：実時間の決まりを確かめる件は全部 RenderGate(2, 30.0) の明示で、アプリが使う既定（app.py 85行）を時刻つきで通すのは60 Hzの件（35行。決まりの後半が働かない場面）だけなので、既定を None にしても、105行が時刻を渡さなくなっても、test と run の両経路（更新と描画が交互で、2 tickの決まりだけで60回）は通る。直し方の案のうち「区切り3の web-smoke の実描画の回数で見る」は保証として書かないこと（試作 e12 の机上の計算では、60 Hzで軽い負荷なら2 tickの決まりだけでも毎秒30回になり、落ちない見込み）。
+■ tests-4 [低/確かめた] 所：tools/rules_guard.py 67〜78行（parse_paths）／tests/test_rules_guard.py（この形の件が無い）
+   直し：paths: の並びを閉じるのは、字下げの無い `名前:` の行だけにする。並びの中の注の行と空行は読み飛ばし、それ以外の行は「読めない行」として報告する。この2つの形をテストに足す。
+   場合：入力：規則ファイルの頭が、`paths:`、`  - "tools/**"`、`  # テスト`、`  - "tests/test_ruls_guard.py"` の4行（3行目はYAMLの注、4行目は打ち間違い）→ 結果：注の行で in_paths が False になり（77〜78行）、4行目は当て先にも「読めない行」にも数えられない。check_rules は targets=1、問題0で通る。YAMLとしては4行目も当て先なので、見張りは通るのに、その当て先の空振りも HUBS への当たりも見られていない。引用符の無い行は「読めない」と報告する（71〜76行）のに、この形だけ黙って落とす。rules_guard.py 6行の「どの当て先も1つ以上のファイルに当たる」と合わない。
+   反証：コードを追うと指摘のとおりで、並びの途中に「-」で始まらない行（注など）があると in_paths が False になり（77〜78行）、後ろの当て先は当て先にも「読めない行」にも数えられず、空振りと HUBS への当たりの両方が見られないまま通る。注を1行入れた後は、ファイルの名前を変えた時の空振りも黙って通る形で、見張りの頭の文（6行）と合わない。直すときは、Claude Code が頭の中の注の行をどう読むかをここでは確かめられないので、並びの中の注も読み飛ばさず「読めない行」として落とすほうが安全。
+■ tests-7 [低/確かめた] 所：tools/export.py 29〜46行（inspect_names）、71〜73行（payload）、82行（checks=6）／tools/selftest_break.py 172〜178行
+   直し：payload の照合を、HTMLの文字列と .pyxapp のバイト列を受ける関数に出す。inspect_names と一緒に tests/ の守りのテストで、合う入力と合わない入力（外のパス、main.py なし、1バイト違うデータ）を与える。
+   場合：export の検査6つのうち、壊す件があるのは forbidden、unknown_type、size の3つ。missing、outside、payload（HTML内のデータが .pyxapp と一致する。docs/design/overview.md 793行の検査）は、壊す件もテストも無い。決まりは .claude/rules/tools.md 28行「検査や失敗の条件を足したら、tools/selftest_break.py に壊す件を足す」。入力：export.py 72行の照合を常に通る形に壊す → 結果：selftest_break の export の件（control 2件と壊す件7件）は全部期待どおりのままで、気づけない。inspect_names は pyxel を読まない純関数だが、tests/ から呼ばれていない。
+   反証：export の検査6つのうち missing、outside、payload は selftest_break にも tests/ にも件が無い（export_main_py_missing は pyxel package が先に落ちて reason=pyxel_package_failed の2になり、missing の枝を通らない）。tools.md 28行と計画271行の「検査を足したら壊す件を足す」に合わず、設計793行の「HTML内のデータが .pyxapp と一致する」の照合を常に通る形に壊しても全件が期待どおりのままになる。3つとも道具の外からは壊せないので、案のとおり純関数に出して tests/ で照らすのが筋（export.py は pyxel をimportしないので、テストのプロセスで読める）。
+
+== 退けた指摘
+□ fakepass-3 [中] 設計（overview.md:750）が test の失敗の条件を「件数が前回より減った場合」と総数で決めており、実装（test.py:103-112）と規則ファイル（tools.md:23）はそのとおりで、食い違いではなく仕組みを強める設計の変更の案（ファイルごとの件数にしても、同じファイルの中の増減は隠れる）。-k の間の遅れは、plan.md:239 のとおり当面はどの区切りでも全体を回すので起きない。
+□ fakepass-5 [低] pytest の動き（Exit は runner.py:264 でそのまま上がり、main.py:339-348 と 362-376 で終了コード0のまま junit を書く）は指摘のとおりだが、起きるのは、下限の件数より後ろで走るテストが pytest.exit(…, returncode=0) をわざわざ呼ぶ場合だけで、起きる見込みの無い場面。プロセスが消える形（os._exit、pyxel.quit）、失敗、スキップ、割り込み（終了コード2）は、いまの条件で落ちる。
+□ fakepass-6 [低] 3種類に壊す件も単体テストも無いのは事実だが、missing は pyxel package が先に落ち（pyxel/cli.py:185）、outside は必ず clipping_point/ の下の名前で入る（cli.py:221-238）ので届かない枝、payload は合わなければ落ちる側に倒れる検査で、合格に化ける道が無い。checks=6 はいま毎回評価している数と同じで、run の app_exit と result_file は run.py:49-60 の return で実際に確かめており壊す件（selftest_break.py:154-156）もあるので、害が無い。
+□ fakepass-7 [低] 決まり（tools.md:11）は「調べた件数が0なら2」で、道具の件数で見る実装はそのとおり。片方の層の .py が全部無い状態は、全節の check（ui.md の当て先の空振り）でも test（cp_ui をimportできない）でも落ち、区切りの検証は全節を回すので、--only arch だけが通っても害が無い。
+□ fakepass-8 [低] 例外で止まると traceback と終了コード1で終わるのは指摘のとおりだが、どの場合も0（合格）にはならず、1も2も失敗として扱う決まり（tools.md:10）なので、合否の読み違えは起きない。原因は traceback と show_tail の表示に出ており、1と2の区分けだけの差で害が無い。
+□ fakepass-10 [低] 「どう変えても落ちない」は言い過ぎ：(a) は a と b を交互に進めるので、クラスで共有する数を各世界が写し取る形や、作った順・個体に寄る状態が入れば要約が割れて落ちる。(b) は docstring に「落とし穴を残しておく」と書いた記録で、76行は RenderGate を実際に確かめており、重なる1件に害は無く、消すと件数の下限を下げる手間だけが増える。
+□ design-6 [低] 2つの文はどちらも arch_check.py の実際と合っていて、食い違う中身は無い（ui.md が一覧の件を書いていないだけ）。一覧に無いimportは check が理由つきで落とすので、読み違えの害が無い。名前の列挙を tools.md に寄せる案は、cp_core や cp_ui を触るときにその約束が読み込まれなくなる。
+□ design-7 [低] 計画の表（plan.md:318）は tools の当て先を「検証の道具」としていて、いまの paths: と目次はそのとおりで、食い違いではない。挙げた害（selftest-break の回し忘れ）は、変更したファイルから組を引く verify（plan.md:249、265。区切り3）で受ける決まりで、conftest.py:18 と pytest.ini:3、8 の注、壊す件（selftest_break.py:146、147）もある。paths: に足すのは任意の改善。
+□ design-8 [低] いまのコードは設計どおり（app.py:79、80、83）で、指摘も食い違いではないと認めている。設計の検証の表（overview.md:747-757）に無い新しい見張りの提案で、起きるのは理由の注が付いた3行を誰かが消した場合だけ。放っておいて読み違えや手戻りは起きない。「3つを消しても全道具がOK」という読みは合っているので、足すかは主のエージェントの判断でよい。
+□ design-9 [低] Pyxel 3.0.1 の cli.py（23、227-236、357-364行）が .gif、.zip、「.」で始まる名前を黙って除くのは事実。ただし初期版は画像やモデルのファイルを持たず（overview.md:58）、素材に .gif と .zip は使わない（同800行）と決めてあり、指摘も「いまは起きない」と認めている。起きない場面。tools.md:43 に1文足すのは任意。
+□ layers-2 [低] id が一覧に無いことと 0件になる追い方は正しいが、id を禁じる決まりはどの文書にも無く、試作の全コードに id( の呼び出しは0件、アプリ側の heapq の利用も0件で、起きる場面が見当たらない（hash は「ハッシュでの抽選」という具体の誘いがあるので禁じてある）。Name で id を禁じると、定義データの id を入れた変数 `id` の読み出しまで違反になる副作用もあり、オブジェクトの集合の順の話は指摘自身が言うとおり区切り7の覚えにとどまる。
+□ layers-3 [低] 行と引用は合っているが、(a)〜(e) は指摘自身が「わざと書かなければ出ない形」と認める形で、うっかりを拾うためのソースの検査が相手にする場面ではない（根の CLAUDE.md は検査を抜けるための書き方を禁じている）。動的な抜け道を静的な検査で全部ふさぐことはできず、放っておいても読み違えや手戻りは起きない。「テストでは通ってアプリでだけ Pyxel に届く」という説明も、cp_core はテストでもアプリでも import されるモジュールなので根拠が無い。
+□ layers-5 [低] arch の節だけを見れば件数が合計なのは事実だが、挙げた入力はどれも別の所で落ちる：cp_ui が無いか空なら ui.md の当て先 `clipping_point/cp_ui/**` が当たらず check が failed=rules になり（rules_guard.py 152〜157行）、test_canvas と app の import も落ちる。PURE_PACKAGES の語の食い違いは test_arch_guard.py 97〜100行（層の名を直に書いて (2, []) を求める）がファイル数に関わらず拾うので、「cp_core が5ファイルになった後は拾わない」は113行しか見ていない読みで、層の名を設計が固定している以上、残る場面は起きない。
+□ tests-2 [中] 決めた方針のとおりの作り。計画281行と tools.md 16行は「見張りは正本の要約値の写し、取り直す口は1つ、単独のコミットは手順の決まり」としており、写しの書き換えは git の差分に出てレビュー役の観点（計画335行）で見る（test.py --update-floor も同じく歯止めなしの口）。案の --proposal は、既にある 0001 を渡せば通るので「人が採った」を機械で見られず、書く形のずれは、使った時に check の canon が2で落ちる向きなので見かけの合格にならない（いまの写しはこのスクリプトの形で、read_snapshot を通るテストがある）。
+□ tests-3 [中] レビュー役自身が推測とする指摘で、いまの害が無い。いまの規則ファイル3つの当て先は明示のパスと dir/** だけで、この2つの形はこのセッションでも読み込まれた（tools/ と tests/test_fixed_loop.py を読んだ時に tools.md と sim-core.md が差し込まれた）。(a) は誰も使っていない形、(b) は落ちる向き、(c) は確かめようが無く、仮に当たっていても余分に読み込まれるのは見張りが見ない spikes/ などの側だけ。Claude Code の照合の実装はこの環境で読めないので、(c) の当否そのものは確かめていない。
+□ tests-5 [低] check_source が os.urandom を通すのは事実だが、設計が決めた仕組みはimportの許可した一覧で（overview 34・87行、sim-core.md の約束も random と time のimportの禁止）、検査は決めた範囲を満たしている。害の根拠の「区切り7で踏みやすい」は設計と合わず（704行：種はレースの通し番号と設定から決め、テストでは明示して渡す）、環境変数を禁じる決まりはどの文書にも無い。属性の禁止の一覧は open() や pathlib の stat を残す部分的な網なので、足すなら cp_core が os を初めて使う区切りで、理由つきで考える細目。
+□ tests-6 [低] (a) は名前と中身が合っている（題も頭の注も「偶奇で間引くと追い付く間に描かれない」という落とし穴の記録で、中身はその計算）。リポジトリのコードを呼ばないことと、76行が52〜53行と重なることは事実だが、害が無い。(b) の件名と中身のずれ（禁じた名前と同じ名の属性が出てこない）は事実だが、検査は ast.Name しか見ないので、後で崩れても落ちる向き（誤って拾う）にしか出ず、見かけの合格も手戻りも生まない。
+□ tests-8 [低] 99行を rel.parts に変えても全件が通ることは事実だが、害の出る場面が無い。clipping_point/ には __init__.py が無く、cp_core は最上位のパッケージとして読まれるので（conftest.py 10行、main.py の起動も同じ）、層の外へ出る相対importは読み込んだ時に必ず ImportError になり、拾い損ねても動くコードにならない。逆向きの崩れ（層の中の相対importを誤って拾う）は、区切り9で check が落ちる向きに出る。parents の判定そのものは73〜77行で確かめてあり、件数をテストの側で数え直す案は検査と同じ rglob の写しになる。
+□ tests-9 [低] 推測で、起きた跡が無い（主のエージェントの回し直しは両経路とも renders=60 で、selftest_break の実時間の件も通っている）。幅の±3は budgets.json の仮の値で、見直す時（全体の検証の中で外れが出た時）が _notes に書いてあり、道具を1本ずつ回す決まり（tools.md）もある。揺れても出るのは落ちる向き（回し直せば分かる誤報）で、見かけの合格にはならない。設計の表も「実描画の回数が合わない」を run の失敗の条件にしている。
+
+== 役が書いた、見られなかった所
+・fakepass（レビュー役）: 道具とテストは回していない（決まり）。pytest の sessionfinish の中の print が標準出力に出ること、pyxel.run の中の sys.exit(0) の終了コード、画面なしでの pyxel.pget の読みは、コードではなく out/selftest/break_results.json（主のエージェントの前回の実行の記録）の行で見ただけ。
+・fakepass（レビュー役）: 指摘1〜5の「この状態 → 合格」は、コードと pytest／pyxel のソースを追った結果で、実際に壊して回してはいない。
+・fakepass（レビュー役）: tests/snapshots/canon_digest.json の値が、docs/canon/planning.md の実際の sha256 と合うかは計算していない（使える命令に無い）。git log では、正本の最後の変更（7b52c5a）は要約値の写しを置いたコミットより前。
+・fakepass（レビュー役）: 層の分離の検査そのものの抜け道（許可した os や pathlib を通した実時間、乱数、環境の読み取りなど）は、この観点の外として追っていない。
+・fakepass（レビュー役）: spikes/ の試作との突き合わせは、run.py の driver の扱いだけ。ほかは見ていない。
+・fakepass（レビュー役）: CLAUDE.md は読んでいる間に書き換わった（119行）。見たのは「規則ファイルの目次」の表だけ。.claude/rules/tools.md:29 が指す「コマンド」の表は、いまの CLAUDE.md に見当たらないが、対象外の節なので指摘にしていない。
+・design（レビュー役）: 道具とテストは回していない（決まり）。実行時のふるまいは、主のエージェントの結果（run OK、selftest_break 83件）に頼り、コードを読んだだけ。対象は、画面なしで pyxel.integer_scale(True) が通ること、pyxel.run の中の sys.exit(0) の終了コード、flip と run の2経路の実描画の回数。
+・design（レビュー役）: ブラウザ版の道は読んだだけ。Pyodide で os.environ と time.perf_counter が同じに動くか、HTMLが起動するかは確かめていない。区切り3の煙テストの範囲。
+・design（レビュー役）: Claude Codeが規則ファイルの paths: をこの書式で実際に読み込むかは、読むだけでは分からない。設計の「見えなかったこと」にある、段0で確かめる件。
+・design（レビュー役）: docs/ の文書と、根の CLAUDE.md の「規則ファイルの目次」のほかの節は対象外。照らす先として読んだだけで、文書の側の食い違いは見ていない（例：言葉の表の check の行に「正本の見張り」が無い）。
+・design（レビュー役）: selftest_break の83件それぞれが狙った理由で落ちるかは、この観点では追っていない。確かめたのは、export の件の一覧と、計画のチェックリストの5つに壊す件があることだけ。
+・layers（レビュー役）: 道具とテストは回していない（レビュー役の約束）。指摘の「違反0件」と「reason=collection_error」は、コードを追った結果で、実行では確かめていない。
+・layers（レビュー役）: ブラウザ版（PyodideのPython 3.14）の標準ライブラリは読んでいない。os.sys、enum.bltns、os.times が同じ形で在るかは、開発環境の3.13のソースでしか確かめていない。
+・layers（レビュー役）: tools/rules_guard.py の150行より後、tests/test_rules_guard.py の60行より後、tests/test_canon_guard.py の40行より後、tests/snapshots/canon_digest.json は読んでいない。層の分離と決定性の観点の外。
+・layers（レビュー役）: spikes/frameloop/proto は読んでいない。参考にしたのは spikes/harness/repo の arch_check.py と cp_core のimport行だけ。
+・layers（レビュー役）: 実時間が世界へ届かないことを機械で見張る仕組み（run の指紋、ハッシュの種を変えた別プロセス）は後の区切りなので、評価していない。いまは Sim.step() が引数を取らないことだけを見た。
+・layers（レビュー役）: pyxel をimportしただけで pytest のプロセスに起きる副作用（音の出口の初期化など）は見ていない。
+・layers（レビュー役）: layers-2 の「メモリ上の位置の順は、同じ環境で続けて回すと揃うことが多く、指紋テストで動かないまま残りやすい」という見込みは経験則で、確かめていない。
+・tests（レビュー役）: Claude Code の paths: の照合の実装と文書。この環境で読めない。tests-3 は推測で、このセッションで読み込みを見た2つの形（明示のパス、`dir/**`）のほかは、実際にどう当たるかを見ていない。tools.md が差し込まれたきっかけ（どの読み方で当たったか）も特定していない。
+・tests（レビュー役）: 道具とテストは回していない（約束どおり）。pytest の動き（空のパラメータがスキップになること、sessionfinish で終了コードを変えられること）は知識からの読み。主のエージェントが残した out/selftest/break_results.json が83件すべて ok であることと矛盾しないことだけ見た。
+・tests（レビュー役）: tests/snapshots/canon_digest.json の値が、いまの docs/canon/planning.md の sha256 と合っているか。計算する命令が、使ってよい範囲に無い。主のエージェントの check の結果（canon=1）に頼った。
+・tests（レビュー役）: 重いコンテナでの `run --realtime` の実際の動き（tests-9）。回していないので、外れが出る頻度は分からない。
+・tests（レビュー役）: 層の分離の検査の抜け道の網羅（`from os import sys` のような、許可したモジュール経由の動的なimport）と、export に入るファイルの網羅。テストの穴に関わる所だけ追い、検査そのものの網羅は見ていない。
+・tests（レビュー役）: CLAUDE.md は、読んでいる間に主のエージェントが書き換えた。規則ファイルの目次のほかの節は対象外として見ていない。rules_guard の本物への確かめが、書き換え後の CLAUDE.md（200行まで）で通るかは確かめていない。
+review_summary: OK lenses=4 findings=33 passed=14 rejected=19 unevaluated=0 role_notes=24

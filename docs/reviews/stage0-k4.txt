@@ -1,0 +1,142 @@
+区切り：段0 区切り4：Claude Codeの整え
+
+== config
+■ config-1 [中/確かめた] 所：.claude/settings.json 4〜17行目（permissions.deny）
+   直し：deny に `Bash(git * push -f)`、`Bash(git push * +*)`、`Bash(git * push * +*)`、`Bash(git reset * --hard*)`、`Bash(git * reset * --hard*)` を足す。`-fu` と env の形は glob では安全に書けない（`git push -*f*` は `git push -u origin feature` も断る）ので、docs/research/claude-code-config.md 51行目の「完全な壁ではない」に抜ける形として足す。
+   場合：公式の文書（permissions の「Wildcard patterns」「Wrappers」「What a Bash rule doesn't match」）に照らすと、計画が名指しする操作のうち次の形が断られない。(a) `git -C . push -f`（引数なし）：10行目 `Bash(git * push -f *)` は `*` が2つあるので、末尾の ` *` は何も続かない形に当たらない（文書：「That holds only when the trailing `*` is the rule's only wildcard」）。12行目 `Bash(git * push * -f)` は push と -f の間にもう1語要る。(b) `git push -fu origin dev`、`git push -uf origin dev`：5行目は `-f` の後に空白を求める。(c) `git push origin +dev`：`+` を見る規則が無い。(d) `git reset HEAD~1 --hard`、`git reset -q --hard`：14行目は `git reset --hard` で始まる形だけ。(e) `env X=1 git reset --hard`：剥がされる包みの一覧（timeout、time、nice、nohup、stdbuf、command、builtin、noglob、旗なしの xargs）に env が無い。決まりの文：docs/plan.md 339行目「設定では、強制push、`reset --hard`、`clean` など戻せないgit操作を禁じます。作業ディレクトリを指定する形（git -C）も含めます。」、136行目「`git -C` を付けた形も禁じる」。(a) は -C の形そのもの。実機では回していない（このセッションでは設定が読まれず、道具も回さない約束のため）。判定は文書の文と規則の突き合わせ。
+   反証：公式の文と規則を突き合わせ、(a)〜(e) のどれにも当たる規則が無いことを確かめた。(a) は計画が名指しする -C の形そのもので、調べ51行の「完全な壁ではない」が言うのは別の呼び方（/usr/bin/git、sh -c）だけ。実機では回していない。(b) と (e) は、案のとおり記録だけで足りる。
+■ config-2 [低/確かめた] 所：.claude/settings.json 9〜13、15、17行目（`git * …` で始まる規則）
+   直し：tools/claude/README.md か根のCLAUDE.mdの「gitの決まり」に、「gitの命令の引数（コミットの文を含む）に、空白に続く `clean `、`reset --hard`、`push --force`、`push -f` を書くと断られる。書くときは `git commit -F <ファイル>` で渡す」と1行足す。
+   場合：規則は命令の文字列の全体に当たり、`*` は空白も引用符の中も越える（公式：「Bash rules match the whole command text, with `*` standing in for any text」。例の `Bash(* --version)` は `bash -c 'echo hi' --version` に当たる）。入力：`git commit -m "段0 区切り4（途中）：新しいセッションで git clean -n が断られることを確かめた"` → 17行目 `Bash(git * clean *)` に当たり、コミットが断られる（`git` の後に、空白で挟まれた ` clean ` が出るため）。同じく `git commit -m "… git reset --hard は使わない"` → 15行目、`git log --grep "git push --force"` → 9行目、`git checkout -b clean origin/dev` → 17行目。deny なので承認でも通せない。docs/research/claude-code-config.md 68行目「禁止する操作が、ふだんの命令を誤って断らないことを、このセッションの過去の命令で確かめる」は、過去のコミットの題（どれも1行で、該当する綴りが無い）では、この形が出ない。
+   反証：公式の文（`*` は空白を含むどんな文にも当たる。`Bash(* --version)` は `bash -c 'echo hi' --version` に当たる）から、挙げた4つの入力は9、15、17行に当たる。過去のコミットの文には該当の綴りが0件で、調べ68行の確かめ方では出ない。11〜13行（push と --force や -f が離れた形）も同じ誤爆をするので、足す1行に含める。
+■ config-4 [低/確かめた] 所：tools/claude/README.md 21行目・34行目、.claude/agents/reviewer.md 4行目・13行目・29行目
+   直し：README の `targets` の説明に、「変えたファイルの一覧（`git status --short` の写し）と、ふるまいの写し（`tests/snapshots/`）を変えたかどうかを書く」を足す。
+   場合：状態：README 24行目の `"agentType": "reviewer"` を付けてレビューを回す。レビュー役の型は `tools: Read, Grep, Glob`（reviewer.md 4行目）で、`git status` も `git diff` も使えない。README 34行目は「レビュー役の型はshellを持たないので、差分ではなく作業ツリーのファイルを読ませる」、21行目の `targets` の説明は「見るファイルの一覧。見ないものも書く」だけ。→ レビュー役は、この区切りでどのファイルが変わったかを知る手段が無く、reviewer.md 29行目「`cp_core` や `cp_ui` の変更と同じコミットで、ふるまいの写しが書き換わっていないか」（docs/plan.md 335行目の観点）を確かめられない。reviewer.md 13行目は「差分は、主のエージェントがファイルに書き出したもの（頼みの文に場所がある）」を読むと書くが、README の手順には、差分や変えたファイルの一覧を渡す手が無い。
+   反証：引用は実物どおり。reviewer の型はshellを持たず、READMEの手順には変えたファイルの一覧も差分の場所も渡す項が無いので、reviewer.md 13行の「頼みの文に場所がある」と29行の確かめが果たせない。ただし案の `git status --short` は、途中のコミットがあると空になる（いまの作業ツリーは clean で、区切り4の物は d8d3013 と 24441bf に入っている）ので、基点からの `git diff --name-status` の写しにする。
+■ config-5 [低/推測] 所：.claude/agents/reader.md 6行目・11行目
+   直し：reader.md 11行目に、「`spikes/` は設計時の試作で、出荷物の外。頼まれないかぎり読まず、地図に入れない」を足す。
+   場合：読み手は `omitClaudeMd: true`（6行目）で、根のCLAUDE.mdを受け取らない（公式：「start this subagent without the user, project, and local CLAUDE.md files」）。本文の11行目が挙げる置き場は `clipping_point/`、`tests/`、`tools/`、`docs/` と、読まない `out/`、`dist/`、`.cache/` だけで、`spikes/` が無い。決まりの文：根のCLAUDE.md 95行目「`spikes/` | 設計時の試作と実測の記録。出荷物の外。土台を組み直すときの参考にし、中は直さない」。reviewer.md 13行目は `spikes/` を頼まれないかぎり見ないと書いている。状態：読み手に領域の地図を頼み、読み手が名前でGrepする → `spikes/` の試作が当たり、入口やテストとして地図に混ざる。追い切れていない所：`spikes/` の中は見ない約束なので、出荷するコードと同じ名前が実際にあるかは確かめていない。ほかの案内（3つの層、言葉の表の場所、大きな文書を頭から読まない）は本文にあり、足りている。
+   反証：前提は確かめた：omitClaudeMd は公式どおり根のCLAUDE.mdを渡さず、reader.md 11行は根のディレクトリの表のうち spikes/ だけを欠き、reviewer.md 13行は挙げている。試作は出荷物と同じ9領域にあり、Grepの既定の範囲はリポジトリ全体なので、当たりは混ざりうる。混ざるという結果そのものは推測のままで（spikes/ の中は見ていない）、害は小さい。
+■ config-6 [低/確かめた] 所：tests/test_claude_tools.py（全体）、.claude/settings.json、.claude/agents/*.md
+   直し：tests/test_claude_tools.py に、settings.json がJSONとして読めて deny に3つの操作の規則があり SessionStart の command が実在する handoff_hook.py を指すことと、型3つの頭の項目が許した名前（name、description、tools、model、omitClaudeMd、experimental）だけであることを見るテストを足す。
+   場合：状態：後の区切りで settings.json に規則を足して末尾にカンマが残る、または型の頭の項目を `omitClaudeMD` のように綴り違える → 公式の文書では、読めない設定のファイルは飛ばされ（settings の「Fix a broken settings file」：対話でない実行は「skips a broken user, project, or local file or its broken values and continues with the rest」）、知らない頭の項目は「ignores a field it doesn't recognize without reporting an error」。禁止する操作も、控えの差し込みも、読み手の omitClaudeMd も黙って消えるが、check も test も落ちない：`tests/` と `tools/` を `settings.json`、`.claude/agents`、`deny`、`SessionStart` でgrepして当たるのは、handoff_hook.py の頭の注だけ。規則ファイルには見張り（.claude/rules/tools.md が挙げる tests/test_rules_guard.py）があるが、設定と型には無い。いまのファイルは正しい。
+   反証：事実は確かめた：公式では知らない頭の項目は黙って無視され、壊れた設定のファイルは飛ばされる。check の構文の検査は .py だけで、設定と型を見るテストも道具も無い（tools の綴り違いなら、読むだけの縛りも黙って外れる）。ただし案のままでは、selftest-break の複製に .claude/settings.json と .claude/agents が入らず、複製の中でテストが別の理由で落ちるので、COPY_ITEMS にも足す。
+■ config-7 [低/確かめた] 所：docs/handoff.md 21行目、根のCLAUDE.md 122行目
+   直し：docs/handoff.md の「次の手」と根のCLAUDE.md 122行目に、「リポジトリを1つだけ選んで始める（後から足さない。プロジェクトのスレッドでは、設定もフックも型も読まれない）」を足す。
+   場合：破る行：docs/handoff.md 21行目「区切り4を閉じたら、新しいセッションの開始をお願いする（`dev` から）。」、根のCLAUDE.md 122行目「新しいセッションは `dev` から始める。」。どちらにも、設定が読まれる条件が無い。決まりの文：docs/research/claude-code-config.md 36行目「リポジトリが1つのセッションは、cloneの中の `.claude/settings.json` を読む。プロジェクトのスレッドでは、当たらない。」、73行目「新しいセッション（リポジトリを付けて始めたもの）で、次を確かめる」。公式の文書（settings の「Settings in cloud sessions」、cloud-environments の「What carries over」）：リポジトリが複数のセッションは clone の上で始まり、権限の決まりもフックも読まない。プロジェクトのスレッドは、根のCLAUDE.mdと paths の無い規則ファイルしか読まず、`.claude/agents/` も paths つきの規則ファイルも読まない。状態：このセッションと同じ始め方（リポジトリ無しで始めて後から足す）か、プロジェクトのスレッドで、新しいセッションが始まる → 控えの案内、禁止する操作、型の3つとも効かず、通過条件の4つ目（docs/plan.md 108行目）の確かめがやり直しになる。
+   反証：引用は実物どおりで、設定が読まれる始め方の条件は調べの36行と73行にしか無い（作業の控え21行、作業記録19行、根のCLAUDE.md 122行、常設の方針33行は、どれも「dev から」だけ）。複数のリポジトリとプロジェクトのスレッドで権限の決まりもフックも読まれないことは、公式で確かめた。後から足す形は公式に記述が無く、根拠はこのセッションの観察（調べ72行）だけ。直すときは、作業記録19行の「次の手」にも同じ文を足す。
+
+== resume
+■ resume-2 [中/確かめた] 所：CLAUDE.md:11-12 と 30-31、.claude/settings.json:20-32、docs/research/claude-code-config.md:28-36
+   直し：CLAUDE.md:12 に、切り替わった後に未コミットの変更をどうするかを1文で決めて書く（退避のコミットとpushだけ行って待機する、または触らずに待機する）。公式の文書（hooks）にある PostModelSwitch のフック（Claudeのモデルが替わった後に走り、標準出力が文脈に入る。v2.1.251 から）で人の指示の1〜2行を差し込む案を、調べの文書に足す。週の枠切れの切り替えで走るかは追い切れていないので、新しいセッションで確かめる項目に入れる。
+   場合：この状態：区切りの途中（未コミットの変更がある）で週の枠が切れ、主のセッションが別のClaudeのモデルに切り替わる（docs/standing-policy.md:46 が挙げているおそれ）。→ この結果：
+(1) 切り替わった時に読まれる差し込みが無い。.claude/settings.json のフックは SessionStart だけ。CLAUDE.md:11 の確かめる時は「セッションの開始時、区切りごと、サブエージェントやワークフローを始める前」なので、切り替わったClaudeのモデルは、次の確かめる時まで区切りを進める。
+(2) 気づいた後の動きが決まらない。CLAUDE.md:12「違うClaudeのモデルで動いていたら、何も進めずに待機する」と、CLAUDE.md:31「区切りの途中では止めない。検証、作業記録、作業の控え、コミット、pushまで終えてから止める」、CLAUDE.md:30「pushしていない作業は無いものとして扱う」がぶつかる。未コミットの作業を退避のコミットにしてよいのか（docs/plan.md:299 のとおり、環境はターンの終わりにコミットとpushを促す）、触らずに置くのか（コンテナが替われば失う）が書かれていない。95%の線（CLAUDE.md:13）には「控えと作業記録を書いてコミットとpushをし、待機する」と動きがあるのに、切り替わった後には無い。
+   反証：CLAUDE.md:12「何も進めずに待機する」と31行「区切りの途中では止めない…pushまで終えてから止める」・30行は、未コミットの変更を持ったまま切り替わった場合にぶつかり、95%の線（13行）と違って動きが書かれていない。週の枠が戻るまで何日も待つ間にコンテナが替われば失う。PostModelSwitch は公式の文書（hooks）に実在し（v2.1.251以降、標準出力が文脈に入り、自動の切り替えの後にも走る）、案は誤っていない。ただし、週の枠切れの切り替えは新しいセッションでは試せない。
+■ resume-3 [中/確かめた] 所：.claude/agents/implementer.md:5、reviewer.md:5、reader.md:5-6、CLAUDE.md:11-13、tools/claude/README.md:15、tools/claude/usage_row.py:43-48
+   直し：tools/claude/README.md の手順1に「始める前に、Claudeのモデルと週の使用率を確かめる。いまの値に見込み（レビュー8体で約10ポイント）を足して95%を超えるなら始めない」を、手順4の前に「結果が届いたら確かめ直す。途中で95%を超えたか、Claudeのモデルが替わっていたら、結果を採らずに人に伺う」を足す。CLAUDE.md:11 の確かめる時に「返った後」を足し、usage_row.py に見込みのポイントを渡す引数を足す。
+   場合：この状態：週の使用率が90%ちょうどか少し下で、区切りのレビュー（8体）を始める。CLAUDE.md:13 は「90%を超えたら、新しいサブエージェントとワークフローを始めない」なので、始められる（docs/worklog.md:46 に、90%ちょうどで実装役を起動した例がある）。実績では、レビュー8体で高いほうが約6ポイント、もう一方が約9ポイント進む（worklog.md:48）。区切り1本で約10ポイント（docs/reports/2026-11-11/02.md:43）。→ この結果：ワークフローの途中で95%の線を越え、週の枠が切れることもある。サブエージェントの型は3つとも model: inherit で、公式の文書（sub-agents）では主の会話のClaudeのモデルに従う。残りの役は別のClaudeのモデルで動き、結果は review_summary で OK と読める。
+文書にある手当ては、docs/standing-policy.md:46 の「途中から別のClaudeのモデルで続いてしまうおそれがあるので」置いた90%と95%の線だけ。足りない所：
+(a) 線は始める時の値だけを見て、これから始める物の見込みの消費を見ない（usage_row.py も同じ）。
+(b) CLAUDE.md:11 の確かめる時は「始める前」だけ。サブエージェントやワークフローが返った後に確かめ直す決まりも、途中で越えていたときに結果を採るのか捨てるのかも無い。
+(c) tools/claude/README.md の手順1（15行）は verify の回し直しだけで、始める前の確かめが手順に無い（9行の表にはある）。docs/requests/README.md のひな形にも無い。
+(d) サブエージェントの型の本文とワークフローの文に、この指示が無い。実装役とレビュー役は CLAUDE.md を読むが、get_session を持たないので確かめられない。読み手は omitClaudeMd で、指示そのものを読まない。
+   反証：引用は実物どおりで、90%以下で始めた8体のレビューは実績（6〜9ポイント）で96〜99%に届き、返った後に確かめ直す決まりが CLAUDE.md:11 にも README にも無いので、主が直しを続けて週の枠を使い切る余地が残る（standing-policy.md:46 自身が「消費が分かってきたら見直す」としている）。(c) は常に読まれる CLAUDE.md:11 にあり、(d) は役が確かめられないだけなので弱い。「結果を採らない」と始める線の引き下げは主が決める細目で、usage_row に引数を足すならテストも要る。
+■ resume-4 [中/確かめた] 所：tools/claude/README.md:30-32、docs/handoff.md:14
+   直し：README の手順4に、出力のファイルの場所の見つけ方（主がこのセッションで見た形）を書く。手順5の前に「review_summary の出力（通った全idを --case に渡し、--rejected と --notes も付ける）を Write でリポジトリに置き、途中のコミットでpushしてから直しに入る。控えには、その場所を書く」を足す。
+   場合：破る行：tools/claude/README.md:30「結果が届いたら、結果のJSON（ワークフローの出力のファイル）を python3 tools/claude/review_summary.py <ファイル> で読む」。ファイルの場所も、見つけ方も書いていない。docs/handoff.md:14 も「<ワークフローの出力のファイル>」のまま。決まりの文：CLAUDE.md:30「pushしていない作業は無いものとして扱う」、CLAUDE.md:57「コンテナは一時的で、残るのはpushしたgitだけ」。
+この状態：レビューの結果が届いた後、直しを終える前に、コンテナが替わるか、新しいセッションに替わる。→ この結果：結果のJSONはコンテナの中にしか無く、リポジトリに残るのは件数だけ（README.md:32 の手順6。区切り3の21件も、docs/worklog.md:167 に件数があるだけ）。控えを読んだ新しいセッションは、ファイルを見つけられず、通った指摘の中身も分からない。レビューを回し直すことになる（8体で約204万トークン、週の使用率で6〜9ポイント。worklog.md:48）。同じコンテナの中でも、READMEだけを読んだ主は、ファイルを探す所から始める。Workflowの道具が出力のファイルをどこに置くかは、レビュー役からは読めなかった。
+   反証：README.md:30 と handoff.md:14 は出力のファイルの場所を書かず（控えは「<ワークフローの出力のファイル>」のまま）、リポジトリに残るのは件数だけなので、結果が届いてから直し終えるまでに圧縮かコンテナの入れ替えが起きると、通った指摘の中身を失ってレビューを回し直すことになる。主のセッションの文脈は圧縮の線の近く（約81万／90万トークン）で、起きうる場面。案のうち、リポジトリに置く場所は決める必要がある（docs/review/ は「済。足さない」）。
+■ resume-5 [中/確かめた] 所：tools/claude/review_summary.py:66-68・91-95・107-110、tools/claude/README.md:30-32、tools/claude/step_review.js:122・134
+   直し：review_summary.py の最後の1行に notes の件数と体数を足し、通った指摘には反証の理由を既定で出す。README の手順4に --rejected と --notes を書き、「notes が0でなければ、作業記録の『レビュー役が見られなかった所』に写す」「未評価が出たら、その観点だけを lenses に入れて回し直し、件数は2つの結果を足して書く」を足す。
+   場合：(1) この入力：レビュー役が findings を空で返し、unevaluated に「公式の文書を読めなかった」と書く。→ この結果：review_summary.py:66-68 は、役が書いた「見られなかった所」を未評価の件数に入れず、--notes を付けたときだけ出す。最後の1行は「review_summary: OK findings=0 passed=0 rejected=0 unevaluated=0」で、終了コードは0。README.md:30 が挙げる引数は --case だけで、--notes と --rejected は出てこない。READMEだけを読んだ主は、作業記録に「未評価は無し」と書く（README.md:32）。決まりの文：CLAUDE.md:36「0件、回り切れない検査、未評価は失敗として扱う」。区切り1の節（docs/worklog.md:104）は「レビュー役が見られなかった所」を書いているが、手順には無い。
+(2) この入力：反証役が verdict を「通った」とし、reason に「直し方の案は誤り」と書く（step_review.js:122 が、そう書くように求めている）。→ この結果：既定の出力は「直し：<案>」だけで（review_summary.py:91-92）、反証の理由は --case に挙げたidにしか出ない（93-95行）。主か実装役が、誤った案のとおりに直す。
+(3) 未評価（終了コード1）が出たときの回し直し方が README に無い（その観点だけを回し直すのか、2つの結果の件数をどう足すのか）。README.md:32 が書かせる「体数」も出力に無い。指摘0件の観点では反証役を起こさないので（step_review.js:134）、観点の数の2倍にならない。
+   反証：コードを追うと、指摘0件で unevaluated に書いた観点は notes に入るだけで、最後の1行は findings=0 … unevaluated=0 の OK になり（66-68行、111-113行）、README は --notes と --rejected を挙げていない。通った指摘の反証の理由も --case のidにしか出ない（93-95行）ので、step_review.js:122 が reason に書かせる「案は誤り」が既定では主に届かない。
+■ resume-7 [中/確かめた] 所：docs/research/claude-code-config.md:3・68・72-75、docs/worklog.md:19、.claude/settings.json:9・15・17、docs/index.md:36
+   直し：5点のそれぞれに、落ちたときの動きを1句ずつ書く。確かめる項目に「step_review.js を agentType つきで1観点だけ回す」と「ふだんの命令が断られないこと」を足す。Bash(git * clean *) の形は Bash(git -C * clean *) のように狭めるか、禁止の語を含むコミットの文は -F でファイルから渡すと書く。要約と docs/index.md:36 を、置いた後の状態に直す。
+   場合：新しいセッションが最初に行う5点（claude-code-config.md:73）は、通ったときの動きだけが書いてある（docs/worklog.md:19「5点を確かめ、初日のチェックリストの通過条件の4つ目に印を付ける」）。
+(a) 落ちたときの動きが無い。この状態：新しいセッションで git clean -n が断られずに動く（このセッションで実際に起きた。72行）、サブエージェントの型が見えない、ブランチが dev でない。→ この結果：続きが書かれていない（Claude Codeの設定を直すのか、人に知らせて止めるのか、印を付けずに区切り5へ進んでよいのか）。ブランチは、フックが「進める前に、dev との違いを確かめる」と言うだけ（tools/claude/handoff_hook.py:64）。
+(b) 68行「禁止する操作が、ふだんの命令を誤って断らないことを…確かめる」が、5点に入っていない（入っているのは「git status は通る」だけ）。この入力：git commit -m "… git clean -n が断られることを確かめた"。→ この結果：.claude/settings.json:17 の Bash(git * clean *) に当たり、コミットが断られる。公式の文書（permissions）は「* は空白を含むどんな文にも当たる」「Bashの決まりは命令の文の全体に当てる」と書いている（動かしては見ていない）。15行の Bash(git * reset --hard*) と9行の Bash(git * push --force*) でも同じ。5点の結果を書くコミットの文は、この語を含みやすい。
+(c) サブエージェントの型を付けたワークフロー（agentType が reviewer。決まった形の結果つき）は、1度も回していない（75行）。レビュー役の tools は Read、Grep、Glob だけなので、決まった形の結果を返せるかは、区切り5のレビューで初めて分かる。5点の (3) は「使える」だけ。
+(d) 3行の要約「実際のセッションではまだ試していない。置く前に、小さく試す」と docs/index.md:36「文書で調べただけ。段0の区切り4で、試してから使う」は、置いた後の今と合わない（70-75行と食い違う）。
+   反証：5点（73行）に落ちたときの動きが無いこと、68行の確かめが5点に入らず済んだ記録も無いこと、3行の要約と docs/index.md:36 が置いた後の状態と合わないことは、実物どおり。公式の文書（permissions）は「* は空白を含むどんな文にも当たる」「Bashの決まりは命令の文の全体に当てる」と書いており、Bash(git * clean *) は禁止の語を含むコミットの文に当たりうる。案の Bash(git -C * clean *) への絞りは、ほかの全体オプションの形（git --no-pager clean など）を外すので、-F で渡すほうが食い違いを生まない。
+■ resume-8 [低/確かめた] 所：tools/claude/usage_row.py:22-24・75・77
+   直し：75行と77行の文を、定数から percent() で組み立てる。22行の注を「そろえる所：CLAUDE.md、docs/standing-policy.md、tests/test_claude_tools.py。作業記録には、見直しを新しい細目として足す」に直す。
+   場合：破る行：usage_row.py:22「…変えるときは、3か所をそろえる」と、75行の print("線：95%を超えた。…")、77行の print("線：90%を超えた。…")。文の中の数字は、定数（23-24行の NO_NEW_AGENTS_ABOVE、STOP_ABOVE）とは別に、直に書いてある。決まりの文：docs/standing-policy.md:46「線の値は、区切り1本あたりの消費が分かってきたら見直す」。
+線の値が書いてある所は3か所より多い：CLAUDE.md:13、docs/standing-policy.md:46 と 48、usage_row.py の定数と文、tests/test_claude_tools.py:158-162、docs/worklog.md:82（細目の13番）。
+この状態：線を見直し、注のとおり3か所（CLAUDE.md、常設の方針、定数）を直す。→ この結果：usage_row.py は、新しい線で判定しながら「線：95%を超えた」と古い数字の文を出す。テストは古い値のままなので落ちる。
+   反証：75行と77行の文は数字を直に書いており、22行の注の「3か所」はテスト（158-162行）と作業記録の細目13番を数えていない。線は見直す前提（standing-policy.md:46）なので、注のとおりに直すと、新しい線で判定しながら古い数字の文を出す。害は小さく、重さは低のまま。
+■ resume-9 [低/確かめた] 所：.claude/agents/reviewer.md:13・18-22・24-31・35、tools/claude/step_review.js:12・62-69・85-91・118-122、tools/claude/README.md:34
+   直し：step_review.js の頭に「指摘の書き方、退ける型、共通の約束は .claude/agents/reviewer.md と同じ文。変えるときは両方」と注を置く（または agentType があるときは共通の部分を省く）。サブエージェントの型を付けない回にも6点が届くよう、README の手順2に書く。README.md:34 を reviewer.md:13 に合わせ、差分を渡すときの書き出し方と、targets に場所を書くことを足す。
+   場合：レビュー役の約束が、サブエージェントの型（reviewer.md）とワークフローの文（step_review.js）の2か所に、ほぼ同じ文で書いてある（指摘の書き方：reviewer.md:18-21 と step_review.js:86-89。退ける型：reviewer.md:35 と step_review.js:120）。agentType を付けると、役は両方を受け取る。既に差がある：reviewer.md:13「out/、dist/、.cache/、spikes/ は、頼まれないかぎり見ない」に対し、step_review.js:67 は「out/、dist/、.cache/…は見ない」（spikes/ が無い）。reviewer.md:22（読む口を1つにしている値の迂回は、決まりの破れとして扱う）と 24-31行（必ず見ること6点）は、サブエージェントの型にだけある。
+この状態：サブエージェントの型を付けずに回す（このセッションの回し方。step_review.js:12「省けば、既定のサブエージェントで回す」）。→ この結果：必ず見ること6点（docs/plan.md:330-337 がレビュー役の観点に足すとしたもの）と22行の決まりが、役に届かない。重さの定義や退ける型を片方だけ直すと、サブエージェントの型を付けた回に、2つの違う決まりが同時に届く。
+もう1つ：tools/claude/README.md:34「差分ではなく作業ツリーのファイルを読ませる」と reviewer.md:13「差分は、主のエージェントがファイルに書き出したもの（頼みの文に場所がある）か、作業ツリーのファイルを読む」が食い違う。args にも、差分のファイルの場所を渡す欄が無い。
+   反証：同じ約束が reviewer.md と step_review.js の2か所にあり、既に差があること（spikes/、22行、必ず見ること6点）、agentType を省くと plan.md:330-337 の6点が役に届かないことは、実物どおり（この反証の頼みの文にも6点は無い）。ただし README.md:34 と reviewer.md:13 は食い違いではなく、型が許す2つのうち片方を README が選んでいるだけなので、その部分の直しは要らない。
+
+== scripts
+■ scripts-1 [中/確かめた] 所：/home/user/clipping-point/tools/claude/review_summary.py:66-68、101-104、107-113
+   直し：役の unevaluated の件数を、最後の1行に `role_unevaluated=N` で出し、0でなければ中身を常に出して1で終わる。1にしないと決めるなら、件数だけは最後の1行に入れ、READMEの手順4と6に読み方を書く。
+   場合：入力：{"step":"s","results":[{"key":"a","review":{"scope":"","findings":[],"unevaluated":["tools/claude/ を読めなかった"]},"refute":{"verdicts":[],"unevaluated":[]}}]} を、READMEの手順4の形（--notes なし）で読む → 役が書いた未評価は1行も出ず、最後の1行は「review_summary: OK findings=0 passed=0 rejected=0 unevaluated=0」、終了コード0。何も読めなかったレビュー役が「指摘0件」に数わる。反証役が unevaluated に「確かめられなかった」と書いて「退け」を付けた指摘も、退けの1件になるだけ。破る行：review_summary.py:66「# 役が自分で書いた「見られなかった所」。未評価の件数には入れず、--notes で見せる。」。決まりの文：CLAUDE.md:36「0件、回り切れない検査、未評価は失敗として扱う。」、.claude/agents/reviewer.md:41「3. 未評価（見られなかった所と理由。無ければ「無し」）」（役の側は、この欄を未評価と呼ぶ）、tools/claude/README.md:32「作業記録の区切りの節に、体数、指摘の件数、反証を通った件数、採った件数、未評価を書く。」。README.md:30 は --case だけを挙げ、--notes を挙げていないので、手順どおりに読むと、役の未評価は誰も見ない。
+   反証：コードを追うと、findings が空で役の unevaluated だけがある観点は「OK … unevaluated=0」・終了コード0になり、--notes なしでは1行も出ない。README の手順4は --case しか挙げておらず、区切り1の作業記録では主が「レビュー役が見られなかった所」を書いていたので、手順どおりだと落ちる。直しは、役の注1件ごとに1で終える案だと部分的な注でも毎回1になるので、件数を最後の1行に出してREADMEに読み方を書く案のほうが合う。
+■ scripts-2 [中/確かめた] 所：/home/user/clipping-point/tools/claude/step_review.js:13-15、76-80、140-145
+   直し：15行の後で、step、targets、basis が空でない文字列であること、lenses が1件以上の配列で各件に key、title、prompt があることを調べ、欠けていれば `throw new Error(...)` で止める。
+   場合：(a) args に targets が無い（鍵を target と打った、など）→ 78行の `${A.targets}` が文字の「undefined」になり、全観点のレビュー役が「【見るもの】undefined」で走る。step、basis、lens.title、lens.prompt も同じ。見るものの無いレビュー役が findings=[] を返すと、144行は「未評価の観点 無し」と出し、review_summary.py は scripts-1 の道筋で OK・0 で終わる。拾う行が、どちらの側にも無い。(b) args に lenses が無い、空、または args をJSONの文字列で渡した → 14行の `A.lenses || []` が空になり、1体も走らずに、140-145行が n=0、passed=0、missing=[] で「指摘 0 件、反証を通った 0 件、未評価の観点 無し」を出して正常に返る。(b) は review_summary.py が `reason=no_lenses` の2で拾うが、ワークフローの側の表示と counts は合格の形。決まりの文：.claude/agents/reviewer.md:30「何も調べずに合格で終われる道具になっていないか。」。pipeline に空の配列を渡すと空の配列が返ることは、Workflowの道具の説明から読んだもので、実物では回していない。レビュー役が「undefined」にどう答えるかも、決まっていない。
+   反証：args の確かめがどこにも無く、鍵が欠けると「undefined」の文で全観点のレビュー役が走り、拾う所が無い（体数ぶんのトークンも使う）。lenses が空か args が文字列のときは1体も走らずに「指摘 0 件…未評価の観点 無し」が出る。こちらは review_summary.py:111-112 が2で拾うので、害は表示だけ。Workflowの説明（文字列で渡した args は1つの文字列で届く）とも合う。
+■ scripts-4 [中/確かめた] 所：/home/user/clipping-point/tests/test_claude_tools.py:1-4、69-74、112-138、146-169（handoff_hook.main と usage_row.main を呼ぶ行が無い）
+   直し：main() を通すテストを足す：usage_row.main（0.90→0、0.91→1、0.96→1、範囲外→2、読めない --now→2）、handoff_hook.main（git が None、控えがUTF-8で読めない、標準入力が None のときの戻り値0と出る文）、review_summary.main（結果が空→2、--case と --rejected と --notes の出力）。commits_after の0と2、findings の無い review の形も足す。
+   場合：次の書き換えをしても、31件がすべて通る。(1) usage_row.py:79 の `OK if result["verdict"] == "ok" else FAIL` を `OK` にする → 96%でも終了コード0。65-67行の範囲の検査を消しても同じ。線の判定を終了コードで読む主が、止まらない。(2) handoff_hook.py:81-94 の try/except を外す → docstring 9行「何が起きても終了コードは0」が破れても気づかない。main() は、`handoff_hook.git`、`handoff_hook.HANDOFF`、`sys.stdin` を差し替えれば、gitに触れずに通せる。(3) review_summary.py:111-112（結果の配列が空なら2）を消す → 空の結果が OK・0 で通る。--case、--rejected、--notes の出力（93-104行）は1度も通らない（123-127行の run_review_main は、argv にパスしか渡さない）。(4) handoff_hook.py:58 の `commits_after <= 1` を `<= 2` にする → 途中のコミットで控えを直さなかった場合（2個）が「新しい」になる。テストの値は1と3だけ（69-70行）。(5) review が辞書で findings が無い行と、辞書でない行は、未評価の4つの形（112-117行）に無い。tools/claude/ は selftest-break の対象の外なので、守りはこのテストだけ。
+   反証：テストは handoff_hook.main と usage_row.main を呼ばず、review_summary.main も --case、--rejected、--notes と results が空の形を通していないので、挙げられた書き換え（usage_row.py:79、review_summary.py:111-112、handoff_hook.py:58 の境）は31件を通る。tools/selftest_break.py に tools/claude/ を壊す件も無く、終了コードの約束を守るのはこのテストだけ。重さは低寄り（フックの0は settings.json の `|| true` でも受けている）。
+■ scripts-7 [低/確かめた] 所：/home/user/clipping-point/tools/claude/usage_row.py:41-42、60、65-72
+   直し：main() で、切り替わりの変換を try で包み（ValueError、OverflowError、OSError は `reason=bad_resets_at` の2）、週の経過が0〜1の外なら `reason=resets_at_outside_week` の2で止める。テストに3つの形を足す。
+   場合：(a) `--resets-at 0 --now 2026-11-11T08:00:00Z` → 「… | 約296790% | 1970-01-01 00:00 | |」の行を出して、終了コード0。(b) 切り替わりを過ぎた値 `--resets-at 1794297600`（2026-11-10 08:00）と同じ --now → 「約114%」「2026-11-10 08:00」の行を出して、終了コード0。使用率の値が、切り替わりの前の古いイベントのものでも気づけない。(c) ミリ秒で渡す `--resets-at 1794902400000` → 41行の `datetime.fromtimestamp` が ValueError（year … is out of range）で落ち、最後の1行は出ず、終了コード1。docstring 11行では、1は「線を超えた」。どれも、docstring 11行の「2＝値が読めない」に当たるのに、2にならない。(c) は読んで追っただけで、回していない。
+   反証：main は使用率の2値と --now しか確かめず、--resets-at はそのまま41-42行へ入るので、切り替わりを過ぎた古いイベントの値でも「約114%」の行と終了コード0が出る（(a) も同じ計算で 約296790%）。週の切り替わり（2026-11-17 08:00）の後に古いイベントを読む場面は起きうるので、docstring 11行の「2＝値が読めない」に入れる価値がある。重さは低のまま。
+■ scripts-12 [低/確かめた] 所：/home/user/clipping-point/docs/worklog.md:33-37、/home/user/clipping-point/CLAUDE.md:14、/home/user/clipping-point/tools/claude/README.md:9
+   直し：docs/worklog.md の「確かめ方」に、「読んだ値は `python3 tools/claude/usage_row.py …` に渡し、出た1行を表に足し、最後の1行の verdict に従う」の1文を足す。
+   場合：足りない行：docs/worklog.md:33「確かめ方：Claude Codeの道具 `get_session`（引数なし）で、… 週の経過は、（いまの時刻 − 切り替わりの7日前）÷ 7日。」と35-37行に、usage_row.py が出てこない。決まりの文：CLAUDE.md:14「確かめ方と値の読み方は `docs/worklog.md` の「週の使用率の推移」にある。確かめた値は、その表に1行足す。」、tools/claude/README.md:9「`usage_row.py` | 週の使用率を、作業記録の表の1行にし、停止の線を判定する | 区切りごとと、サブエージェントやワークフローを始める前」。根のCLAUDE.mdから「最初に確かめること」をたどる新しいセッションは、作業記録の手順（手で高いほうを選び、手で割合を出す）に着き、usage_row.py と線の判定には着かない。.md を grep したところ、usage_row.py の名があるのは tools/claude/README.md だけだった。
+   反証：.md を引くと usage_row.py の名は tools/claude/README.md:9、41 にしか無く、CLAUDE.md:14 が送る worklog.md:33-37 は、手で高いほうを選んで割合を出す手順のまま。区切り4で置いた線の判定に、「最初に確かめること」からたどり着けない。
+
+== 退けた指摘
+□ config-3 [低] 指摘自身が決まりの破れではないと書いており、計画136行と根のCLAUDE.md 138行が名指しする3つを設定は満たしている。範囲を広げるのは新しい方針の提案で、案の `Bash(git restore *)` と `Bash(git checkout -- *)` は、1ファイルの戻しや `restore --staged` というふだんの命令を断る。
+□ resume-1 [中] 主の場面（道具が無い、イベントが無い）は推測で、週の使用率が読めないときの動きは worklog.md:37「備考に書き、節目で人に伺う」で既に決めてあり、案の「始めずに人に伺う」はこの行と食い違う。(a) は、このセッションの get_session で3つの欄が文字どおり同じ値（接尾辞なし）で、道具の説明そのものが「そろえてから比べる」と言うので起きにくい。(b)（usage_row.py が CLAUDE.md:14→worklog の道筋に出ない）は事実だが、README の表と手で書く行で足り、害は小さい。
+□ resume-6 [中] ひな形は骨組みで、挙げられた項目は【やること】に書く形（README.md:7・21）。決まりそのものは、常に読まれる CLAUDE.md:166・113 と再開のときに読む plan.md:101、implementer.md:20・25 にあり、6番目は27行が書くよう言っている。実例の stage0-k3.md も同じ表から引けるので、欄の細かさの好みに近く、害は小さい。
+□ scripts-3 [中] 起きるのは深さ1のcloneか、控えのHEADが浅い境より古いときだけで、セッションのcloneの既定は50コミット（指摘も認めている）。控えのHEADは控えを含むコミットの親なので深さ2以上ならあり、出る文も「読めない…かもしれない」と断っていて、誤った手に導かない。
+□ scripts-5 [低] コードの読みは合っているが、(a)(b) は役が同じ id を2つ返したときだけで、id は順に振らせており（step_review.js:90）、(d) はスキーマで起きない。(c) の「指摘に無い id」は、元の指摘が65行で「反証が付いていない」になって1で終わるので、黙っては通らない。
+□ scripts-6 [低] 数え方が混ざるのは事実だが、未評価があれば105-106行が1件ずつ（反証役の欠けは「指摘N件」つきで）出し、終了コードは1になるので、読み違えには至らない。体数は主が渡した lenses の数で分かり、表示の好みの範囲。
+□ scripts-8 [低] 線の判定は丸める前の値で行い、「線：95%を超えた」の文と verdict= を出すので、(a)(b) は表示の好みで、0/1/2 の終了コードはプロジェクト共通の約束どおり。(c) は、100%でも95%の線の手当て（控えを書いてpushして待機）が当たり、テストも 1.0 を stop と決めている。案のとおり「何も進めずに」に変えると、pushしていない作業を残す向きになる。
+□ scripts-9 [低] 3つとも起きない場面（フックは標準入力にJSONを受ける、控えはWriteで書くUTF-8、gitの出力は dev と英数字）で、起きても終了コードは0のまま「docs/handoff.md を読む」の1行が出る。settings.json も `|| true` で受けており、害は小さい。
+□ scripts-10 [低] (a) は計画に無い detached HEAD のときだけで、行には「いまのブランチ：読めない」が出る。(b) は控えとフックが同じリポジトリに入っているので起きない。(c) はフックが作業ツリーの控えを読み、「新しい」はコミットの数の話で、案の「直近のコミットの時点のもの」は、コミット前に控えを直した場合に偽になる。
+□ scripts-11 [低] Workflowの説明では、agent() が投げるのはトークンの目標（「+500k」の形の指示）に達したときと満たせないスキーマのときだけで、役が死んだときは null が返り、133-136行が review を残す。このプロジェクトはその目標を置いておらず、投げた場合も観点は未評価（1）で止まる。(b) は review_summary.py:65 が拾い、結果を読む口は review_summary と決めてある。
+
+== 役が書いた、見られなかった所
+・config（レビュー役）: 禁止する操作の実機での当たり方。このセッションでは .claude/settings.json が読まれず、道具も回さない約束なので、当たる・当たらないは、公式の文書（permissions）の文と規則の突き合わせだけで判定した。特に `env X=1 git …` は「剥がされる包みの一覧に env が無い」ことからの判定で、試していない。
+・config（レビュー役）: hooks の公式の文書は約29万字のうち頭の20万字だけを読んだ。設定ファイルのフックと「workspace trust」の節は直接は読めず、permissions の「What runs before you trust a folder」の表（フックは使われる。deny は信頼の前でも効く）で代えた。
+・config（レビュー役）: sub-agents の公式の文書は末尾の約1.7万字（cacheの節など）を読んでいない。experimental.cacheTtl は、頭の項目の表の文（experimental の下に書く。5m か 1h。使用量のクレジットを使っている間は 1h を無視する）だけで確かめた。
+・config（レビュー役）: step_review.js に agentType: reviewer と schema を一緒に渡したとき、tools を Read, Grep, Glob に絞った型でも結果を返す道具（StructuredOutput）が使えるか。Workflowの道具の説明には「schema と組み合わせられる」とあるが、型が使えないセッションなので試せない。
+・config（レビュー役）: 実装役の型（tools に Monitor が無い）で、2分を超える道具（`verify.py --all --selftest`、約6分）を時間の上限を延ばさずに回したときの動き。公式の文書では、時間切れの命令は裏へ移り、サブエージェントの実行が終わると止まる。型が使えないセッションなので試せない。
+・config（レビュー役）: `spikes/` の中（見ない約束）。config-5 の「同じ名前が当たる」は確かめていない。
+・config（レビュー役）: tests/test_claude_tools.py、review_summary.py、usage_row.py は全文を読んだが、テストの穴や集計の正しさは、この観点（設定と型の書式、効き方）の外なので評価していない。
+・config（レビュー役）: サブエージェントの型の最初の要求の重さ（計画の133行目）と、新しいセッションでの5点の確かめ（調べの73行目）。主のエージェントの注のとおり、新しいセッションでしか見られない。
+・resume（レビュー役）: 新しいセッションでの実際の動き（フックの差し込み、禁止する操作、サブエージェントの型、agentType を付けたワークフロー）。このセッションでは Claude Codeの設定が効かず、試せない。文と公式の文書の突き合わせだけ。
+・resume（レビュー役）: 週の枠が切れたときに、クラウドのセッションと走っているサブエージェントが、実際にどのClaudeのモデルへ、どう切り替わるか。PostModelSwitch のフックがその切り替えで走るかも追えていない。公式の文書の model-config のページは読んでいない。
+・resume（レビュー役）: Workflowの道具の説明と、出力のファイルの置き場。レビュー役の持つ道具に Workflow が無く、読めなかった。新しいセッションに Workflow、get_session、list_events が在るかも分からない。
+・resume（レビュー役）: 公式の文書のうち、memory のページ、sub-agents の末尾の約1.7万字、hooks の SessionStart・SubagentStart・PostModelSwitch と頭の表のほかの節は読んでいない。permissions は Bash の決まりの節だけを読んだ。
+・resume（レビュー役）: 禁止する操作の型がコミットの文に当たること（resume-7 の b）は、settings.json と公式の文書の文を突き合わせただけで、動かしては見ていない。
+・resume（レビュー役）: tools/claude/canon_digest.py、tools/verify.py の本体、tools/claude/ のほかの tools/ と clipping_point/ のコード、spikes/、out/、dist/、.cache/ は、範囲の外なので見ていない。道具もテストも回していない。
+・resume（反証役）: resume-7 の (b)：禁止の語を含むコミットの文が実際に断られるかは、動かしていない（このセッションでは設定が効かず、道具も回さない約束のため）。公式の文書の文で確かめただけ。
+・resume（反証役）: resume-7 の (c)：サブエージェントの型（tools が Read、Grep、Glob だけ）を付けたワークフローが、決まった形の結果を返せるかは、確かめられなかった。公式の文書 sub-agents の読めた範囲に記述が無い。
+・resume（反証役）: resume-2：PostModelSwitch が、週の枠切れによる切り替えで走るかは確かめられなかった。公式の文書は「自動の切り替え（session の model が替わるもの）の後に走り、1ターンだけの代わりの model では走らない」と書くが、この環境の切り替えがどちらに当たるかは分からない。プロジェクトの設定のフックが新しいセッションで読まれるかも、まだ見ていない。
+・resume（反証役）: resume-4：Workflowの道具が出力のファイルをどこに置くかは、確かめていない（リポジトリの外で、見てよい範囲に無い）。
+・resume（反証役）: resume-3：主のClaudeのモデルが切り替わったときに、走っている途中のサブエージェントも切り替わるかは、公式の文書の読めた範囲では確かめられなかった。
+・scripts（レビュー役）: 道具もテストも回していない（決まり）。次は、読んで追っただけ：`datetime.fromtimestamp` にミリ秒を渡したときの例外、標準入力が閉じているときに sys.stdin が None になること、浅いcloneでの `git rev-list` の失敗、detached HEAD での `git branch --show-current` の出力。
+・scripts（レビュー役）: 新しいコンテナのcloneの深さ。この環境のセッション作成の道具の説明に「既定は50コミット」とあるのを読んだだけで、実際の新しいセッションでは見ていない。このセッションのcloneは、後から足したもので、浅くない。
+・scripts（レビュー役）: step_review.js で agentType を打ち間違えたときのWorkflowの道具のふるまい（投げるのか、既定のサブエージェントに落ちるのか）。道具の説明に書かれておらず、追えなかった。投げるなら全観点が未評価になり、落ちるなら型の縛り（Read、Grep、Glob だけ）が黙って外れる。
+・scripts（レビュー役）: pipeline に空の配列を渡したときの戻り値と、agent() が投げる場面。Workflowの道具の説明の文からの読みで、実物では確かめていない。
+・scripts（レビュー役）: 週の使用率のイベント（rate_limit_event）の実物。utilization の桁数と、resetsAt が秒かミリ秒かは、セッションのイベントを読めないので確かめていない。scripts-7 の (c) と scripts-8 の (a) が実際に起きるかは、これによる。
+・scripts（レビュー役）: 公式の文書は hooks の頁の頭の200,000字まで（全293,226字）。残りの約93,000字と、sub-agents、memory、permissions、settings、claude-code-on-the-web の頁は読んでいない。
+・scripts（レビュー役）: この観点の外として見ていない：.claude/settings.json の禁止する操作の書式、.claude/agents/implementer.md と reader.md、docs/requests/README.md、根のCLAUDE.mdの4つの節の文そのもの（照らす先として当たる行だけを読んだ）。
+・scripts（反証役）: Claude Codeの公式の文書（hooks など）は読んでいない。今回の指摘は設定の書式に掛からないため。scripts-9 の (a) を「起きない場面」とした根拠（フックは標準入力にJSONを受ける）は、handoff_hook.py:3 と tools/claude/README.md:49 の記述と、一般の知識による。
+・scripts（反証役）: gitとPythonのふるまい（浅いcloneでの rev-list の失敗、detached HEAD での `git branch --show-current` の空の出力、ミリ秒の値での fromtimestamp の ValueError、閉じた標準入力で sys.stdin が None になること）は、道具を回せないので実物では確かめていない。verdict は、これらが指摘の言うとおりだとしても変わらない形で付けた。
+・scripts（反証役）: scripts-2 の「pipeline に空の配列を渡すと空の配列が返る」は、Workflowの説明に明記が無く、確かめていない（review_summary.py の no_lenses の2で拾われるので、verdict には響かない）。
+・scripts（反証役）: scripts-8 の (a)：イベントの utilization が小数の何桁まで出るかは確かめていない（作業記録と例は2桁）。2桁なら (a) は起きない。
+review_summary: OK lenses=3 findings=28 passed=18 rejected=10 unevaluated=0 role_notes=30

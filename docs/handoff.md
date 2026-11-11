@@ -1,5 +1,5 @@
 <!-- 作業の控え。25行まで。区切りのコミット、途中のコミット、止める前に上書きする。HEADは、この控えを書いた時点のもの（控えを含むコミットの親）。 -->
-HEAD: 24441bf　書いた刻: 2026-11-11 09:12 UTC　ブランチ: dev
+HEAD: dd4715e　書いた刻: 2026-11-11 09:55 UTC　ブランチ: dev
 
 段と区切り: 段0：立ち上げ ／ 区切り3まで終えた（3/10）。区切り4は物を書き終え、レビュー中
 
@@ -11,7 +11,7 @@ HEAD: 24441bf　書いた刻: 2026-11-11 09:12 UTC　ブランチ: dev
 - 区切り4の物：`.claude/agents/` の型3つ、`.claude/settings.json`、`tools/claude/` の補助とREADME、`tests/test_claude_tools.py`、`docs/requests/README.md`。主が `python3 tools/verify.py --all --selftest` を回して通った（384秒）。
 
 いまの手:
-- 区切り4のレビュー（3観点と反証の6体）の結果を待っている。結果は `python3 tools/claude/review_summary.py <ワークフローの出力のファイル>` で読む。通った指摘を直し、回し直して、`段0 区切り4：Claude Codeの整え` の題でコミットする。
+- 区切り4のレビュー（6体。指摘28、通った18）の直しを入れた。結果は `docs/reviews/stage0-k4.txt`。主が `python3 tools/verify.py --all --selftest` を回し直している。通ったら、作業記録を書いて `段0 区切り4：Claude Codeの整え` の題でコミットする。
 
 残っている検証:
 - 区切り4の直しの後の回し直し。

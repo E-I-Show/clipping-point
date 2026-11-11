@@ -10,9 +10,33 @@ export const meta = {
 // 使い方は tools/claude/README.md。args の形：
 //   { step, targets, basis, note, lenses: [{ key, title, prompt }], agentType }
 // agentType は、サブエージェントの型の名（"reviewer"）。型が使えるセッションで渡す。省けば、既定のサブエージェントで回す。
+// 下の文のうち、指摘の書き方、退ける型、共通の約束は .claude/agents/reviewer.md と同じ文。変えるときは両方を直す。
 const A = args || {}
 const lenses = A.lenses || []
 const TYPE = A.agentType ? { agentType: A.agentType } : {}
+
+// args の欠けで、何も調べずに終わらないようにする。欠けていれば、役を1体も起こさずに止める。
+// （欠けたまま進むと、文の中が「undefined」になったレビュー役が走るか、1体も走らずに「指摘 0 件」で終わる。）
+const isText = v => typeof v === 'string' && v.trim() !== ''
+if (typeof A !== 'object' || Array.isArray(A)) {
+  throw new Error('step-review: args をオブジェクトで渡す（JSONの文字列や配列では受け取れない）。形は tools/claude/README.md。')
+}
+const lacking = ['step', 'targets', 'basis'].filter(name => !isText(A[name]))
+if (!Array.isArray(A.lenses) || A.lenses.length === 0) {
+  lacking.push('lenses（1件以上の配列）')
+} else {
+  A.lenses.forEach((lens, i) => {
+    for (const name of ['key', 'title', 'prompt']) {
+      if (!lens || !isText(lens[name])) lacking.push(`lenses[${i}].${name}`)
+    }
+  })
+}
+if (lacking.length) {
+  throw new Error(
+    `step-review: args が足りない：${lacking.join('、')}。` +
+    'step、targets、basis と、lenses の各件の key、title、prompt は、空でない文字列で渡す。形は tools/claude/README.md。'
+  )
+}
 
 const FINDINGS = {
   type: 'object',
