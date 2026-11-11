@@ -30,7 +30,7 @@
 | [requests/stage0-k3.md](requests/stage0-k3.md) | 段0の区切り3（環境とブラウザ版の煙テスト）を、実装役に頼む文 | 実装済み |
 | [requests/stage0-k5.md](requests/stage0-k5.md) | 段0の区切り5（入力の土台）を、実装役に頼む文。主が決めた細目17件の表つき | 実装済み |
 | [requests/stage0-k6.md](requests/stage0-k6.md) | 段0の区切り6（画面の検査と巡回）を、実装役に頼む文。主が決めた細目17件の表つき | 実装済み |
-| [requests/stage0-k7.md](requests/stage0-k7.md) | 段0の区切り7（保存と決定性の土台）を、実装役に頼む文。主が決めた細目23件の表つき | 実装中 |
+| [requests/stage0-k7.md](requests/stage0-k7.md) | 段0の区切り7（保存と決定性の土台）を、実装役に頼む文。主が決めた細目23件の表と、区切りのレビューの直しの10項目つき | 実装済み |
 
 ## 調べ
 
