@@ -1,0 +1,31 @@
+{
+  "_notes": {
+    "assists": "仮の値：操作補正の最小版（段0 区切り9）の、仮の1組。項目は、舵の上限の式の係数、切る速さ、後退の条件だけ。使う項目の id は default（cp_core/controls.py の DEFAULT_SET）。調整項目の段階ごとの値と、既定の組は、段1の「入力と操作補正」の区切りで作り替える。",
+    "steer": "仮の値：limit_ka と limit_km は、舵の上限の式の係数（設計の SPEED LOCK の、既定の段階。アナログ操作は段階3、デジタル操作は段階4）。full_time_s は、舵の上限いっぱいを動く時間（設計の STEER SPEED の、既定の段階。アナログ操作は全域0.09秒、デジタル操作は上限に達する0.32秒）。limit_mu_min は、式に入れる、路面の摩擦係数の下限。limit_min_speed_m_s 未満の車速では、車の最大舵角をそのまま使う。合わせるのは、段1の試走。",
+    "reverse": "仮の値：設計の、後退の決め（毎秒0.5 m未満で、ブレーキを0.5秒）。pedal_press_min は、ペダルを「押している」と見る線（遊びの除去を入れていないので、戻りが0にならないトリガーのために置いた）。試作には、後退へ入る経路が無く、実機では確かめていない。合わせるのは、段1の試走。"
+  },
+  "assists": [
+    {
+      "id": "default",
+      "steer": {
+        "limit_mu_min": 0.5,
+        "limit_min_speed_m_s": 1.0,
+        "analog": {
+          "limit_ka": 1.0,
+          "limit_km": 0.2,
+          "full_time_s": 0.09
+        },
+        "digital": {
+          "limit_ka": 0.92,
+          "limit_km": 0.12,
+          "full_time_s": 0.32
+        }
+      },
+      "reverse": {
+        "stop_speed_m_s": 0.5,
+        "brake_hold_s": 0.5,
+        "pedal_press_min": 0.1
+      }
+    }
+  ]
+}

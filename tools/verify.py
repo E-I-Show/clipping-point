@@ -77,16 +77,36 @@ class Area:
 # check の areas の節が落ち、そのファイルの分野を決めさせるため。
 AREAS = (
     Area(
-        # 並びは、計画の表の順（操作補正と入力 → カメラと画面の状態 → 画面（2D）→ ブラウザ連携 → …）。
+        # 並びは、計画の表の順（車両 → コース → 操作補正と入力 → カメラと画面の状態 → 画面（2D）→ ブラウザ連携 → …）。
+        # 車両モデル（段0 区切り9）。車の値（clipping_point/data/cars.json）は、下の「メインループと世界の状態」に並べてある（全部を回す）。
+        "車両",
+        ("clipping_point/cp_core/vehicle.py", "tests/test_vehicle.py"),
+        # 計画の表のテストの絞りは「車両、世界、指紋、セッティングの順」。セッティングの順（段1）は、まだテストが無い。作る区切りで足す。
+        "vehicle or sim or fingerprint",
+        # 計画の表のとおり。drive は段1で作る（いまは NOT_YET）。
+        ("run", "drive"),
+    ),
+    Area(
+        # コースの表、照会、壁の押し戻し、形の検査（段0 区切り9）。コースの形（clipping_point/data/tracks/ の下）は、
+        # 下の「メインループと世界の状態」に並べてある（全部を回す）。
+        "コース",
+        ("clipping_point/cp_core/track.py", "tests/test_track.py"),
+        # 計画の表のテストの絞りは「コース、世界、指紋、データ」。データは、読み込み検査（datadefs）と、ファイルを読む所（data_files）。
+        "track or sim or fingerprint or datadefs or data_files",
+        # 計画の表のとおり。drive は段1で作る（いまは NOT_YET）。
+        ("run", "tour", "drive"),
+    ),
+    Area(
         "操作補正と入力",
         (
-            "clipping_point/cp_core/input_frame.py", "clipping_point/cp_core/input_script.py",
+            "clipping_point/cp_core/input_frame.py", "clipping_point/cp_core/input_script.py", "clipping_point/cp_core/controls.py",
             "clipping_point/cp_app/input_pyxel.py", "clipping_point/cp_app/input_trace.py",
             "tests/test_input_frame.py", "tests/test_input_script.py", "tests/test_input_pyxel.py", "tests/test_input_trace.py",
+            "tests/test_controls.py",
         ),
         # 計画の表のテストの絞りは「操作補正、保存する項目、セッティングの順」。保存する項目（profile）は、段0 区切り7で足した。
-        # 操作補正（段1 区切り4）とセッティングの順（段1）は、まだテストが無い。作る区切りで足す。
-        "input_frame or input_script or input_pyxel or input_trace or profile",
+        # 操作補正（controls）は、最小版を、段0 区切り9で足した（本体は、段1 区切り4）。セッティングの順（段1）は、まだテストが無い。
+        "input_frame or input_script or input_pyxel or input_trace or controls or profile",
         # 計画の表のとおり。drive は段1で作る（いまは NOT_YET）。
         ("run", "drive", "web-smoke"),
     ),
@@ -137,7 +157,8 @@ AREAS = (
         # localStorage の保存先と、保存先を選ぶ所は、上の「ブラウザ連携」に並べた。
         # 計画の表の「データの検査」に当たるファイル（段0 区切り8）は、読み込み検査と重ね方（cp_core/datadefs.py）、ファイルを読む所（cp_app/data_files.py）、
         # 実物の定義データ（clipping_point/data/ の下。1つずつ並べる）、試験用データ（testpacks/。出荷物の外なので、まとめて当てる）。
-        # 計画の表の「コース」「音」の行のテストの絞りにある「データ」は、その分野の最初のファイルを作る区切りで、行ごと足す。
+        # 実物の定義データは、中身が車の値、コースの形、操作補正の値でも、ここに並べる（上の「車両」「コース」「操作補正と入力」には並べない。
+        # 値を変えたら、全部を回す）。計画の表の「音」の行のテストの絞りにある「データ」は、その分野の最初のファイルを作る区切りで、行ごと足す。
         "メインループと世界の状態",
         (
             "clipping_point/main.py", "clipping_point/cp_app/__init__.py", "clipping_point/cp_app/app.py",
@@ -145,7 +166,7 @@ AREAS = (
             "clipping_point/cp_core/sim.py", "clipping_point/cp_core/rng.py", "clipping_point/cp_core/storage.py",
             "clipping_point/cp_core/profile.py", "clipping_point/cp_app/storage_file.py",
             "clipping_point/cp_core/datadefs.py", "clipping_point/cp_app/data_files.py",
-            "clipping_point/data/cars.json", "clipping_point/data/tracks/test_loop.json", "testpacks/**",
+            "clipping_point/data/cars.json", "clipping_point/data/tracks/test_loop.json", "clipping_point/data/assists.json", "testpacks/**",
             "tests/test_fixed_loop.py", "tests/test_sim.py", "tests/test_perf.py", "tests/test_rng.py", "tests/test_storage.py",
             "tests/test_profile.py", "tests/test_storage_file.py", "tests/test_fingerprint.py",
             "tests/test_datadefs.py", "tests/test_data_files.py",

@@ -16,10 +16,11 @@ from cp_app import data_files
 from cp_app.data_files import PACK_ENV, load, read_pack, read_sources
 from cp_core import datadefs
 from cp_core.datadefs import DataError
+from test_datadefs import real_assist, real_car, real_loop
 from test_screens import APP_PY, app_method, is_attribute_of, is_self_attribute, self_attribute_values
 
-CAR = {"id": "kazane", "name": "KAZANE", "data_version": 1}
-TRACK = {"id": "test_loop", "name": "TEST LOOP", "data_version": 1}
+# 一時の置き場に置く項目。実物の項目を読んで作る（鍵が増えても、見本が、足りない鍵の問題を出さない）。
+CAR, TRACK, ASSIST = real_car(), real_loop(), real_assist()
 PACKS = ROOT / "testpacks"
 
 
@@ -37,13 +38,14 @@ def good_data(tmp_path):
     data = tmp_path / "data"
     write(data / "cars.json", {"cars": [CAR]})
     write(data / "tracks" / "test_loop.json", TRACK)
+    write(data / "assists.json", {"assists": [ASSIST]})
     return data
 
 
 def good_pack(tmp_path, name: str = "extreme"):
     """重ねられる、最小の試験用データ。返すのは、試験用データの根。"""
     root = tmp_path / "testpacks"
-    write(root / name / "cars.json", {"cars": [{"id": "kazane", "name": "PACKED", "data_version": 2}, {"id": "extra", "name": "EXTRA", "data_version": 1}]})
+    write(root / name / "cars.json", {"cars": [{**CAR, "name": "PACKED", "data_version": 2}, {**CAR, "id": "extra", "name": "EXTRA"}]})
     return root
 
 
@@ -51,8 +53,9 @@ def good_pack(tmp_path, name: str = "extreme"):
 def test_data_files_reads_every_file_under_the_directory_by_its_relative_name(tmp_path):
     data = good_data(tmp_path)
     sources = read_sources(data)
-    assert list(sources) == ["cars.json", "tracks/test_loop.json"]  # 名は / 区切りで、整列した順
+    assert list(sources) == ["assists.json", "cars.json", "tracks/test_loop.json"]  # 名は / 区切りで、整列した順
     assert json.loads(sources["cars.json"]) == {"cars": [CAR]} and json.loads(sources["tracks/test_loop.json"]) == TRACK
+    assert json.loads(sources["assists.json"]) == {"assists": [ASSIST]}
     assert read_sources(str(data)) == sources  # 文字列のパスでも、同じ
 
 
@@ -62,7 +65,7 @@ def test_data_files_names_the_files_that_fit_neither_shape_too(tmp_path):
     for name in ("notes.txt", "sounds.json", "tracks/deep/x.json", "tracks/readme.md", "zz/a/b/c.json", ".hidden"):
         write(data / name, "x")
     sources = read_sources(data)
-    assert list(sources) == sorted([".hidden", "cars.json", "notes.txt", "sounds.json", "tracks/deep/x.json", "tracks/readme.md", "tracks/test_loop.json", "zz/a/b/c.json"])
+    assert list(sources) == sorted([".hidden", "assists.json", "cars.json", "notes.txt", "sounds.json", "tracks/deep/x.json", "tracks/readme.md", "tracks/test_loop.json", "zz/a/b/c.json"])
     with pytest.raises(DataError) as info:
         datadefs.load_game_data(sources)
     assert list(info.value.problems) == [f"{name}: unknown file (no table reads this name)" for name in sorted([".hidden", "notes.txt", "sounds.json", "tracks/deep/x.json", "tracks/readme.md", "zz/a/b/c.json"])]
@@ -86,13 +89,13 @@ def test_data_files_missing_or_empty_directory_reads_as_nothing(tmp_path):
     assert read_sources(tmp_path / "empty") == {}  # ディレクトリだけでは、何も無い
     with pytest.raises(DataError) as info:
         load({}, None, tmp_path / "no_such_data", tmp_path / "testpacks")
-    assert list(info.value.problems) == ["cars.json: missing file", "tracks/: no entry files"]
+    assert list(info.value.problems) == ["cars.json: missing file", "tracks/: no entry files", "assists.json: missing file"]
 
 
 # --- 試験用データの置き場を読む ---
 def test_data_files_reads_a_pack_in_the_same_shape(tmp_path):
     root = good_pack(tmp_path)
-    write(root / "extreme" / "tracks" / "wide.json", {"id": "wide", "name": "WIDE", "data_version": 1})
+    write(root / "extreme" / "tracks" / "wide.json", {**TRACK, "id": "wide", "name": "WIDE"})
     write(root / "extreme" / "notes.txt", "x")
     name, files = read_pack("extreme", root)
     assert name == "extreme" and list(files) == ["cars.json", "notes.txt", "tracks/wide.json"]
@@ -142,7 +145,7 @@ def test_data_files_desktop_without_the_variable_loads_the_shipped_data_only(tmp
     for env in ({}, {PACK_ENV: ""}, {"CP_SMOKE": "/tmp/result.json", "CP_SAVE_DIR": "/tmp/saves"}):
         loaded = load(env, None, data, root)
         assert loaded.pack is None and loaded.save_namespace == "main"
-        assert loaded.counts() == {"cars": 1, "tracks": 1} and loaded.entry("cars", "kazane") == CAR
+        assert loaded.counts() == {"cars": 1, "tracks": 1, "assists": 1} and loaded.entry("cars", "kazane") == CAR
 
 
 def test_data_files_desktop_with_the_variable_overlays_the_pack(tmp_path):
@@ -164,7 +167,7 @@ def test_data_files_browser_does_not_read_the_environment(tmp_path):
 
 def test_data_files_problems_of_the_pack_come_out_of_load_as_a_data_error(tmp_path):
     data, root = good_data(tmp_path), good_pack(tmp_path)
-    write(root / "extreme" / "cars.json", {"cars": [{"id": "kazane", "name": "K" * 15, "data_version": 1}]})
+    write(root / "extreme" / "cars.json", {"cars": [{**CAR, "name": "K" * 15}]})
     write(root / "extreme" / "notes.txt", "x")
     with pytest.raises(DataError) as info:
         load({PACK_ENV: "extreme"}, None, data, root)
@@ -187,7 +190,7 @@ def test_data_files_real_directories_are_found_from_the_place_of_the_module():
 
 def test_data_files_real_shipped_data_loads_with_the_default_places():
     loaded = load({}, None)
-    assert loaded.warnings == () and loaded.pack is None and loaded.counts() == {"cars": 1, "tracks": 1}
+    assert loaded.warnings == () and loaded.pack is None and loaded.counts() == {"cars": 1, "tracks": 1, "assists": 1}
 
 
 def test_data_files_every_real_pack_loads_on_top_of_the_shipped_data():
@@ -201,13 +204,19 @@ def test_data_files_every_real_pack_loads_on_top_of_the_shipped_data():
         assert set(plain.ids("cars")) <= set(loaded.ids("cars")) and set(plain.ids("tracks")) <= set(loaded.ids("tracks"))
     # extreme：車の名を14字に差し替え、14字の名の車を1台と、14字の名のコースを1本足す。
     extreme = load({PACK_ENV: "extreme"}, None)
-    assert extreme.counts() == {"cars": 2, "tracks": 2}
+    assert extreme.counts() == {"cars": 2, "tracks": 2, "assists": 1}
     assert len(extreme.entry("cars", "kazane")["name"]) == 14 != len(plain.entry("cars", "kazane")["name"])
     added_cars = [ident for ident in extreme.ids("cars") if ident not in plain.ids("cars")]
     added_tracks = [ident for ident in extreme.ids("tracks") if ident not in plain.ids("tracks")]
     assert len(added_cars) == 1 and len(extreme.entry("cars", added_cars[0])["name"]) == datadefs.NAME_MAX
     assert len(added_tracks) == 1 and len(extreme.entry("tracks", added_tracks[0])["name"]) == datadefs.NAME_MAX
     assert load({}, None).entry("cars", "kazane") == plain.entry("cars", "kazane")  # 元は変わらない
+    # 車とコースの、走りの値と形は、出荷するデータと同じ値（違うのは、id と表示名だけ。極端な走りの値は、ここでは試さない）。
+    real_kazane, real_test_loop = plain.entry("cars", "kazane"), plain.entry("tracks", "test_loop")
+    for ident in extreme.ids("cars"):
+        assert {**extreme.entry("cars", ident), "id": "kazane", "name": "KAZANE"} == real_kazane, ident
+    assert extreme.entry("tracks", "test_loop") == real_test_loop
+    assert {**extreme.entry("tracks", added_tracks[0]), "id": "test_loop", "name": "TEST LOOP"} == real_test_loop
 
 
 def test_data_files_real_packs_say_in_their_notes_that_they_are_never_shipped():

@@ -1,21 +1,27 @@
 """定義データの読み込み検査と、試験用データの重ね方（cp_core.datadefs）のテスト。pyxel は読み込まない。
 
 読み込み検査は、ファイルに触れない（受けるのは「相対の名 → 文」の辞書）。ファイルを読むのは、実物の定義データを
-辞書にする所（real_sources）だけ。実物の表の定義は、参照、並び、入れ子の項目を、まだ持たない。それらは、作り物の表の定義
-（FAKE_TABLES）で確かめる。
+辞書にする所（real_sources）だけ。実物の表の定義は、並びと、入れ子の項目を持つ（車の値、コースの形、操作補正の値）。参照と、
+省ける項目は、まだ持たない。それらは、作り物の表の定義（FAKE_TABLES）で確かめる。
+項目の見本（ENTRY、PACK_CARS など）は、実物の項目を読んで作る（鍵が増えても、見本が、足りない鍵の問題を出さない）。
 壊した場合は、どれも DataError になること（ほかの例外にならない）と、問題の行が、狙ったファイルと場所を指すことを見る。
 表を足す、項目を足すときは、ここの BROKEN に、その表とその鍵の、壊した場合を足す（足さないと、末尾の節の見張りのテストが落ちる）。
 見張りは、入れ子の項目、並びの中の項目、省ける項目の中まで開いて、鍵の道（engine.idle_rpm など）の全部に、壊した場合を求める。
 壊した場合の札（どの鍵を壊したか）は、並ぶはずの行の場所と照らす（書いた人の申告のままにしない）。
+数、入れ子の項目、並びの鍵の、壊した場合は、鍵の道から作る（GENERATED）。並ぶはずの行は、鍵の道と、決まった文から組み立てる
+（読み込み検査の出力からは、作らない）。
+項目をまたぐ検査（車の値の矛盾、コースの形の誤り）は、読み込み検査を通して、問題の行の形と、呼ばれる条件を見る。検査の中身は
+tests/test_vehicle.py と tests/test_track.py。
 ファイルを読む所は tests/test_data_files.py、道具 check の data の節は tests/test_check_tool.py。
 """
 import json
+import math
 import re
 
 import pytest
 
 from conftest import ROOT
-from cp_core import datadefs, profile, storage
+from cp_core import datadefs, profile, storage, track, vehicle
 from cp_core.datadefs import (
     ONE_ENTRY,
     ONE_TABLE,
@@ -37,12 +43,32 @@ from cp_core.datadefs import (
 )
 
 DATA = ROOT / "clipping_point" / "data"
-CARS, LOOP = "cars.json", "tracks/test_loop.json"  # 実物の定義データのファイル
+CARS, LOOP, ASSISTS = "cars.json", "tracks/test_loop.json", "assists.json"  # 実物の定義データのファイル
 
 
 def real_sources() -> dict:
     """実物の定義データ。「相対の名 → 文」の辞書。"""
     return {path.relative_to(DATA).as_posix(): path.read_text(encoding="utf-8") for path in sorted(DATA.rglob("*")) if path.is_file()}
+
+
+def real_car() -> dict:
+    """実物の車の項目（kazane）。引くたびに、新しい辞書。"""
+    return json.loads(real_sources()[CARS])["cars"][0]
+
+
+def real_loop() -> dict:
+    """実物のコースの項目（test_loop）。ファイルの頭の注は、落とす。引くたびに、新しい辞書。"""
+    return without(json.loads(real_sources()[LOOP]), "_notes")
+
+
+def real_assist() -> dict:
+    """実物の操作補正の項目（default）。引くたびに、新しい辞書。"""
+    return json.loads(real_sources()[ASSISTS])["assists"][0]
+
+
+def without(entry: dict, *keys) -> dict:
+    """項目から、鍵を落としたもの。元の辞書は変えない。"""
+    return {key: value for key, value in entry.items() if key not in keys}
 
 
 def edited(name: str, change, sources=None) -> dict:
@@ -71,11 +97,30 @@ def test_datadefs_shipped_data_loads_with_no_warnings():
     data = load_game_data(real_sources())
     assert type(data) is GameData
     assert data.warnings == ()  # 出荷するデータは、警告0件
-    assert data.counts() == {"cars": 1, "tracks": 1}
-    assert data.ids("cars") == ("kazane",) and data.ids("tracks") == ("test_loop",)
-    assert data.entry("cars", "kazane") == {"id": "kazane", "name": "KAZANE", "data_version": 1}
-    assert data.entry("tracks", "test_loop") == {"id": "test_loop", "name": "TEST LOOP", "data_version": 1}
+    assert data.counts() == {"cars": 1, "tracks": 1, "assists": 1}
+    assert data.ids("cars") == ("kazane",) and data.ids("tracks") == ("test_loop",) and data.ids("assists") == ("default",)
+    car, loop, assist = data.entry("cars", "kazane"), data.entry("tracks", "test_loop"), data.entry("assists", "default")
+    assert (car["id"], car["name"], car["data_version"]) == ("kazane", "KAZANE", 1)
+    assert (loop["id"], loop["name"], loop["data_version"]) == ("test_loop", "TEST LOOP", 1)
+    # 読み込んだ項目は、ファイルの項目と同じ（注の鍵のほかは、何も落とさず、何も足さない）。
+    assert car == real_car() and loop == real_loop() and assist == real_assist()
+    assert list(car) == list(TABLES["cars"].fields) and list(loop) == list(TABLES["tracks"].fields) and list(assist) == list(TABLES["assists"].fields)
+    # 走りの値、コースの形、操作補正の値の、頭の所を、数字でも固定する。
+    assert car["body"]["mass_kg"] == 960.0 and car["drivetrain"]["gears"] == [3.136, 1.888, 1.33, 1.0, 0.86] and len(car["engine"]["torque_curve"]) == 6
+    assert len(loop["control_points"]) == 72 and loop["control_points"][0] == {"x_m": 0.0, "z_m": 0.0} and loop["width_m"] == 12.0
+    assert assist["reverse"] == {"stop_speed_m_s": 0.5, "brake_hold_s": 0.5, "pedal_press_min": 0.1}
     assert data.pack is None and data.save_namespace == "main" == storage.DEFAULT_NAMESPACE
+
+
+def test_datadefs_shipped_entries_build_the_car_the_track_and_the_controls():
+    # 読み込んだ項目から、車の値、コースの表、操作補正の値が作れる（使う側が読む鍵が、表の定義と食い違っていない）。
+    from cp_core import controls
+
+    data = load_game_data(real_sources())
+    assert vehicle.spec_from_entry(data.entry("cars", "kazane")).car_id == "kazane"
+    assert track.build_track(data.entry("tracks", "test_loop")).track_id == "test_loop"
+    assert controls.params_from_entry(data.entry("assists", controls.DEFAULT_SET)).brake_hold_ticks == 30
+    assert sorted(data.entry("tracks", "test_loop")["surface_mu"]) == sorted(track.SURFACES)  # 路面の種類ごとに、摩擦係数がある
 
 
 def test_datadefs_shipped_files_carry_their_notes_and_the_notes_are_not_handed_out():
@@ -89,14 +134,49 @@ def test_datadefs_shipped_files_carry_their_notes_and_the_notes_are_not_handed_o
             assert not [key for key in data.entry(table, ident) if key.startswith("_")]
 
 
-def test_datadefs_real_table_definitions_are_the_two_minimal_tables():
-    assert list(TABLES) == ["cars", "tracks"]
-    assert TABLES["cars"].layout == ONE_TABLE and TABLES["tracks"].layout == ONE_ENTRY
-    for table in TABLES.values():
-        assert list(table.fields) == ["id", "name", "data_version"]
+def test_datadefs_real_table_definitions_are_cars_tracks_and_assists():
+    assert list(TABLES) == ["cars", "tracks", "assists"]
+    assert TABLES["cars"].layout == ONE_TABLE and TABLES["tracks"].layout == ONE_ENTRY and TABLES["assists"].layout == ONE_TABLE
+    for name in ("cars", "tracks"):
+        table = TABLES[name]
+        assert list(table.fields)[:3] == ["id", "name", "data_version"]
         assert type(table.fields["id"]) is Ident and type(table.fields["name"]) is Label
         assert table.fields["name"].max_len == datadefs.NAME_MAX == 14  # 車名もコース名も、14字まで
+        assert type(table.fields["data_version"]) is Int
         assert (table.fields["data_version"].low, table.fields["data_version"].high) == (1, None)  # データの版は、1以上の整数
+    assert list(TABLES["cars"].fields)[3:] == ["body", "steering", "engine", "drivetrain", "lsd", "tires", "suspension", "brakes", "aero", "rest", "outputs"]
+    assert list(TABLES["tracks"].fields)[3:] == ["table", "width_m", "grass_m", "surface_mu", "wall", "start", "control_points"]
+    assert list(TABLES["assists"].fields) == ["id", "steer", "reverse"] and type(TABLES["assists"].fields["id"]) is Ident
+    # 項目をまたぐ検査は、車とコースが持つ。検査の関数は、使う側のモジュールに置く（datadefs が読み込む向き）。
+    assert TABLES["cars"].check is vehicle.spec_problems and TABLES["tracks"].check is track.shape_problems and TABLES["assists"].check is None
+    assert TableDef(ONE_TABLE, {"id": Ident()}).check is None  # 省けば、無い
+
+
+def zero_is_outside(rule) -> bool:
+    return type(rule) is Num and rule.check(0) is not None and rule.check(0.0) is not None
+
+
+def test_datadefs_values_that_would_divide_by_zero_cannot_be_zero():
+    # 0で割ることになる値は、鍵の規則の範囲で、0を外す（車の値を作る計算と、1 tickの計算が、止まらない）。
+    car = TABLES["cars"].fields
+    for group, keys in (
+        ("body", ("mass_kg", "wheelbase_m", "track_m", "front_weight", "yaw_inertia_k")),
+        ("engine", ("power_ps", "redline_rpm", "torque_step_rpm", "rpm_smooth_s")),
+        ("drivetrain", ("reverse_gear", "final_gear", "wheel_radius_m")),
+        ("tires", ("mu", "peak_slip_rad", "curve_c", "low_speed_reg_m_s")),
+        ("suspension", ("load_transfer_s",)),
+        ("outputs", ("slip_speed_floor_m_s",)),
+    ):
+        for key in keys:
+            assert zero_is_outside(car[group].fields[key]), (group, key)
+    assert car["body"].fields["front_weight"].high < 1.0  # 1でも、後軸の荷重が0になる
+    assert zero_is_outside(car["drivetrain"].fields["gears"].item) and zero_is_outside(car["engine"].fields["torque_curve"].item.fields["ratio"])
+    loop = TABLES["tracks"].fields
+    assert all(zero_is_outside(loop["table"].fields[key]) for key in ("sample_step_m", "dense_step_m")) and zero_is_outside(loop["width_m"])
+    assert all(zero_is_outside(rule) for rule in loop["surface_mu"].fields.values())  # 摩擦係数が0の路面では、進めない
+    assist = TABLES["assists"].fields
+    assert zero_is_outside(assist["steer"].fields["limit_min_speed_m_s"]) and zero_is_outside(assist["reverse"].fields["pedal_press_min"])
+    assert all(zero_is_outside(assist["steer"].fields[kind].fields["full_time_s"]) for kind in ("analog", "digital"))
 
 
 # --- 実物の定義データを、1か所ずつ壊す。{名前: (表, 札, 壊したファイルの辞書, 並ぶはずの問題の行)} ---
@@ -108,6 +188,31 @@ def car(**values):
 
 def loop(**values):
     return edited(LOOP, lambda doc: doc.update(values))
+
+
+def assist(**values):
+    return edited(ASSISTS, lambda doc: doc["assists"][0].update(values))
+
+
+def car_group(group: str, **values):
+    """実物の車の、入れ子の項目（body、engine など）の中の値を、書き換えたもの。"""
+    return edited(CARS, lambda doc: doc["cars"][0][group].update(values))
+
+
+def key_paths(fields: dict, prefix: str = "") -> list:
+    """鍵ごとの規則の、鍵の道の全部（定義の順）。入れ子の項目、並びの中の項目、省ける項目の中も開く。
+
+    {"engine": Obj({"idle_rpm": …, "curve": ListOf(Obj({"rpm": …}), …)})} なら、engine、engine.idle_rpm、engine.curve、engine.curve.rpm。
+    """
+    found = []
+    for key, rule in fields.items():
+        path = f"{prefix}{key}"
+        found.append(path)
+        while isinstance(rule, (Opt, ListOf)):  # 省ける項目と並びは、中の規則まで開く
+            rule = rule.inner if isinstance(rule, Opt) else rule.item
+        if isinstance(rule, Obj):
+            found += key_paths(rule.fields, f"{path}.")
+    return found
 
 
 BROKEN = {
@@ -137,10 +242,125 @@ BROKEN = {
         "tracks", "id", loop(id="other_loop"), ["tracks/test_loop.json:id: 'other_loop' does not match the file name 'test_loop'"],
     ),
     "tracks bad id": (
-        "tracks", "id", {CARS: real_sources()[CARS], "tracks/Test Loop.json": json.dumps({"id": "Test Loop", "name": "TEST LOOP", "data_version": 1})},
+        "tracks", "id", {**without(real_sources(), LOOP), "tracks/Test Loop.json": json.dumps({**real_loop(), "id": "Test Loop"})},
         ["tracks/Test Loop.json:id: 'Test Loop' is not an id (lowercase ASCII, digits, _)"],
     ),
+    "assists unknown key": ("assists", None, assist(steeer={}), ["assists.json:assists[0].steeer: unknown key"]),
+    "assists bad id": ("assists", "id", assist(id="Default Set"), ["assists.json:assists[0].id: 'Default Set' is not an id (lowercase ASCII, digits, _)"]),
+    "assists empty table": ("assists", None, edited(ASSISTS, lambda doc: doc["assists"].clear()), ["assists.json:assists: no entries"]),
+    # 入れ子の項目の中の、知らない鍵（鍵の名の打ち間違い）。
+    "cars unknown key in a group": ("cars", None, car_group("body", mass=960.0), ["cars.json:cars[0].body.mass: unknown key"]),
+    "tracks unknown key in a point": (
+        "tracks", None, edited(LOOP, lambda doc: doc["control_points"][3].update(y_m=0.0)), ["tracks/test_loop.json:control_points[3].y_m: unknown key"],
+    ),
+    # 並びの中の値。3番目の変速比が、数でない。
+    "cars gear that is not a number": (
+        "cars", "drivetrain.gears", car_group("drivetrain", gears=[3.136, 1.888, "1.33", 1.0, 0.86]),
+        ["cars.json:cars[0].drivetrain.gears[2]: expected a number, got str"],
+    ),
+    # 項目をまたぐ検査（車の値の矛盾、コースの形の誤り）。問題の行は、ほかの問題と同じ形（ファイルと、鍵の道）。
+    "cars gear ratios that do not fall": (
+        "cars", "drivetrain.gears", car_group("drivetrain", gears=[3.136, 1.888, 1.888, 1.0, 0.86]),
+        ["cars.json:cars[0].drivetrain.gears[2]: gear ratio 1.888 is not below the gear before it (1.888)"],
+    ),
+    "cars torque points that do not rise": (
+        "cars", "engine.torque_curve.rpm", edited(CARS, lambda doc: doc["cars"][0]["engine"]["torque_curve"][3].update(rpm=4500.0)),
+        ["cars.json:cars[0].engine.torque_curve[3].rpm: rpm 4500.0 is not above the point before it (4500.0)"],
+    ),
+    "tracks loop that is not closed": (
+        "tracks", "control_points", edited(LOOP, lambda doc: doc.update(control_points=doc["control_points"][:40])),
+        ["tracks/test_loop.json:control_points: not closed: the gap from the last point back to the first is 192.9 m (the longest other gap is 12.5 m)"],
+    ),
+    "tracks first point repeated at the end": (
+        "tracks", "control_points", edited(LOOP, lambda doc: doc["control_points"].append(dict(doc["control_points"][0]))),
+        ["tracks/test_loop.json:control_points[72]: this point and the next are 0.000 m apart (at least 0.5; do not repeat the first point at the end)"],
+    ),
+    "tracks inner wall that folds over": (
+        "tracks", "control_points", loop(grass_m=34.0),
+        ["tracks/test_loop.json:control_points: the inner wall (40.0 m from the centre line) folds over at s=679 m (radius 44.8 m)"],
+    ),
+    "tracks start off the asphalt": (
+        "tracks", "start.lateral_m", loop(start={"s_m": 60.0, "lateral_m": 5.5}),
+        ["tracks/test_loop.json:start.lateral_m: 5.5 is not on the asphalt (half width 6.0 m, keep 1.0 m from the edge)"],
+    ),
+    "tracks start beyond the lap": (
+        "tracks", "start.s_m", loop(start={"s_m": 800.0, "lateral_m": 0.0}),
+        ["tracks/test_loop.json:start.s_m: 800.0 is beyond the lap length 732.7 m"],
+    ),
 }
+
+# --- 数、入れ子の項目、並びの鍵の、壊した場合を、鍵の道から作る ---
+# 表ごとの、(実物のファイル, 問題の行の、項目までの頭, ファイルの中身から項目を取る関数)。
+HEADS = {
+    "cars": (CARS, "cars.json:cars[0].", lambda doc: doc["cars"][0]),
+    "tracks": (LOOP, "tracks/test_loop.json:", lambda doc: doc),
+    "assists": (ASSISTS, "assists.json:assists[0].", lambda doc: doc["assists"][0]),
+}
+MISSING = object()  # 鍵を消す、の印
+
+
+def rules_along(fields: dict, path: str) -> list:
+    """鍵の道（engine.torque_curve.rpm）を、[(鍵, その鍵の規則)] にする。省ける項目は、中の規則にする。"""
+    steps = []
+    for key in path.split("."):
+        rule = fields[key]
+        if isinstance(rule, Opt):
+            rule = rule.inner
+        steps.append((key, rule))
+        inner = rule.item if isinstance(rule, ListOf) else rule
+        fields = inner.fields if isinstance(inner, Obj) else {}
+    return steps
+
+
+def set_at(entry: dict, steps: list, value) -> str:
+    """項目の、鍵の道の所へ、値を置く（MISSING なら、鍵を消す）。並びの中は、頭の項目。返すのは、問題の行に出る場所（engine.torque_curve[0].rpm）。"""
+    holder, where = entry, []
+    for key, rule in steps[:-1]:
+        holder = holder[key]
+        where.append(key)
+        if isinstance(rule, ListOf):
+            holder = holder[0]
+            where[-1] += "[0]"
+    key = steps[-1][0]
+    if value is MISSING:
+        del holder[key]
+    else:
+        holder[key] = value
+    return ".".join([*where, key])
+
+
+def generated_cases() -> dict:
+    """実物の表の定義の、鍵の道の全部について、壊した場合を作る。{名前: (表, 札, 壊したファイルの辞書, 並ぶはずの問題の行)}。
+
+    どの鍵も、鍵を消す（missing）。数は、型の違い（文字列）と、範囲の外（上限＋1）。入れ子の項目は、型の違い（整数）。
+    並びは、型の違い（文字列）と、長さ（空）。並ぶはずの行は、鍵の道と、決まった文から組み立てる（読み込み検査の出力からは、作らない）。
+    """
+    cases = {}
+    for table, (name, head, entry_of) in HEADS.items():
+        for path in key_paths(TABLES[table].fields):
+            steps = rules_along(TABLES[table].fields, path)
+            rule = steps[-1][1]
+            changes = [("missing", MISSING, "missing")]
+            if type(rule) is Num:
+                too_big = rule.high + 1
+                changes += [("wrong type", "x", "expected a number, got str"), ("out of range", too_big, f"{too_big} is outside {rule.low}..{rule.high}")]
+            elif type(rule) is Obj:
+                changes += [("wrong type", 5, "expected an object, got int")]
+            elif type(rule) is ListOf:
+                changes += [
+                    ("wrong type", "x", "expected a list, got str"),
+                    ("empty", [], f"expected a list of {rule.min_len}..{rule.max_len} items, got 0"),
+                ]
+            for label, value, message in changes:
+                places = []
+                sources = edited(name, lambda doc: places.append(set_at(entry_of(doc), steps, value)))  # noqa: B023 - その場で呼ばれる
+                cases[f"{table} {path} {label}"] = (table, path, sources, [f"{head}{places[0]}: {message}"])
+    return cases
+
+
+GENERATED = generated_cases()
+assert not set(GENERATED) & set(BROKEN)
+BROKEN.update(GENERATED)
 
 
 @pytest.mark.parametrize("case", sorted(BROKEN))
@@ -189,7 +409,9 @@ def test_datadefs_duplicate_keys_and_nan_are_problems_of_the_file(name, text, wa
     assert problems_of(with_text(name, text)) == [want]
 
 
-SECOND_CAR_BROKEN = '{"id": "second", "nmae": "X", "data_version": 0}'  # 知らない鍵、足りない鍵、範囲の外
+ENTRY = real_car()  # 実物の車の項目。読み込み検査を通る、項目の見本
+# 2つ目の車。実物の項目から作る。知らない鍵、足りない鍵（表示名）、範囲の外（データの版）。
+SECOND_CAR_BROKEN = json.dumps({**without(ENTRY, "name"), "id": "second", "nmae": "X", "data_version": 0})
 SECOND_CAR_LINES = ["cars.json:cars[1].nmae: unknown key", "cars.json:cars[1].name: missing", "cars.json:cars[1].data_version: 0 is outside 1.."]
 
 
@@ -290,13 +512,20 @@ def test_datadefs_file_that_no_table_reads_is_a_problem(name):
 
 def test_datadefs_missing_table_files_are_problems():
     sources = real_sources()
-    assert problems_of({name: text for name, text in sources.items() if name != CARS}) == ["cars.json: missing file"]
-    assert problems_of({CARS: sources[CARS]}) == ["tracks/: no entry files"]
-    assert problems_of({}) == ["cars.json: missing file", "tracks/: no entry files"]
+    assert problems_of(without(sources, CARS)) == ["cars.json: missing file"]
+    assert problems_of(without(sources, LOOP)) == ["tracks/: no entry files"]
+    assert problems_of(without(sources, ASSISTS)) == ["assists.json: missing file"]
+    assert problems_of({CARS: sources[CARS]}) == ["tracks/: no entry files", "assists.json: missing file"]
+    assert problems_of({}) == ["cars.json: missing file", "tracks/: no entry files", "assists.json: missing file"]
 
 
 # --- ファイルの頭の形の誤り。2つの形のそれぞれで ---
-ENTRY = {"id": "kazane", "name": "KAZANE", "data_version": 1}
+LOOP_ENTRY = real_loop()  # 実物のコースの項目。読み込み検査を通る、項目の見本
+# コースの項目の、id のほかの鍵が、全部足りないときに並ぶ行（表の定義の順）。
+LOOP_KEYS_MISSING = [
+    f"tracks/test_loop.json:{key}: missing"
+    for key in ("name", "data_version", "table", "width_m", "grass_m", "surface_mu", "wall", "start", "control_points")
+]
 
 
 @pytest.mark.parametrize(
@@ -315,11 +544,13 @@ ENTRY = {"id": "kazane", "name": "KAZANE", "data_version": 1}
             "cars.json:cars[2]: expected an entry (an object), got str",
             "cars.json:cars[3]: expected an entry (an object), got list",
         ]),
-        ({"cars": [{"name": "KAZANE", "data_version": 1}]}, ["cars.json:cars[0].id: missing"]),
+        ({"cars": [without(ENTRY, "id")]}, ["cars.json:cars[0].id: missing"]),
         ({"cars": [{**ENTRY, "id": 7}]}, ["cars.json:cars[0].id: expected a string id, got int"]),
         ({"cars": [{**ENTRY, "id": None}]}, ["cars.json:cars[0].id: expected a string id, got NoneType"]),
         # id が無い項目も、ほかの鍵は照らす（全部を並べる）。
-        ({"cars": [{"name": "", "nmae": 1}]}, ["cars.json:cars[0].id: missing", "cars.json:cars[0].nmae: unknown key", "cars.json:cars[0].name: expected a non-empty text, got ''", "cars.json:cars[0].data_version: missing"]),
+        ({"cars": [{**without(ENTRY, "id", "data_version"), "name": "", "nmae": 1}]}, ["cars.json:cars[0].id: missing", "cars.json:cars[0].nmae: unknown key", "cars.json:cars[0].name: expected a non-empty text, got ''", "cars.json:cars[0].data_version: missing"]),
+        # 3つの鍵だけの項目（走りの値が無い）。足りない鍵が、全部並ぶ。
+        ({"cars": [{"id": "kazane", "name": "KAZANE", "data_version": 1}]}, [f"cars.json:cars[0].{key}: missing" for key in list(TABLES["cars"].fields)[3:]]),
     ],
 )
 def test_datadefs_one_table_file_with_a_wrong_head_is_a_problem_of_the_file(doc, want):
@@ -329,17 +560,14 @@ def test_datadefs_one_table_file_with_a_wrong_head_is_a_problem_of_the_file(doc,
 @pytest.mark.parametrize(
     "doc, want",
     [
-        ([{"id": "test_loop", "name": "TEST LOOP", "data_version": 1}], ["tracks/test_loop.json: the file must be one entry (an object), got list"]),
+        ([LOOP_ENTRY], ["tracks/test_loop.json: the file must be one entry (an object), got list"]),
         ("test_loop", ["tracks/test_loop.json: the file must be one entry (an object), got str"]),
         (3, ["tracks/test_loop.json: the file must be one entry (an object), got int"]),
-        ({"name": "TEST LOOP", "data_version": 1}, ["tracks/test_loop.json:id: missing"]),
-        ({"id": ["test_loop"], "name": "TEST LOOP", "data_version": 1}, ["tracks/test_loop.json:id: expected a string id, got list"]),
-        ({}, ["tracks/test_loop.json:id: missing", "tracks/test_loop.json:name: missing", "tracks/test_loop.json:data_version: missing"]),
+        (without(LOOP_ENTRY, "id"), ["tracks/test_loop.json:id: missing"]),
+        ({**LOOP_ENTRY, "id": ["test_loop"]}, ["tracks/test_loop.json:id: expected a string id, got list"]),
+        ({}, ["tracks/test_loop.json:id: missing", *LOOP_KEYS_MISSING]),
         # 1ファイル1表の形（{"tracks": […]}）で置いた。
-        ({"tracks": [{"id": "test_loop", "name": "TEST LOOP", "data_version": 1}]}, [
-            "tracks/test_loop.json:id: missing", "tracks/test_loop.json:tracks: unknown key",
-            "tracks/test_loop.json:name: missing", "tracks/test_loop.json:data_version: missing",
-        ]),
+        ({"tracks": [LOOP_ENTRY]}, ["tracks/test_loop.json:id: missing", "tracks/test_loop.json:tracks: unknown key", *LOOP_KEYS_MISSING]),
     ],
 )
 def test_datadefs_one_entry_file_with_a_wrong_head_is_a_problem_of_the_file(doc, want):
@@ -360,8 +588,21 @@ def test_datadefs_strange_values_anywhere_never_raise_anything_but_data_error():
             with_text(CARS, json.dumps({"cars": [{**ENTRY, "name": value}]})),
             with_text(CARS, json.dumps({"cars": [{**ENTRY, "extra": value}]})),
             with_text(LOOP, json.dumps(value)),
-            with_text(LOOP, json.dumps({"id": value, "name": "TEST LOOP", "data_version": 1})),
-            with_text(LOOP, json.dumps({"id": "test_loop", "name": "TEST LOOP", "data_version": value})),
+            with_text(LOOP, json.dumps({**LOOP_ENTRY, "id": value})),
+            with_text(LOOP, json.dumps({**LOOP_ENTRY, "data_version": value})),
+            # 入れ子の項目、並び、並びの中の項目に置く。項目をまたぐ検査が読む鍵でも、同じ。
+            with_text(CARS, json.dumps({"cars": [{**ENTRY, "body": value}]})),
+            with_text(CARS, json.dumps({"cars": [{**ENTRY, "drivetrain": {**ENTRY["drivetrain"], "gears": value}}]})),
+            with_text(CARS, json.dumps({"cars": [{**ENTRY, "drivetrain": {**ENTRY["drivetrain"], "gears": [value, value]}}]})),
+            with_text(CARS, json.dumps({"cars": [{**ENTRY, "engine": {**ENTRY["engine"], "torque_curve": value}}]})),
+            with_text(CARS, json.dumps({"cars": [{**ENTRY, "engine": {**ENTRY["engine"], "torque_curve": [value, value]}}]})),
+            with_text(LOOP, json.dumps({**LOOP_ENTRY, "control_points": value})),
+            with_text(LOOP, json.dumps({**LOOP_ENTRY, "control_points": [value] * 4})),
+            with_text(LOOP, json.dumps({**LOOP_ENTRY, "control_points": [{"x_m": value, "z_m": 0.0}] * 4})),
+            with_text(LOOP, json.dumps({**LOOP_ENTRY, "start": value})),
+            with_text(LOOP, json.dumps({**LOOP_ENTRY, "table": value})),
+            with_text(ASSISTS, json.dumps({"assists": [{**real_assist(), "steer": value}]})),
+            with_text(ASSISTS, json.dumps({"assists": [{**real_assist(), "reverse": {"stop_speed_m_s": value}}]})),
         ):
             try:
                 load_game_data(sources)
@@ -371,7 +612,51 @@ def test_datadefs_strange_values_anywhere_never_raise_anything_but_data_error():
             try:
                 load_game_data(real_sources(), ("p", sources))
             except DataError as exc:
-                assert exc.problems and all(line.startswith(("testpacks/p/", "cars.json", "tracks/")) for line in exc.problems)
+                assert exc.problems and all(line.startswith(("testpacks/p/", "cars.json", "tracks/", "assists.json")) for line in exc.problems)
+
+
+def P(x: float, z: float) -> dict:  # noqa: N802 - 制御点1つ。下の表を、短く書くための名
+    return {"x_m": float(x), "z_m": float(z)}
+
+
+# 鍵ごとの規則は通るが、形が退化したコース。項目をまたぐ検査が、表を作る計算で止まらずに、問題の行にする。
+DEGENERATE_LOOPS = {
+    "every point is the same point": [P(5, 5)] * 6,
+    "two points": [P(0, 0), P(5, 5)],
+    "three points": [P(0, 0), P(50, 0), P(0, 50)],
+    "the same two points twice": [P(0, 0), P(50, 0), P(0, 0), P(50, 0)],
+    "a line there and back": [P(0, 0), P(20, 0), P(40, 0), P(60, 0), P(40, 0), P(20, 0)],
+    "four points on a line": [P(0, 0), P(10, 0), P(20, 0), P(30, 0)],
+    "two tight pairs far apart": [P(0, 0), P(0.6, 0), P(100, 0), P(100.6, 0)],
+    "a sliver": [P(0, 0), P(100, 0), P(100, 0.5), P(0, 0.5)],
+    "a zigzag that does not close": [P(index * 5, index % 2 * 5) for index in range(20)],
+    "points at the far corners": [P(-20000, -20000), P(20000, -20000), P(20000, 20000), P(-20000, 20000)],
+    "a figure of eight": [P(60.0 * math.sin(2.0 * math.pi * index / 48), 30.0 * math.sin(4.0 * math.pi * index / 48)) for index in range(48)],
+}
+
+
+@pytest.mark.parametrize("case", sorted(DEGENERATE_LOOPS))
+def test_datadefs_degenerate_loops_are_data_errors_and_never_anything_else(case):
+    points = DEGENERATE_LOOPS[case]
+    for table in ({"sample_step_m": 2.0, "dense_step_m": 0.25}, {"sample_step_m": 8.0, "dense_step_m": 1.0}, {"sample_step_m": 0.5, "dense_step_m": 0.05}):
+        got = problems_of(loop(control_points=points, table=table))  # DataError のほかの例外は、ここで外へ出る
+        assert got and all(line.startswith("tracks/test_loop.json:control_points") for line in got), got
+    # 試験用データの側に置いても、同じ。
+    got = problems_of(real_sources(), ("p", {LOOP: json.dumps({**LOOP_ENTRY, "control_points": points})}))
+    assert got and all(line.startswith("testpacks/p/tracks/test_loop.json:control_points") for line in got)
+
+
+def test_datadefs_degenerate_car_values_are_data_errors_and_never_anything_else():
+    # 鍵ごとの規則は通るが、車の値を作る計算が、0で割ることになる値（同じ回転数の点、同じ変速比）。
+    flat = [{"rpm": 3000.0, "ratio": 1.0}] * 4
+    for sources in (
+        car_group("engine", torque_curve=flat),
+        car_group("drivetrain", gears=[1.0] * 5),
+        car_group("drivetrain", gears=[0.2, 10.0]),
+        edited(CARS, lambda doc: (doc["cars"][0]["engine"].update(torque_curve=flat), doc["cars"][0]["drivetrain"].update(gears=[1.0, 1.0]))),
+    ):
+        got = problems_of(sources)
+        assert got and all(line.startswith(("cars.json:cars[0].engine.torque_curve[", "cars.json:cars[0].drivetrain.gears[")) for line in got), got
 
 
 # --- 規則の部品。1つずつ ---
@@ -575,20 +860,22 @@ def test_datadefs_entry_is_a_fresh_copy_down_to_the_nested_lists():
 
 
 def test_datadefs_loading_does_not_change_the_sources():
-    sources, pack_files = real_sources(), {CARS: json.dumps({"cars": [{"id": "kazane", "name": "OTHER", "data_version": 2}]})}
+    sources, pack_files = real_sources(), {CARS: json.dumps({"cars": [{**ENTRY, "name": "OTHER", "data_version": 2}]})}
     before, pack_before = dict(sources), dict(pack_files)
-    load_game_data(sources, ("p", pack_files))
+    assert load_game_data(sources, ("p", pack_files)).entry("cars", "kazane")["name"] == "OTHER"
     assert sources == before and pack_files == pack_before
 
 
 # --- 問題の行の順 ---
 def test_datadefs_problem_lines_come_in_the_same_order_every_time():
     # 辞書へ入れた順と、JSONの中の鍵の順を変えても、問題の行は、同じ順で並ぶ（集合を回した順に頼らない）。
-    car = {"zz": 1, "id": "kazane", "aa": 2, "data_version": 0, "name": "", "mm": 3}
-    track = {"data_version": "1", "zz": 1, "name": "カ", "aa": 2, "id": "test_loop"}
-    names = ["notes.txt", CARS, "zz.json", LOOP, "aa.json"]
+    # ほかの鍵（走りの値、コースの形）は、実物の値のまま（問題にならない）。操作補正のファイルも、実物のまま。
+    car = {"zz": 1, "id": "kazane", "aa": 2, "data_version": 0, "name": "", "mm": 3, **without(ENTRY, "id", "name", "data_version")}
+    loop_entry = {"data_version": "1", "zz": 1, "name": "カ", "aa": 2, "id": "test_loop", **without(LOOP_ENTRY, "id", "name", "data_version")}
+    names = ["notes.txt", CARS, "zz.json", LOOP, "aa.json", ASSISTS]
     texts = {
-        CARS: {"cars": [car, dict(reversed(car.items()))]}, LOOP: track, "notes.txt": {}, "zz.json": {}, "aa.json": {},
+        CARS: {"cars": [car, dict(reversed(car.items()))]}, LOOP: loop_entry, "notes.txt": {}, "zz.json": {}, "aa.json": {},
+        ASSISTS: json.loads(real_sources()[ASSISTS]),
     }
     want = [
         "aa.json: unknown file (no table reads this name)",
@@ -617,7 +904,12 @@ def test_datadefs_problem_lines_come_in_the_same_order_every_time():
 
 
 # --- 試験用データの重ね方 ---
-PACK_CARS = {"cars": [{"id": "kazane", "name": "KAZANE RS TEST", "data_version": 3}, {"id": "wide_test_car", "name": "W" * 14, "data_version": 1}]}
+# 試験用データの車の表。実物の項目から作る（項目ごと差し替える重ね方なので、全部の鍵を持つ）。1台目は、同じ id で、表示名と
+# データの版と質量を変える。2台目は、新しい id。
+PACK_CARS = {"cars": [
+    {**ENTRY, "name": "KAZANE RS TEST", "data_version": 3, "body": {**ENTRY["body"], "mass_kg": 1234.5}},
+    {**ENTRY, "id": "wide_test_car", "name": "W" * 14},
+]}
 
 
 def test_datadefs_pack_replaces_the_same_id_and_appends_a_new_id():
@@ -625,12 +917,23 @@ def test_datadefs_pack_replaces_the_same_id_and_appends_a_new_id():
     data = load_game_data(sources, ("extreme", {CARS: json.dumps(PACK_CARS)}))
     assert data.pack == "extreme" and data.warnings == ()
     assert data.ids("cars") == ("kazane", "wide_test_car")  # 同じ id は、元の位置で差し替え。新しい id は、末尾
-    assert data.entry("cars", "kazane") == {"id": "kazane", "name": "KAZANE RS TEST", "data_version": 3}
+    replaced = data.entry("cars", "kazane")
+    assert replaced == PACK_CARS["cars"][0] and (replaced["name"], replaced["data_version"]) == ("KAZANE RS TEST", 3)
+    assert replaced["body"]["mass_kg"] == 1234.5  # 項目ごと差し替える（入れ子の中の値も、試験用データの値）
     assert data.entry("cars", "wide_test_car")["name"] == "W" * 14
-    assert data.counts() == {"cars": 2, "tracks": 1}  # 重ねなかった表は、そのまま
+    assert data.counts() == {"cars": 2, "tracks": 1, "assists": 1}  # 重ねなかった表は、そのまま
     # 元のデータは変わらない。
     plain = load_game_data(sources)
     assert plain.pack is None and plain.ids("cars") == ("kazane",) and plain.entry("cars", "kazane")["name"] == "KAZANE"
+    assert plain.entry("cars", "kazane")["body"]["mass_kg"] == 960.0
+
+
+def test_datadefs_pack_entry_that_leaves_keys_out_is_not_merged_with_the_shipped_entry():
+    # 重ね方は、項目ごとの差し替え。試験用データの項目が、鍵を持たなければ、足りない鍵の問題になる（出荷するデータの値で、埋めない）。
+    partial = {"cars": [{"id": "kazane", "name": "KAZANE RS TEST", "data_version": 1}]}
+    assert problems_of(real_sources(), ("p", {CARS: json.dumps(partial)})) == [
+        f"testpacks/p/cars.json:cars[0].{key}: missing" for key in list(TABLES["cars"].fields)[3:]
+    ]
 
 
 def test_datadefs_pack_keeps_the_position_of_a_replaced_entry():
@@ -642,29 +945,37 @@ def test_datadefs_pack_keeps_the_position_of_a_replaced_entry():
 
 
 def test_datadefs_pack_of_one_entry_files_replaces_the_same_name_and_adds_a_new_name():
+    replaced = {**LOOP_ENTRY, "name": "REPLACED LOOP", "data_version": 9, "width_m": 10.0}
     pack = {
-        LOOP: json.dumps({"id": "test_loop", "name": "REPLACED LOOP", "data_version": 9}),
-        "tracks/wide_test_loop.json": json.dumps({"id": "wide_test_loop", "name": "M" * 14, "data_version": 1}),
-        "tracks/another_loop.json": json.dumps({"id": "another_loop", "name": "ANOTHER", "data_version": 1}),
+        LOOP: json.dumps(replaced),
+        "tracks/wide_test_loop.json": json.dumps({**LOOP_ENTRY, "id": "wide_test_loop", "name": "M" * 14}),
+        "tracks/another_loop.json": json.dumps({**LOOP_ENTRY, "id": "another_loop", "name": "ANOTHER"}),
     }
     data = load_game_data(real_sources(), ("extreme", pack))
     assert data.ids("tracks") == ("test_loop", "another_loop", "wide_test_loop")  # 元の順のあとに、新しい名（名を整列した順）
-    assert data.entry("tracks", "test_loop") == {"id": "test_loop", "name": "REPLACED LOOP", "data_version": 9}
-    assert data.counts() == {"cars": 1, "tracks": 3}
+    assert data.entry("tracks", "test_loop") == replaced and data.entry("tracks", "test_loop")["width_m"] == 10.0
+    assert data.counts() == {"cars": 1, "tracks": 3, "assists": 1}
     assert load_game_data(real_sources()).entry("tracks", "test_loop")["name"] == "TEST LOOP"
 
 
 def test_datadefs_the_overlaid_result_goes_through_the_same_checks():
     # 重ねた結果を、同じ読み込み検査に通す。試験用データの中の問題は、頭に testpacks/<名>/ が付く。
-    bad = {"cars": [{"id": "kazane", "name": "K" * 15, "data_version": 1}, {"id": "new_car", "nmae": "X", "data_version": True}]}
+    bad = {"cars": [{**ENTRY, "name": "K" * 15}, {**without(ENTRY, "name"), "id": "new_car", "nmae": "X", "data_version": True}]}
     assert problems_of(real_sources(), ("extreme", {CARS: json.dumps(bad)})) == [
         f"testpacks/extreme/cars.json:cars[0].name: '{'K' * 15}' is 15 characters (at most 14)",
         "testpacks/extreme/cars.json:cars[1].nmae: unknown key",
         "testpacks/extreme/cars.json:cars[1].name: missing",
         "testpacks/extreme/cars.json:cars[1].data_version: expected an integer, got bool",
     ]
-    assert problems_of(real_sources(), ("extreme", {LOOP: json.dumps({"id": "other", "name": "X", "data_version": 1})})) == [
+    assert problems_of(real_sources(), ("extreme", {LOOP: json.dumps({**LOOP_ENTRY, "id": "other", "name": "X"})})) == [
         "testpacks/extreme/tracks/test_loop.json:id: 'other' does not match the file name 'test_loop'"
+    ]
+    # 項目をまたぐ検査も、重ねた結果に掛かる。足した項目（新しい id）と、差し替えた項目の、どちらにも。
+    slow = {**ENTRY, "id": "new_car", "drivetrain": {**ENTRY["drivetrain"], "gears": [1.0, 2.0]}}
+    open_loop = {**LOOP_ENTRY, "control_points": LOOP_ENTRY["control_points"][:40]}
+    assert problems_of(real_sources(), ("extreme", {CARS: json.dumps({"cars": [slow]}), LOOP: json.dumps(open_loop)})) == [
+        "testpacks/extreme/cars.json:cars[0].drivetrain.gears[1]: gear ratio 2.0 is not below the gear before it (1.0)",
+        "testpacks/extreme/tracks/test_loop.json:control_points: not closed: the gap from the last point back to the first is 192.9 m (the longest other gap is 12.5 m)",
     ]
     # 参照も、重ねた結果で照らす。試験用データが足した定義への参照は通り、無い定義への参照は落ちる。
     more_sounds = {"sounds.json": json.dumps({"sounds": [{"id": "eng_turbo", "kind": "engine"}]})}
@@ -686,12 +997,12 @@ def test_datadefs_the_overlaid_result_goes_through_the_same_checks():
         ({CARS: json.dumps({"cars": {"kazane": {}}})}, ["testpacks/p/cars.json:cars: expected a list of entries, got dict"]),
         ({CARS: json.dumps({"cars": []})}, ["testpacks/p/cars.json:cars: no entries"]),
         ({CARS: json.dumps({"cars": [PACK_CARS["cars"][0], 5]})}, ["testpacks/p/cars.json:cars[1]: expected an entry (an object), got int"]),
-        ({CARS: json.dumps({"cars": [{"name": "X", "data_version": 1}]})}, ["testpacks/p/cars.json:cars[0].id: missing"]),
-        ({CARS: json.dumps({"cars": [{"id": 5, "name": "", "data_version": 1}]})}, [
+        ({CARS: json.dumps({"cars": [{**without(ENTRY, "id"), "name": "X"}]})}, ["testpacks/p/cars.json:cars[0].id: missing"]),
+        ({CARS: json.dumps({"cars": [{**ENTRY, "id": 5, "name": ""}]})}, [
             "testpacks/p/cars.json:cars[0].id: expected a string id, got int", "testpacks/p/cars.json:cars[0].name: expected a non-empty text, got ''",
         ]),
         ({LOOP: json.dumps(["test_loop"])}, ["testpacks/p/tracks/test_loop.json: the file must be one entry (an object), got list"]),
-        ({LOOP: json.dumps({"name": "X", "data_version": 1})}, ["testpacks/p/tracks/test_loop.json:id: missing"]),
+        ({LOOP: json.dumps({**without(LOOP_ENTRY, "id"), "name": "X"})}, ["testpacks/p/tracks/test_loop.json:id: missing"]),
         ({CARS: "{"}, None),
         ({CARS: None}, ["testpacks/p/cars.json: cannot read the file"]),
         ({CARS: '{"cars": [], "cars": []}'}, ["testpacks/p/cars.json: duplicate key 'cars'"]),
@@ -750,23 +1061,7 @@ def test_datadefs_pack_named_like_a_namespace_in_use_does_not_share_that_namespa
         assert storage.SaveStore(storage.MemoryBackend(), data.save_namespace).namespace not in in_use, name
 
 
-# --- 表を足す、項目を足すときの手順の見張り ---
-def key_paths(fields: dict, prefix: str = "") -> list:
-    """鍵ごとの規則の、鍵の道の全部（定義の順）。入れ子の項目、並びの中の項目、省ける項目の中も開く。
-
-    {"engine": Obj({"idle_rpm": …, "curve": ListOf(Obj({"rpm": …}), …)})} なら、engine、engine.idle_rpm、engine.curve、engine.curve.rpm。
-    """
-    found = []
-    for key, rule in fields.items():
-        path = f"{prefix}{key}"
-        found.append(path)
-        while isinstance(rule, (Opt, ListOf)):  # 省ける項目と並びは、中の規則まで開く
-            rule = rule.inner if isinstance(rule, Opt) else rule.item
-        if isinstance(rule, Obj):
-            found += key_paths(rule.fields, f"{path}.")
-    return found
-
-
+# --- 表を足す、項目を足すときの手順の見張り（鍵の道を集める key_paths は、BROKEN の前に置いてある） ---
 def key_path_of(line: str, table: str, tables: dict) -> str:
     """問題の行の場所を、項目の中の鍵の道にする。並びの中の番号と、1ファイル1表の頭（表の名と、項目の番号）は落とす。
 
@@ -826,7 +1121,151 @@ def test_datadefs_every_real_table_has_its_files_and_every_key_has_a_broken_case
     assert all(datadefs._classify(name, TABLES) is not None for name in sources)  # 実物の置き場に、知らないファイルが無い
 
 
-# 見張りそのものの確かめ。実物の表の定義は、まだ入れ子を持たないので、作り物の表の定義（入れ子の項目、並びの中の項目、
+def test_datadefs_generated_broken_cases_are_built_from_the_key_paths_and_fixed_texts():
+    # 鍵の道から作った、壊した場合。並ぶはずの行を、いくつか、手で書いた行と照らす（作り方が、狙った場所と文になっていること）。
+    assert GENERATED["cars body.mass_kg missing"][1:] == ("body.mass_kg", GENERATED["cars body.mass_kg missing"][2], ["cars.json:cars[0].body.mass_kg: missing"])
+    assert GENERATED["cars body.mass_kg wrong type"][3] == ["cars.json:cars[0].body.mass_kg: expected a number, got str"]
+    assert GENERATED["cars body.mass_kg out of range"][3] == ["cars.json:cars[0].body.mass_kg: 5001.0 is outside 100.0..5000.0"]
+    assert GENERATED["cars engine.torque_curve.rpm out of range"][3] == ["cars.json:cars[0].engine.torque_curve[0].rpm: 20001.0 is outside 0.0..20000.0"]
+    assert GENERATED["cars engine.torque_curve empty"][3] == ["cars.json:cars[0].engine.torque_curve: expected a list of 2..32 items, got 0"]
+    assert GENERATED["cars drivetrain wrong type"][3] == ["cars.json:cars[0].drivetrain: expected an object, got int"]
+    assert GENERATED["tracks control_points.x_m wrong type"][3] == ["tracks/test_loop.json:control_points[0].x_m: expected a number, got str"]
+    assert GENERATED["tracks control_points wrong type"][3] == ["tracks/test_loop.json:control_points: expected a list, got str"]
+    assert GENERATED["tracks start.s_m out of range"][3] == ["tracks/test_loop.json:start.s_m: 20001.0 is outside 0.0..20000.0"]
+    assert GENERATED["assists steer.digital.full_time_s missing"][3] == ["assists.json:assists[0].steer.digital.full_time_s: missing"]
+    assert GENERATED["assists reverse.pedal_press_min out of range"][3] == ["assists.json:assists[0].reverse.pedal_press_min: 2.0 is outside 0.001..1.0"]
+    # 壊したファイルは、狙った1か所だけが、実物と違う。
+    doc = json.loads(GENERATED["cars body.mass_kg wrong type"][2][CARS])["cars"][0]
+    assert doc["body"]["mass_kg"] == "x" and {**doc, "body": {**doc["body"], "mass_kg": 960.0}} == real_car()
+    assert "mass_kg" not in json.loads(GENERATED["cars body.mass_kg missing"][2][CARS])["cars"][0]["body"]
+    # どの鍵にも、鍵を消した場合。数の鍵には、型の違いと、範囲の外の、2通り。入れ子の項目と並びには、型の違い。
+    for table, definition in TABLES.items():
+        for path in key_paths(definition.fields):
+            rule = rules_along(definition.fields, path)[-1][1]
+            want = {"missing"} | ({"wrong type", "out of range"} if type(rule) is Num else set())
+            want |= {"wrong type"} if type(rule) is Obj else {"wrong type", "empty"} if type(rule) is ListOf else set()
+            assert {name.rsplit(f" {path} ", 1)[1] for name in GENERATED if name.startswith(f"{table} {path} ")} == want, (table, path)
+    # 実物の表の定義の、数の鍵の数（足したら、ここも変える。鍵が、規則ごと消えていないこと）。
+    numbers = [path for table in TABLES.values() for path in key_paths(table.fields) if type(rules_along(table.fields, path)[-1][1]) is Num]
+    assert len(numbers) == 79
+
+
+# --- 項目をまたぐ検査の口（TableDef.check）。作り物の表の定義で、呼ばれる条件と、問題の行の形を見る ---
+def checked_tables(check) -> dict:
+    return {
+        "cars": TableDef(ONE_TABLE, {"id": Ident(), "low": Num(0, 10), "high": Num(0, 10), "points": Opt(ListOf(Obj({"x": Num(0, 9)}), 0, 4))}, check),
+        "tracks": TableDef(ONE_ENTRY, {"id": Ident(), "length": Num(0, 100)}, check),
+    }
+
+
+def checked_sources(cars, track=None) -> dict:
+    return {"cars.json": json.dumps({"cars": cars}), "tracks/test_loop.json": json.dumps({"id": "test_loop", "length": 5} if track is None else track)}
+
+
+def low_above_high(entry: dict) -> list:
+    """作り物の検査。low が high より大きければ、問題（鍵の道は low）。並びの点は、x が昇順でなければ、その点の問題。"""
+    problems = [(("low",), f"{entry['low']} is above high ({entry['high']})")] if "low" in entry and entry["low"] > entry["high"] else []
+    points = entry.get("points", [])
+    problems += [(("points", index, "x"), "x does not rise") for index in range(1, len(points)) if points[index]["x"] <= points[index - 1]["x"]]
+    if entry.get("length") == 13:
+        problems += [((), "an unlucky length"), (("length",), "13 is not accepted")]
+    return problems
+
+
+def test_datadefs_cross_check_lines_have_the_file_and_the_key_path_like_any_other_problem():
+    tables = checked_tables(low_above_high)
+    cars = [{"id": "a", "low": 1, "high": 2}, {"id": "b", "low": 5, "high": 2, "points": [{"x": 1}, {"x": 1}, {"x": 0}]}, {"id": "c", "low": 9, "high": 0}]
+    assert load_game_data(checked_sources(cars[:1]), tables=tables).ids("cars") == ("a",)
+    assert problems_of(checked_sources(cars, {"id": "test_loop", "length": 13}), tables=tables) == [
+        "cars.json:cars[1].low: 5 is above high (2)",
+        "cars.json:cars[1].points[1].x: x does not rise",
+        "cars.json:cars[1].points[2].x: x does not rise",
+        "cars.json:cars[2].low: 9 is above high (0)",
+        "tracks/test_loop.json: an unlucky length",  # 鍵の道が空なら、項目そのものの問題
+        "tracks/test_loop.json:length: 13 is not accepted",
+    ]
+    # 試験用データの中の項目も、同じ。頭に testpacks/<名>/ が付く。
+    pack = {"cars.json": json.dumps({"cars": [{"id": "a", "low": 3, "high": 2}]})}
+    assert problems_of(checked_sources(cars[:1]), ("p", pack), tables) == ["testpacks/p/cars.json:cars[0].low: 3 is above high (2)"]
+
+
+def test_datadefs_cross_check_is_called_only_for_entries_that_pass_every_key_rule():
+    seen = []
+
+    def remember(entry: dict) -> list:
+        seen.append(entry)
+        return [(("low",), "checked")]
+
+    tables = checked_tables(remember)
+    cars = [
+        {"id": "ok", "low": 1, "high": 2, "_note": "x", "points": [{"x": 1, "_why": "y"}]},
+        {"id": "range", "low": 11, "high": 2},  # 範囲の外
+        {"id": "unknown", "low": 1, "high": 2, "hgih": 3},  # 知らない鍵
+        {"id": "missing", "low": 1},  # 足りない鍵
+        {"id": "Bad Id", "low": 1, "high": 2},  # id の規則
+        {"low": 1, "high": 2},  # id が無い
+        {"id": "nested", "low": 1, "high": 2, "points": [{"x": 99}]},  # 並びの中の値
+    ]
+    got = problems_of(checked_sources(cars), tables=tables)
+    assert [line for line in got if line.endswith(": checked")] == ["cars.json:cars[0].low: checked", "tracks/test_loop.json:low: checked"]
+    assert len(got) == 2 + 6  # ほかの6つの項目は、鍵ごとの規則の問題が1件ずつ。検査の関数は、呼ばれない
+    # 検査の関数へは、注の鍵を落とした、複製が渡る（書き換えても、読み込んだ定義に響かない）。
+    assert seen == [{"id": "ok", "low": 1, "high": 2, "points": [{"x": 1}]}, {"id": "test_loop", "length": 5}]
+
+    def scribble(entry: dict) -> list:
+        entry["low"] = 99
+        entry.setdefault("points", []).append({"x": 5})
+        return []
+
+    data = load_game_data(checked_sources(cars[:1]), tables=checked_tables(scribble))
+    assert data.entry("cars", "ok") == {"id": "ok", "low": 1, "high": 2, "points": [{"x": 1}]}
+
+
+@pytest.mark.parametrize(
+    "error, text",
+    [
+        (ZeroDivisionError("float division by zero"), "ZeroDivisionError: float division by zero"),
+        (ValueError("math domain error"), "ValueError: math domain error"),
+        (IndexError("tuple index out of range"), "IndexError: tuple index out of range"),
+        (OverflowError("cannot convert float infinity to integer"), "OverflowError: cannot convert float infinity to integer"),
+        (KeyError("gears"), "KeyError: 'gears'"),
+        (TypeError("unsupported operand"), "TypeError: unsupported operand"),
+    ],
+)
+def test_datadefs_cross_check_that_raises_becomes_a_problem_line_of_the_entry(error, text):
+    # 検査の関数が、計算の例外を出しても、DataError のほかの例外は、外へ出ない。その項目の問題の行になり、ほかの問題も並ぶ。
+    def explode(entry: dict) -> list:
+        if entry["id"] in ("b", "test_loop"):
+            raise error
+        return []
+
+    tables = checked_tables(explode)
+    cars = [{"id": "a", "low": 1, "high": 2}, {"id": "b", "low": 1, "high": 2}, {"id": "c", "low": 1, "high": 99}]
+    assert problems_of(checked_sources(cars), tables=tables) == [
+        f"cars.json:cars[1]: cannot check the entry ({text})",
+        "cars.json:cars[2].high: 99 is outside 0..10",
+        f"tracks/test_loop.json: cannot check the entry ({text})",
+    ]
+
+
+def test_datadefs_real_cross_checks_run_only_when_the_key_rules_pass_and_list_everything():
+    # 実物の表の定義で。変速比の順と、足りない鍵を、同じ車に仕込む。並ぶのは、足りない鍵だけ（規則を通らない値で、検査を始めない）。
+    both = edited(CARS, lambda doc: (doc["cars"][0]["drivetrain"].update(gears=[1.0, 2.0]), doc["cars"][0]["body"].pop("mass_kg")))
+    assert problems_of(both) == ["cars.json:cars[0].body.mass_kg: missing"]
+    # 車の矛盾2つと、コースの形の誤り2つ。4つとも並ぶ。
+    sources = edited(CARS, lambda doc: (
+        doc["cars"][0]["drivetrain"].update(gears=[3.0, 3.5, 1.0]), doc["cars"][0]["engine"]["torque_curve"][1].update(rpm=900.0),
+    ))
+    sources = edited(LOOP, lambda doc: doc.update(grass_m=34.0, start={"s_m": 900.0, "lateral_m": 0.0}), sources)
+    assert problems_of(sources) == [
+        "cars.json:cars[0].drivetrain.gears[1]: gear ratio 3.5 is not below the gear before it (3.0)",
+        "cars.json:cars[0].engine.torque_curve[1].rpm: rpm 900.0 is not above the point before it (1000.0)",
+        "tracks/test_loop.json:control_points: the inner wall (40.0 m from the centre line) folds over at s=679 m (radius 44.8 m)",
+        "tracks/test_loop.json:start.s_m: 900.0 is beyond the lap length 732.7 m",
+    ]
+
+
+# 見張りそのものの確かめ。実物の表の定義は、省ける項目を持たないので、作り物の表の定義（入れ子の項目、並びの中の項目、
 # 省ける項目の中の項目。2つのファイルの形）で、見張りが、奥の鍵と、札の食い違いを拾うことを見る。
 GUARD_TABLES = {
     "cars": TableDef(ONE_TABLE, {
@@ -874,7 +1313,21 @@ def test_datadefs_broken_case_guard_collects_the_key_paths_down_to_the_nested_ke
     assert key_paths(FAKE_TABLES["cars"].fields) == [
         "id", "name", "turbo", "sound", "gears", "engine", "engine.idle_rpm", "engine.curve", "engine.curve.rpm", "engine.curve.torque", "extras",
     ]
-    assert key_paths(TABLES["cars"].fields) == ["id", "name", "data_version"]  # 実物は、まだ頭の階だけ
+    # 実物。入れ子の項目と、並びの中の項目の鍵まで、開く。
+    assert key_paths(TABLES["tracks"].fields) == [
+        "id", "name", "data_version", "table", "table.sample_step_m", "table.dense_step_m", "width_m", "grass_m",
+        "surface_mu", "surface_mu.asphalt", "surface_mu.grass", "wall", "wall.restitution", "wall.friction",
+        "start", "start.s_m", "start.lateral_m", "control_points", "control_points.x_m", "control_points.z_m",
+    ]
+    assert key_paths(TABLES["assists"].fields) == [
+        "id", "steer", "steer.limit_mu_min", "steer.limit_min_speed_m_s",
+        "steer.analog", "steer.analog.limit_ka", "steer.analog.limit_km", "steer.analog.full_time_s",
+        "steer.digital", "steer.digital.limit_ka", "steer.digital.limit_km", "steer.digital.full_time_s",
+        "reverse", "reverse.stop_speed_m_s", "reverse.brake_hold_s", "reverse.pedal_press_min",
+    ]
+    car_paths = key_paths(TABLES["cars"].fields)
+    assert car_paths[:5] == ["id", "name", "data_version", "body", "body.mass_kg"] and len(car_paths) == 72
+    assert {"engine.torque_curve", "engine.torque_curve.rpm", "engine.torque_curve.ratio", "drivetrain.gears", "outputs.yaw_ref_min_speed_m_s"} <= set(car_paths)
     # 問題の行の場所を、鍵の道にする。
     assert key_path_of("cars.json:cars[0].engine.curve[1].rpm: -1 is outside 0..9000", "cars", GUARD_TABLES) == "engine.curve.rpm"
     assert key_path_of("testpacks/p/cars.json:cars[12].id: duplicate id 'kazane'", "cars", GUARD_TABLES) == "id"

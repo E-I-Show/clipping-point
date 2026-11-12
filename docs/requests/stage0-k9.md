@@ -226,3 +226,65 @@
 5. 推奨の案で決めた細目
 6. 「実測して、報告に書くこと」の6点（前半の回は、その回で測れるものだけ。測れなかったものは、後半へ、と書く）
 7. 前半の回だけ：後半が使う口の一覧（モジュール、関数やクラスの名、引数と返す値、単位）
+
+## 前半の回の結果（後半の回は、ここから読む）
+
+前半の回（2026-11-12）が作った口と、決めたこと。実物のコードが正しい（食い違っていたら、コードに合わせて、報告に書く）。
+
+### 後半が使う口
+
+`cp_core/vehicle.py`
+
+- `spec_from_entry(entry) -> CarSpec`。`entry` は `GameData.entry("cars", id)`。
+- `CarSpec`（書き換えられない）。世界と操作補正が読む値：`car_id`、`max_steer`（rad）、`wheelbase`（m）、`peak_slip`（rad）、`tire_mu`、`half_length`、`half_width`（m）、`mass`（kg）。
+- `Car(spec)`
+  - `reset(x, z, heading, speed=0.0)`：m、m、rad、m/s（負は後ろ向き）。ATなら、速さに合うギアを選ぶ。
+  - `step(steer_cmd, throttle, brake, mu) -> None`：rad（左が正）、0〜1、0〜1、路面の摩擦係数。範囲の外は `ValueError`。
+  - `relocate(x, z, wvx, wvz)`：m、m/s（世界座標）。車体座標の速度と速さも置き直す。向き、ヨーレート、ギアは変えない。
+  - `shift_to_reverse() -> bool`（1速で、変速中でなければ True）、`shift_to_forward() -> bool`、`shift_up() -> bool`、`shift_down() -> bool`。
+  - 属性：`x`、`z`（m）、`heading`（rad。−π〜π）、`wvx`、`wvz`（m/s。世界座標）、`vx`、`vy`（m/s。車体座標）、`speed`（m/s。0以上）、`yaw_rate`（rad/s）、`steer`（rad。実舵角）、`gear`（後退は −1、前進は1〜5）、`rpm`、`shift_t`（秒）。`state() -> tuple`。
+- 定数：`REVERSE`（−1）、`GRAVITY`、`DT`、`SUBSTEPS`。
+
+`cp_core/track.py`
+
+- `build_track(entry) -> Track`。`entry` は `GameData.entry("tracks", id)`。同じ中身なら、同じ表が返る（直近4個まで覚える）。
+- `Track`（書き換えられない）
+  - `query(x, z, hint=None) -> TrackQuery`。`hint` は前回の `index`。項目：`index`、`s`（m。0以上、全長未満）、`lateral`（m。左が正）、`heading`（rad）、`curvature`（1/m）、`surface`（`"asphalt"` か `"grass"`）、`half_left`、`half_right`、`wall_left`、`wall_right`、`to_wall_left`、`to_wall_right`（m）、`height`（いつも0.0）、`requeried`（bool）。
+  - `pose_at(s, lateral=0.0) -> (x, z, heading)`、`start_pose() -> (x, z, heading)`、`surface_mu(surface) -> float`。
+  - `push_out(query, x, z, wvx, wvz, heading, half_length, half_width) -> (x, z, wvx, wvz, hit, impact)`。`impact` は、壁へ向かっていた速さ（m/s）。車へ置くのは、呼ぶ側の `car.relocate()`。
+  - `track_id`、`length`（m）、`n`、`ds`（m）、`start_s`、`start_lateral`。
+
+`cp_core/controls.py`
+
+- `params_from_entry(entry) -> ControlParams`。`entry` は `GameData.entry("assists", controls.DEFAULT_SET)`。
+- `ControlState()`：`steer`（rad）、`brake_hold_ticks`（整数）。世界が持つ。
+- `step(params, state, frame, speed, gear, max_steer, wheelbase, peak_slip, tire_mu, surface_mu) -> Command`。`speed` は `car.speed`、`gear` は `car.gear`、車の4つは `CarSpec` の同じ名の値。
+- `Command(steer, throttle, brake, shift)`：rad、0〜1、0〜1、`SHIFT_NONE`／`SHIFT_TO_REVERSE`／`SHIFT_TO_FORWARD`。
+
+世界が1 tickでする形（`tests/test_controls.py` の `drive()` と同じ）：
+
+```python
+cmd = controls.step(params, state, frame, car.speed, car.gear, spec.max_steer, spec.wheelbase, spec.peak_slip, spec.tire_mu, mu)
+if cmd.shift == controls.SHIFT_TO_REVERSE:
+    entered = car.shift_to_reverse()  # True のときだけ、後退に入った
+elif cmd.shift == controls.SHIFT_TO_FORWARD:
+    car.shift_to_forward()
+car.step(cmd.steer, cmd.throttle, cmd.brake, mu)
+q = track.query(car.x, car.z, hint)  # q.requeried を数える。hint = q.index
+x, z, wvx, wvz, hit, impact = track.push_out(q, car.x, car.z, car.wvx, car.wvz, car.heading, spec.half_length, spec.half_width)
+if hit:
+    car.relocate(x, z, wvx, wvz)
+mu = track.surface_mu(q.surface)  # 次のtickへ
+```
+
+### 後半で気を付ける所（前半の報告から）
+
+- 照会は、別の道の区間を `hint` に渡すと、その道の上の答えを返す（取り直さない）。車を、離れた所へ置き直した後（テストと道具の、置き直す口）は、`hint` を None にする。
+- `push_out` の後の `q.s` と `q.lateral` は、押し戻す前の位置の値。要約に入れる値は、押し戻した後の位置で、どう取るかを決める（取り直しに数えない形で）。
+- 変速の回数は、`step` の前後の `car.gear` を比べれば数えられる。後退の出入りも変わるので、後退に入った回数は、`shift_to_reverse()` の戻り値で数える。
+- 変速は、13 tickかかる（0.2秒＝12 tickではない。試作のまま）。
+- 高いギアのまま壁で止まると、ATが1速へ下げ終わるまで、後退へ入れない（5速からは約0.9秒。指示は毎tick出る）。
+- 無い id は `KeyError`。起動時に、分かる文にする。
+- 規則ファイル `data.md`（7,976バイト）と `controls.md`（7,949バイト）は、上限8,000の間際。足すなら、ほかへ書くか、短くしてから。
+- 表 `assists` は、アナログ操作用とデジタル操作用の2組を、1つの項目（id は `default`）の中に持つ。
+- わざと壊す検査（selftest-break）は、前半の後に、主が、並列に回す形へ短くする予定（後半の回を始めるときに、主が、状態を伝える）。

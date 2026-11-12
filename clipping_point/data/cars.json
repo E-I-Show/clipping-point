@@ -1,13 +1,109 @@
 {
   "_notes": {
-    "cars": "仮の値：車は1台だけ。項目は、id、表示名、データの版の3つだけ。走りの値は、使う側を作る段0 区切り9で足す。",
-    "name": "仮の値：車名の後ろの型番を画面に付けるかは、未定。車名を出す画面を作る段1で合わせる。"
+    "cars": "仮の値：車は1台だけ。走りの値は、設計時の試作（spikes/vehicle/vehicle.py）の、カザネ RS の、標準のセッティングの値。式の値（タイヤの式、LSD、ATの変速点、変速時間、エンジンブレーキ）も、車の項目に持つ。鍵の名の終わりは単位（_kg、_m、_rad、_s、_rpm、_ps、_n、_m_s、_m2）。合わせるのは、段1の「車両モデル」の区切りと、段4。",
+    "name": "仮の値：車名の後ろの型番を画面に付けるかは、未定。車名を出す画面を作る段1で合わせる。",
+    "body": "仮の値：front_weight は、前軸の重量配分。yaw_inertia_k は、ヨーの慣性モーメントの係数（質量×重心から前軸まで×重心から後軸まで に掛ける）。half_length_m と half_width_m は、壁の当たりに使う、車体の半長と半幅（試作の、壁の押し戻しの値）。合わせるのは、段1と段4。",
+    "steering": "仮の値：max_steer_rad は、車の最大舵角（約31.5度）。合わせるのは、段1の「入力と操作補正」の区切り。",
+    "engine": "仮の値：torque_curve は、回転数ごとの、トルクの割合（読み込むときに、最高出力が power_ps になる倍率を掛ける）。torque_step_rpm は、トルクの表の刻み。engine_brake_k は、エンジンブレーキの係数（最大トルク÷回転数の上限 に掛ける）。rpm_smooth_s は、回転数の表示の値をならす時間。launch_rpm は、全開で発進するときの回転数。合わせるのは、段1と段4。",
+    "drivetrain": "仮の値：front_drive は、駆動力の、前軸の取り分（0＝FR）。shift_down_k と shift_down_first_k は、ATが下げる線（shift_up_rpm に掛ける。2速から1速へだけ、低い）。shift_time_s の間は、駆動力が0。合わせるのは、段1と段4。",
+    "lsd": "仮の値：lock は、ロック率（セッティングのトラクションの、標準の値）。coupling_n_s_per_m は、左右の車輪の速さの差（m/s）に対して移す力。preload_n と ramp は、移せる力の上限（プリロードと、駆動力に比例する分）。セッティングの対応は、段1で作り直す。",
+    "tires": "仮の値：peak_slip_rad は、タイヤが最大グリップを出す滑り角（7.5度）。curve_c、ellipse_k、spin_k、slide_force、slide_full_inv、load_k は、タイヤの式の値（意味は cp_core/vehicle.py の CarSpec の注）。low_speed_reg_m_s は、低速の正則化。合わせるのは、段1と段4。",
+    "suspension": "仮の値：load_transfer_s は、荷重移動をならす時間（セッティングのサスペンションの、標準の値）。roll_front は、左右の荷重移動のうち、前軸の取り分。合わせるのは、段1と段4。",
+    "brakes": "仮の値：force_g は、ブレーキを踏み切ったときの制動の要求（車の重さに対する割合）。front_share は、前軸の取り分の、標準の値（前軸の重量配分＋重心の高さ÷ホイールベース＋0.02 を、試作と同じ値になるように、丸めずに置いた）。セッティングのブレーキバランスは、段1で足す。",
+    "aero": "仮の値：drag_area_m2 と lift_area_m2 は、空気抵抗とダウンフォースの係数（Cd×面積、Cl×面積）。front_share は、ダウンフォースの、前軸の取り分。セッティングのウイングは、段1で足す。",
+    "rest": "仮の値：静止への吸い付き。アクセルを離していて、速さと、ヨーレートの大きさが、この値未満なら、ちょうど0にする。試作の値。合わせるのは、段1。",
+    "outputs": "仮の値：操作補正とアシストへ出す量（滑り角、ヨーレートの目標、限界を超えたか）を計算するときの、速さの下限。試作の値。使う側（操作補正とアシスト）を作る段1で合わせる。"
   },
   "cars": [
     {
       "id": "kazane",
       "name": "KAZANE",
-      "data_version": 1
+      "data_version": 1,
+      "body": {
+        "mass_kg": 960.0,
+        "wheelbase_m": 2.27,
+        "track_m": 1.42,
+        "front_weight": 0.51,
+        "cg_height_m": 0.46,
+        "yaw_inertia_k": 0.95,
+        "half_length_m": 2.1,
+        "half_width_m": 0.85
+      },
+      "steering": {
+        "max_steer_rad": 0.55
+      },
+      "engine": {
+        "power_ps": 145.0,
+        "idle_rpm": 850.0,
+        "redline_rpm": 7200.0,
+        "launch_rpm": 4500.0,
+        "torque_step_rpm": 25.0,
+        "engine_brake_k": 0.18,
+        "rpm_smooth_s": 0.06,
+        "torque_curve": [
+          {"rpm": 1000.0, "ratio": 0.72},
+          {"rpm": 2500.0, "ratio": 0.88},
+          {"rpm": 4500.0, "ratio": 1.0},
+          {"rpm": 5500.0, "ratio": 0.98},
+          {"rpm": 6500.0, "ratio": 0.9},
+          {"rpm": 7200.0, "ratio": 0.78}
+        ]
+      },
+      "drivetrain": {
+        "front_drive": 0.0,
+        "gears": [3.136, 1.888, 1.33, 1.0, 0.86],
+        "reverse_gear": 3.0,
+        "final_gear": 4.3,
+        "efficiency": 0.9,
+        "wheel_radius_m": 0.29,
+        "shift_up_rpm": 7000.0,
+        "shift_down_k": 0.75,
+        "shift_down_first_k": 0.55,
+        "shift_time_s": 0.2
+      },
+      "lsd": {
+        "lock": 0.4,
+        "coupling_n_s_per_m": 4000.0,
+        "preload_n": 300.0,
+        "ramp": 0.25
+      },
+      "tires": {
+        "mu": 1.0,
+        "grip_front": 1.0,
+        "grip_rear": 1.0,
+        "peak_slip_rad": 0.1308996938995747,
+        "curve_c": 1.4,
+        "ellipse_k": 0.94,
+        "spin_k": 4.0,
+        "slide_force": 0.85,
+        "slide_full_inv": 2.0,
+        "load_k": 0.15,
+        "rolling_resistance": 0.014,
+        "low_speed_reg_m_s": 0.5
+      },
+      "suspension": {
+        "load_transfer_s": 0.14,
+        "roll_front": 0.53
+      },
+      "brakes": {
+        "force_g": 1.25,
+        "front_share": 0.7326431718061674
+      },
+      "aero": {
+        "drag_area_m2": 0.62,
+        "lift_area_m2": 0.3,
+        "front_share": 0.42
+      },
+      "rest": {
+        "speed_m_s": 0.01,
+        "yaw_rate_rad_s": 0.01
+      },
+      "outputs": {
+        "slip_min_speed_m_s": 0.3,
+        "slip_speed_floor_m_s": 1.0,
+        "limit_min_speed_m_s": 1.0,
+        "yaw_ref_min_speed_m_s": 3.0
+      }
     }
   ]
 }

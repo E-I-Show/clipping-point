@@ -177,6 +177,8 @@ Pyxel 3.0の3D機能（Pyxel Cube）で作る、初代PS時代風ローポリゴ
 | `.claude/rules/sim-core.md` | 固定刻みの間引き（`cp_core/fixed_loop.py`）、世界（`cp_core/sim.py`）、乱数（`cp_core/rng.py`）、指紋の照合（`tools/fingerprint.py`）、そのテスト |
 | `.claude/rules/ui.md` | `cp_ui/`（描画命令、画面、はみ出しの検査、見本データ）、描画命令の実行（`cp_app/canvas_pyxel.py`）、画面の名の一覧（`cp_core/flow.py`）、巡回の口（`cp_app/tour.py`）、道具 screen-check と tour、そのテスト |
 | `.claude/rules/web.md` | ブラウザ版の煙テスト（`tools/web_smoke.py`、`tools/web/`）とブラウザ連携（`cp_app/web_bridge.py`）、そのテスト |
-| `.claude/rules/controls.md` | 入力フレームと台本（`cp_core/input_frame.py`、`input_script.py`）、入力アダプタ、直読み、入力の跡（`cp_app/input_pyxel.py`、`input_web.py`、`input_trace.py`）、偽のコントローラー、そのテスト |
+| `.claude/rules/controls.md` | 入力フレームと台本（`cp_core/input_frame.py`、`input_script.py`）、入力アダプタ、直読み、入力の跡（`cp_app/input_pyxel.py`、`input_web.py`、`input_trace.py`）、偽のコントローラー、操作補正の最小版（`cp_core/controls.py`、`data/assists.json`）、そのテスト |
 | `.claude/rules/save.md` | 保存の口と保存する項目（`cp_core/storage.py`、`profile.py`）、保存先と、保存先を選ぶ所（`cp_app/storage_file.py`、`storage_web.py`、`storage_select.py`）、保存先に触れると例外にするスクリプト（`tools/web/block_storage.js`）、そのテスト |
 | `.claude/rules/data.md` | 定義データの読み込み検査と重ね方（`cp_core/datadefs.py`）、ファイルを読む所（`cp_app/data_files.py`）、実物の定義データ（`clipping_point/data/`）、試験用データ（`testpacks/`）、そのテスト |
+| `.claude/rules/vehicle.md` | 車両モデル（`cp_core/vehicle.py`）、車の定義データ（`data/cars.json`）、そのテスト |
+| `.claude/rules/track.md` | コースの表、照会、壁の押し戻し、形の検査（`cp_core/track.py`）、コースの定義データ（`data/tracks/`）、制御点を作る補助（`tools/claude/make_test_loop.py`）、そのテスト |

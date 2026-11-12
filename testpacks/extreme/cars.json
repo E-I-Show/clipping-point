@@ -1,19 +1,189 @@
 {
   "_notes": {
     "pack": "試験用データ（extreme）。表示名の上限いっぱい（14字）の値を重ねて試す。出荷物に入らない（clipping_point/ の外に置く）。",
-    "kazane": "出荷するデータの車（kazane）の表示名を、14字に差し替える。",
-    "wide_test_car": "14字の表示名の車を、1台足す。"
+    "kazane": "出荷するデータの車（kazane）の表示名を、14字に差し替える。走りの値は、出荷するデータと同じ値（項目ごと差し替える重ね方なので、全部の鍵を持つ）。",
+    "wide_test_car": "14字の表示名の車を、1台足す。走りの値は、出荷するデータの車（kazane）と同じ値。極端な走りの値は、ここでは試さない。"
   },
   "cars": [
     {
       "id": "kazane",
       "name": "KAZANE RS TEST",
-      "data_version": 1
+      "data_version": 1,
+      "body": {
+        "mass_kg": 960.0,
+        "wheelbase_m": 2.27,
+        "track_m": 1.42,
+        "front_weight": 0.51,
+        "cg_height_m": 0.46,
+        "yaw_inertia_k": 0.95,
+        "half_length_m": 2.1,
+        "half_width_m": 0.85
+      },
+      "steering": {
+        "max_steer_rad": 0.55
+      },
+      "engine": {
+        "power_ps": 145.0,
+        "idle_rpm": 850.0,
+        "redline_rpm": 7200.0,
+        "launch_rpm": 4500.0,
+        "torque_step_rpm": 25.0,
+        "engine_brake_k": 0.18,
+        "rpm_smooth_s": 0.06,
+        "torque_curve": [
+          {"rpm": 1000.0, "ratio": 0.72},
+          {"rpm": 2500.0, "ratio": 0.88},
+          {"rpm": 4500.0, "ratio": 1.0},
+          {"rpm": 5500.0, "ratio": 0.98},
+          {"rpm": 6500.0, "ratio": 0.9},
+          {"rpm": 7200.0, "ratio": 0.78}
+        ]
+      },
+      "drivetrain": {
+        "front_drive": 0.0,
+        "gears": [3.136, 1.888, 1.33, 1.0, 0.86],
+        "reverse_gear": 3.0,
+        "final_gear": 4.3,
+        "efficiency": 0.9,
+        "wheel_radius_m": 0.29,
+        "shift_up_rpm": 7000.0,
+        "shift_down_k": 0.75,
+        "shift_down_first_k": 0.55,
+        "shift_time_s": 0.2
+      },
+      "lsd": {
+        "lock": 0.4,
+        "coupling_n_s_per_m": 4000.0,
+        "preload_n": 300.0,
+        "ramp": 0.25
+      },
+      "tires": {
+        "mu": 1.0,
+        "grip_front": 1.0,
+        "grip_rear": 1.0,
+        "peak_slip_rad": 0.1308996938995747,
+        "curve_c": 1.4,
+        "ellipse_k": 0.94,
+        "spin_k": 4.0,
+        "slide_force": 0.85,
+        "slide_full_inv": 2.0,
+        "load_k": 0.15,
+        "rolling_resistance": 0.014,
+        "low_speed_reg_m_s": 0.5
+      },
+      "suspension": {
+        "load_transfer_s": 0.14,
+        "roll_front": 0.53
+      },
+      "brakes": {
+        "force_g": 1.25,
+        "front_share": 0.7326431718061674
+      },
+      "aero": {
+        "drag_area_m2": 0.62,
+        "lift_area_m2": 0.3,
+        "front_share": 0.42
+      },
+      "rest": {
+        "speed_m_s": 0.01,
+        "yaw_rate_rad_s": 0.01
+      },
+      "outputs": {
+        "slip_min_speed_m_s": 0.3,
+        "slip_speed_floor_m_s": 1.0,
+        "limit_min_speed_m_s": 1.0,
+        "yaw_ref_min_speed_m_s": 3.0
+      }
     },
     {
       "id": "wide_test_car",
       "name": "WWWWWWWWWWWWWW",
-      "data_version": 1
+      "data_version": 1,
+      "body": {
+        "mass_kg": 960.0,
+        "wheelbase_m": 2.27,
+        "track_m": 1.42,
+        "front_weight": 0.51,
+        "cg_height_m": 0.46,
+        "yaw_inertia_k": 0.95,
+        "half_length_m": 2.1,
+        "half_width_m": 0.85
+      },
+      "steering": {
+        "max_steer_rad": 0.55
+      },
+      "engine": {
+        "power_ps": 145.0,
+        "idle_rpm": 850.0,
+        "redline_rpm": 7200.0,
+        "launch_rpm": 4500.0,
+        "torque_step_rpm": 25.0,
+        "engine_brake_k": 0.18,
+        "rpm_smooth_s": 0.06,
+        "torque_curve": [
+          {"rpm": 1000.0, "ratio": 0.72},
+          {"rpm": 2500.0, "ratio": 0.88},
+          {"rpm": 4500.0, "ratio": 1.0},
+          {"rpm": 5500.0, "ratio": 0.98},
+          {"rpm": 6500.0, "ratio": 0.9},
+          {"rpm": 7200.0, "ratio": 0.78}
+        ]
+      },
+      "drivetrain": {
+        "front_drive": 0.0,
+        "gears": [3.136, 1.888, 1.33, 1.0, 0.86],
+        "reverse_gear": 3.0,
+        "final_gear": 4.3,
+        "efficiency": 0.9,
+        "wheel_radius_m": 0.29,
+        "shift_up_rpm": 7000.0,
+        "shift_down_k": 0.75,
+        "shift_down_first_k": 0.55,
+        "shift_time_s": 0.2
+      },
+      "lsd": {
+        "lock": 0.4,
+        "coupling_n_s_per_m": 4000.0,
+        "preload_n": 300.0,
+        "ramp": 0.25
+      },
+      "tires": {
+        "mu": 1.0,
+        "grip_front": 1.0,
+        "grip_rear": 1.0,
+        "peak_slip_rad": 0.1308996938995747,
+        "curve_c": 1.4,
+        "ellipse_k": 0.94,
+        "spin_k": 4.0,
+        "slide_force": 0.85,
+        "slide_full_inv": 2.0,
+        "load_k": 0.15,
+        "rolling_resistance": 0.014,
+        "low_speed_reg_m_s": 0.5
+      },
+      "suspension": {
+        "load_transfer_s": 0.14,
+        "roll_front": 0.53
+      },
+      "brakes": {
+        "force_g": 1.25,
+        "front_share": 0.7326431718061674
+      },
+      "aero": {
+        "drag_area_m2": 0.62,
+        "lift_area_m2": 0.3,
+        "front_share": 0.42
+      },
+      "rest": {
+        "speed_m_s": 0.01,
+        "yaw_rate_rad_s": 0.01
+      },
+      "outputs": {
+        "slip_min_speed_m_s": 0.3,
+        "slip_speed_floor_m_s": 1.0,
+        "limit_min_speed_m_s": 1.0,
+        "yaw_ref_min_speed_m_s": 3.0
+      }
     }
   ]
 }

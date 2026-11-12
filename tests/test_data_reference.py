@@ -81,11 +81,11 @@ def test_data_reference_file_it_cannot_count_is_a_value_error_and_no_count(tmp_p
 def test_data_reference_real_counts_agree_with_the_loader_of_the_app():
     # 道具の数え方（標準のJSONの読みと、ファイルの一覧）と、アプリの読み込み（読み込み検査と重ね方）が、実物で同じ数になる。
     tables, why = data_reference.expected_tables()
-    assert why == "" and tables == data_files.load({}, None).counts() == {"cars": 1, "tracks": 1}
+    assert why == "" and tables == data_files.load({}, None).counts() == {"cars": 1, "tracks": 1, "assists": 1}
     for name in data_reference.pack_names():
         tables, why = data_reference.expected_tables(name)
         assert why == "" and tables == data_files.load({data_files.PACK_ENV: name}, None).counts(), name
-    assert data_reference.expected_tables("extreme")[0] == {"cars": 2, "tracks": 2}
+    assert data_reference.expected_tables("extreme")[0] == {"cars": 2, "tracks": 2, "assists": 1}  # 重ねなかった表（操作補正）は、そのまま
     assert data_reference.DATA_DIR == ROOT / "clipping_point" / "data" and data_reference.PACKS_ROOT == ROOT / "testpacks"
     assert "extreme" in data_reference.pack_names() and data_reference.pack_names(ROOT / "no_such_packs") == []
 

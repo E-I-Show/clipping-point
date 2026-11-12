@@ -377,7 +377,25 @@ CAR_NAME = '      "name": "KAZANE",\n'  # 実物の車の、表示名の行
 CAR_NAME_VALUE = '"name": "KAZANE"'
 CAR_VERSION = '"data_version": 1'  # 実物の車の、データの版
 CAR_TABLE_END = "    }\n  ]"  # 実物の車の表の、並びの終わり
-SECOND_CAR_WITH_THE_SAME_ID = '    },\n    {\n      "id": "kazane",\n      "name": "KAZANE TWO",\n      "data_version": 1\n    }\n  ]'
+CAR_TABLE_HEAD = '  "cars": [\n'  # 実物の車の表の、並びの頭
+NO_SUCH_TEXT = "\0 no such text \0"  # どのファイルにも無い文。壊し方を作れなかったときに、置けない壊し方にするために使う
+
+
+def second_car_with_the_same_id() -> list:
+    """実物の車の表に、実物の項目の複製（同じ id）を、2台目として足す。作れなければ、置けない壊し方。
+
+    3つの鍵だけの項目を足す形にしない（足りない鍵の問題も並んで、id の重複だけの確かめにならない）。
+    """
+    try:
+        text = (ROOT / CARS_JSON).read_text(encoding="utf-8")
+    except OSError:
+        return [rep(CARS_JSON, NO_SUCH_TEXT, "")]
+    if text.count(CAR_TABLE_HEAD) != 1 or text.count(CAR_TABLE_END) != 1:
+        return [rep(CARS_JSON, NO_SUCH_TEXT, "")]
+    entry = text[text.index(CAR_TABLE_HEAD) + len(CAR_TABLE_HEAD):text.index(CAR_TABLE_END)] + "    }"  # 実物の項目の、頭の { から、終わりの } まで
+    return [rep(CARS_JSON, CAR_TABLE_END, "    },\n" + entry + "\n  ]")]
+
+
 DATA_UNKNOWN_KEY = rep(CARS_JSON, CAR_NAME, CAR_NAME + '      "nmae": "KAZANE",\n')  # 出荷するデータに、知らない鍵（鍵の名の打ち間違い）
 DATA_CARS_DELETED = rm(CARS_JSON)
 PACK_NAME_TOO_LONG = rep(PACK_CARS_JSON, '"name": "WWWWWWWWWWWWWW"', '"name": "WWWWWWWWWWWWWWW"')  # 試験用データの表示名を、15字にする
@@ -409,6 +427,72 @@ PACK_WARNINGS = '            problems += [f"({path.name}) warning: {line}" for l
 # 項目の中の、注の鍵の値に NaN を置く。規則の部品は、注の鍵を見ない。拾えるのは、JSONの文を読む所で NaN を受けない検査だけ。
 DATA_NAN_IN_A_NOTE = rep(CARS_JSON, CAR_NAME, CAR_NAME + '      "_trial": NaN,\n')
 APP_ENV_LIST = 'APP_ENV_PREFIXES = ("CP_SMOKE", "CP_TOUR", "CP_SAVE", "CP_DATA")'  # 道具が、子プロセスへ渡さない環境変数の名の頭
+
+# --- 車両モデル、コース、操作補正、車とコースの定義データ（段0 区切り9） ---
+VEHICLE_PY = "clipping_point/cp_core/vehicle.py"
+TRACK_PY = "clipping_point/cp_core/track.py"
+CONTROLS_PY = "clipping_point/cp_core/controls.py"
+ASSISTS_JSON = "clipping_point/data/assists.json"
+TIRE_BRAKE_CLAMP = "            if fbrk > lim:\n                fbrk = lim\n"  # タイヤの制動力の、止める力の頭打ち
+TIRE_SIDE_CLAMP = "        if fy > lim:\n            fy = lim\n"  # タイヤの横力の、止める力の頭打ち
+STEER_CLAMP = "        steer = max_steer if steer_cmd > max_steer else -max_steer if steer_cmd < -max_steer else steer_cmd\n"  # 車両モデルが、舵角の指令を最大舵角で切る所
+# 車両モデルが、舵の速さも制限する（毎秒1 rad。試作の形）。
+STEER_RATE_LIMITED = STEER_CLAMP + "        steer = max(self.steer - DT, min(self.steer + DT, steer))\n"
+ENGINE_BRAKE_BRANCH = "            if torque >= 0.0:\n"  # 車両モデルが、正味のトルクの符号で、駆動とエンジンブレーキを分ける所
+WALL_NO_CONTACT = "        if side == 0:\n            return x, z, wvx, wvz, False, 0.0\n"  # 壁の押し戻しが、当たっていないときに、そのまま返す所
+QUERY_FROM_HINT = "            found, i, t = self._locate(x, z, hint % n, QUERY_MAX_WALK)\n"  # 照会が、前回の区間から探す所
+QUERY_REQUERY = "        if not found:\n            start = self.nearest_index(x, z)\n"  # 照会が、届かなかったときに、全部を探して取り直す所
+ASK_REVERSE = "        shift = SHIFT_TO_REVERSE if state.brake_hold_ticks >= params.brake_hold_ticks else SHIFT_NONE\n"  # 操作補正が、後退へ入る指示を出す所
+NEVER_ASK_REVERSE = "        shift = SHIFT_NONE\n"  # 後退へ入る指示を、出さない
+REVERSE_PEDALS = "        return Command(steer, brake_in, throttle_in, shift)\n"  # 操作補正が、後退中に、ペダルを読み替える所
+STEER_LIMIT_RESULT = "    return limit if limit < max_steer else max_steer\n"  # 操作補正が、車速に応じた最大舵角を返す所
+CROSS_CHECK_CALL = "    if not found and item.has_id and definition.check is not None:\n"  # 読み込み検査が、項目をまたぐ検査を呼ぶ条件
+CROSS_CHECK_CATCH = "        except Exception as exc:  # noqa: BLE001 - どの例外も、その項目の問題の行にする\n"  # 検査の関数の例外を、問題の行に直す所
+CAR_GEARS = '"gears": [3.136, 1.888, 1.33, 1.0, 0.86]'  # 実物の車の、変速比
+LOOP_POINT = '    {"x_m": 100.0, "z_m": 0.0},\n'  # 実物のコースの、1本目の直線の途中の制御点
+LOOP_POINT_HEAD = '    {"x_m": '  # 実物のコースの、制御点の行の頭
+
+
+def loop_lines() -> tuple:
+    """実物のコースのファイルの行と、制御点の行の番号。読めないか、制御点が無ければ、(None, [])。"""
+    try:
+        lines = (ROOT / LOOP_JSON).read_text(encoding="utf-8").splitlines(keepends=True)
+    except OSError:
+        return None, []
+    return lines, [index for index, line in enumerate(lines) if line.startswith(LOOP_POINT_HEAD)]
+
+
+def loop_with_only_the_first_points(keep: int) -> list:
+    """実物のコースの制御点を、頭の keep 点だけにする（末尾から頭へ戻るすき間が、大きく空く）。作れなければ、置けない壊し方。"""
+    lines, points = loop_lines()
+    if len(points) <= keep:
+        return [rep(LOOP_JSON, NO_SUCH_TEXT, "")]
+    cut = "".join(lines[points[keep - 1]:points[-1] + 1])  # 残す最後の点の行から、最後の点の行まで
+    return [rep(LOOP_JSON, cut, lines[points[keep - 1]].rstrip("\n").rstrip(",") + "\n")]
+
+
+PACK_STEERING_GROUP = '      "steering": {\n        "max_steer_rad": 0.55\n      },\n'  # 試験用データの車の、入れ子の項目の1つ（2台とも持つ）
+
+
+def pack_car_without_the_steering_group() -> list:
+    """試験用データ（extreme）の、1台目の車（kazane の差し替え）から、入れ子の項目 steering を消す。作れなければ、置けない壊し方。"""
+    try:
+        text = (ROOT / PACK_CARS_JSON).read_text(encoding="utf-8")
+    except OSError:
+        return [rep(PACK_CARS_JSON, NO_SUCH_TEXT, "")]
+    if text.count(PACK_STEERING_GROUP) != 2:
+        return [rep(PACK_CARS_JSON, NO_SUCH_TEXT, "")]
+    return [rm(PACK_CARS_JSON), add(PACK_CARS_JSON, text.replace(PACK_STEERING_GROUP, "", 1))]
+
+
+def loop_with_every_point_at_the_same_place() -> list:
+    """実物のコースの制御点を、全部、同じ点にする（鍵ごとの規則は通る。表を作る計算は、0で割る）。作れなければ、置けない壊し方。"""
+    lines, points = loop_lines()
+    if not points:
+        return [rep(LOOP_JSON, NO_SUCH_TEXT, "")]
+    for index in points:
+        lines[index] = LOOP_POINT_HEAD + '5.0, "z_m": 5.0}' + ("," if lines[index].rstrip("\n").endswith(",") else "") + "\n"
+    return [rm(LOOP_JSON), add(LOOP_JSON, "".join(lines))]
 
 # (名前, 壊し方の並び, 回す道具, 期待する終了コード, 最後の1行にあるはずの語)
 CASES = [
@@ -904,7 +988,7 @@ CASES = [
     ("check_data_value_out_of_range", [rep(CARS_JSON, CAR_VERSION, '"data_version": 0')], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
     ("check_data_name_not_ascii", [rep(CARS_JSON, CAR_NAME_VALUE, '"name": "カザネ"')], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
     ("check_data_name_of_15_characters", [rep(CARS_JSON, CAR_NAME_VALUE, '"name": "KAZANE RS TESTS"')], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
-    ("check_data_duplicate_id", [rep(CARS_JSON, CAR_TABLE_END, SECOND_CAR_WITH_THE_SAME_ID)], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    ("check_data_duplicate_id", second_car_with_the_same_id(), CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
     ("check_data_bool_where_an_integer_belongs", [rep(CARS_JSON, CAR_VERSION, '"data_version": true')], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
     # JSONの文を読む所で見つかる問題。標準の読み方は、重複した鍵と NaN を、黙って通す。
     ("check_data_file_is_not_json", [first_char(CARS_JSON)], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
@@ -994,6 +1078,90 @@ CASES = [
         "web_probe_data_is_not_loaded_only_in_browser",
         [rep(APP_PY, LOAD_DATA, LOAD_DATA + "    if js is not None:\n    " + NO_DATA_AT_START)],
         WEB_PROBE, {1}, "failed=probe.data_tables",
+    ),
+    # --- 車両モデル：test（狙ったテストに絞る） ---
+    # 止める力の頭打ち（タイヤの制動力と横力）を外す。極低速で、ヨーレートが毎tick反転して、静止しない。
+    (
+        "test_vehicle_stop_clamp_removed", [rep(VEHICLE_PY, TIRE_BRAKE_CLAMP, ""), rep(VEHICLE_PY, TIRE_SIDE_CLAMP, "")],
+        tool("test", "-k", "vehicle and coasting_with_full_lock"), {1}, "reason=failed",
+    ),
+    # 1 tickの中を、1回だけで積分する。数字で固定した参照値が、変わる。
+    ("test_vehicle_one_substep", [rep(VEHICLE_PY, "SUBSTEPS = 2\n", "SUBSTEPS = 1\n")], tool("test", "-k", "vehicle and mixed_inputs"), {1}, "reason=failed"),
+    # エンジンブレーキを、試作の形（負の駆動力）に戻す。前進のギアのまま後ろ向きに動くと、増速する。
+    (
+        "test_vehicle_engine_brake_as_negative_drive", [rep(VEHICLE_PY, ENGINE_BRAKE_BRANCH, "            if True:\n")],
+        tool("test", "-k", "vehicle and rolling_backwards"), {1}, "reason=failed",
+    ),
+    # 車両モデルが、舵の速さを制限する（試作の形）。舵の速さを決めるのは、操作補正の1か所だけ。
+    ("test_vehicle_rate_limits_the_steer", [rep(VEHICLE_PY, STEER_CLAMP, STEER_RATE_LIMITED)], tool("test", "-k", "vehicle and never_rate_limited"), {1}, "reason=failed"),
+    # --- コース：test ---
+    # 壁の押し戻しを外す（当たっていても、そのまま返す）。
+    (
+        "test_track_wall_does_not_push_out", [rep(TRACK_PY, WALL_NO_CONTACT, WALL_NO_CONTACT.replace("if side == 0:", "if True:"))],
+        tool("test", "-k", "track and wall_takes_speed_away"), {1}, "reason=failed",
+    ),
+    # 照会が、前回の区間を使わずに、いつも区間0から探す。答えは同じで、毎回、全部を探して取り直す（遅くなるだけの退行）。
+    (
+        "test_track_query_ignores_the_previous_segment", [rep(TRACK_PY, QUERY_FROM_HINT, QUERY_FROM_HINT.replace("hint % n", "0"))],
+        tool("test", "-k", "track and never_requeries"), {1}, "reason=failed",
+    ),
+    # 照会が、前回の区間の近くで探し当てられなかったときに、取り直さない（区間の端に寄せた、違う答えになる）。
+    (
+        "test_track_query_does_not_requery", [rep(TRACK_PY, QUERY_REQUERY, QUERY_REQUERY.replace("if not found:", "if not found and hint is None:"))],
+        tool("test", "-k", "track and far_segment"), {1}, "reason=failed",
+    ),
+    # --- 操作補正：test ---
+    # 後退に入らない（後退へ入る指示を、出さない）。壁に正面から当たって止まると、抜けられない（詰み）。
+    ("test_controls_never_asks_for_reverse", [rep(CONTROLS_PY, ASK_REVERSE, NEVER_ASK_REVERSE)], tool("test", "-k", "controls and asks_for_reverse"), {1}, "reason=failed"),
+    # 後退中に、ペダルを読み替えない（ブレーキの入力が、ブレーキのまま）。
+    (
+        "test_controls_pedals_are_not_swapped_in_reverse", [rep(CONTROLS_PY, REVERSE_PEDALS, "        return Command(steer, throttle_in, brake_in, shift)\n")],
+        tool("test", "-k", "controls and pedals_swap"), {1}, "reason=failed",
+    ),
+    # 車速に応じた最大舵角を外す（いつも、車の最大舵角）。
+    ("test_controls_steer_has_no_speed_limit", [rep(CONTROLS_PY, STEER_LIMIT_RESULT, "    return max_steer\n")], tool("test", "-k", "controls and steer_limit"), {1}, "reason=failed"),
+    # --- 項目をまたぐ検査（車の値の矛盾、コースの形）：test ---
+    # 読み込み検査が、項目をまたぐ検査を呼ばない。
+    ("test_data_cross_check_is_never_called", [rep(DATADEFS_PY, CROSS_CHECK_CALL, "    if False:\n")], tool("test", "-k", "datadefs and cross_check_lines"), {1}, "reason=failed"),
+    # 鍵ごとの規則を通らなかった項目にも、検査を呼ぶ（規則を通らない値で、計算を始める）。
+    (
+        "test_data_cross_check_runs_on_entries_that_fail_a_rule", [rep(DATADEFS_PY, CROSS_CHECK_CALL, "    if item.has_id and definition.check is not None:\n")],
+        tool("test", "-k", "datadefs and called_only"), {1}, "reason=failed",
+    ),
+    # 検査の関数の例外を、問題の行に直さない（DataError のほかの例外が、外へ出る）。
+    (
+        "test_data_cross_check_exception_escapes", [rep(DATADEFS_PY, CROSS_CHECK_CATCH, "        except DataError as exc:\n")],
+        tool("test", "-k", "datadefs and cross_check_that_raises"), {1}, "reason=failed",
+    ),
+    # --- 車とコースと操作補正の定義データ：check --only data（出荷するデータを、1か所ずつ壊す。調べた組は2つのまま） ---
+    # 車の値の矛盾。5速の変速比が、4速より大きい。
+    ("check_data_car_gear_ratios_do_not_fall", [rep(CARS_JSON, CAR_GEARS, CAR_GEARS.replace("0.86", "1.2"))], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    # コースの形の誤り。制御点が、頭の40点だけ（末尾から頭へ、閉じていない）。
+    ("check_data_track_is_not_closed", loop_with_only_the_first_points(40), CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    # コースの形の誤り。直線の途中の制御点を、横へ8 m動かす。最小半径より小さく曲がり、内側の壁も折り返す（2件）。
+    (
+        "check_data_track_radius_too_small", [rep(LOOP_JSON, LOOP_POINT, LOOP_POINT.replace('"z_m": 0.0', '"z_m": 8.0'))],
+        CHECK_DATA, {1}, "check: FAILED data=2 problems=2 failed=data",
+    ),
+    # 退化したコース。制御点が、全部同じ点。表を作る計算（0で割る）へ進まずに、問題にする（節が例外で止まって、2にならない）。
+    # 問題は、制御点の間隔ごとに1件（72件）。
+    ("check_data_track_every_point_is_the_same", loop_with_every_point_at_the_same_place(), CHECK_DATA, {1}, "check: FAILED data=2 problems=72 failed=data"),
+    # 操作補正の値が、範囲の外（ペダルを押していると見る線が0。いつも押している扱いになり、後退へ入れない）。
+    (
+        "check_data_assist_press_line_is_zero", [rep(ASSISTS_JSON, '"pedal_press_min": 0.1', '"pedal_press_min": 0.0')],
+        CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data",
+    ),
+    # 操作補正の表のファイルが無い。起動時にも、例外で止まる。
+    ("check_data_assists_file_deleted", [rm(ASSISTS_JSON)], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    ("run_data_assists_file_deleted", [rm(ASSISTS_JSON)], RUN, {1}, "reason=app_exit_code"),
+    # 試験用データの車が、足した鍵を持たない（項目ごと差し替える重ね方なので、足りない鍵は、問題になる）。出荷するデータの組は通る。
+    ("check_data_test_pack_car_leaves_a_group_out", pack_car_without_the_steering_group(), CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    # --- 作業の補助：仮の周回路の制御点を、式から作る（tools/claude/make_test_loop.py） ---
+    ("control_make_test_loop_check", [], tool("claude/make_test_loop", "--check"), {0}, "make_test_loop: OK points=72"),
+    # 制御点を、手で動かした。式から作った制御点と違う。
+    (
+        "make_test_loop_point_moved_by_hand", [rep(LOOP_JSON, LOOP_POINT, LOOP_POINT.replace('"z_m": 0.0', '"z_m": 0.5'))],
+        tool("claude/make_test_loop", "--check"), {1}, "same=no",
     ),
 ]
 

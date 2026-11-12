@@ -14,6 +14,8 @@ import pytest
 import verify
 from conftest import ROOT
 
+VEHICLE = "車両"
+TRACK = "コース"
 INPUT = "操作補正と入力"
 FLOW = "カメラと画面の状態"
 UI = "画面（2D）"
@@ -23,7 +25,9 @@ TOOLS_AREA = "検証の道具と検査の決まり"
 FULL_STEPS = ["check", "test", "fingerprint", "screen-check", "run", "run-realtime", "run-pack", "tour", "export", "web-smoke"]
 UI_WORDS = "canvas or screens or ui_check or fixtures or tour"
 FLOW_WORDS = "flow or fixtures or screens or fingerprint"
-INPUT_WORDS = "input_frame or input_script or input_pyxel or input_trace or profile"
+INPUT_WORDS = "input_frame or input_script or input_pyxel or input_trace or controls or profile"
+VEHICLE_WORDS = "vehicle or sim or fingerprint"
+TRACK_WORDS = "track or sim or fingerprint or datadefs or data_files"
 WEB_WORDS = "web_bridge or input_web or storage or profile"
 # どの分野にも当たらない見本。設計のモジュールの表に出てこない名前にする（本物のファイルと重ならないように）。
 NO_AREA_CODE = "clipping_point/cp_core/zz_no_area.py"
@@ -148,6 +152,7 @@ def test_verify_input_files_map_to_the_input_area_and_the_direct_read_to_the_web
         "clipping_point/cp_core/input_frame.py", "clipping_point/cp_core/input_script.py", "clipping_point/cp_app/input_pyxel.py",
         "clipping_point/cp_app/input_trace.py", "tests/test_input_frame.py", "tests/test_input_script.py",
         "tests/test_input_pyxel.py", "tests/test_input_trace.py",
+        "clipping_point/cp_core/controls.py", "tests/test_controls.py",  # 操作補正の最小版（段0 区切り9）
     ):
         assert names_of(path) == [INPUT], path
     # 直読みは、計画の表の「ブラウザ連携（入力の直読み、保存先、ファイルの受け渡し）」。
@@ -163,9 +168,28 @@ def test_verify_focused_plan_for_the_input_area_follows_the_plan_table():
     plan, kind, not_yet = verify.plan_for([area(INPUT)], [], focused=True)
     assert kind == "focused"
     assert step_names(plan) == ["check", "test", "run", "web-smoke"]
-    # 計画の表の「操作補正、保存する項目、セッティングの順」のうち、保存する項目（profile）まで入っている。
+    # 計画の表の「操作補正、保存する項目、セッティングの順」のうち、操作補正（controls）と、保存する項目（profile）まで入っている。
     assert plan[1][1][-2:] == ["-k", INPUT_WORDS]
     assert not_yet == ["drive"]
+
+
+def test_verify_vehicle_and_track_files_map_to_their_areas_and_follow_the_plan_table():
+    # 計画の表の「車両」：テストの絞りは、車両、世界、指紋（セッティングの順は、まだ無い）。足す手順は run、drive。
+    for path in ("clipping_point/cp_core/vehicle.py", "tests/test_vehicle.py"):
+        assert names_of(path) == [VEHICLE], path
+    plan, kind, not_yet = verify.plan_for([area(VEHICLE)], [], focused=True)
+    assert kind == "focused" and step_names(plan) == ["check", "test", "run"] and not_yet == ["drive"]
+    assert plan[1][1][-2:] == ["-k", VEHICLE_WORDS]
+    # 計画の表の「コース」：テストの絞りは、コース、世界、指紋、データ。足す手順は run、tour、drive。
+    for path in ("clipping_point/cp_core/track.py", "tests/test_track.py"):
+        assert names_of(path) == [TRACK], path
+    plan, kind, not_yet = verify.plan_for([area(TRACK)], [], focused=True)
+    assert kind == "focused" and step_names(plan) == ["check", "test", "run", "tour"] and not_yet == ["drive"]
+    assert plan[1][1][-2:] == ["-k", TRACK_WORDS]
+    # 並びは、計画の表の順（車両、コース、操作補正と入力、…）。
+    assert [a.name for a in verify.AREAS][:3] == [VEHICLE, TRACK, INPUT]
+    areas, unknown = verify.areas_for(["tests/test_controls.py", "clipping_point/cp_core/track.py", "clipping_point/cp_core/vehicle.py"])
+    assert [a.name for a in areas] == [VEHICLE, TRACK, INPUT] and unknown == []
 
 
 def test_verify_save_and_rng_files_map_to_the_main_loop_area_and_the_browser_backends_to_the_web_area():
@@ -205,10 +229,11 @@ def test_verify_data_files_map_to_the_main_loop_area_and_the_load_checks_to_the_
     # 計画の表の「保存、データの検査、乱数、メインループ、世界の状態」：全部を回す。ファイルを読む所、実物の定義データ、試験用データ。
     for path in (
         "clipping_point/cp_app/data_files.py", "clipping_point/data/cars.json", "clipping_point/data/tracks/test_loop.json",
+        "clipping_point/data/assists.json",
         "testpacks/extreme/cars.json", "testpacks/extreme/tracks/wide_test_loop.json", "testpacks/another/cars.json",
         "tests/test_data_files.py",
     ):
-        assert names_of(path) == [LOOP], path
+        assert names_of(path) == [LOOP], path  # 中身が、車の値、コースの形、操作補正の値でも、実物の定義データは、ここ（全部を回す）
     # 読み込み検査の決まり（検査と重ね方）は、計画の表で selftest-break つきの分野（検査の決まり）でもある。
     for path in ("clipping_point/cp_core/datadefs.py", "tests/test_datadefs.py"):
         assert names_of(path) == [LOOP, TOOLS_AREA], path
