@@ -1,4 +1,5 @@
-"""画面の状態（cp_core.flow）のテスト。いまは最小の形：画面の名の一覧、いまの画面の名、表示用の値の型、世界から車の値を作る所。"""
+"""画面の状態（cp_core.flow）のテスト。いまは最小の形：画面の名の一覧、いまの画面の名、表示用の値の型、世界から車の値を作る所、
+測った値を、表示の桁に収める所。"""
 import dataclasses
 import functools
 
@@ -173,3 +174,39 @@ def test_flow_car_view_can_be_made_on_every_tick_of_the_wall_script_in_reverse_o
     assert {view.gear for view, _ in views} == {REVERSE, 1, 2}
     assert max(view.speed_kmh for view in in_reverse) > 15  # 後ろへ進んでいる間も、速度は0以上
     assert all(view.speed_kmh >= 0 and view.rpm >= 0 for view, _ in views)
+
+
+# --- 測った値を、表示の 0.1 刻みの整数にして、桁いっぱいで頭打ちにする ---
+@pytest.mark.parametrize("value, digits, want", [
+    (0.0, 2, 0), (0.04, 2, 0), (0.05, 2, 0), (0.06, 2, 1), (1.0, 2, 10), (12.34, 2, 123), (12.36, 2, 124), (3, 2, 30),
+    (99.8, 2, 998), (99.9, 2, 999), (99.94, 2, 999),  # 桁の内は、そのまま
+    (59.96, 3, 600), (999.9, 3, 9999), (123.45, 1, 99),
+])
+def test_flow_capped_tenths_rounds_a_measured_value_to_tenths(value, digits, want):
+    got = flow.capped_tenths(value, digits)
+    assert got == want and type(got) is int
+
+
+@pytest.mark.parametrize("value, digits, want", [
+    (99.95, 2, 999), (100.0, 2, 999), (12345.6, 2, 999), (1000.0, 3, 9999), (1e308, 3, 9999), (float("inf"), 2, 999), (10 ** 400, 2, 999),
+])
+def test_flow_capped_tenths_stops_at_the_widest_value_the_digits_can_show(value, digits, want):
+    # 表示の桁を超えた値は、桁いっぱいの値にする。例外にしない（ふつうの起動の、更新か実描画の中で呼ぶ）。
+    got = flow.capped_tenths(value, digits)
+    assert got == want and type(got) is int
+
+
+def test_flow_capped_tenths_keeps_not_measured_apart_from_zero():
+    assert flow.capped_tenths(None, 2) is None  # 測れていない
+    assert flow.capped_tenths(float("nan"), 2) is None  # 数にならなかった値も、測れていない扱い
+    assert flow.capped_tenths(0.0, 2) == 0 and flow.capped_tenths(0, 3) == 0
+    assert flow.capped_tenths(-0.5, 2) == 0 and flow.capped_tenths(float("-inf"), 2) == 0  # 負の値は、0
+
+
+def test_flow_capped_tenths_rejects_what_is_not_a_number_and_a_width_below_one():
+    for value in ("1.5", True, [1.5], b"1"):
+        with pytest.raises(TypeError):
+            flow.capped_tenths(value, 2)
+    for digits in (0, -1, 2.0, True, None, "2"):
+        with pytest.raises(ValueError):
+            flow.capped_tenths(1.5, digits)

@@ -16,7 +16,8 @@
   例外：JSONでない文、重複した鍵、NaN と Infinity のあるファイルは、項目を検査へ渡さない（並ぶのは、そのファイルの問題の行だけ）。
   項目をまたぐ検査（車の値の矛盾、コースの形の誤り）。表の定義が、関数（項目 → [(鍵の道, 問題の文)]）として持つ（TableDef.check）。
   呼ぶのは、鍵ごとの規則を全部通った項目だけ。関数が、計算の例外（0で割る、など）を出したら、その項目の問題の行に直す。
-  車の検査は cp_core/vehicle.py、コースの検査は cp_core/track.py に置く（そちらからは、ここを読み込まない）。
+  車の検査は cp_core/vehicle.py と cp_core/car_shape.py（仮の形の寸法）、コースの検査は cp_core/track.py に置く
+  （そちらからは、ここを読み込まない）。
 問題の行の形：「cars.json:cars[0].name: …」「tracks/test_loop.json:name: …」。試験用データの中の問題は、頭に testpacks/<名>/ が付く。
 警告：参照される側の表で、どこからも参照されていない定義。出荷するデータは0件（テストと道具 check が見張る）。
 注：_ で始まる鍵は、どの階でも注。検査の外で、使う側へも渡さない。根拠の薄い値は、同じファイルの頭の _notes に
@@ -33,7 +34,7 @@ import json
 import math
 from dataclasses import dataclass
 
-from cp_core import storage, track, vehicle
+from cp_core import car_shape, palette, storage, track, vehicle
 
 NAME_MAX = 14  # 表示名（車名、コース名）の字数の上限。変えるときは、画面と一緒に変える
 ID_CHARS = frozenset("abcdefghijklmnopqrstuvwxyz0123456789_")  # id に使える字（小文字のASCII、数字、_）
@@ -217,6 +218,11 @@ CAR_FIELDS = {
         "slip_min_speed_m_s": Num(0.0, 10.0), "slip_speed_floor_m_s": Num(0.01, 10.0),
         "limit_min_speed_m_s": Num(0.0, 10.0), "yaw_ref_min_speed_m_s": Num(0.0, 50.0),
     }),
+    # 仮の形の寸法（描画用。走りには効かない）。意味は cp_core/car_shape.py。寸法どうしの矛盾は、項目をまたぐ検査（car_shape.shape_problems）。
+    "shape": Obj({
+        "height_m": Num(0.3, 3.0), "body_top_m": Num(0.2, 2.5), "roof_front_m": Num(-5.0, 5.0), "roof_rear_m": Num(-5.0, 5.0),
+        "roof_inset_m": Num(0.0, 1.5), "ground_clearance_m": Num(0.0, 1.0), "tire_width_m": Num(0.05, 1.0),
+    }),
 }
 # コースの項目の鍵。意味は cp_core/track.py。制御点は、頭の点を、末尾に繰り返さない。
 TRACK_FIELDS = {
@@ -227,6 +233,10 @@ TRACK_FIELDS = {
     "surface_mu": Obj({track.SURFACE_ASPHALT: Num(0.05, 2.0), track.SURFACE_GRASS: Num(0.05, 2.0)}),
     "wall": Obj({"restitution": Num(0.0, 1.0), "friction": Num(0.0, 2.0)}),
     "start": Obj({"s_m": Num(0.0, track.MAX_LENGTH_M), "lateral_m": Num(-30.0, 30.0)}),
+    # メッシュ用の数値の寸法（描画用。走りには効かない）。意味は cp_core/track.py の mesh_chunks()。白線2本は、舗装の幅の下限（4 m）に収まる。
+    "mesh": Obj({
+        "step_m": Num(1.0, 20.0), "road_strips": Int(1, 16), "line_m": Num(0.05, 1.0), "wall_height_m": Num(0.1, 5.0), "chunk_m": Num(10.0, 500.0),
+    }),
     "control_points": ListOf(Obj({"x_m": Num(-track.MAX_LENGTH_M, track.MAX_LENGTH_M), "z_m": Num(-track.MAX_LENGTH_M, track.MAX_LENGTH_M)}), track.MIN_POINTS, 2000),
 }
 # 操作補正の項目の鍵。意味は cp_core/controls.py の ControlParams。いまは、仮の1組だけ（段階と既定の組は、段1）。
@@ -239,11 +249,33 @@ ASSIST_FIELDS = {
     }),
     "reverse": Obj({"stop_speed_m_s": Num(0.01, 10.0), "brake_hold_s": Num(0.0, 10.0), "pedal_press_min": Num(0.001, 1.0)}),
 }
+# カメラの項目の鍵。意味は cp_core/camera.py の CameraSpec。いまは、後方追従（chase）だけ。手前は、1.0 を超えない
+# （超えると、足元が欠ける。試作の実測）。奥は、手前より、いつも大きい（範囲が、重ならない）。
+CAMERA_FIELDS = {
+    ID_KEY: Ident(),
+    "back_m": Num(0.5, 50.0), "height_m": Num(0.1, 50.0), "look_ahead_m": Num(0.5, 200.0), "look_height_m": Num(0.0, 50.0),
+    "fov_deg": Num(10.0, 120.0), "near_m": Num(0.01, 1.0), "far_m": Num(10.0, 5000.0),
+}
+# パレットの項目の鍵。意味は cp_core/palette.py。色は、ちょうど32個（番号の役割は、palette.ROLES）。
+PALETTE_FIELDS = {
+    ID_KEY: Ident(),
+    "colors": ListOf(Int(0, palette.COLOR_MAX), palette.COLOR_COUNT, palette.COLOR_COUNT),
+    "unshaded": ListOf(Int(0, palette.COLOR_COUNT - 1), 1, palette.COLOR_COUNT),
+}
+
+
+def car_problems(entry: dict) -> list:
+    """車の項目をまたぐ検査。車の値の矛盾（cp_core/vehicle.py）と、仮の形の寸法の矛盾（cp_core/car_shape.py）を、続けて並べる。"""
+    return vehicle.spec_problems(entry) + car_shape.shape_problems(entry)
+
+
 # 実物の表の定義。表を足す、項目を足すときは、実物のファイルと、壊した場合のテスト（tests/test_datadefs.py）も足す。
 TABLES = {
-    "cars": TableDef(ONE_TABLE, CAR_FIELDS, vehicle.spec_problems),
+    "cars": TableDef(ONE_TABLE, CAR_FIELDS, car_problems),
     "tracks": TableDef(ONE_ENTRY, TRACK_FIELDS, track.shape_problems),
     "assists": TableDef(ONE_TABLE, ASSIST_FIELDS),
+    "cameras": TableDef(ONE_TABLE, CAMERA_FIELDS),
+    "palettes": TableDef(ONE_TABLE, PALETTE_FIELDS),
 }
 
 

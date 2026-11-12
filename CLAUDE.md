@@ -182,4 +182,5 @@ Pyxel 3.0の3D機能（Pyxel Cube）で作る、初代PS時代風ローポリゴ
 | `.claude/rules/save.md` | 保存の口と保存する項目（`cp_core/storage.py`、`profile.py`）、保存先と、保存先を選ぶ所（`cp_app/storage_file.py`、`storage_web.py`、`storage_select.py`）、保存先に触れると例外にするスクリプト（`tools/web/block_storage.js`）、そのテスト |
 | `.claude/rules/data.md` | 定義データの読み込み検査と重ね方（`cp_core/datadefs.py`）、ファイルを読む所（`cp_app/data_files.py`）、実物の定義データ（`clipping_point/data/`）、試験用データ（`testpacks/`）、そのテスト |
 | `.claude/rules/vehicle.md` | 車両モデル（`cp_core/vehicle.py`）、車の定義データ（`data/cars.json`）、そのテスト |
-| `.claude/rules/track.md` | コースの表、照会、壁の押し戻し、形の検査（`cp_core/track.py`）、コースの定義データ（`data/tracks/`）、制御点を作る補助（`tools/claude/make_test_loop.py`）、そのテスト |
+| `.claude/rules/track.md` | コースの表、照会、壁の押し戻し、形の検査、メッシュ用の数値（`cp_core/track.py`）、コースの定義データ（`data/tracks/`）、制御点を作る補助（`tools/claude/make_test_loop.py`）、そのテスト |
+| `.claude/rules/render.md` | カメラ（`cp_core/camera.py`）、色の役割とパレット（`cp_core/palette.py`、`data/palettes.json`）、メッシュ用の数値の型と面の向き（`cp_core/mesh.py`）、車の仮の形（`cp_core/car_shape.py`）、3Dの絵の判定（`tools/scene_reference.py`）、パレットを作る補助（`tools/claude/make_palette.py`）、そのテスト |

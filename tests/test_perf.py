@@ -1,7 +1,10 @@
-"""処理時間と回数の集計（cp_app.perf）のテスト。時計は使わず、実時間（秒）を引数で渡す。"""
+"""処理時間と回数の集計（cp_app.perf）のテスト。時計は使わず、実時間（秒）を引数で渡す。
+
+全部をためる測り方（PerfMeter。煙テストの線の判定に使う）と、処理時間の輪（PerfRing。ふつうの起動で、画面に出す値に使う）。
+"""
 import pytest
 
-from cp_app.perf import PerfMeter, percentile
+from cp_app.perf import RENDER_RING, UPDATE_RING, PerfMeter, PerfRing, percentile
 
 TICK_S = 1.0 / 60.0
 
@@ -101,3 +104,106 @@ def test_perf_percentile_of_nothing_is_none():
     assert percentile([], 0.95) is None
     assert percentile([4.0], 0.95) == 4.0
     assert percentile([3.0, 1.0, 2.0], 0.5) == 2.0
+
+
+# --- 全部をためる測り方の要約の、平均と最大 ---
+def test_perf_report_has_the_mean_and_the_maximum_beside_the_95th_percentile():
+    meter = PerfMeter()
+    for i in range(100):
+        meter.on_update(i * TICK_S, i * TICK_S + (0.009 if i >= 98 else 0.001))  # 100回のうち、2回だけ 9 ms
+        if i % 2 == 1:
+            meter.on_render(i * TICK_S + 0.002, i * TICK_S + 0.002 + (0.011 if i == 51 else 0.003))  # 50回のうち、1回だけ 11 ms
+    report = meter.report()
+    assert report["update_ms_p95"] == pytest.approx(1.0, abs=0.001)  # 95%点には、出ない
+    assert report["update_ms_mean"] == pytest.approx(1.16, abs=0.001) and report["update_ms_max"] == pytest.approx(9.0, abs=0.001)
+    assert report["render_ms_mean"] == pytest.approx(3.16, abs=0.001) and report["render_ms_max"] == pytest.approx(11.0, abs=0.001)
+    assert report["with_warmup"]["update_ms_max"] == report["update_ms_max"]
+
+
+def test_perf_mean_and_maximum_leave_the_warmup_out_and_are_none_when_nothing_was_measured():
+    meter = PerfMeter(warmup_ticks=60)
+    feed(meter, 660, slow_first=60)
+    report = meter.report()
+    assert report["update_ms_mean"] == pytest.approx(0.5, abs=0.001) and report["update_ms_max"] == pytest.approx(0.5, abs=0.001)
+    assert report["with_warmup"]["update_ms_max"] == pytest.approx(50.0, abs=0.001)  # 慣らしの間の遅い更新は、こちらにだけ出る
+    assert report["with_warmup"]["update_ms_mean"] == pytest.approx((60 * 50.0 + 600 * 0.5) / 660, abs=0.001)
+    empty = PerfMeter().report()
+    assert [empty[key] for key in ("update_ms_mean", "update_ms_max", "render_ms_mean", "render_ms_max")] == [None] * 4
+
+
+# --- 処理時間の輪（直近の決まった回数ぶんだけを持つ） ---
+def test_perf_ring_sizes_are_two_seconds_of_updates_and_of_renders():
+    assert (UPDATE_RING, RENDER_RING) == (120, 60)
+
+
+def test_perf_ring_reports_the_mean_the_maximum_and_the_rate_of_what_it_holds():
+    ring = PerfRing(4)
+    for index, took_ms in enumerate((1.0, 2.0, 6.0)):
+        ring.add(index * TICK_S, index * TICK_S + took_ms / 1000.0)
+    assert ring.count == 3 and ring.size == 4
+    assert ring.mean_ms() == pytest.approx(3.0) and ring.max_ms() == pytest.approx(6.0)
+    assert ring.per_second() == pytest.approx(60.0)  # 3回の始まりが、2 tickぶんの間に並ぶ
+
+
+def test_perf_ring_throws_the_oldest_values_away():
+    ring = PerfRing(4)
+    for index in range(10):
+        took_ms = 50.0 if index < 6 else 1.0 + index  # 頭の6回は遅い。残るのは、最後の4回（7、8、9、10 ms）
+        ring.add(index * TICK_S, index * TICK_S + took_ms / 1000.0)
+    assert ring.count == 4
+    assert ring.mean_ms() == pytest.approx(8.5) and ring.max_ms() == pytest.approx(10.0)  # 古い 50 ms は、もう無い
+    assert ring.per_second() == pytest.approx(60.0)
+    # 上限のないリストに、ためない。持つのは、いつも size 個。
+    assert len(ring._starts_s) == 4 and len(ring._took_ms) == 4
+    for index in range(10, 5000):
+        ring.add(index * TICK_S, index * TICK_S + 0.002)
+    assert ring.count == 4 and len(ring._starts_s) == 4 and len(ring._took_ms) == 4
+    assert ring.mean_ms() == pytest.approx(2.0) and ring.max_ms() == pytest.approx(2.0)
+
+
+def test_perf_ring_rate_follows_the_real_time_between_the_starts_it_holds():
+    ring = PerfRing(RENDER_RING)
+    for index in range(200):
+        ring.add(index / 20.0, index / 20.0 + 0.004)  # 毎秒20回に落ちた実描画
+    assert ring.count == RENDER_RING and ring.per_second() == pytest.approx(20.0)
+    for index in range(200, 200 + RENDER_RING):
+        ring.add(10.0 + (index - 200) / 30.0, 10.0 + (index - 200) / 30.0 + 0.004)  # 毎秒30回に戻る
+    assert ring.per_second() == pytest.approx(30.0)  # 直近の区間だけを見る
+
+
+def test_perf_ring_with_nothing_or_one_value_has_no_rate():
+    ring = PerfRing(UPDATE_RING)
+    assert ring.count == 0 and ring.mean_ms() is None and ring.max_ms() is None and ring.per_second() is None
+    ring.add(1.0, 1.002)
+    assert ring.count == 1 and ring.mean_ms() == pytest.approx(2.0) and ring.max_ms() == pytest.approx(2.0)
+    assert ring.per_second() is None  # 区間が取れない
+
+
+def test_perf_ring_whose_starts_are_all_the_same_has_no_rate_and_does_not_divide_by_zero():
+    # 時計が粗いブラウザで、続けて呼ばれた更新。始まりの時刻が、全部同じになる。毎秒の回数は「測れていない」。
+    ring = PerfRing(4)
+    for _ in range(6):
+        ring.add(5.0, 5.0)
+    assert ring.count == 4 and ring.per_second() is None
+    assert ring.mean_ms() == 0.0 and ring.max_ms() == 0.0  # 掛かった時間は、0 と測れている
+    # 時計が戻った（区間が負）ときも、測れていない。
+    back = PerfRing(4)
+    back.add(5.0, 5.001)
+    back.add(4.0, 4.001)
+    assert back.per_second() is None
+    # 1つでも進めば、測れる。
+    ring.add(5.1, 5.1)
+    assert ring.per_second() == pytest.approx(30.0)  # 4回の始まりが、0.1秒の間に並ぶ
+
+
+@pytest.mark.parametrize("size", [0, -1, 1.5, True, None, "4"])
+def test_perf_ring_needs_a_size_of_one_or_more(size):
+    with pytest.raises(ValueError):
+        PerfRing(size)
+
+
+def test_perf_ring_of_one_keeps_only_the_newest_value():
+    ring = PerfRing(1)
+    ring.add(0.0, 0.003)
+    ring.add(1.0, 1.007)
+    assert ring.count == 1 and ring.mean_ms() == pytest.approx(7.0) and ring.max_ms() == pytest.approx(7.0) and ring.per_second() is None

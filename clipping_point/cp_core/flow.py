@@ -6,6 +6,7 @@
 表示用の値は、画面の組み立て（cp_ui.screens）に渡す値。描く側は、受け取って描くだけにする。値は、整数と文字列で渡す
 （小数を、描く側で丸めない）。
 世界の状態から、表示用の値を作る所（car_view）も、ここに置く（pyxel を読まない。世界のどの状態からでも、作れること）。
+測った値（処理時間、毎秒の回数、起動にかかった時間）を、表示の 0.1 刻みの整数にして、桁いっぱいで頭打ちにする所（capped_tenths）も、ここに置く。
 画面を足すときは、SCREEN_NAMES、表示用の値の型、cp_ui.screens の SCREENS、cp_ui.fixtures の見本データに足す
 （そろっていることは、tests/test_fixtures.py の突き合わせのテストが見る）。
 """
@@ -33,6 +34,30 @@ def _count(name: str, value) -> int:
     if _whole(name, value) < 0:
         raise ValueError(f"{name}={value!r} must be >= 0")
     return value
+
+
+def capped_tenths(value, whole_digits: int):
+    """測った値（処理時間の ms、毎秒の回数、秒など。小数）を、表示の 0.1 刻みの整数にする（12.34 は 123）。描く側で、小数を丸めない。
+
+    None（測れていない）は、None のまま返す。NaN も、測れていない扱いで None。
+    表示の桁（整数部が whole_digits 桁）を超えた値は、桁いっぱいの値に頭打ちにする（2桁なら 999 ＝ 99.9。無限大も）。負の値は 0。
+    値の大きさでは、例外にしない（ふつうの起動の、更新か実描画の中で呼ぶ。例外になると、ブラウザ版は、エラー表示で止まる）。
+    数でない値（文字列、bool）と、1未満の桁の数は、呼ぶ側の誤りなので、TypeError と ValueError。
+    """
+    if type(whole_digits) is not int or whole_digits < 1:
+        raise ValueError(f"whole_digits={whole_digits!r} must be an integer >= 1")
+    if value is None:
+        return None
+    if type(value) not in (int, float):
+        raise TypeError(f"value={value!r} must be a number or None (bool and str are not accepted)")
+    if value != value:  # NaN
+        return None
+    top = 10 ** (whole_digits + 1) - 1  # 桁いっぱいの値（0.1 刻みの整数）
+    if value <= 0:
+        return 0
+    if value * 10 >= top:  # 無限大も、ここで頭打ちになる（丸める前に比べる。無限大は、整数に丸められない）
+        return top
+    return round(value * 10)
 
 
 @dataclass(frozen=True)

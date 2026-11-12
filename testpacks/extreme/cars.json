@@ -93,6 +93,15 @@
         "slip_speed_floor_m_s": 1.0,
         "limit_min_speed_m_s": 1.0,
         "yaw_ref_min_speed_m_s": 3.0
+      },
+      "shape": {
+        "height_m": 1.24,
+        "body_top_m": 0.78,
+        "roof_front_m": 0.42,
+        "roof_rear_m": -1.0,
+        "roof_inset_m": 0.29,
+        "ground_clearance_m": 0.17,
+        "tire_width_m": 0.22
       }
     },
     {
@@ -183,6 +192,15 @@
         "slip_speed_floor_m_s": 1.0,
         "limit_min_speed_m_s": 1.0,
         "yaw_ref_min_speed_m_s": 3.0
+      },
+      "shape": {
+        "height_m": 1.24,
+        "body_top_m": 0.78,
+        "roof_front_m": 0.42,
+        "roof_rear_m": -1.0,
+        "roof_inset_m": 0.29,
+        "ground_clearance_m": 0.17,
+        "tire_width_m": 0.22
       }
     }
   ]

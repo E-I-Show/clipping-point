@@ -35,6 +35,7 @@ paths:
 ## Xを足したらYも
 
 - 車の項目に鍵を足したら、`CAR_FIELDS`、`CarSpec`、`spec_from_entry()`、実物の `cars.json`（`_notes` に「仮の値：」）、`testpacks/extreme/cars.json` の2台に足す。壊した場合は、`tests/test_datadefs.py` が鍵の道から作る。
+- 車の項目の `shape`（仮の形の寸法。描画用で、走りに効かない）は、`CarSpec` に入れない。読むのは `cp_core/car_shape.py`（決まりは `render.md`）。車の項目をまたぐ検査は、`datadefs.car_problems()` が、車の値の矛盾と、仮の形の寸法の矛盾を、続けて呼ぶ。
 - 式を変えたら、`tests/test_vehicle.py` の参照値（`MIXED`）を置き直し、指紋の写しを取り直す（単独のコミット）。`STRAIGHT` は、試作の値。変わるのは、舵0・全開の直進に効く式を変えたときだけ。
 - 車の値を変えたら、設計の表の値（0-100 km/h、最高速、制動距離、最大横加速度）のテストを見る。データの版は、段0の間は1のまま。
 - 矛盾の検査を足したら、`tests/test_vehicle.py`、`tests/test_datadefs.py` の `BROKEN`、`tools/selftest_break.py` に足す。

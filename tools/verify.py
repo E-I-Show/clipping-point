@@ -83,7 +83,7 @@ class Area:
 # check の areas の節が落ち、そのファイルの分野を決めさせるため。
 AREAS = (
     Area(
-        # 並びは、計画の表の順（車両 → コース → 操作補正と入力 → カメラと画面の状態 → 画面（2D）→ ブラウザ連携 → …）。
+        # 並びは、計画の表の順（車両 → コース → 操作補正と入力 → 描画 → カメラと画面の状態 → 画面（2D）→ ブラウザ連携 → …）。
         # 車両モデル（段0 区切り9）。車の値（clipping_point/data/cars.json）は、下の「メインループと世界の状態」に並べてある（全部を回す）。
         "車両",
         ("clipping_point/cp_core/vehicle.py", "tests/test_vehicle.py"),
@@ -119,15 +119,31 @@ AREAS = (
         ("run", "run-drive", "run-wall", "drive", "web-smoke"),
     ),
     Area(
-        # 計画の表の「カメラと画面の状態」。いまあるのは、画面の状態（cp_core/flow.py）の最小の形だけ。
+        # 計画の表の「描画」（段0 区切り10）。色の役割（cp_core/palette.py）、メッシュ用の数値の型と面の向きの決まり（cp_core/mesh.py）、
+        # 車の仮の形（cp_core/car_shape.py）。Pyxelの3Dに触れる所（cp_app/render.py）は、作る区切りで、ここへ足す。
+        # コースのメッシュ用の数値は、上の「コース」（cp_core/track.py）、カメラは、下の「カメラと画面の状態」。
+        # パレットとカメラの値（clipping_point/data/ の下）は、下の「メインループと世界の状態」に並べてある（全部を回す）。
+        "描画",
+        (
+            "clipping_point/cp_core/palette.py", "clipping_point/cp_core/mesh.py", "clipping_point/cp_core/car_shape.py",
+            "tests/test_palette.py", "tests/test_mesh.py", "tests/test_car_shape.py",
+        ),
+        # 計画の表のテストの絞りは「画面」。画面（2D）の語に、ここのテスト（色の役割、面の向き、車の仮の形）と、
+        # メッシュ用の数値とカメラ（どちらも、面の向きの決まりと、色の役割の名を使う）を足した。
+        "palette or mesh or car_shape or camera or canvas or screens or ui_check or fixtures or tour",
+        # 計画の表のとおり。
+        ("run", "tour", "web-smoke"),
+    ),
+    Area(
+        # 計画の表の「カメラと画面の状態」。画面の状態（cp_core/flow.py）の最小の形と、カメラ（cp_core/camera.py。段0 区切り10）。
         "カメラと画面の状態",
-        ("clipping_point/cp_core/flow.py", "tests/test_flow.py"),
-        # 計画の表のテストの絞りは「カメラ、画面の状態、指紋」。指紋（fingerprint）は、段0 区切り7で足した。カメラは段0 区切り10で作る。
+        ("clipping_point/cp_core/camera.py", "clipping_point/cp_core/flow.py", "tests/test_camera.py", "tests/test_flow.py"),
+        # 計画の表のテストの絞りは「カメラ、画面の状態、指紋」。指紋（fingerprint）は、段0 区切り7で、カメラ（camera）は、段0 区切り10で足した。
         # 計画の表に無い fixtures と screens を足した。突き合わせのテスト（ロジックが持つ画面の名、画面の登録、見本データが
         # 同じ集まりであること。tests/test_fixtures.py と tests/test_screens.py）は、名に flow を含まない。flow だけでは、
         # flow.py にだけ画面の名を足して、登録と見本データへ足し忘れても、絞った検証が通ってしまう（screen-check は、
         # 画面の登録から予定を作る）。この式が、画面の名を見るテストに当たることは、tests/test_verify.py が見る。
-        "flow or fixtures or screens or fingerprint",
+        "camera or flow or fixtures or screens or fingerprint",
         # 計画の表のとおり。
         ("run", "screen-check"),
     ),
@@ -165,8 +181,8 @@ AREAS = (
         # localStorage の保存先と、保存先を選ぶ所は、上の「ブラウザ連携」に並べた。
         # 計画の表の「データの検査」に当たるファイル（段0 区切り8）は、読み込み検査と重ね方（cp_core/datadefs.py）、ファイルを読む所（cp_app/data_files.py）、
         # 実物の定義データ（clipping_point/data/ の下。1つずつ並べる）、試験用データ（testpacks/。出荷物の外なので、まとめて当てる）。
-        # 実物の定義データは、中身が車の値、コースの形、操作補正の値でも、ここに並べる（上の「車両」「コース」「操作補正と入力」には並べない。
-        # 値を変えたら、全部を回す）。計画の表の「音」の行のテストの絞りにある「データ」は、その分野の最初のファイルを作る区切りで、行ごと足す。
+        # 実物の定義データは、中身が車の値、コースの形、操作補正の値、カメラの値、パレットでも、ここに並べる（上の「車両」「コース」
+        # 「操作補正と入力」「描画」「カメラと画面の状態」には並べない。値を変えたら、全部を回す）。計画の表の「音」の行のテストの絞りにある「データ」は、その分野の最初のファイルを作る区切りで、行ごと足す。
         "メインループと世界の状態",
         (
             "clipping_point/main.py", "clipping_point/cp_app/__init__.py", "clipping_point/cp_app/app.py",
@@ -174,7 +190,8 @@ AREAS = (
             "clipping_point/cp_core/sim.py", "clipping_point/cp_core/rng.py", "clipping_point/cp_core/storage.py",
             "clipping_point/cp_core/profile.py", "clipping_point/cp_app/storage_file.py",
             "clipping_point/cp_core/datadefs.py", "clipping_point/cp_app/data_files.py",
-            "clipping_point/data/cars.json", "clipping_point/data/tracks/test_loop.json", "clipping_point/data/assists.json", "testpacks/**",
+            "clipping_point/data/cars.json", "clipping_point/data/tracks/test_loop.json", "clipping_point/data/assists.json",
+            "clipping_point/data/cameras.json", "clipping_point/data/palettes.json", "testpacks/**",
             "tests/test_fixed_loop.py", "tests/test_sim.py", "tests/test_perf.py", "tests/test_rng.py", "tests/test_storage.py",
             "tests/test_profile.py", "tests/test_storage_file.py", "tests/test_fingerprint.py",
             "tests/test_datadefs.py", "tests/test_data_files.py",
@@ -189,7 +206,7 @@ AREAS = (
         # 道具 run の、保存のファイルを読む関数のテスト（tests/test_run_tool.py）は、道具の側なので、ここに並べる。
         # 読み込み検査の決まり（cp_core/datadefs.py と、そのテスト。計画の表の「データの検査」）は、「メインループと世界の状態」にも、ここにも並べる。
         # 道具 check の data の節の関数のテスト（tests/test_check_tool.py）と、道具が定義データを自分で数える所のテスト
-        # （tests/test_data_reference.py）は、道具の側なので、ここに並べる。
+        # （tests/test_data_reference.py）、3Dの絵の判定の関数のテスト（tests/test_scene_reference.py）は、道具の側なので、ここに並べる。
         # 実物の定義データと試験用データ（中身の値）は、ここには並べない（値を合わせるたびに selftest-break を回さない）。
         # selftest-break の壊す件は、実物の定義データの文字を壊す所に使う。id と表示名を変えたら、壊す件も確かめる（.claude/rules/data.md）。
         "検証の道具と検査の決まり",
@@ -198,6 +215,7 @@ AREAS = (
             "tests/test_rules_guard.py", "tests/test_canon_guard.py", "tests/test_export_inspect.py", "tests/test_verify.py",
             "tests/test_web_smoke.py", "tests/test_claude_tools.py", "tests/test_screen_tools.py", "tests/test_fingerprint.py",
             "tests/test_run_tool.py", "tests/test_check_tool.py", "tests/test_data_reference.py", "tests/test_selftest_tool.py",
+            "tests/test_scene_reference.py",
             "clipping_point/cp_ui/check.py", "clipping_point/cp_ui/fixtures.py", "tests/test_ui_check.py", "tests/test_fixtures.py",
             "clipping_point/cp_core/datadefs.py", "tests/test_datadefs.py",
             "pytest.ini", "requirements-dev.txt",

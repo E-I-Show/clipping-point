@@ -17,6 +17,7 @@ from conftest import ROOT
 VEHICLE = "車両"
 TRACK = "コース"
 INPUT = "操作補正と入力"
+RENDER = "描画"
 FLOW = "カメラと画面の状態"
 UI = "画面（2D）"
 WEB = "ブラウザ連携"
@@ -26,7 +27,8 @@ FULL_STEPS = [
     "check", "test", "fingerprint", "screen-check", "run", "run-realtime", "run-pack", "run-drive", "run-wall", "tour", "export", "web-smoke",
 ]
 UI_WORDS = "canvas or screens or ui_check or fixtures or tour"
-FLOW_WORDS = "flow or fixtures or screens or fingerprint"
+FLOW_WORDS = "camera or flow or fixtures or screens or fingerprint"
+RENDER_WORDS = "palette or mesh or car_shape or camera or canvas or screens or ui_check or fixtures or tour"
 INPUT_WORDS = "input_frame or input_script or input_pyxel or input_trace or controls or profile"
 VEHICLE_WORDS = "vehicle or sim or fingerprint"
 TRACK_WORDS = "track or sim or fingerprint or datadefs or data_files"
@@ -95,6 +97,8 @@ def test_verify_screen_files_map_to_the_ui_area_and_the_checks_also_to_the_tools
 def test_verify_flow_files_map_to_the_camera_and_screen_state_area():
     assert names_of("clipping_point/cp_core/flow.py") == [FLOW]
     assert names_of("tests/test_flow.py") == [FLOW]
+    # カメラ（位置と向きの計算。段0 区切り10）も、計画の表の「カメラと画面の状態」。
+    assert names_of("clipping_point/cp_core/camera.py") == [FLOW] and names_of("tests/test_camera.py") == [FLOW]
     # 計画の表の「カメラと画面の状態」：run、screen-check。
     plan, kind, not_yet = verify.plan_for([area(FLOW)], [], focused=True)
     assert kind == "focused"
@@ -102,6 +106,28 @@ def test_verify_flow_files_map_to_the_camera_and_screen_state_area():
     # 計画の表に無い fixtures と screens を足してある（突き合わせのテストを選ぶため。理由は AREAS の行の注）。
     assert plan[1][1][-2:] == ["-k", FLOW_WORDS]
     assert not_yet == []
+
+
+def test_verify_palette_mesh_and_car_shape_files_map_to_the_render_area():
+    # 計画の表の「描画」：色の役割、メッシュ用の数値の型と面の向きの決まり、車の仮の形。
+    for path in (
+        "clipping_point/cp_core/palette.py", "clipping_point/cp_core/mesh.py", "clipping_point/cp_core/car_shape.py",
+        "tests/test_palette.py", "tests/test_mesh.py", "tests/test_car_shape.py",
+    ):
+        assert names_of(path) == [RENDER], path
+    # 足す手順は、計画の表のとおり：run、tour、web-smoke。テストの絞りは、画面（2D）の語に、描画とカメラのテストを足したもの。
+    plan, kind, not_yet = verify.plan_for([area(RENDER)], [], focused=True)
+    assert kind == "focused" and step_names(plan) == ["check", "test", "run", "tour", "web-smoke"] and not_yet == []
+    assert plan[1][1][-2:] == ["-k", RENDER_WORDS]
+    assert set(UI_WORDS.split(" or ")) <= set(RENDER_WORDS.split(" or "))
+    assert area(RENDER).selftest is False
+    # パレットとカメラの値（実物の定義データ）は、全部を回す分野。3Dの絵の判定の関数（道具）と、作る補助は、道具の分野。
+    for path in ("clipping_point/data/palettes.json", "clipping_point/data/cameras.json"):
+        assert names_of(path) == [LOOP], path
+    for path in ("tools/scene_reference.py", "tests/test_scene_reference.py", "tools/claude/make_palette.py"):
+        assert names_of(path) == [TOOLS_AREA], path
+    # 並びは、計画の表の順。
+    assert [a.name for a in verify.AREAS] == [VEHICLE, TRACK, INPUT, RENDER, FLOW, UI, WEB, LOOP, TOOLS_AREA]
 
 
 def readers_of(needle: str) -> list:
@@ -233,11 +259,11 @@ def test_verify_data_files_map_to_the_main_loop_area_and_the_load_checks_to_the_
     # 計画の表の「保存、データの検査、乱数、メインループ、世界の状態」：全部を回す。ファイルを読む所、実物の定義データ、試験用データ。
     for path in (
         "clipping_point/cp_app/data_files.py", "clipping_point/data/cars.json", "clipping_point/data/tracks/test_loop.json",
-        "clipping_point/data/assists.json",
+        "clipping_point/data/assists.json", "clipping_point/data/cameras.json", "clipping_point/data/palettes.json",
         "testpacks/extreme/cars.json", "testpacks/extreme/tracks/wide_test_loop.json", "testpacks/another/cars.json",
         "tests/test_data_files.py",
     ):
-        assert names_of(path) == [LOOP], path  # 中身が、車の値、コースの形、操作補正の値でも、実物の定義データは、ここ（全部を回す）
+        assert names_of(path) == [LOOP], path  # 中身が、車の値、コースの形、操作補正の値、カメラ、パレットでも、実物の定義データは、ここ（全部を回す）
     # 読み込み検査の決まり（検査と重ね方）は、計画の表で selftest-break つきの分野（検査の決まり）でもある。
     for path in ("clipping_point/cp_core/datadefs.py", "tests/test_datadefs.py"):
         assert names_of(path) == [LOOP, TOOLS_AREA], path

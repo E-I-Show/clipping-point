@@ -451,7 +451,7 @@ def test_web_smoke_probe_data_checks_come_right_after_the_storage_checks():
     at = names.index("storage_main")
     assert names[at + 1:at + 5] == DATA_CHECKS == list(web_smoke.data_reference.DATA_CHECKS)
     assert all(names.count(name) == 1 for name in DATA_CHECKS)
-    assert DATA_TABLES == {"cars": 1, "tracks": 1, "assists": 1}  # 実物の定義データを、道具が自分で数えた件数
+    assert DATA_TABLES == {"cars": 1, "tracks": 1, "assists": 1, "cameras": 1, "palettes": 1}  # 実物の定義データを、道具が自分で数えた件数
 
 
 @pytest.mark.parametrize(

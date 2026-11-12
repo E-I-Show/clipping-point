@@ -224,3 +224,33 @@
 6. 「実測して、報告に書くこと」（前半の回は、その回で測れるものだけ。測れなかったものは、後半へ、と書く）
 7. 前半の回だけ：後半が使う口の一覧（モジュール、関数やクラスの名、引数と返す値、単位、座標）
 8. 後半の回だけ：絵を見た結果（どの画像を見たか、何が写っていたか）
+
+## 前半の回の結果（後半の回は、ここから読む）
+
+前半の回（2026-11-12）が作った口と、決めたこと。実物のコードが正しい（食い違っていたら、コードに合わせて、報告に書く）。座標の印：【ロ】＝ロジックの座標（Pyxelへは、z を反転し、メッシュは頂点の順も入れ替える）。【模】＝模型の座標（そのまま渡す）。長さは m、角度は rad（画角だけ度）。
+
+### 後半が使う口
+
+- `cp_core/mesh.py`：`MeshPart(name, role, vertices, triangles)`（`vertices` は `((x, y, z), …)`、`triangles` は `((a, b, c), …)`、`role` は色の役割の名）。`face_normal(vertices, triangle)`（(b−a)×(c−a)。どちらの座標でも、これが外向き）。`box()`、`board()`、`quad()`。
+- `cp_core/track.py`【ロ】：`Track.mesh_chunks() -> tuple[MeshChunk]`（呼ぶたびに作る。起動時に1度）。`MeshChunk`：`s_start`、`s_end`、`center`（`(x, z)`）、`radius`（平面）、`parts`（`MeshPart` の並び。名は `road`、`line`、`grass`、`wall`）。`MESH_PARTS`、`MESH_ROLES`。全周で3,660三角形、12塊。
+- `cp_core/camera.py`【ロ】：`CHASE`、`spec_from_entry(data.entry("cameras", CHASE)) -> CameraSpec`、`chase_pose(spec, x, z, heading) -> CameraPose`（`eye`、`target` は `(x, y, z)`。`fov_deg` は縦の画角。`near`、`far`、`.heading`、`.pitch`）。`chunk_visible(pose, center_x, center_z, radius)`。背景：`focal_px()`、`backdrop_period_px(fov_deg, screen_h)`（58度・240で1360）、`backdrop_shift_px(pose.heading, period_px)`、`horizon_row(pose, screen_h)`（後方追従で99）。柱：`pillar_positions(x, z, heading)`、`pillar_parts(x, z, heading) -> (左, 右)`（`MeshPart`。名は `pillar_left`、`pillar_right`。コースと同じ変換を通す）。
+- `cp_core/palette.py`：`ROLES`（32の名。並びが番号）、定数 `BLACK`〜`PINK`、`number(役割の名)`、`SKY`（上から下）、`MOUNTAINS`、`FAR_GROUND`、`EVENING`。`palette_from_entry(data.entry("palettes", EVENING)) -> Palette(palette_id, colors, unshaded)`。
+- `cp_core/car_shape.py`【模】：`build_car_shape(data.entry("cars", CAR_ID)) -> CarShape`（`body`＝車体と屋根の `MeshPart`、`wheel`＝中心が原点の箱1つ、`wheel_centers`＝4つの `(x, y, z)`。車の根の下に置く。72三角形）。`mark_parts() -> (右の印, 鼻先の印)`（名は `mark_right`、`mark_nose`。車の根の変換の下に、そのまま置く）。
+- `cp_app/perf.py`：`PerfRing(size)`、`UPDATE_RING`（120）、`RENDER_RING`（60）。`.add(start_s, end_s)`、`.mean_ms()`、`.max_ms()`、`.per_second()`（測れていなければ None）。`PerfMeter.report()` に、平均と最大。
+- `cp_core/flow.py`：`capped_tenths(value, whole_digits) -> int | None`（小数 → 0.1刻みの整数。桁を超えたら、桁いっぱい）。
+- `tools/scene_reference.py`（道具 run、tour、web-smoke が引く）：アプリが結果に入れる形は `result["scene"] = {"sky", "track", "car", "ink_inside", "ink_outside", "probes": {名: {"pixels", "x10"}}, "palette": [32色], "digest"}`（値は整数。`probes` の名は `pillar_left`、`pillar_right`、`mark_right`、`mark_nose`）。`scene_checks(result, budgets, want_palette, why="", names=SCENE_CHECKS)`、`SCENE_CHECKS`（`backdrop`、`scene3d`、`mirror`、`palette`、`scene_same`、`back_ink`）、`expected_palette()`、`missing_budgets(budgets)`、`BUDGET_KEYS`（`scene_sky_min_px`、`scene_track_min_px`、`scene_car_min_px`、`scene_mirror_margin_px`。`tools/budgets.json` には、まだ無い。実測して足す）、`scene_words(result)`。
+
+### 前半の回が、実物のPyxelで試したこと（リポジトリの外の、一時のスクリプト）
+
+- ロジックの座標の形は「z を反転して、頂点の順を入れ替える」、模型の座標の形は「そのまま、`Mat4.from_translation(Vec3(x, 0, -z)).rotate_y(degrees(heading))` の下」、カメラは、目と注視点の z を反転して `Mat4.look_at`。裏の面を捨てる設定で、描けた。
+- 向き 0、1.0、2.37、π の4通りで、重心の x は同じ：左の柱113.8、右の柱205.2、右の印211.1、鼻先の印159.5（画面の中央は159.5）。画素は、約229、211、292、132。
+- 頂点の順を取り違えると、柱も印も0画素。コースは、入れ替え無しだと、路面、白線、芝が0画素。
+- スタート位置の絵：路面35,906、白線314、芝5,160、壁1,827画素。車：車体3,918、屋根1,164画素。車輪は、後方追従の視点からは、車体に隠れて、0画素。
+
+### 後半で気を付ける所
+
+- 判定の下限と余裕（`tools/budgets.json`）は、後半が、実測して足す（無いまま判定すると、例外。`scene_reference.missing_budgets()` で、先に見られる）。
+- 背景をずらす量は、画面の高さから作る（Pyxelの3Dの画角は、縦の画角）。
+- `.claude/rules/render.md`（約6,000バイト）に、後半の分（`cp_app/render.py` の当て先、実描画の順、Pyxelの3Dの癖、判定用の実描画）を足す。足したら、根のCLAUDE.mdの目次の行も直す。
+- メッシュの「区切り」（コースを約4 mごとに分けた1つ）は、言葉の表の「区切り」（開発の単位）と重なる。注と規則ファイルの語を、「断面」に言い換える（`cp_core/track.py`、`cp_core/mesh.py`、`.claude/rules/track.md`、`.claude/rules/render.md`、テストの注）。名（英語）は、変えなくてよい。
+- 細目の16番（規則ファイル sim-core.md の文）と、30番（「区切り10で合わせる」の値）は、後半。

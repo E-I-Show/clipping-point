@@ -9,6 +9,7 @@
 | `usage_row.py` | 2つある週の枠の値を、作業記録の表の1行にし、停止の線（このモデルの週の枠）を判定する | 区切りごとと、サブエージェントやワークフローを始める前 |
 | `handoff_hook.py` | セッションの開始時に、作業の控えを差し込む（`.claude/settings.json` から呼ばれる） | 自動。手では呼ばない |
 | `canon_digest.py` | 正本の要約値の写しを見る、取り直す | 取り直しは、採られた改訂案を正本に当てるコミットでだけ |
+| `make_palette.py` | 夕方のパレット（`clipping_point/data/palettes.json` の `evening`）の32色を、昼の32色と夕方の式から作る。`--check` で、定義データと照らす（selftest-break が回す） | パレットの色を変える時 |
 | `make_test_loop.py` | 仮の周回路（`clipping_point/data/tracks/test_loop.json`）の制御点を、寸法の式から作る。`--check` で、定義データの制御点と照らす（selftest-break が回す） | 仮の周回路の寸法を変える時。本物のコースを作る段で、仮の周回路と一緒に消す |
 | `make_drive_scripts.py` | 走る台本（`tools/input_script_drive.json`）と、壁の台本（`tools/input_script_wall.json`）を作る。簡単な追従で世界を回しながら、入力を段に丸めて書き出し、台本として読み直して、同じ要約になることと、指紋の筋書きの走行の下限を確かめる。`--write` で書く。`--lap` は、1周のtickを出す。道具とテストは、これを読まない | 世界の式か、車、コース、操作補正の値を変えて、台本が走行の下限を満たさなくなった時。書いたら、指紋の写しを取り直す。段1で、運転役の周回に置き換える |
 

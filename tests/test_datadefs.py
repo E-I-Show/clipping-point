@@ -21,7 +21,7 @@ import re
 import pytest
 
 from conftest import ROOT
-from cp_core import datadefs, profile, storage, track, vehicle
+from cp_core import camera, car_shape, datadefs, palette, profile, storage, track, vehicle
 from cp_core.datadefs import (
     ONE_ENTRY,
     ONE_TABLE,
@@ -44,6 +44,7 @@ from cp_core.datadefs import (
 
 DATA = ROOT / "clipping_point" / "data"
 CARS, LOOP, ASSISTS = "cars.json", "tracks/test_loop.json", "assists.json"  # 実物の定義データのファイル
+CAMERAS, PALETTES = "cameras.json", "palettes.json"  # 同じく、カメラとパレット（段0 区切り10）
 
 
 def real_sources() -> dict:
@@ -64,6 +65,16 @@ def real_loop() -> dict:
 def real_assist() -> dict:
     """実物の操作補正の項目（default）。引くたびに、新しい辞書。"""
     return json.loads(real_sources()[ASSISTS])["assists"][0]
+
+
+def real_camera() -> dict:
+    """実物のカメラの項目（chase）。引くたびに、新しい辞書。"""
+    return json.loads(real_sources()[CAMERAS])["cameras"][0]
+
+
+def real_palette() -> dict:
+    """実物のパレットの項目（evening）。引くたびに、新しい辞書。"""
+    return json.loads(real_sources()[PALETTES])["palettes"][0]
 
 
 def without(entry: dict, *keys) -> dict:
@@ -97,18 +108,28 @@ def test_datadefs_shipped_data_loads_with_no_warnings():
     data = load_game_data(real_sources())
     assert type(data) is GameData
     assert data.warnings == ()  # 出荷するデータは、警告0件
-    assert data.counts() == {"cars": 1, "tracks": 1, "assists": 1}
+    assert data.counts() == {"cars": 1, "tracks": 1, "assists": 1, "cameras": 1, "palettes": 1}
     assert data.ids("cars") == ("kazane",) and data.ids("tracks") == ("test_loop",) and data.ids("assists") == ("default",)
+    assert data.ids("cameras") == ("chase",) and data.ids("palettes") == ("evening",)
     car, loop, assist = data.entry("cars", "kazane"), data.entry("tracks", "test_loop"), data.entry("assists", "default")
+    chase, evening = data.entry("cameras", "chase"), data.entry("palettes", "evening")
     assert (car["id"], car["name"], car["data_version"]) == ("kazane", "KAZANE", 1)
     assert (loop["id"], loop["name"], loop["data_version"]) == ("test_loop", "TEST LOOP", 1)
     # 読み込んだ項目は、ファイルの項目と同じ（注の鍵のほかは、何も落とさず、何も足さない）。
-    assert car == real_car() and loop == real_loop() and assist == real_assist()
+    assert car == real_car() and loop == real_loop() and assist == real_assist() and chase == real_camera() and evening == real_palette()
     assert list(car) == list(TABLES["cars"].fields) and list(loop) == list(TABLES["tracks"].fields) and list(assist) == list(TABLES["assists"].fields)
+    assert list(chase) == list(TABLES["cameras"].fields) and list(evening) == list(TABLES["palettes"].fields)
     # 走りの値、コースの形、操作補正の値の、頭の所を、数字でも固定する。
     assert car["body"]["mass_kg"] == 960.0 and car["drivetrain"]["gears"] == [3.136, 1.888, 1.33, 1.0, 0.86] and len(car["engine"]["torque_curve"]) == 6
     assert len(loop["control_points"]) == 72 and loop["control_points"][0] == {"x_m": 0.0, "z_m": 0.0} and loop["width_m"] == 12.0
     assert assist["reverse"] == {"stop_speed_m_s": 0.5, "brake_hold_s": 0.5, "pedal_press_min": 0.1}
+    # 描画の値（車の仮の形、メッシュの寸法、カメラ、パレット）も、数字で固定する。
+    assert car["shape"] == {
+        "height_m": 1.24, "body_top_m": 0.78, "roof_front_m": 0.42, "roof_rear_m": -1.0, "roof_inset_m": 0.29, "ground_clearance_m": 0.17, "tire_width_m": 0.22,
+    }
+    assert loop["mesh"] == {"step_m": 4.0, "road_strips": 4, "line_m": 0.2, "wall_height_m": 0.9, "chunk_m": 60.0}
+    assert chase == {"id": "chase", "back_m": 6.2, "height_m": 2.1, "look_ahead_m": 6.0, "look_height_m": 0.9, "fov_deg": 58.0, "near_m": 0.3, "far_m": 300.0}
+    assert len(evening["colors"]) == 32 and evening["colors"][0] == 0x16111D and evening["colors"][31] == 0xE26487 and evening["unshaded"] == [15, 30]
     assert data.pack is None and data.save_namespace == "main" == storage.DEFAULT_NAMESPACE
 
 
@@ -121,6 +142,11 @@ def test_datadefs_shipped_entries_build_the_car_the_track_and_the_controls():
     assert track.build_track(data.entry("tracks", "test_loop")).track_id == "test_loop"
     assert controls.params_from_entry(data.entry("assists", controls.DEFAULT_SET)).brake_hold_ticks == 30
     assert sorted(data.entry("tracks", "test_loop")["surface_mu"]) == sorted(track.SURFACES)  # 路面の種類ごとに、摩擦係数がある
+    # 描画の側（車の仮の形、メッシュ用の数値、カメラの値、パレット）も、読み込んだ項目から作れる。使う項目の id は、使う側の定数。
+    assert car_shape.build_car_shape(data.entry("cars", "kazane")).triangle_count == 72
+    assert len(track.build_track(data.entry("tracks", "test_loop")).mesh_chunks()) == 12
+    assert camera.spec_from_entry(data.entry("cameras", camera.CHASE)).camera_id == "chase"
+    assert len(palette.palette_from_entry(data.entry("palettes", palette.EVENING)).colors) == palette.COLOR_COUNT == 32
 
 
 def test_datadefs_shipped_files_carry_their_notes_and_the_notes_are_not_handed_out():
@@ -134,9 +160,10 @@ def test_datadefs_shipped_files_carry_their_notes_and_the_notes_are_not_handed_o
             assert not [key for key in data.entry(table, ident) if key.startswith("_")]
 
 
-def test_datadefs_real_table_definitions_are_cars_tracks_and_assists():
-    assert list(TABLES) == ["cars", "tracks", "assists"]
+def test_datadefs_real_table_definitions_are_cars_tracks_assists_cameras_and_palettes():
+    assert list(TABLES) == ["cars", "tracks", "assists", "cameras", "palettes"]
     assert TABLES["cars"].layout == ONE_TABLE and TABLES["tracks"].layout == ONE_ENTRY and TABLES["assists"].layout == ONE_TABLE
+    assert TABLES["cameras"].layout == ONE_TABLE and TABLES["palettes"].layout == ONE_TABLE
     for name in ("cars", "tracks"):
         table = TABLES[name]
         assert list(table.fields)[:3] == ["id", "name", "data_version"]
@@ -144,11 +171,28 @@ def test_datadefs_real_table_definitions_are_cars_tracks_and_assists():
         assert table.fields["name"].max_len == datadefs.NAME_MAX == 14  # 車名もコース名も、14字まで
         assert type(table.fields["data_version"]) is Int
         assert (table.fields["data_version"].low, table.fields["data_version"].high) == (1, None)  # データの版は、1以上の整数
-    assert list(TABLES["cars"].fields)[3:] == ["body", "steering", "engine", "drivetrain", "lsd", "tires", "suspension", "brakes", "aero", "rest", "outputs"]
-    assert list(TABLES["tracks"].fields)[3:] == ["table", "width_m", "grass_m", "surface_mu", "wall", "start", "control_points"]
+    assert list(TABLES["cars"].fields)[3:] == ["body", "steering", "engine", "drivetrain", "lsd", "tires", "suspension", "brakes", "aero", "rest", "outputs", "shape"]
+    assert list(TABLES["tracks"].fields)[3:] == ["table", "width_m", "grass_m", "surface_mu", "wall", "start", "mesh", "control_points"]
     assert list(TABLES["assists"].fields) == ["id", "steer", "reverse"] and type(TABLES["assists"].fields["id"]) is Ident
+    assert list(TABLES["cameras"].fields) == ["id", "back_m", "height_m", "look_ahead_m", "look_height_m", "fov_deg", "near_m", "far_m"]
+    assert list(TABLES["palettes"].fields) == ["id", "colors", "unshaded"]
+    assert type(TABLES["cameras"].fields["id"]) is Ident and type(TABLES["palettes"].fields["id"]) is Ident
+    assert list(TABLES["cars"].fields["shape"].fields) == ["height_m", "body_top_m", "roof_front_m", "roof_rear_m", "roof_inset_m", "ground_clearance_m", "tire_width_m"]
+    assert list(TABLES["tracks"].fields["mesh"].fields) == ["step_m", "road_strips", "line_m", "wall_height_m", "chunk_m"]
+    # パレットの色は、ちょうど32個（0〜16,777,215 の整数）。陰影で暗くしない色の番号は、0〜31 が、1個以上。
+    colors, unshaded = TABLES["palettes"].fields["colors"], TABLES["palettes"].fields["unshaded"]
+    assert type(colors) is ListOf and (colors.min_len, colors.max_len) == (32, 32) and type(colors.item) is Int and (colors.item.low, colors.item.high) == (0, 16777215)
+    assert type(unshaded) is ListOf and (unshaded.min_len, unshaded.max_len) == (1, 32) and type(unshaded.item) is Int and (unshaded.item.low, unshaded.item.high) == (0, 31)
     # 項目をまたぐ検査は、車とコースが持つ。検査の関数は、使う側のモジュールに置く（datadefs が読み込む向き）。
-    assert TABLES["cars"].check is vehicle.spec_problems and TABLES["tracks"].check is track.shape_problems and TABLES["assists"].check is None
+    # 車は、車の値の矛盾（vehicle）と、仮の形の寸法の矛盾（car_shape）を、続けて並べる。
+    assert TABLES["cars"].check is datadefs.car_problems and TABLES["tracks"].check is track.shape_problems
+    assert TABLES["assists"].check is None and TABLES["cameras"].check is None and TABLES["palettes"].check is None
+    entry = real_car()
+    entry["drivetrain"]["gears"] = [1.0, 2.0]
+    entry["shape"]["roof_inset_m"] = 1.0
+    assert datadefs.car_problems(entry) == vehicle.spec_problems(entry) + car_shape.shape_problems(entry)
+    assert [path for path, _ in datadefs.car_problems(entry)] == [("drivetrain", "gears", 1), ("shape", "roof_inset_m")]
+    assert datadefs.car_problems(real_car()) == []
     assert TableDef(ONE_TABLE, {"id": Ident()}).check is None  # 省けば、無い
 
 
@@ -177,6 +221,14 @@ def test_datadefs_values_that_would_divide_by_zero_cannot_be_zero():
     assist = TABLES["assists"].fields
     assert zero_is_outside(assist["steer"].fields["limit_min_speed_m_s"]) and zero_is_outside(assist["reverse"].fields["pedal_press_min"])
     assert all(zero_is_outside(assist["steer"].fields[kind].fields["full_time_s"]) for kind in ("analog", "digital"))
+    # 描画の値。メッシュの区切りと塊の長さ、路面を割る数、タイヤの幅、画角（焦点距離は、tan(画角÷2) で割る）。
+    mesh = loop["mesh"].fields
+    assert zero_is_outside(mesh["step_m"]) and zero_is_outside(mesh["chunk_m"]) and zero_is_outside(mesh["line_m"]) and mesh["road_strips"].low == 1
+    assert 2.0 * mesh["line_m"].high < loop["width_m"].low  # 白線2本は、舗装の幅の下限に収まる（路面の幅が、0にならない）
+    assert zero_is_outside(car["shape"].fields["tire_width_m"]) and zero_is_outside(car["shape"].fields["height_m"])
+    lens = TABLES["cameras"].fields
+    assert zero_is_outside(lens["fov_deg"]) and lens["fov_deg"].high < 180.0 and zero_is_outside(lens["back_m"]) and zero_is_outside(lens["near_m"])
+    assert lens["near_m"].high <= 1.0 < lens["far_m"].low  # 手前は 1.0 を超えない（足元が欠ける）。奥は、いつも、手前より遠い
 
 
 # --- 実物の定義データを、1か所ずつ壊す。{名前: (表, 札, 壊したファイルの辞書, 並ぶはずの問題の行)} ---
@@ -197,6 +249,24 @@ def assist(**values):
 def car_group(group: str, **values):
     """実物の車の、入れ子の項目（body、engine など）の中の値を、書き換えたもの。"""
     return edited(CARS, lambda doc: doc["cars"][0][group].update(values))
+
+
+def loop_mesh(**values):
+    """実物のコースの、メッシュの寸法（mesh）の中の値を、書き換えたもの。"""
+    return edited(LOOP, lambda doc: doc["mesh"].update(values))
+
+
+def chase_camera(**values):
+    return edited(CAMERAS, lambda doc: doc["cameras"][0].update(values))
+
+
+def evening_palette(**values):
+    return edited(PALETTES, lambda doc: doc["palettes"][0].update(values))
+
+
+def evening_colors(change):
+    """実物のパレットの、色の並びを、change で書き換えたもの。"""
+    return edited(PALETTES, lambda doc: change(doc["palettes"][0]["colors"]))
 
 
 def key_paths(fields: dict, prefix: str = "") -> list:
@@ -287,6 +357,61 @@ BROKEN = {
         "tracks", "start.s_m", loop(start={"s_m": 800.0, "lateral_m": 0.0}),
         ["tracks/test_loop.json:start.s_m: 800.0 is beyond the lap length 732.7 m"],
     ),
+    # 描画の値（段0 区切り10）。メッシュの寸法の、整数の鍵（数の鍵の、型と範囲は、下で、鍵の道から作る）。
+    "tracks unknown key in the mesh": ("tracks", None, loop_mesh(lod_m=30.0), ["tracks/test_loop.json:mesh.lod_m: unknown key"]),
+    "tracks mesh strips that are not an integer": (
+        "tracks", "mesh.road_strips", loop_mesh(road_strips=4.0), ["tracks/test_loop.json:mesh.road_strips: expected an integer, got float"],
+    ),
+    "tracks mesh with no strips": ("tracks", "mesh.road_strips", loop_mesh(road_strips=0), ["tracks/test_loop.json:mesh.road_strips: 0 is outside 1..16"]),
+    # 車の仮の形の、寸法の矛盾（項目をまたぐ検査。cp_core/car_shape.py）。
+    "cars shape body box below the ground clearance": (
+        "cars", "shape.body_top_m", car_group("shape", ground_clearance_m=0.9),
+        ["cars.json:cars[0].shape.body_top_m: 0.78 is not above the ground clearance (0.9)"],
+    ),
+    "cars shape height below the body box": (
+        "cars", "shape.height_m", car_group("shape", height_m=0.7), ["cars.json:cars[0].shape.height_m: 0.7 is not above the top of the body box (0.78)"],
+    ),
+    "cars shape roof ahead of the nose": (
+        "cars", "shape.roof_front_m", car_group("shape", roof_front_m=2.5), ["cars.json:cars[0].shape.roof_front_m: 2.5 is ahead of the nose (half length 2.1)"],
+    ),
+    "cars shape roof behind the tail": (
+        "cars", "shape.roof_rear_m", car_group("shape", roof_rear_m=-2.5), ["cars.json:cars[0].shape.roof_rear_m: -2.5 is behind the tail (half length 2.1)"],
+    ),
+    "cars shape roof squeezed to nothing": (
+        "cars", "shape.roof_inset_m", car_group("shape", roof_inset_m=0.9), ["cars.json:cars[0].shape.roof_inset_m: 0.9 leaves no roof (half width 0.85)"],
+    ),
+    # カメラ。
+    "cameras unknown key": ("cameras", None, chase_camera(distance_m=6.2), ["cameras.json:cameras[0].distance_m: unknown key"]),
+    "cameras bad id": ("cameras", "id", chase_camera(id="Chase Cam"), ["cameras.json:cameras[0].id: 'Chase Cam' is not an id (lowercase ASCII, digits, _)"]),
+    "cameras empty table": ("cameras", None, edited(CAMERAS, lambda doc: doc["cameras"].clear()), ["cameras.json:cameras: no entries"]),
+    "cameras near plane beyond one metre": ("cameras", "near_m", chase_camera(near_m=3.0), ["cameras.json:cameras[0].near_m: 3.0 is outside 0.01..1.0"]),
+    "cameras field of view of a half turn": ("cameras", "fov_deg", chase_camera(fov_deg=180.0), ["cameras.json:cameras[0].fov_deg: 180.0 is outside 10.0..120.0"]),
+    # パレット。色は、ちょうど32個の、0〜16,777,215 の整数。
+    "palettes unknown key": ("palettes", None, evening_palette(colours=[]), ["palettes.json:palettes[0].colours: unknown key"]),
+    "palettes bad id": ("palettes", "id", evening_palette(id="Evening"), ["palettes.json:palettes[0].id: 'Evening' is not an id (lowercase ASCII, digits, _)"]),
+    "palettes empty table": ("palettes", None, edited(PALETTES, lambda doc: doc["palettes"].clear()), ["palettes.json:palettes: no entries"]),
+    "palettes 31 colours": (
+        "palettes", "colors", evening_colors(lambda colors: colors.pop()), ["palettes.json:palettes[0].colors: expected a list of 32..32 items, got 31"],
+    ),
+    "palettes 33 colours": (
+        "palettes", "colors", evening_colors(lambda colors: colors.append(0)), ["palettes.json:palettes[0].colors: expected a list of 32..32 items, got 33"],
+    ),
+    "palettes colour beyond 24 bits": (
+        "palettes", "colors", evening_colors(lambda colors: colors.__setitem__(3, 0x1000000)),
+        ["palettes.json:palettes[0].colors[3]: 16777216 is outside 0..16777215"],
+    ),
+    "palettes negative colour": (
+        "palettes", "colors", evening_colors(lambda colors: colors.__setitem__(31, -1)), ["palettes.json:palettes[0].colors[31]: -1 is outside 0..16777215"],
+    ),
+    "palettes colour written as a hex text": (
+        "palettes", "colors", evening_colors(lambda colors: colors.__setitem__(0, "16111D")), ["palettes.json:palettes[0].colors[0]: expected an integer, got str"],
+    ),
+    "palettes colour that is a float": (
+        "palettes", "colors", evening_colors(lambda colors: colors.__setitem__(5, 15848639.0)), ["palettes.json:palettes[0].colors[5]: expected an integer, got float"],
+    ),
+    "palettes unshaded number beyond 31": (
+        "palettes", "unshaded", evening_palette(unshaded=[15, 32]), ["palettes.json:palettes[0].unshaded[1]: 32 is outside 0..31"],
+    ),
 }
 
 # --- 数、入れ子の項目、並びの鍵の、壊した場合を、鍵の道から作る ---
@@ -295,6 +420,8 @@ HEADS = {
     "cars": (CARS, "cars.json:cars[0].", lambda doc: doc["cars"][0]),
     "tracks": (LOOP, "tracks/test_loop.json:", lambda doc: doc),
     "assists": (ASSISTS, "assists.json:assists[0].", lambda doc: doc["assists"][0]),
+    "cameras": (CAMERAS, "cameras.json:cameras[0].", lambda doc: doc["cameras"][0]),
+    "palettes": (PALETTES, "palettes.json:palettes[0].", lambda doc: doc["palettes"][0]),
 }
 MISSING = object()  # 鍵を消す、の印
 
@@ -515,8 +642,12 @@ def test_datadefs_missing_table_files_are_problems():
     assert problems_of(without(sources, CARS)) == ["cars.json: missing file"]
     assert problems_of(without(sources, LOOP)) == ["tracks/: no entry files"]
     assert problems_of(without(sources, ASSISTS)) == ["assists.json: missing file"]
-    assert problems_of({CARS: sources[CARS]}) == ["tracks/: no entry files", "assists.json: missing file"]
-    assert problems_of({}) == ["cars.json: missing file", "tracks/: no entry files", "assists.json: missing file"]
+    assert problems_of(without(sources, CAMERAS)) == ["cameras.json: missing file"]
+    assert problems_of(without(sources, PALETTES)) == ["palettes.json: missing file"]
+    assert problems_of({CARS: sources[CARS]}) == ["tracks/: no entry files", "assists.json: missing file", "cameras.json: missing file", "palettes.json: missing file"]
+    assert problems_of({}) == [
+        "cars.json: missing file", "tracks/: no entry files", "assists.json: missing file", "cameras.json: missing file", "palettes.json: missing file",
+    ]
 
 
 # --- ファイルの頭の形の誤り。2つの形のそれぞれで ---
@@ -524,7 +655,7 @@ LOOP_ENTRY = real_loop()  # 実物のコースの項目。読み込み検査を�
 # コースの項目の、id のほかの鍵が、全部足りないときに並ぶ行（表の定義の順）。
 LOOP_KEYS_MISSING = [
     f"tracks/test_loop.json:{key}: missing"
-    for key in ("name", "data_version", "table", "width_m", "grass_m", "surface_mu", "wall", "start", "control_points")
+    for key in ("name", "data_version", "table", "width_m", "grass_m", "surface_mu", "wall", "start", "mesh", "control_points")
 ]
 
 
@@ -603,6 +734,18 @@ def test_datadefs_strange_values_anywhere_never_raise_anything_but_data_error():
             with_text(LOOP, json.dumps({**LOOP_ENTRY, "table": value})),
             with_text(ASSISTS, json.dumps({"assists": [{**real_assist(), "steer": value}]})),
             with_text(ASSISTS, json.dumps({"assists": [{**real_assist(), "reverse": {"stop_speed_m_s": value}}]})),
+            # 描画の値。車の仮の形と、メッシュの寸法（項目をまたぐ検査と、表を作る計算が読む鍵）、カメラ、パレット。
+            with_text(CARS, json.dumps({"cars": [{**ENTRY, "shape": value}]})),
+            with_text(CARS, json.dumps({"cars": [{**ENTRY, "shape": {**ENTRY["shape"], "roof_front_m": value}}]})),
+            with_text(LOOP, json.dumps({**LOOP_ENTRY, "mesh": value})),
+            with_text(LOOP, json.dumps({**LOOP_ENTRY, "mesh": {**LOOP_ENTRY["mesh"], "road_strips": value}})),
+            with_text(CAMERAS, json.dumps(value)),
+            with_text(CAMERAS, json.dumps({"cameras": [value]})),
+            with_text(CAMERAS, json.dumps({"cameras": [{**real_camera(), "fov_deg": value}]})),
+            with_text(PALETTES, json.dumps({"palettes": value})),
+            with_text(PALETTES, json.dumps({"palettes": [{**real_palette(), "colors": value}]})),
+            with_text(PALETTES, json.dumps({"palettes": [{**real_palette(), "colors": [value] * 32}]})),
+            with_text(PALETTES, json.dumps({"palettes": [{**real_palette(), "unshaded": [value]}]})),
         ):
             try:
                 load_game_data(sources)
@@ -612,7 +755,8 @@ def test_datadefs_strange_values_anywhere_never_raise_anything_but_data_error():
             try:
                 load_game_data(real_sources(), ("p", sources))
             except DataError as exc:
-                assert exc.problems and all(line.startswith(("testpacks/p/", "cars.json", "tracks/", "assists.json")) for line in exc.problems)
+                heads = ("testpacks/p/", "cars.json", "tracks/", "assists.json", "cameras.json", "palettes.json")
+                assert exc.problems and all(line.startswith(heads) for line in exc.problems)
 
 
 def P(x: float, z: float) -> dict:  # noqa: N802 - 制御点1つ。下の表を、短く書くための名
@@ -869,13 +1013,13 @@ def test_datadefs_loading_does_not_change_the_sources():
 # --- 問題の行の順 ---
 def test_datadefs_problem_lines_come_in_the_same_order_every_time():
     # 辞書へ入れた順と、JSONの中の鍵の順を変えても、問題の行は、同じ順で並ぶ（集合を回した順に頼らない）。
-    # ほかの鍵（走りの値、コースの形）は、実物の値のまま（問題にならない）。操作補正のファイルも、実物のまま。
+    # ほかの鍵（走りの値、コースの形）は、実物の値のまま（問題にならない）。操作補正、カメラ、パレットのファイルも、実物のまま。
     car = {"zz": 1, "id": "kazane", "aa": 2, "data_version": 0, "name": "", "mm": 3, **without(ENTRY, "id", "name", "data_version")}
     loop_entry = {"data_version": "1", "zz": 1, "name": "カ", "aa": 2, "id": "test_loop", **without(LOOP_ENTRY, "id", "name", "data_version")}
-    names = ["notes.txt", CARS, "zz.json", LOOP, "aa.json", ASSISTS]
+    names = ["notes.txt", CARS, "zz.json", LOOP, "aa.json", ASSISTS, PALETTES, CAMERAS]
     texts = {
         CARS: {"cars": [car, dict(reversed(car.items()))]}, LOOP: loop_entry, "notes.txt": {}, "zz.json": {}, "aa.json": {},
-        ASSISTS: json.loads(real_sources()[ASSISTS]),
+        ASSISTS: json.loads(real_sources()[ASSISTS]), CAMERAS: json.loads(real_sources()[CAMERAS]), PALETTES: json.loads(real_sources()[PALETTES]),
     }
     want = [
         "aa.json: unknown file (no table reads this name)",
@@ -921,7 +1065,7 @@ def test_datadefs_pack_replaces_the_same_id_and_appends_a_new_id():
     assert replaced == PACK_CARS["cars"][0] and (replaced["name"], replaced["data_version"]) == ("KAZANE RS TEST", 3)
     assert replaced["body"]["mass_kg"] == 1234.5  # 項目ごと差し替える（入れ子の中の値も、試験用データの値）
     assert data.entry("cars", "wide_test_car")["name"] == "W" * 14
-    assert data.counts() == {"cars": 2, "tracks": 1, "assists": 1}  # 重ねなかった表は、そのまま
+    assert data.counts() == {"cars": 2, "tracks": 1, "assists": 1, "cameras": 1, "palettes": 1}  # 重ねなかった表は、そのまま
     # 元のデータは変わらない。
     plain = load_game_data(sources)
     assert plain.pack is None and plain.ids("cars") == ("kazane",) and plain.entry("cars", "kazane")["name"] == "KAZANE"
@@ -954,7 +1098,7 @@ def test_datadefs_pack_of_one_entry_files_replaces_the_same_name_and_adds_a_new_
     data = load_game_data(real_sources(), ("extreme", pack))
     assert data.ids("tracks") == ("test_loop", "another_loop", "wide_test_loop")  # 元の順のあとに、新しい名（名を整列した順）
     assert data.entry("tracks", "test_loop") == replaced and data.entry("tracks", "test_loop")["width_m"] == 10.0
-    assert data.counts() == {"cars": 1, "tracks": 3, "assists": 1}
+    assert data.counts() == {"cars": 1, "tracks": 3, "assists": 1, "cameras": 1, "palettes": 1}
     assert load_game_data(real_sources()).entry("tracks", "test_loop")["name"] == "TEST LOOP"
 
 
@@ -1134,6 +1278,17 @@ def test_datadefs_generated_broken_cases_are_built_from_the_key_paths_and_fixed_
     assert GENERATED["tracks start.s_m out of range"][3] == ["tracks/test_loop.json:start.s_m: 20001.0 is outside 0.0..20000.0"]
     assert GENERATED["assists steer.digital.full_time_s missing"][3] == ["assists.json:assists[0].steer.digital.full_time_s: missing"]
     assert GENERATED["assists reverse.pedal_press_min out of range"][3] == ["assists.json:assists[0].reverse.pedal_press_min: 2.0 is outside 0.001..1.0"]
+    # 描画の値（車の仮の形、メッシュの寸法、カメラ、パレット）。
+    assert GENERATED["cars shape.roof_front_m out of range"][3] == ["cars.json:cars[0].shape.roof_front_m: 6.0 is outside -5.0..5.0"]
+    assert GENERATED["cars shape wrong type"][3] == ["cars.json:cars[0].shape: expected an object, got int"]
+    assert GENERATED["tracks mesh.step_m out of range"][3] == ["tracks/test_loop.json:mesh.step_m: 21.0 is outside 1.0..20.0"]
+    assert GENERATED["tracks mesh.road_strips missing"][3] == ["tracks/test_loop.json:mesh.road_strips: missing"]
+    assert GENERATED["tracks mesh missing"][3] == ["tracks/test_loop.json:mesh: missing"]
+    assert GENERATED["cameras fov_deg out of range"][3] == ["cameras.json:cameras[0].fov_deg: 121.0 is outside 10.0..120.0"]
+    assert GENERATED["cameras far_m wrong type"][3] == ["cameras.json:cameras[0].far_m: expected a number, got str"]
+    assert GENERATED["palettes colors empty"][3] == ["palettes.json:palettes[0].colors: expected a list of 32..32 items, got 0"]
+    assert GENERATED["palettes unshaded empty"][3] == ["palettes.json:palettes[0].unshaded: expected a list of 1..32 items, got 0"]
+    assert GENERATED["palettes colors wrong type"][3] == ["palettes.json:palettes[0].colors: expected a list, got str"]
     # 壊したファイルは、狙った1か所だけが、実物と違う。
     doc = json.loads(GENERATED["cars body.mass_kg wrong type"][2][CARS])["cars"][0]
     assert doc["body"]["mass_kg"] == "x" and {**doc, "body": {**doc["body"], "mass_kg": 960.0}} == real_car()
@@ -1147,7 +1302,7 @@ def test_datadefs_generated_broken_cases_are_built_from_the_key_paths_and_fixed_
             assert {name.rsplit(f" {path} ", 1)[1] for name in GENERATED if name.startswith(f"{table} {path} ")} == want, (table, path)
     # 実物の表の定義の、数の鍵の数（足したら、ここも変える。鍵が、規則ごと消えていないこと）。
     numbers = [path for table in TABLES.values() for path in key_paths(table.fields) if type(rules_along(table.fields, path)[-1][1]) is Num]
-    assert len(numbers) == 79
+    assert len(numbers) == 79 + 7 + 4 + 7  # 段0 区切り9までの79に、車の仮の形の7、メッシュの寸法の4（路面を割る数は、整数）、カメラの7
 
 
 # --- 項目をまたぐ検査の口（TableDef.check）。作り物の表の定義で、呼ばれる条件と、問題の行の形を見る ---
@@ -1252,17 +1407,23 @@ def test_datadefs_real_cross_checks_run_only_when_the_key_rules_pass_and_list_ev
     # 実物の表の定義で。変速比の順と、足りない鍵を、同じ車に仕込む。並ぶのは、足りない鍵だけ（規則を通らない値で、検査を始めない）。
     both = edited(CARS, lambda doc: (doc["cars"][0]["drivetrain"].update(gears=[1.0, 2.0]), doc["cars"][0]["body"].pop("mass_kg")))
     assert problems_of(both) == ["cars.json:cars[0].body.mass_kg: missing"]
-    # 車の矛盾2つと、コースの形の誤り2つ。4つとも並ぶ。
+    # 車の矛盾2つ、車の仮の形の矛盾2つ、コースの形の誤り2つ。6つとも並ぶ（車は、車の値の矛盾が先、仮の形の寸法が後）。
     sources = edited(CARS, lambda doc: (
         doc["cars"][0]["drivetrain"].update(gears=[3.0, 3.5, 1.0]), doc["cars"][0]["engine"]["torque_curve"][1].update(rpm=900.0),
+        doc["cars"][0]["shape"].update(height_m=0.5, roof_rear_m=-3.0),
     ))
     sources = edited(LOOP, lambda doc: doc.update(grass_m=34.0, start={"s_m": 900.0, "lateral_m": 0.0}), sources)
     assert problems_of(sources) == [
         "cars.json:cars[0].drivetrain.gears[1]: gear ratio 3.5 is not below the gear before it (3.0)",
         "cars.json:cars[0].engine.torque_curve[1].rpm: rpm 900.0 is not above the point before it (1000.0)",
+        "cars.json:cars[0].shape.height_m: 0.5 is not above the top of the body box (0.78)",
+        "cars.json:cars[0].shape.roof_rear_m: -3.0 is behind the tail (half length 2.1)",
         "tracks/test_loop.json:control_points: the inner wall (40.0 m from the centre line) folds over at s=679 m (radius 44.8 m)",
         "tracks/test_loop.json:start.s_m: 900.0 is beyond the lap length 732.7 m",
     ]
+    # 仮の形の寸法の矛盾と、足りない鍵を、同じ車に仕込む。並ぶのは、足りない鍵だけ。
+    both = edited(CARS, lambda doc: (doc["cars"][0]["shape"].update(height_m=0.5), doc["cars"][0]["shape"].pop("tire_width_m")))
+    assert problems_of(both) == ["cars.json:cars[0].shape.tire_width_m: missing"]
 
 
 # 見張りそのものの確かめ。実物の表の定義は、省ける項目を持たないので、作り物の表の定義（入れ子の項目、並びの中の項目、
@@ -1317,8 +1478,12 @@ def test_datadefs_broken_case_guard_collects_the_key_paths_down_to_the_nested_ke
     assert key_paths(TABLES["tracks"].fields) == [
         "id", "name", "data_version", "table", "table.sample_step_m", "table.dense_step_m", "width_m", "grass_m",
         "surface_mu", "surface_mu.asphalt", "surface_mu.grass", "wall", "wall.restitution", "wall.friction",
-        "start", "start.s_m", "start.lateral_m", "control_points", "control_points.x_m", "control_points.z_m",
+        "start", "start.s_m", "start.lateral_m",
+        "mesh", "mesh.step_m", "mesh.road_strips", "mesh.line_m", "mesh.wall_height_m", "mesh.chunk_m",
+        "control_points", "control_points.x_m", "control_points.z_m",
     ]
+    assert key_paths(TABLES["cameras"].fields) == ["id", "back_m", "height_m", "look_ahead_m", "look_height_m", "fov_deg", "near_m", "far_m"]
+    assert key_paths(TABLES["palettes"].fields) == ["id", "colors", "unshaded"]  # 並びの中が、数だけなら、鍵の道は、並びまで
     assert key_paths(TABLES["assists"].fields) == [
         "id", "steer", "steer.limit_mu_min", "steer.limit_min_speed_m_s",
         "steer.analog", "steer.analog.limit_ka", "steer.analog.limit_km", "steer.analog.full_time_s",
@@ -1326,8 +1491,12 @@ def test_datadefs_broken_case_guard_collects_the_key_paths_down_to_the_nested_ke
         "reverse", "reverse.stop_speed_m_s", "reverse.brake_hold_s", "reverse.pedal_press_min",
     ]
     car_paths = key_paths(TABLES["cars"].fields)
-    assert car_paths[:5] == ["id", "name", "data_version", "body", "body.mass_kg"] and len(car_paths) == 72
+    assert car_paths[:5] == ["id", "name", "data_version", "body", "body.mass_kg"] and len(car_paths) == 72 + 8  # 仮の形（shape）と、その7つの寸法
     assert {"engine.torque_curve", "engine.torque_curve.rpm", "engine.torque_curve.ratio", "drivetrain.gears", "outputs.yaw_ref_min_speed_m_s"} <= set(car_paths)
+    assert car_paths[-8:] == [
+        "shape", "shape.height_m", "shape.body_top_m", "shape.roof_front_m", "shape.roof_rear_m", "shape.roof_inset_m",
+        "shape.ground_clearance_m", "shape.tire_width_m",
+    ]
     # 問題の行の場所を、鍵の道にする。
     assert key_path_of("cars.json:cars[0].engine.curve[1].rpm: -1 is outside 0..9000", "cars", GUARD_TABLES) == "engine.curve.rpm"
     assert key_path_of("testpacks/p/cars.json:cars[12].id: duplicate id 'kazane'", "cars", GUARD_TABLES) == "id"

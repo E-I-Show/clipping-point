@@ -537,6 +537,45 @@ CAR_VIEW_GEAR_CHECK = '        if _whole("gear", self.gear) == 0:\n'  # 仮の�
 # （回すtick数は tools/budgets.json の web_script_ticks。最後の更新の中では、回した更新の数は、まだ、それより1つ少ない）。
 ONLY_ON_WEB_AT_THE_END = f"        if sys.platform == 'emscripten' and self.ticks == {load_budgets()['web_script_ticks'] - 1}:\n"
 
+# --- 縦切りの描画の、純Pythonの部品と定義データ（段0 区切り10の前半。カメラ、メッシュ用の数値、色の役割、車の仮の形、処理時間の輪、3Dの絵の判定） ---
+CAMERA_PY = "clipping_point/cp_core/camera.py"
+MESH_PY = "clipping_point/cp_core/mesh.py"
+CAR_SHAPE_PY = "clipping_point/cp_core/car_shape.py"
+PERF_PY = "clipping_point/cp_app/perf.py"
+SCENE_REFERENCE_PY = "tools/scene_reference.py"
+CAMERAS_JSON = "clipping_point/data/cameras.json"
+PALETTES_JSON = "clipping_point/data/palettes.json"
+MAKE_PALETTE_CHECK = tool("claude/make_palette", "--check")  # 作業の補助：夕方のパレットを、定義データと照らす
+CHASE_EYE = "        eye=(x - fx * spec.back, spec.height, z - fz * spec.back),\n"  # 後方追従の、目の位置
+CHASE_TARGET = "        target=(x + fx * spec.look_ahead, spec.look_height, z + fz * spec.look_ahead),\n"  # 後方追従の、注視点
+# 後方と前方を取り違える（目を、注視点までの距離だけ後ろへ、注視点を、目の距離だけ前へ置く）。
+CAMERA_BACK_AND_AHEAD_SWAPPED = [
+    rep(CAMERA_PY, CHASE_EYE, CHASE_EYE.replace("spec.back", "spec.look_ahead")),
+    rep(CAMERA_PY, CHASE_TARGET, CHASE_TARGET.replace("spec.look_ahead", "spec.back")),
+]
+CHASE_FORWARD = "    fx, fz = cos(heading), sin(heading)\n    return CameraPose(\n"  # 後方追従が、車の向きから、前方の向きを作る所
+PILLAR_LEFT_SIDE = "    left_x, left_z = -fz * PILLAR_SIDE_M, fx * PILLAR_SIDE_M\n"  # 判定用の柱の、左の向き
+CHUNK_AHEAD = "    return (dx * fx + dz * fz) / flat > -radius\n"  # 塊が見えるかの判定の、前方への射影
+BACKDROP_SHIFT = "    return int(floor(heading / TWO_PI * period_px)) % period_px\n"  # 背景を、右へずらす量
+MESH_ROAD_QUAD = "                road_triangles += quad(a, a + 1, b + 1, b)\n"  # コースのメッシュの、路面の四角形（上向き）
+MESH_WALL_QUADS = "            wall_triangles += quad(a, b, b + 1, a + 1) + quad(a + 2, a + 3, b + 3, b + 2)\n"  # 同じく、右の壁と左の壁
+MESH_SEAM = "            parts = self._chunk_parts([rows[k % count] for k in range(first, last + 1)])\n"  # 最後の区切りを、頭の区切りの線へつなぐ所
+BOX_FIRST_FACE = "BOX_FACES = ((1, 2, 6, 5), "  # 箱の面の表の、頭の面（+x）
+MARK_RIGHT_CENTER = "MARK_RIGHT: (0.0, 1.0, 1.5)"  # 判定用の、模型の右の印の中心（模型の座標。右が +Z）
+FRONT_WHEELS = '        "front_left": (front_x, radius, -half_track), "front_right": (front_x, radius, half_track),\n'  # 車の仮の形の、前の2輪の中心
+CAR_CHECKS = "    return vehicle.spec_problems(entry) + car_shape.shape_problems(entry)\n"  # 読み込み検査が、車の項目をまたぐ検査を、2つ続けて呼ぶ所
+RING_RATE = "        return (self.count - 1) / span_s if span_s > 0 else None\n"  # 処理時間の輪が、区間が0以下なら「測れていない」を返す所
+CAP_TENTHS = "    if value * 10 >= top:  # 無限大も、ここで頭打ちになる（丸める前に比べる。無限大は、整数に丸められない）\n        return top\n"  # 表示の桁の頭打ち
+# 3Dの絵の判定（tools/scene_reference.py）。柱と印が、写るはずの側にあるかを決める行、空の画素の下限、パレットの照らし。
+PROBE_PLACED = "        placed = offset10 < -margin10 if side == LEFT_OF_CENTER else offset10 > margin10 if side == RIGHT_OF_CENTER else -margin10 <= offset10 <= margin10\n"
+SKY_FLOOR = "    return _count(sky) and sky >= low, "
+PALETTE_SAME = "    ok = want_palette is not None and listed and seen == list(want_palette)\n"
+PALETTE_LAST_COLOR = ", 14836871\n"  # 実物のパレットの、32番目の色（桃）
+PALETTE_WHITE = "15848639"  # 実物のパレットの、白
+PALETTE_UNSHADED = '"unshaded": [15, 30]'  # 実物のパレットの、陰影で暗くしない色の番号
+LOOP_MESH = '  "mesh": {\n    "step_m": 4.0,\n    "road_strips": 4,\n    "line_m": 0.2,\n    "wall_height_m": 0.9,\n    "chunk_m": 60.0\n  },\n'  # コースの、メッシュの寸法
+CAR_ROOF_FRONT = '"roof_front_m": 0.42'  # 実物の車の、屋根の箱の前の端
+
 # (名前, 壊し方の並び, 回す道具, 期待する終了コード, 最後の1行にあるはずの語)
 CASES = [
     # --- 壊さない件。0で通ること ---
@@ -861,8 +900,11 @@ CASES = [
     ("test_overflow_check_ignores_the_boxes", [rep("clipping_point/cp_ui/check.py", "    if parent != SCREEN_BOX:\n", "    if False:\n")], TEST, {1}, "reason=failed"),
     # はみ出しの検査が、開かれなかった囲みを数えない。
     ("test_overflow_check_ignores_boxes_that_were_not_entered", [rep("clipping_point/cp_ui/check.py", "        if index not in canvas.entered:\n", "        if False:\n")], TEST, {1}, "reason=failed"),
-    # 分野「カメラと画面の状態」のテストの絞りが、突き合わせのテストに当たらない（絞りを flow だけに戻す）。
-    ("test_flow_area_does_not_select_the_registry_tests", [rep("tools/verify.py", '"flow or fixtures or screens or fingerprint"', '"flow"')], TEST, {1}, "reason=failed"),
+    # 分野「カメラと画面の状態」のテストの絞りが、突き合わせのテストに当たらない（絞りを、カメラと flow だけに戻す）。
+    (
+        "test_flow_area_does_not_select_the_registry_tests",
+        [rep("tools/verify.py", '"camera or flow or fixtures or screens or fingerprint"', '"camera or flow"')], TEST, {1}, "reason=failed",
+    ),
     # --- 巡回の口：test（保存する絵の中身。道具 tour は、画像の大きさまでしか見ない） ---
     # 全体の絵を、描く前に消さない。前の件の絵が残る。命令の数も、画面が空でないことも変わらないので、道具は通る。
     ("test_tour_whole_picture_is_not_cleared", [rep(TOUR_APP_PY, TOUR_CLEAR_WHOLE, "    pass\n")], TEST, {1}, "reason=failed"),
@@ -1345,6 +1387,90 @@ CASES = [
     ("test_selftest_timed_cases_are_not_told_apart", [rep(SELFTEST_PY, SELFTEST_IS_TIMED, "    return False\n")], TEST_SELFTEST_TOOL, {1}, "reason=failed"),
     # 時間に頼る件を、並列の件と一緒に、まとめて回す（1件ずつにしない）。
     ("test_selftest_timed_cases_run_in_the_pool", [rep(SELFTEST_PY, SELFTEST_SPLIT, "    return cases, []\n")], TEST_SELFTEST_TOOL, {1}, "reason=failed"),
+    # --- 縦切りの描画（段0 区切り10の前半）：純Pythonの部品。test（狙ったテストに絞る） ---
+    # カメラ。後方と前方を取り違える。
+    ("test_camera_back_and_ahead_swapped", CAMERA_BACK_AND_AHEAD_SWAPPED, tool("test", "-k", "camera and chase"), {1}, "reason=failed"),
+    # カメラ。向きの符号を逆にする（描画の試作の決まり。向きが増えると、右旋回）。向き0では同じ答えになるので、向きを振ったテストで拾う。
+    (
+        "test_camera_heading_grows_to_the_right", [rep(CAMERA_PY, CHASE_FORWARD, CHASE_FORWARD.replace("sin(heading)", "-sin(heading)"))],
+        tool("test", "-k", "camera and chase"), {1}, "reason=failed",
+    ),
+    # 判定用の柱。左と右を取り違える（柱の位置の計算に、右旋回が正の決まりが混ざる。3つの誤りが打ち消し合うと、鏡写しの絵が通る）。
+    (
+        "test_camera_pillars_on_the_wrong_sides", [rep(CAMERA_PY, PILLAR_LEFT_SIDE, PILLAR_LEFT_SIDE.replace("-fz * PILLAR_SIDE_M, fx", "fz * PILLAR_SIDE_M, -fx"))],
+        tool("test", "-k", "camera and pillar"), {1}, "reason=failed",
+    ),
+    # 見えるかの判定を、逆にする（前の塊を隠し、後ろの塊を見せる）。
+    ("test_camera_hides_the_chunks_ahead", [rep(CAMERA_PY, CHUNK_AHEAD, CHUNK_AHEAD.replace("> -radius", "< -radius"))], tool("test", "-k", "camera and chunk"), {1}, "reason=failed"),
+    # 背景を、逆へ流す（向きが増えると、絵が左へ流れる）。
+    (
+        "test_camera_backdrop_flows_the_other_way", [rep(CAMERA_PY, BACKDROP_SHIFT, BACKDROP_SHIFT.replace("heading / TWO_PI", "-heading / TWO_PI"))],
+        tool("test", "-k", "camera and backdrop"), {1}, "reason=failed",
+    ),
+    # コースのメッシュ。路面の面の向きを、逆にする（下を向く。裏の面を捨てる設定で、路面が描かれなくなる）。
+    (
+        "test_track_mesh_road_faces_down", [rep(TRACK_PY, MESH_ROAD_QUAD, MESH_ROAD_QUAD.replace("quad(a, a + 1, b + 1, b)", "quad(a, b, b + 1, a + 1)"))],
+        tool("test", "-k", "track_mesh"), {1}, "reason=failed",
+    ),
+    # 壁の面の向きを、逆にする（コースの外を向く。コースの側からは、見えなくなる）。
+    (
+        "test_track_mesh_walls_face_away_from_the_track",
+        [rep(TRACK_PY, MESH_WALL_QUADS, MESH_WALL_QUADS.replace("quad(a, b, b + 1, a + 1) + quad(a + 2, a + 3, b + 3, b + 2)", "quad(a, a + 1, b + 1, b) + quad(a + 2, b + 2, b + 3, a + 3)"))],
+        tool("test", "-k", "track_mesh"), {1}, "reason=failed",
+    ),
+    # 1周の継ぎ目を、つながない（最後の区切りが、頭の区切りの線へ戻らない）。
+    (
+        "test_track_mesh_seam_is_left_open", [rep(TRACK_PY, MESH_SEAM, MESH_SEAM.replace("rows[k % count]", "rows[min(k, count - 1)]"))],
+        tool("test", "-k", "track_mesh"), {1}, "reason=failed",
+    ),
+    # 箱の面を1つ、内向きにする（車体、屋根、車輪の箱の、前の面）。
+    ("test_mesh_box_face_points_inwards", [rep(MESH_PY, BOX_FIRST_FACE, "BOX_FACES = ((1, 5, 6, 2), ")], tool("test", "-k", "test_mesh or car_shape"), {1}, "reason=failed"),
+    # 判定用の、模型の右の印を、左（−Z）に置く（模型の座標を、ロジックの座標と取り違える。+z が左）。
+    ("test_car_shape_right_mark_on_the_left", [rep(CAR_SHAPE_PY, MARK_RIGHT_CENTER, "MARK_RIGHT: (0.0, 1.0, -1.5)")], tool("test", "-k", "car_shape and marks"), {1}, "reason=failed"),
+    # 車の仮の形の、前の左右の車輪を、取り違える。
+    (
+        "test_car_shape_front_wheels_on_the_wrong_sides",
+        [rep(CAR_SHAPE_PY, FRONT_WHEELS, FRONT_WHEELS.replace("radius, -half_track), \"front_right\": (front_x, radius, half_track)", "radius, half_track), \"front_right\": (front_x, radius, -half_track)"))],
+        tool("test", "-k", "car_shape and wheels"), {1}, "reason=failed",
+    ),
+    # 読み込み検査が、車の仮の形の、寸法の矛盾の検査を呼ばない。
+    ("test_data_car_shape_check_is_not_called", [rep(DATADEFS_PY, CAR_CHECKS, "    return vehicle.spec_problems(entry)\n")], tool("test", "-k", "datadefs and broken_shipped"), {1}, "reason=failed"),
+    # 処理時間の輪が、区間が0のとき（始まりの時刻が、全部同じ）に、0で割る。
+    ("test_perf_ring_divides_by_a_span_of_zero", [rep(PERF_PY, RING_RATE, "        return (self.count - 1) / span_s\n")], tool("test", "-k", "perf and ring"), {1}, "reason=failed"),
+    # 表示の桁を超えた値を、頭打ちにしない。
+    ("test_flow_value_beyond_the_digits_is_not_capped", [rep(FLOW_PY, CAP_TENTHS, "")], tool("test", "-k", "flow and capped"), {1}, "reason=failed"),
+    # 3Dの絵の判定。柱と印が、どちらの側に写っていても、通す（鏡写しの絵が、通る）。
+    ("test_scene_mirror_passes_on_either_side", [rep(SCENE_REFERENCE_PY, PROBE_PLACED, "        placed = True\n")], tool("test", "-k", "scene_reference"), {1}, "reason=failed"),
+    # 空の画素の下限を、見ない（背景を写していない絵が、通る）。
+    ("test_scene_sky_floor_is_not_checked", [rep(SCENE_REFERENCE_PY, SKY_FLOOR, "    return _count(sky), ")], tool("test", "-k", "scene_reference"), {1}, "reason=failed"),
+    # 読み戻したパレットを、定義データの色と照らさない（パレットを当てていない絵が、通る）。
+    ("test_scene_palette_is_not_compared", [rep(SCENE_REFERENCE_PY, PALETTE_SAME, "    ok = listed\n")], tool("test", "-k", "scene_reference"), {1}, "reason=failed"),
+    # --- 縦切りの描画の定義データ：check --only data（出荷するデータを、1か所ずつ壊す。調べた組は2つのまま） ---
+    # パレットの色の数が、31個。
+    ("check_data_palette_has_31_colors", [rep(PALETTES_JSON, PALETTE_LAST_COLOR, "\n")], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    # パレットの色が、24ビットを超える。
+    ("check_data_palette_color_beyond_24_bits", [rep(PALETTES_JSON, PALETTE_WHITE, "16777216")], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    ("check_data_palettes_file_deleted", [rm(PALETTES_JSON)], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    # カメラの、手前の切り取り面が、1.0 を超える（足元が欠ける）。
+    ("check_data_camera_near_plane_too_far", [rep(CAMERAS_JSON, '"near_m": 0.3', '"near_m": 3.0')], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    ("check_data_cameras_file_deleted", [rm(CAMERAS_JSON)], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    # 車の仮の形の、寸法の矛盾。屋根の箱の前の端が、鼻先より前。
+    ("check_data_car_shape_roof_ahead_of_the_nose", [rep(CARS_JSON, CAR_ROOF_FRONT, '"roof_front_m": 2.5')], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    # コースの、メッシュの寸法が無い。出荷するデータのコースと、試験用データのコース（項目ごと差し替える重ね方なので、足りない鍵は、問題になる）。
+    ("check_data_track_mesh_left_out", [rep(LOOP_JSON, LOOP_MESH, "")], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    ("check_data_test_pack_track_leaves_the_mesh_out", [rep(PACK_LOOP_JSON, LOOP_MESH, "")], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    # パレットの色の数が違えば、起動時にも、例外で止まる。出荷物にも、パレットのファイルが要る。
+    ("run_data_palette_has_31_colors", [rep(PALETTES_JSON, PALETTE_LAST_COLOR, "\n")], RUN, {1}, "reason=app_exit_code"),
+    ("export_data_palettes_file_deleted", [rm(PALETTES_JSON)], EXPORT, {1}, "failed=missing"),
+    # --- 作業の補助：夕方のパレットを、試作の昼の32色から作る（tools/claude/make_palette.py） ---
+    ("control_make_palette_check", [], MAKE_PALETTE_CHECK, {0}, "make_palette: OK palette=evening colors=32 unshaded=2 same=yes"),
+    # 色を1つ、手で変えた（白）。式から作った色と違う。読み込み検査は、通る（32個の、範囲の内の整数）。
+    ("make_palette_color_changed_by_hand", [rep(PALETTES_JSON, PALETTE_WHITE, "15848640")], MAKE_PALETTE_CHECK, {1}, "same=no"),
+    ("control_check_data_passes_with_a_palette_color_changed_by_hand", [rep(PALETTES_JSON, PALETTE_WHITE, "15848640")], CHECK_DATA, {0}, "check: OK data=2 problems=0"),
+    # 陰影で暗くしない色の番号を、手で変えた（ブレーキランプを外す）。
+    ("make_palette_unshaded_changed_by_hand", [rep(PALETTES_JSON, PALETTE_UNSHADED, '"unshaded": [15]')], MAKE_PALETTE_CHECK, {1}, "same=no"),
+    # パレットのファイルが無い。照らせない（合格にしない）。
+    ("make_palette_file_deleted", [rm(PALETTES_JSON)], MAKE_PALETTE_CHECK, {2}, "reason=cannot_read"),
 ]
 
 

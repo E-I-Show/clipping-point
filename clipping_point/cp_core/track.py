@@ -17,11 +17,21 @@
 同じ中身の項目から作った表は、覚えておいて、同じものを渡す（build_track。直近の BUILT_MAX 個まで）。表は、読み込み検査の中の
 形の検査と、世界を作るときに要る。2度作らない（1度に、デスクトップ版で約4ミリ秒、ブラウザ版で約15〜25ミリ秒。段0 区切り9の実測）。
 表は書き換えられないので、同じものを、いくつの世界が持ってもよい。
-入れていないもの（段1の「コースデータと照会」の区切り）：高さ、勾配、バンク（平地だけ。高さは、いつも0）、縁石、グラベル、
-区間ごとの路肩と幅、グリッド、通過点と周回判定、理想ライン、カメラ、景観物、自己交差の検査、車同士の当たり、描画用のメッシュ。
+メッシュ用の数値（Track.mesh_chunks）は、コースの表から作る、描画用の形（段0 区切り10）。Pyxelに触れない。Pyxelの3Dの物にするのは cp_app/render.py。
+  コースを、約 step_m ごとに区切り、約 chunk_m ごとの塊（MeshChunk）に分ける。塊は、中心と半径（平面）を持つ（見えない塊を、描かないため）。
+  幅の向きの並びは、重ねない：左の壁、左の芝、左の白線（舗装の、外側 line_m）、路面（road_strips に割る）、右の白線、右の芝、右の壁。
+  高さは、路面、白線、芝が0、壁は0〜wall_height_m（壁は、壁の位置に立つ板。コースの側を向く面だけ）。
+  頂点は、ロジックの座標 (x, y, z)。面の向きは、(b−a)×(c−a) が外向き（路面と白線と芝は上、壁はコースの側。決まりは cp_core/mesh.py）。
+  寸法は、コースの項目の mesh。部品ごとの色の役割の名は MESH_ROLES（模様は入れない。単色）。
+入れていないもの（段1の「コースデータと照会」と「コースの描画」の区切り）：高さ、勾配、バンク（平地だけ。高さは、いつも0）、縁石、グラベル、
+区間ごとの路肩と幅、グリッド、通過点と周回判定、理想ライン、カメラ、景観物、自己交差の検査、車同士の当たり、
+メッシュの、細かい版と粗い版の切り替え、スタート線、路面の模様。
 """
 import json
+from dataclasses import dataclass
 from math import atan2, ceil, cos, hypot, pi, sin, sqrt
+
+from cp_core.mesh import MeshPart, quad
 
 SURFACE_ASPHALT, SURFACE_GRASS = "asphalt", "grass"
 SURFACES = (SURFACE_ASPHALT, SURFACE_GRASS)  # 路面の種類。いまは、舗装と芝だけ（縁石とグラベルは、段1）
@@ -40,6 +50,13 @@ TURNING_TOLERANCE_RAD = 0.01  # 1周の向きの変化が、±2π からこれ�
 MIN_RADIUS_M = 8.0  # 最小半径（m）
 FOLD_MARGIN = 0.15  # 内側の折り返し。1 − |曲率| × 内側の壁の位置 が、これ未満なら、壁の内で照会が1つに決まらない
 START_EDGE_MARGIN_M = 1.0  # スタート位置が、舗装の端から、これより内にあること（m）
+# --- メッシュ用の数値の決まり ---
+MESH_ROAD, MESH_LINE, MESH_GRASS, MESH_WALL = "road", "line", "grass", "wall"
+MESH_PARTS = (MESH_ROAD, MESH_LINE, MESH_GRASS, MESH_WALL)  # 部品の名。塊の中の並びも、この順
+# 部品ごとの、色の役割の名（cp_core/palette.py の ROLES）。路面の種類ごとの色と模様は、段1の「コースの描画」。
+MESH_ROLES = {MESH_ROAD: "asphalt_mid", MESH_LINE: "white", MESH_GRASS: "grass_mid", MESH_WALL: "silver"}
+MESH_MIN_SEGMENTS = 3  # 1周の区切りの数の下限（これより少ないと、輪にならない）
+MESH_MIN_BAND_M = 0.01  # 芝の帯の幅が、これ以下の区切りには、芝を作らない（芝の幅が0のコース。つぶれた三角形を出さない）
 
 
 class TrackQuery:
@@ -65,6 +82,21 @@ class TrackQuery:
         self.to_wall_right = 0.0  # この点から、右の壁まで（m）
         self.height = 0.0  # 路面の高さ（m）。いまは、いつも0（平地だけ）
         self.requeried = False  # 前回の区間の近くで探し当てられず、全部を探して取り直したか
+
+
+@dataclass(frozen=True, slots=True)
+class MeshChunk:
+    """塊。コースのメッシュを、約 chunk_m ごとに分けた、描画の単位。書き換えられない。作るのは Track.mesh_chunks()。"""
+
+    s_start: float  # コースに沿った範囲の始まり（m）
+    s_end: float  # 同じく、終わり（m）。最後の塊は、全長
+    center: tuple  # 中心 (x, z)。ロジックの座標の平面（m）
+    radius: float  # 半径（m）。平面で、中心から、この塊のどの頂点までも届く
+    parts: tuple  # 部品（cp_core.mesh の MeshPart）。並びは MESH_PARTS の順。三角形の無い部品は、入れない
+
+    @property
+    def triangle_count(self) -> int:
+        return sum(part.triangle_count for part in self.parts)
 
 
 def _wrap_pi(angle: float) -> float:
@@ -141,6 +173,7 @@ class Track:
 
     __slots__ = (
         "track_id", "length", "n", "ds", "turning", "wall_restitution", "wall_friction", "start_s", "start_lateral",
+        "mesh_step", "mesh_strips", "mesh_line", "mesh_wall_height", "mesh_chunk",
         "_mu", "_x", "_z", "_tx", "_tz", "_h", "_k", "_half", "_wall_l", "_wall_r", "_dh", "_dk", "_dxs", "_dzs", "_qa", "_built",
     )
 
@@ -211,6 +244,12 @@ class Track:
         self.wall_friction = float(entry["wall"]["friction"])  # 壁の摩擦
         self.start_s = float(entry["start"]["s_m"])  # スタート位置の、コースに沿った距離（m）
         self.start_lateral = float(entry["start"]["lateral_m"])  # スタート位置の、横のずれ（m）
+        # メッシュ用の数値の寸法（コースの項目の mesh）。使うのは mesh_chunks()。
+        self.mesh_step = float(entry["mesh"]["step_m"])  # 区切りの間隔の目安（m）
+        self.mesh_strips = int(entry["mesh"]["road_strips"])  # 路面を、幅の向きに割る数
+        self.mesh_line = float(entry["mesh"]["line_m"])  # 舗装の端の白線の幅（m）
+        self.mesh_wall_height = float(entry["mesh"]["wall_height_m"])  # 壁の高さ（m）
+        self.mesh_chunk = float(entry["mesh"]["chunk_m"])  # 塊の長さの目安（m）
         self._x = tuple(xs)
         self._z = tuple(zs)
         self._tx = tuple(tx)
@@ -427,6 +466,86 @@ class Track:
             wvx = vt * ch + vn_after * nx
             wvz = vt * sh + vn_after * nz
         return x, z, wvx, wvz, True, impact
+
+    # --- メッシュ用の数値 ---
+    def _across(self, s: float) -> tuple:
+        """コースに沿った距離 s（m。0以上、全長未満）の所の、幅の向きの値。表の点の間は、線形に補う（pose_at と同じ）。
+
+        返すのは (中心線の x, z, 左の法線の x, z（長さ1）, 幅の半分, 左の壁, 右の壁)。
+        """
+        n = self.n
+        f = s / self.ds
+        i = int(f)
+        if i >= n:
+            i = n - 1
+        t = f - i
+        j = i + 1 if i + 1 < n else 0
+        nx = -(self._tz[i] + t * (self._tz[j] - self._tz[i]))
+        nz = self._tx[i] + t * (self._tx[j] - self._tx[i])
+        ln = sqrt(nx * nx + nz * nz)
+        return (
+            self._x[i] + t * self._dxs[i], self._z[i] + t * self._dzs[i], nx / ln, nz / ln,
+            self._half[i] + t * (self._half[j] - self._half[i]),
+            self._wall_l[i] + t * (self._wall_l[j] - self._wall_l[i]),
+            self._wall_r[i] + t * (self._wall_r[j] - self._wall_r[i]),
+        )
+
+    def _chunk_parts(self, rows: list) -> tuple:
+        """塊1つの部品。rows は、区切りの線（_across の値）を、コースに沿った順に並べたもの（区切りの数＋1 本）。
+
+        頂点は、区切りの線ごとに、右（横のずれが負）から左へ並べる。隣り合う四角形は、頂点を共有する。
+        上を向く四角形は、(右の手前, 左の手前, 左の先)、(右の手前, 左の先, 右の先)。壁は、コースの側を向く。
+        """
+        strips, line, top = self.mesh_strips, self.mesh_line, self.mesh_wall_height
+        road, lines, grass, wall = [], [], [], []
+        for x, z, nx, nz, half, wall_left, wall_right in rows:
+            inner = half - line  # 路面の端（白線の内側）
+            road += [(x + nx * lat, 0.0, z + nz * lat) for lat in (-inner + 2.0 * inner * index / strips for index in range(strips + 1))]
+            lines += [(x + nx * lat, 0.0, z + nz * lat) for lat in (-half, -inner, inner, half)]
+            grass += [(x + nx * lat, 0.0, z + nz * lat) for lat in (-wall_right, -half, half, wall_left)]
+            for lat in (-wall_right, wall_left):
+                wall += [(x + nx * lat, 0.0, z + nz * lat), (x + nx * lat, top, z + nz * lat)]
+        road_triangles, line_triangles, grass_triangles, wall_triangles = [], [], [], []
+        across = strips + 1
+        for k in range(len(rows) - 1):
+            for index in range(strips):
+                a, b = k * across + index, (k + 1) * across + index
+                road_triangles += quad(a, a + 1, b + 1, b)
+            a, b = k * 4, (k + 1) * 4
+            line_triangles += quad(a, a + 1, b + 1, b) + quad(a + 2, a + 3, b + 3, b + 2)
+            here, there = rows[k], rows[k + 1]
+            if here[6] - here[4] > MESH_MIN_BAND_M or there[6] - there[4] > MESH_MIN_BAND_M:  # 右の芝
+                grass_triangles += quad(a, a + 1, b + 1, b)
+            if here[5] - here[4] > MESH_MIN_BAND_M or there[5] - there[4] > MESH_MIN_BAND_M:  # 左の芝
+                grass_triangles += quad(a + 2, a + 3, b + 3, b + 2)
+            # 壁。頂点は、区切りの線ごとに（右の下, 右の上, 左の下, 左の上）。右の壁は左（コースの側）を、左の壁は右を向く。
+            wall_triangles += quad(a, b, b + 1, a + 1) + quad(a + 2, a + 3, b + 3, b + 2)
+        parts = (
+            (MESH_ROAD, road, road_triangles), (MESH_LINE, lines, line_triangles),
+            (MESH_GRASS, grass, grass_triangles), (MESH_WALL, wall, wall_triangles),
+        )
+        return tuple(MeshPart(name, MESH_ROLES[name], tuple(vertices), tuple(triangles)) for name, vertices, triangles in parts if triangles)
+
+    def mesh_chunks(self) -> tuple:
+        """メッシュ用の数値。返すのは、塊（MeshChunk）の並び（コースに沿った順）。同じ表からは、同じ数値。呼ぶたびに作る（起動時に1度呼ぶ）。
+
+        1周を、等しい長さの区切り（約 mesh_step m）に分け、区切りを、塊（約 mesh_chunk m）に分ける。どの区切りも、塊のどれか1つに入る。
+        最後の区切りは、頭の区切りの線へつなぐ（1周の継ぎ目）。頂点は、ロジックの座標。面の向きは、(b−a)×(c−a) が外向き。
+        """
+        count = max(MESH_MIN_SEGMENTS, int(round(self.length / self.mesh_step)))  # 区切りの数
+        spacing = self.length / count
+        rows = [self._across(index * spacing) for index in range(count)]
+        chunk_count = max(1, min(count, int(round(self.length / self.mesh_chunk))))
+        chunks = []
+        for index in range(chunk_count):
+            first, last = index * count // chunk_count, (index + 1) * count // chunk_count  # この塊の区切りは first〜last−1
+            parts = self._chunk_parts([rows[k % count] for k in range(first, last + 1)])
+            xs = [vertex[0] for part in parts for vertex in part.vertices]
+            zs = [vertex[2] for part in parts for vertex in part.vertices]
+            cx, cz = 0.5 * (min(xs) + max(xs)), 0.5 * (min(zs) + max(zs))
+            radius = max(hypot(x - cx, z - cz) for x, z in zip(xs, zs))
+            chunks.append(MeshChunk(first * spacing, self.length if last == count else last * spacing, (cx, cz), radius, parts))
+        return tuple(chunks)
 
 
 _built = {}  # 項目の中身（鍵を整列したJSONの文）→ コースの表。古い順に並ぶ。直近の BUILT_MAX 個まで

@@ -141,8 +141,8 @@ def test_run_tool_passes_the_pack_by_the_variable_the_app_reads_and_counts_by_it
     assert run_tool.data_files.PACK_ENV == "CP_DATA_PACK"
     assert run_tool.data_files.PACK_ENV.startswith(_common.APP_ENV_PREFIXES)
     # 結果の data と照らす件数は、道具が、定義データのファイルを自分で読んで数える（数え方のテストは tests/test_data_reference.py）。
-    assert run_tool.data_reference.expected_tables() == ({"cars": 1, "tracks": 1, "assists": 1}, "")
-    assert run_tool.data_reference.expected_tables("extreme") == ({"cars": 2, "tracks": 2, "assists": 1}, "")
+    assert run_tool.data_reference.expected_tables() == ({"cars": 1, "tracks": 1, "assists": 1, "cameras": 1, "palettes": 1}, "")
+    assert run_tool.data_reference.expected_tables("extreme") == ({"cars": 2, "tracks": 2, "assists": 1, "cameras": 1, "palettes": 1}, "")
 
 
 def test_run_tool_result_data_of_a_plain_run_and_of_a_pack_run():
