@@ -9,7 +9,7 @@ out/tour/ を消して作り直し、アプリの巡回の口（clipping_point/c
 アプリは、画面 × 変種ごとに、画像（out/tour/<画面の名>_<変種>.png。画面の2倍）を保存し、数えた値を結果ファイルに書く。
 3Dの絵は、見本ごとに、画像（out/tour/scene_<見本の名>.png）を保存し、判定用の実描画の値（結果の scenes の scene）を書く。
 合否は、ここで決める。3Dの絵の判定は tools/scene_reference.py（確かめは backdrop、scene3d、mirror、palette、scene_same。
-2Dの描画命令を重ねない絵なので、back_ink は外す）。下限と余裕は tools/budgets.json。
+2Dの描画命令を重ねず、周期の中の実描画も無い絵なので、back_ink と back_live は外す）。下限と余裕は tools/budgets.json。
 終了コード：
   2＝回り切れない。予定が0件、--only の名が無い、画面の登録と見本データを読み込めない・組み立てられない、時間切れ、
      アプリの終了コードが0でない、結果ファイルが無い・読めない、予定のどれかが結果に無い（missing_shot）、
@@ -42,8 +42,9 @@ WORK = OUT / "tour"
 # 判定用の実描画の3枚目と照らす（確かめ scene_same）。ファイルの中身を読み戻して照らすかは、走行画面のHUDを作る段1の
 # 「走行画面」の区切りで見直す。
 IMAGE_SIZE = (640, 480)  # 保存する画像の大きさ。画面（320×240）の2倍
-# 3Dの絵で回す確かめ（tools/scene_reference.py の SCENE_CHECKS から、2Dの描画命令の画素の確かめ back_ink を外したもの）。
-SCENE_SHOT_CHECKS = tuple(name for name in scene_reference.SCENE_CHECKS if name != "back_ink")
+# 3Dの絵で回す確かめ（tools/scene_reference.py の SCENE_CHECKS から、2Dの描画命令の画素の確かめ back_ink と、周期の中の実描画の
+# 確かめ back_live を外したもの。外す名は、scene_reference.NOT_FOR_SHOTS の1か所）。
+SCENE_SHOT_CHECKS = tuple(name for name in scene_reference.SCENE_CHECKS if name not in scene_reference.NOT_FOR_SHOTS)
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 PNG_HEAD_BYTES = 24  # 署名（8）、最初のチャンクの長さと名（8）、幅と高さ（8）
 MAX_DETAILS = 40  # 画面に出す問題の行数の上限

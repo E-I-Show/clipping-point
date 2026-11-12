@@ -40,8 +40,10 @@
   palette     当てたパレットが、道具が定義データのファイルを自分で読んだ32色と同じ（--pack の回は、同じ試験用データを重ねて読む）
   scene_same  ふだんの実描画が、判定と同じ3Dを描いている（裏画面と、判定用の3枚目の、2Dの描画命令の矩形の外の違う画素が0）
   back_ink    2Dの描画命令が、裏画面に描かれている（矩形の内の違う画素が1以上）
-下限と余裕は tools/budgets.json（無ければ2。reason=no_scene_budgets）。
-最後の1行には、3Dの絵の値（sky、track、car、ink、digest）、処理時間の要約（update_ms と render_ms は「平均/95%点/最大」。
+  back_live   周期の中の実描画が、裏画面へ描いている（結果を書く直前に描き直す前と後の、裏画面の違う画素が、上限以下。
+              上の2つは、描き直した後の絵を見るので、周期の中で描いていない回を、通す。ここで拾う）
+下限、上限、余裕は tools/budgets.json（無ければ2。reason=no_scene_budgets）。
+最後の1行には、3Dの絵の値（sky、track、car、ink、stale、digest）、処理時間の要約（update_ms と render_ms は「平均/95%点/最大」。
 cycles_over_tick は、実描画のある周期が、1 tickの長さを超えた回数）、場面の数（描いた三角形の数、場面を組む時間、メッシュを作る時間、
 起動にかかった時間）も出す。処理時間と場面の数は、判定に使わない（線の判定は、ブラウザ版の煙テスト）。
 """
@@ -216,7 +218,7 @@ def main() -> int:
             isinstance(data.get("renders"), int) and abs(data["renders"] - want_renders) <= tolerance,
             f"実描画が {data.get('renders')} 回（{want_renders} 回の前後 {tolerance} 回のはず。毎秒30回）",
         ),
-        # 3Dの絵の判定（backdrop、scene3d、mirror、palette、scene_same、back_ink）。判定の関数は、道具 tour、web-smoke と同じ。
+        # 3Dの絵の判定（backdrop、scene3d、mirror、palette、scene_same、back_ink、back_live）。判定の関数は、道具 tour、web-smoke と同じ。
         # パレットは、道具が、定義データのファイルを自分で読んで照らす（--pack の回は、同じ試験用データを重ねて読む）。
         **scene_checks_of(data, budgets, args.pack),
         "screen_diff": (data.get("screen_diff") == 0, f"画面が裏画面と違う（違う画素が {data.get('screen_diff')}）"),

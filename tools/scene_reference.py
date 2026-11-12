@@ -8,6 +8,8 @@ tools/run.py、tools/tour.py、tools/web_smoke.py が使う。同じ判定を、
     "car"          2枚目と、3枚目（2枚目＋車）の、違う画素の数（車の画素）
     "ink_inside"   裏画面（3Dと2D）と、3枚目の、違う画素のうち、2Dの描画命令の矩形の内の数
     "ink_outside"  同じく、矩形の外の数
+    "stale"        描き直す前の裏画面（周期の中の実描画が描いた絵。1〜2 tick前の世界）と、描き直した後の裏画面の、違う画素の数。
+                   アプリの結果にだけ入る（巡回の3Dの絵には、周期の中の実描画が無いので、入らない）
     "probes"       4枚目（柱と印だけ）の、柱と印ごとの {"pixels": 画素の数, "x10": 重心の x（0.1画素の単位）}。名は PROBES
     "palette"      当てたパレットを読み戻した32色（0xRRGGBB の整数）
     "digest"       3枚目の画素の要約値（デスクトップ版とブラウザ版の絵の違いを、報告に書くための値。合否には、使わない）
@@ -21,7 +23,10 @@ tools/run.py、tools/tour.py、tools/web_smoke.py が使う。同じ判定を、
   palette     palette が、道具が定義データから自分で読んだ32色と同じ（パレットを当てていない絵を、通さない）
   scene_same  ink_outside が 0（ふだんの実描画が、判定と同じ3Dを描いている）
   back_ink    ink_inside が 1 以上（2Dの描画命令が、裏画面に描かれている）
-下限と余裕は tools/budgets.json（BUDGET_KEYS）。値は、実測してから置く。
+  back_live   stale が、上限以下（周期の中の実描画が、裏画面へ描いている。scene_same と back_ink は、結果を書く直前に描き直した絵を
+              見るので、周期の中で1度も描かない、途中から描かない、を通す。描いていなければ、黒のままか、古い絵で、ほぼ全面が違う）
+巡回の3Dの絵（2Dの描画命令を重ねず、周期の中の実描画も無い）では、back_ink と back_live を外す（NOT_FOR_SHOTS）。scene_same は、回す。
+下限、上限、余裕は tools/budgets.json（BUDGET_KEYS）。値は、実測してから置く。
 柱と印の名は、出荷するコード（cp_core/camera.py と cp_core/car_shape.py）から引く。画面の幅は cp_ui/canvas.py。
 """
 import json
@@ -37,7 +42,8 @@ import data_reference  # noqa: E402
 from cp_core import camera, car_shape, datadefs, palette  # noqa: E402 - pyxel を読み込まないモジュール
 from cp_ui.canvas import SCREEN_W  # noqa: E402
 
-SCENE_CHECKS = ("backdrop", "scene3d", "mirror", "palette", "scene_same", "back_ink")  # 結果の scene の確かめの名
+SCENE_CHECKS = ("backdrop", "scene3d", "mirror", "palette", "scene_same", "back_ink", "back_live")  # 結果の scene の確かめの名
+NOT_FOR_SHOTS = ("back_ink", "back_live")  # 巡回の3Dの絵では、回さない確かめ（2Dの描画命令の画素と、周期の中の実描画）
 # 柱と印の名（結果の scene の probes の鍵）。左の柱、右の柱、模型の右の印、鼻先の印。
 PROBES = (camera.PILLAR_LEFT, camera.PILLAR_RIGHT, car_shape.MARK_RIGHT, car_shape.MARK_NOSE)
 LEFT_OF_CENTER, RIGHT_OF_CENTER, NEAR_CENTER = "left", "right", "center"
@@ -51,7 +57,8 @@ CENTER_X10 = (SCREEN_W - 1) * 5  # 画面の中央の x（0.1画素の単位。�
 MAX_X10 = (SCREEN_W - 1) * 10  # 重心の x の上限（0.1画素の単位）
 BUDGET_SKY, BUDGET_TRACK, BUDGET_CAR = "scene_sky_min_px", "scene_track_min_px", "scene_car_min_px"  # 空、コース、車の画素の下限
 BUDGET_MIRROR = "scene_mirror_margin_px"  # 柱と印の重心の、中央からの余裕（画素）
-BUDGET_KEYS = (BUDGET_SKY, BUDGET_TRACK, BUDGET_CAR, BUDGET_MIRROR)  # tools/budgets.json の鍵
+BUDGET_STALE = "scene_stale_max_px"  # 描き直す前と後の、裏画面の違う画素の数の上限
+BUDGET_KEYS = (BUDGET_SKY, BUDGET_TRACK, BUDGET_CAR, BUDGET_MIRROR, BUDGET_STALE)  # tools/budgets.json の鍵
 PALETTES_FILE = f"palettes{datadefs.SUFFIX}"  # パレットの定義データのファイルの名
 
 
@@ -163,12 +170,19 @@ def check_back_ink(scene: dict) -> tuple:
     return _count(inside) and inside >= 1, f"2Dの描画命令が、裏画面に描かれていない（矩形の内の、違う画素が {inside!r}。1 以上のはず）"
 
 
+def check_back_live(scene: dict, budgets: dict) -> tuple:
+    """周期の中の実描画が、裏画面へ描いているか（描き直す前と後の、裏画面の違う画素が、上限以下）。"""
+    stale, high = scene.get("stale"), budgets[BUDGET_STALE]
+    return _count(stale) and stale <= high, f"周期の中の実描画が、裏画面へ描いていない（描き直す前と後の、違う画素が {stale!r}。{high} 以下のはず）"
+
+
 def scene_checks(result: dict, budgets: dict, want_palette, why: str = "", names=SCENE_CHECKS) -> list:
     """結果の scene の確かめ。返すのは [(名前, 合っているか, 合わないときの文)]。並びは names の順。
 
     budgets は、道具の値（tools/budgets.json。BUDGET_KEYS が要る。無ければ KeyError。先に missing_budgets で見る）。
     want_palette は、道具が自分で読んだ32色（expected_palette。読めなかったら None。合格にしない）。why は、読めなかった理由。
-    names は、回す確かめ（既定は、全部。2Dの描画命令を重ねない絵では、scene_same と back_ink を外す）。知らない名は ValueError。
+    names は、回す確かめ（既定は、全部。巡回の3Dの絵では、NOT_FOR_SHOTS の2つだけを外す。scene_same は、渡した絵と3枚目が
+    同じことを見るので、残す）。知らない名は ValueError。
     """
     strange = [name for name in names if name not in SCENE_CHECKS]
     if strange:
@@ -181,6 +195,7 @@ def scene_checks(result: dict, budgets: dict, want_palette, why: str = "", names
         "palette": lambda: check_palette(scene, want_palette, why),
         "scene_same": lambda: check_scene_same(scene),
         "back_ink": lambda: check_back_ink(scene),
+        "back_live": lambda: check_back_live(scene, budgets),
     }
     return [(name, *checks[name]()) for name in names]
 
@@ -217,9 +232,9 @@ def stats_words(result: dict) -> str:
 
 
 def scene_words(result: dict) -> str:
-    """最後の1行に出す、結果の scene の値（空、コース、車の画素。矩形の内と外の違う画素。3枚目の画素の要約値）。"""
+    """最後の1行に出す、結果の scene の値（空、コース、車の画素。矩形の内と外の違う画素。描き直す前と後の違う画素。3枚目の画素の要約値）。"""
     scene = _scene(result)
     return (
         f"sky={scene.get('sky')} track={scene.get('track')} car={scene.get('car')} "
-        f"ink={scene.get('ink_inside')}/{scene.get('ink_outside')} digest={scene.get('digest')}"
+        f"ink={scene.get('ink_inside')}/{scene.get('ink_outside')} stale={scene.get('stale')} digest={scene.get('digest')}"
     )

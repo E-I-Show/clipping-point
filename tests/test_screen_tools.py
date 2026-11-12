@@ -367,9 +367,10 @@ def test_tour_tool_scene_plan_comes_from_the_tour_port_of_the_app():
 
 
 def test_tour_tool_scene_shots_skip_only_the_check_that_needs_2d_commands():
-    # 3Dの絵には、2Dの描画命令を重ねない。矩形の内の画素（back_ink）だけを外す。scene_same は、回す
-    # （保存した絵が、判定用の3枚目と同じ＝ふだんの描く道が、判定と同じ3Dを描いている）。
+    # 3Dの絵には、2Dの描画命令を重ねない。周期の中の実描画も、無い。矩形の内の画素（back_ink）と、描き直す前の裏画面（back_live）
+    # だけを外す。scene_same は、回す（保存した絵が、判定用の3枚目と同じ＝ふだんの描く道が、判定と同じ3Dを描いている）。
     assert tour_tool.SCENE_SHOT_CHECKS == ("backdrop", "scene3d", "mirror", "palette", "scene_same")
+    assert set(tour_tool.scene_reference.SCENE_CHECKS) - set(tour_tool.SCENE_SHOT_CHECKS) == set(tour_tool.scene_reference.NOT_FOR_SHOTS)
     assert set(tour_tool.SCENE_SHOT_CHECKS) < set(tour_tool.scene_reference.SCENE_CHECKS)
 
 

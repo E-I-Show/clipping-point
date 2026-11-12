@@ -3,7 +3,8 @@
 Pyxelは使わない。道具 run、tour、web-smoke が、この関数を使う（アプリを別プロセスで回して、絵を壊したら落ちることは、道具 selftest-break が見る）。
 ここでは、確かめが、合っている場合に通り、合わない場合に、その名で落ちることを見る。
   backdrop（空の画素）、scene3d（コースの画素と車の画素）、mirror（柱と印の重心）、palette（読み戻した32色）、
-  scene_same（2Dの描画命令の矩形の外の、違う画素）、back_ink（矩形の内の、違う画素）
+  scene_same（2Dの描画命令の矩形の外の、違う画素）、back_ink（矩形の内の、違う画素）、
+  back_live（描き直す前と後の、裏画面の違う画素）
 """
 import json
 
@@ -15,14 +16,18 @@ from cp_app import data_files
 from cp_core import camera, car_shape, palette
 from cp_ui.canvas import SCREEN_W
 
-BUDGETS = {"scene_sky_min_px": 5000, "scene_track_min_px": 8000, "scene_car_min_px": 300, "scene_mirror_margin_px": 15}  # 判定の値の見本
+# 判定の値の見本。
+BUDGETS = {"scene_sky_min_px": 5000, "scene_track_min_px": 8000, "scene_car_min_px": 300, "scene_mirror_margin_px": 15, "scene_stale_max_px": 2000}
 PALETTE = list(data_files.load({}, None).entry("palettes", palette.EVENING)["colors"])  # アプリと同じ読み方で読んだ32色
 # 正しく写った絵の、柱と印。左の柱は、中央（159.5）の左、右の柱と、模型の右の印は、右、鼻先の印は、中央。
 PROBES = {
     "pillar_left": {"pixels": 180, "x10": 1138}, "pillar_right": {"pixels": 180, "x10": 2052},
     "mark_right": {"pixels": 300, "x10": 2119}, "mark_nose": {"pixels": 130, "x10": 1595},
 }
-SCENE = {"sky": 21000, "track": 30000, "car": 2400, "ink_inside": 3500, "ink_outside": 0, "probes": PROBES, "palette": PALETTE, "digest": 123456789}
+SCENE = {
+    "sky": 21000, "track": 30000, "car": 2400, "ink_inside": 3500, "ink_outside": 0, "stale": 150, "probes": PROBES, "palette": PALETTE,
+    "digest": 123456789,
+}
 
 
 def scene(**values) -> dict:
@@ -42,7 +47,8 @@ def failed(result, names=scene_reference.SCENE_CHECKS, want_palette=PALETTE) -> 
 # --- 合っている場合 ---
 def test_scene_reference_good_scene_passes_every_check():
     checks = scene_reference.scene_checks({"scene": SCENE, "ticks": 120}, BUDGETS, PALETTE)
-    assert [name for name, _, _ in checks] == list(scene_reference.SCENE_CHECKS) == ["backdrop", "scene3d", "mirror", "palette", "scene_same", "back_ink"]
+    assert [name for name, _, _ in checks] == list(scene_reference.SCENE_CHECKS)
+    assert list(scene_reference.SCENE_CHECKS) == ["backdrop", "scene3d", "mirror", "palette", "scene_same", "back_ink", "back_live"]
     assert [name for name, ok, _ in checks if not ok] == []
     assert all(type(message) is str and message for _, _, message in checks)
 
@@ -56,13 +62,17 @@ def test_scene_reference_names_of_the_probes_come_from_the_shipped_code():
 
 
 def test_scene_reference_a_subset_of_the_checks_can_be_asked_for():
-    # 2Dの描画命令を重ねない絵（巡回の3Dの絵）では、scene_same と back_ink を外す。
-    names = ("backdrop", "scene3d", "mirror", "palette")
-    plain = scene(ink_inside=0, ink_outside=999)
-    assert [name for name, _, _ in scene_reference.scene_checks(plain, BUDGETS, PALETTE, "", names)] == list(names)
-    assert failed(plain, names) == [] and failed(plain) == ["scene_same", "back_ink"]
+    # 巡回の3Dの絵（2Dの描画命令を重ねず、周期の中の実描画も無い）では、back_ink と back_live だけを外す（NOT_FOR_SHOTS）。
+    # scene_same は、渡した絵と、判定用の3枚目が同じことを見るので、巡回でも回す。
+    assert scene_reference.NOT_FOR_SHOTS == ("back_ink", "back_live")
+    names = tuple(name for name in scene_reference.SCENE_CHECKS if name not in scene_reference.NOT_FOR_SHOTS)
+    assert names == ("backdrop", "scene3d", "mirror", "palette", "scene_same")
+    shot = {"scene": {**{key: value for key, value in SCENE.items() if key != "stale"}, "ink_inside": 0}}  # 巡回の結果には、stale が無い
+    assert [name for name, _, _ in scene_reference.scene_checks(shot, BUDGETS, PALETTE, "", names)] == list(names)
+    assert failed(shot, names) == [] and failed(shot) == ["back_ink", "back_live"]
+    assert failed(scene(ink_outside=999), names) == ["scene_same"]
     with pytest.raises(ValueError):
-        scene_reference.scene_checks(plain, BUDGETS, PALETTE, "", ("backdrop", "mirorr"))
+        scene_reference.scene_checks(shot, BUDGETS, PALETTE, "", ("backdrop", "mirorr"))
 
 
 # --- 合わない場合。確かめごとに、その名で落ちる ---
@@ -102,6 +112,16 @@ def test_scene_reference_a_subset_of_the_checks_can_be_asked_for():
         (scene(ink_inside=0), ["back_ink"]),
         (scene(ink_inside=None), ["back_ink"]),
         (scene(ink_inside=True), ["back_ink"]),
+        # 周期の中の実描画が、裏画面へ描いていない（描き直す前と後で、上限を超えて違う）。値が無い、形が違う。
+        (scene(stale=2001), ["back_live"]),
+        (scene(stale=70000), ["back_live"]),
+        (scene(stale=None), ["back_live"]),
+        (scene(stale=True), ["back_live"]),
+        (scene(stale=150.0), ["back_live"]),
+        (scene(stale=-1), ["back_live"]),
+        # 上限ちょうどと、0（止まっている回）は、通る。
+        (scene(stale=2000), []),
+        (scene(stale=0), []),
         # 合否に使わない値は、何でもよい。
         (scene(digest=0), []),
         (scene(digest=None), []),
@@ -165,10 +185,12 @@ def test_scene_reference_probes_just_beyond_the_margin_pass():
 
 
 def test_scene_reference_messages_say_what_was_seen():
-    by_name = {name: message for name, _, message in scene_reference.scene_checks(scene(sky=12, track=34, car=56, ink_outside=78, ink_inside=0), BUDGETS, PALETTE)}
+    seen = scene(sky=12, track=34, car=56, ink_outside=78, ink_inside=0, stale=65432)
+    by_name = {name: message for name, _, message in scene_reference.scene_checks(seen, BUDGETS, PALETTE)}
     assert "12" in by_name["backdrop"] and "5000" in by_name["backdrop"]
     assert "34" in by_name["scene3d"] and "56" in by_name["scene3d"] and "8000" in by_name["scene3d"] and "300" in by_name["scene3d"]
     assert "78" in by_name["scene_same"] and "0" in by_name["back_ink"]
+    assert "65432" in by_name["back_live"] and "2000" in by_name["back_live"]
     problems = scene_reference.probe_problems(probes(pillar_left=(180, 2052), mark_nose=(0, 0))["scene"], 15)
     assert len(problems) == 2 and "pillar_left" in problems[0] and "+45.7" in problems[0] and "中央より左" in problems[0]
     assert "mark_nose" in problems[1] and "写っていない" in problems[1]
@@ -194,7 +216,7 @@ def test_scene_reference_palette_that_could_not_be_read_never_passes():
 
 # --- 道具の値（下限と余裕） ---
 def test_scene_reference_budgets_it_needs_are_named_and_checked():
-    assert scene_reference.BUDGET_KEYS == ("scene_sky_min_px", "scene_track_min_px", "scene_car_min_px", "scene_mirror_margin_px")
+    assert scene_reference.BUDGET_KEYS == ("scene_sky_min_px", "scene_track_min_px", "scene_car_min_px", "scene_mirror_margin_px", "scene_stale_max_px")
     assert scene_reference.missing_budgets(BUDGETS) == []
     assert scene_reference.missing_budgets({}) == list(scene_reference.BUDGET_KEYS)
     assert scene_reference.missing_budgets({**BUDGETS, "scene_car_min_px": 2.5}) == ["scene_car_min_px"]
@@ -248,8 +270,8 @@ def test_scene_reference_missing_palette_file_or_id_gives_no_colours_and_a_reaso
 
 # --- 最後の1行に出す値 ---
 def test_scene_reference_words_for_the_last_line():
-    assert scene_reference.scene_words({"scene": SCENE}) == "sky=21000 track=30000 car=2400 ink=3500/0 digest=123456789"
-    assert scene_reference.scene_words({}) == "sky=None track=None car=None ink=None/None digest=None"
+    assert scene_reference.scene_words({"scene": SCENE}) == "sky=21000 track=30000 car=2400 ink=3500/0 stale=150 digest=123456789"
+    assert scene_reference.scene_words({}) == "sky=None track=None car=None ink=None/None stale=None digest=None"
 
 
 def test_scene_reference_words_for_the_probes():

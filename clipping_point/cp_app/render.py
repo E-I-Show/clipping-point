@@ -24,6 +24,7 @@ z の反転と、頂点の順の入れ替えを書くのは、to_cube() の1か�
   2枚目  1枚目＋コース。1枚目との、違う画素の数（コースの画素）
   3枚目  2枚目＋車。2枚目との、違う画素の数（車の画素）。呼ぶ側が渡した絵（ふだんの実描画の絵）との、違う画素を、2Dの描画命令の矩形の内と外に分ける
   4枚目  柱と印だけ。色ごとの画素の数と、重心の x
+呼ぶ側が、描き直す前の絵（アプリは、周期の中の実描画が描いた裏画面）も渡せば、描き直した後の絵との、違う画素の数も返す。
 柱と印（陰影を切った、片面の板）は、build(probes=True) のときだけ作る。ふつうの起動では、柱も、印も、判定用の絵も、作らない。
 判定の後は、柱と印を隠し、コースと車を、見える状態に戻す（途中で例外が出ても戻す）。
 画素は、絵の data_ptr() でまとめて読む（1画素1バイト、左上から行ごと）。
@@ -51,8 +52,9 @@ GROUND_DROP_M = 0.05
 # 割り切り：地面は、コースを囲む範囲（塊の外接の箱に、カメラの奥を足した範囲）を、この大きさの四角に割った板。視点から遠い所も、同じ大きさ。
 # 景観物と、細かい版と粗い版の切り替えを作る段1の「コースの描画」の区切りで、見直す。
 GROUND_TILE_M = 100.0
-# 割り切り：背景は、空の4色の帯（等しい高さ）と、式で作った山並み2本の、仮の絵。高さと波の数は、ここの定数で、定義データに出していない。
-# 遠景を作り込む段1の「コースの描画」の区切りで、時間帯ごとの背景の作り方と一緒に、定義データへ移す。
+# 割り切り：背景は、空の4色の帯（等しい高さ）と、式で作った山並み2本だけの、仮の絵（雲も、時間帯ごとの違いも、景色の形も無い）。
+# 絵の高さ、山並みの高さと波の数、波の重ね方の係数（ridge_heights）は、この絵の作り方の一部。遠景を作り込む段1の「コースの描画」の
+# 区切りで、時間帯ごとの背景の作り方と一緒に、作り直す（そのときに、寸法を、定義データへ出す）。
 BACKDROP_ROWS = 96  # 背景の絵の高さ（画素）。下の端が、地平線。これより上は、空のいちばん上の色で埋める
 # 山並み（遠い尾根、近い尾根の順。色は palette.MOUNTAINS の順）。(低い所の高さ, 高い所との差, 1周の波の数, 波の始まりの角度3つ)。高さは画素。
 # 遠い尾根は、いつも、近い尾根より高い（隠れない）。空のいちばん下の帯（24画素）が、尾根の上に、見える高さにする。
@@ -402,11 +404,13 @@ class Scene:
             target.blt(left, top, self.backdrop, 0, 0, period, BACKDROP_ROWS)
 
     # --- 判定用の実描画 ---
-    def judge(self, shown: bytes, rects, x: float, z: float, heading: float) -> dict:
+    def judge(self, shown: bytes, rects, x: float, z: float, heading: float, before=None) -> dict:
         """判定用の実描画。返すのは、結果の scene（形は tools/scene_reference.py の頭の注。値は、整数と、整数の並び）。
 
         shown は、ふだんの実描画と同じ道で、同じ車の位置と向きで描いた絵の画素（read_pixels の形。アプリは、3Dと2Dを描いた裏画面）。
         rects は、その絵に重ねた、2Dの描画命令の矩形の並び（重ねていなければ、空）。
+        before は、描き直す前の、同じ絵の画素（アプリは、周期の中の実描画が描いた裏画面）。渡せば、shown との違う画素の数を、
+        結果の stale に入れる（渡さなければ、鍵を入れない。巡回の3Dの絵には、周期の中の実描画が無い）。
         判定の後は、柱と印を隠し、コースと車を、見える状態に戻す（途中で例外が出ても戻す）。
         """
         if not self.probes:
@@ -426,12 +430,14 @@ class Scene:
         for name, role in roles.items():
             pixels, x10 = color_centroid(fourth, SCREEN_W, palette.number(role))
             probes[name] = {"pixels": pixels, "x10": x10}
+        stale = {} if before is None else {"stale": count_diff(before, shown)}
         return {
             "sky": sum(first.count(col) for col in palette.SKY),
             "track": count_diff(first, second),
             "car": count_diff(second, third),
             "ink_inside": inside,
             "ink_outside": outside,
+            **stale,
             "probes": probes,
             "palette": [int(color) for color in self.pyxel.colors],
             "digest": zlib.crc32(third),

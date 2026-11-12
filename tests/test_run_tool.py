@@ -172,7 +172,7 @@ BUDGETS = run_tool.load_budgets()
 PALETTE = run_tool.scene_reference.expected_palette()[0]
 # 実物のアプリの、既定の run（道具の台本。120 tick）の値。
 SCENE = {
-    "sky": 24585, "track": 43204, "car": 5082, "ink_inside": 20806, "ink_outside": 0,
+    "sky": 24585, "track": 43204, "car": 5082, "ink_inside": 20806, "ink_outside": 0, "stale": 33,
     "probes": {
         "pillar_left": {"pixels": 229, "x10": 1138}, "pillar_right": {"pixels": 211, "x10": 2052},
         "mark_right": {"pixels": 292, "x10": 2111}, "mark_nose": {"pixels": 132, "x10": 1595},
@@ -185,9 +185,9 @@ def scene_failed(scene, pack=None) -> list:
     return [name for name, (ok, _) in run_tool.scene_checks_of({"scene": scene}, BUDGETS, pack).items() if not ok]
 
 
-def test_run_tool_scene_checks_are_the_six_of_the_scene_reference_in_their_order():
+def test_run_tool_scene_checks_are_those_of_the_scene_reference_in_their_order():
     checks = run_tool.scene_checks_of({"scene": SCENE}, BUDGETS)
-    assert list(checks) == ["backdrop", "scene3d", "mirror", "palette", "scene_same", "back_ink"] == list(run_tool.scene_reference.SCENE_CHECKS)
+    assert list(checks) == ["backdrop", "scene3d", "mirror", "palette", "scene_same", "back_ink", "back_live"] == list(run_tool.scene_reference.SCENE_CHECKS)
     assert scene_failed(SCENE) == []
     assert all(type(message) is str and message for _, message in checks.values())
     # まだ無い確かめの一覧から、scene3d と mirror は、外れた。
@@ -206,10 +206,21 @@ def test_run_tool_scene_checks_are_the_six_of_the_scene_reference_in_their_order
         ({"palette": list(range(32))}, ["palette"]),  # パレットを当てていない
         ({"ink_outside": 61234}, ["scene_same"]),  # ふだんの実描画が、3Dを描いていない
         ({"ink_inside": 0}, ["back_ink"]),  # 2Dの描画命令を、実行していない
+        # 周期の中の実描画が、1度も描いていない（裏画面が、黒のまま。段0 区切り10の実測：既定の run で 62,405）。
+        ({"stale": 62405}, ["back_live"]),
+        # 最初の1回だけ描いた（スタート位置の絵が、残っている。実測：走る台本の回で 8,094、壁の台本の回で 3,147）。
+        ({"stale": 8094}, ["back_live"]),
+        ({"stale": 3147}, ["back_live"]),
     ],
 )
 def test_run_tool_each_broken_picture_fails_under_its_own_name(changes, names):
     assert scene_failed({**SCENE, **changes}) == names
+
+
+def test_run_tool_result_without_the_count_before_the_redraw_fails_the_live_check():
+    # 描き直す前の裏画面を読んでいない結果（stale が無い）。見ずに通さない。走っている回の値（実測の最大は、走る台本の終わりの 175）は、通る。
+    assert scene_failed({key: value for key, value in SCENE.items() if key != "stale"}) == ["back_live"]
+    assert scene_failed({**SCENE, "stale": 175}) == [] and scene_failed({**SCENE, "stale": 0}) == []
 
 
 def test_run_tool_result_without_a_scene_fails_every_scene_check():

@@ -32,10 +32,10 @@ paths:
 - 描く口は `Scene.draw()` の1つ。ふだんの実描画、判定用の4枚、巡回の3Dの絵が、ここを通る。描くものは `layers`。
 - パレットを当てるのは `apply_palette()` の1か所。色の番号は、役割の名（`cp_core/palette.py`）で引く。部品の中は、1色。
 - カメラは、目と注視点を、ロジックの座標で返す。前の呼び出しの値を持たない。画角は、縦の画角（度）。
-- 寸法と値は、定義データ：表 `cameras`、表 `palettes`、車の `shape`、コースの `mesh`（`track.md`）。
+- 寸法と値は、定義データ：表 `cameras`、表 `palettes`、車の `shape`、コースの `mesh`（`track.md`）。仮の絵の背景と地面の寸法だけは `render.py` の定数（割り切りの印つき。段1の「コースの描画」で作り直す）。
 - 車輪は、車体の子にしない（車の根の下）。
 - 判定用の柱と印（片面の板。陰影を切る。表は、車の後ろ向き）と、判定用の実描画（`Scene.judge()`）は、検証の口があるときだけ。ふつうの起動では、作らない。
-- 判定は、結果を書く直前に、裏画面を描き直してから。後で、柱と印を隠し、コースと車を戻す（例外でも）。合否と文は `tools/scene_reference.py` の1か所。
+- 判定は、結果を書く直前に、裏画面を読んでから（周期の中の実描画が描いた絵。`before`）、描き直して。後で、柱と印を隠し、コースと車を戻す（例外でも）。合否と文は `tools/scene_reference.py` の1か所。
 - 描いた結果と、測った値は、世界へ戻さない。
 
 ## 値を読む口
@@ -60,13 +60,15 @@ paths:
 ## テストと道具
 
 - テスト：`test_render.py`（偽の Pyxel。変換、描く口、判定の後の戻し、アプリの配線の守り）、`test_mesh.py`、`test_camera.py`、`test_palette.py`、`test_car_shape.py`、`test_scene_reference.py`。
-- 道具 run：確かめ `backdrop`、`scene3d`、`mirror`、`palette`、`scene_same`、`back_ink`。巡回 `tour.py --only scene`（`out/tour/scene_<名>.png`）。web-smoke の筋書き `drive`。
+- 道具 run：確かめ `backdrop`、`scene3d`、`mirror`、`palette`、`scene_same`、`back_ink`、`back_live`。巡回 `tour.py --only scene`（`out/tour/scene_<名>.png`。`NOT_FOR_SHOTS` の2つは回さない）。web-smoke の筋書き `drive`。
 - 補助 `python3 tools/claude/make_palette.py [--check]`。
 - selftest-break の `run_scene_`、`run_drive_`、`tour_scene_`、`tour_heading_`、`test_render_`、`web_drive_`（3Dの絵を壊す）、`test_camera_`、`test_mesh_`、`test_car_shape_`、`test_scene_`、`check_data_palette`、`check_data_camera`、`check_data_car_shape_`、`make_palette_` で始まる件。
 
 ## 落とし穴
 
-- 向き0、z=0 のスタート位置では、向きの符号の誤りと、反転の付け忘れが、絵に出ない。拾うのは、走る台本の回と、巡回。
+- 向き0、z=0 のスタート位置では、向きの符号の誤りと、反転の付け忘れが、絵に出ない。拾うのは、走る台本の回と、巡回。背景をずらす量の誤りは、道具に頼らない（テストで、写す x を固定）。
+- 描き直した絵を見る確かめ（`scene_same`、`back_ink`）は、周期の中で描かない回を通す。拾うのは `back_live`（走る回）と、守りのテスト。
+- ふつうの起動（検証の口が無い）を実物で通すのは、web-smoke の `shipped` だけ（色の数）。描く文を、条件の下に置かない。
 - 模型をロジックの座標と同じ扱いにすると、車だけが鏡写しになる。箱の輪郭は変わらない（片面の印が0画素になる）。
 - 深度の記録は、draw の呼び出しごとに消える。画面外のノードは、自動では捨てられない（塊を隠す）。
 - UVは0〜1に切り詰められ、繰り返せない。`pyxel.pal` は、3Dに効かない。描画の状態（陰影を切る）は `on_draw` の中で。

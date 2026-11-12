@@ -305,11 +305,13 @@ class App:
 
         結果を書くのは、更新の中。裏画面は、1〜2 tick前の世界の絵なので、先に、いまの世界で描き直す（ふだんの実描画と同じ道 render()）。
         その絵と、2Dの描画命令の矩形を、判定用の実描画（Scene.judge）へ渡す。判定の後、柱と印は隠れ、コースと車は、見える状態に戻る。
+        描き直す前の裏画面（周期の中の実描画 draw() が描いた絵）も読んで渡す（結果の stale。周期の中で描いていなければ、ここで分かる）。
         """
+        before = render.read_pixels(self.back)
         self.render()
         car = self.sim.car
         rects = [command.bounds for command in self.canvas.commands]
-        return self.scene.judge(render.read_pixels(self.back), rects, car.x, car.z, car.heading)
+        return self.scene.judge(render.read_pixels(self.back), rects, car.x, car.z, car.heading, before)
 
     def scene_stats(self) -> dict:
         """結果に足す、場面の数（三角形の数、塊の数、組むのにかかった時間、直近に描いた数）と、起動にかかった時間（ms）。報告のための値。"""

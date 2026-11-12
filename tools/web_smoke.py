@@ -6,7 +6,8 @@
 煙テスト用に作り直したHTMLは開かない。ランタイムへの要求は、ランタイムの写し（.cache/pyxel_web/mirror/）へ差し替える。
 筋書きは6本。順に、1本ずつ回す。どの筋書きでも、直読みの警告（cp_app/input_web.py の WARN_MARK の付いたコンソールの行）が0件であることを見る。
   shipped  何も渡さずに開く。見るもの：Pythonの例外が無い、エラー表示が無い、読み込みの失敗が無い、
-           ランタイムの写しの外への要求が無い、開始のクリックの後の決めた秒数で画面が描かれている（背景と違う画素がある）。
+           ランタイムの写しの外への要求が無い、開始のクリックの後の決めた秒数で画面が描かれている（背景と違う画素がある）、
+           画面に3Dの絵が載っている（色の数が、下限以上。ふつうの起動を、実物のPyxelで通すのは、この筋書きだけ）。
            保存：終わりの localStorage を、ブラウザの実行役に読ませ、このアプリの鍵（頭が clippingpoint/）が1つも無いことを見る。
            ふつうの起動は、何も操作しなければ、localStorage に何も残さない（試し書きの鍵は消えている。保存の往復は、
            検証の口のときだけ回す。設定は、読むだけで書かない）。読めていなければ、何も見ずに通さない。
@@ -21,8 +22,8 @@
            往復の見本と比べる。ふつうの保存（名前空間 main）の鍵が、できていないことも見る。
            定義データ：結果の data の、表ごとの件数が、道具が定義データのファイルを自分で読んで数えた件数と同じ、警告が0件、
            試験用データを重ねていない（null）、設定を読んだ保存の口の名前空間が main。数え方と確かめは tools/data_reference.py。
-           3Dの絵：結果の scene（アプリが、結果を出す直前に、判定用の実描画で数えた値）の確かめ6つ（backdrop、scene3d、mirror、palette、
-           scene_same、back_ink。判定の関数は tools/scene_reference.py。道具 run、tour と同じ）。何も押さないので、車は、スタート位置のまま。
+           3Dの絵：結果の scene（アプリが、結果を出す直前に、判定用の実描画で数えた値）の確かめ7つ（backdrop、scene3d、mirror、palette、
+           scene_same、back_ink、back_live。判定の関数は tools/scene_reference.py。道具 run と同じ）。何も押さないので、車は、スタート位置のまま。
   script   window.CP_PROBE に、回すtick数、道具の台本（tools/input_script_smoke.json）、入力の跡の件数の上限を置いて開く。
            見るもの：ブラウザ版であること、回したtick、入力の出どころが台本で、入力アダプタも直読みも呼んでいない、
            世界の要約がデスクトップ版（同じ台本を渡して回した）と合い、参照（tools/input_reference.py）とも合う（項目ごとの比べ方）、
@@ -41,16 +42,17 @@
            慣らしを置いて開く。入力の跡は、取らない。見るもの：ブラウザ版であること、回したtick、入力の出どころが台本、
            世界の要約がデスクトップ版（同じ台本を渡して回した）と合い、参照とも合う（項目ごとの比べ方）、走行の下限（指紋の筋書き
            drive_900 の下限を、そのまま。tools/fingerprint.py）、実描画の回数、更新と実描画の毎秒の回数、更新1回と実描画1回の時間（95%点）、
-           3Dの絵の確かめ6つ（車が、コーナーの中まで走った所。向きは約2.37 rad、z は約78 m。向きの符号の誤りと、反転の付け忘れを拾う）。
+           3Dの絵の確かめ7つ（車が、コーナーの中まで走った所。向きは約2.37 rad、z は約78 m。向きの符号の誤りと、反転の付け忘れを拾う）。
            画面の絵は out/web_smoke/drive.png（目で見る）。
 script、gamepad、storage_blocked は、処理時間と回数の線を見ない（見るのは probe と drive）。慣らしは0。
-世界の要約の突き合わせ（デスクトップ版とブラウザ版。probe の sim、script の sim と sim_reference の3つとも、同じ関数 summary_check で比べる）：
+世界の要約の突き合わせ（デスクトップ版とブラウザ版。probe の sim、script の sim と sim_reference、drive の sim と sim_reference の
+5つとも、同じ関数 summary_check で比べる）：
   浮動小数の結果は、デスクトップ版とブラウザ版で一致しない前提。項目ごとの比べ方は、世界（cp_core/sim.py の SUMMARY_FIELDS）から引く。
   完全一致（tick、入力の要約値、種、乱数の流れの状態、車とコースの id、ギア、路面の種類、回数の項目）、
   許容差つき（位置、速度、ヨーレート、実舵角、回転数、横のずれ、進行距離、最高速。量子化の刻みで、tools/budgets.json の
   web_summary_tolerance まで）、折り返した差（向きと、コースに沿った距離。1周で折り返した差が、同じ許容差まで）。
   比べ方の表に無い項目が、要約にあれば、見ずに通さない（2。incomplete=<筋書き>.summary_field_without_rule）。
-  最後の1行の probe_gap= と script_gap= は、量子化する項目の、デスクトップ版との差の最大（許容差の余裕を見るための値）。
+  最後の1行の probe_gap=、script_gap=、drive_gap= は、量子化する項目の、デスクトップ版との差の最大（許容差の余裕を見るための値）。
 終了コード：0＝合格、1＝問題あり、2＝回り切れない（ランタイムの写しが無い・照合が合わない、node が無い、
 ビルドできない、デスクトップ版の参照が取れない、道具の参照の世界を作れない、ブラウザの実行役の結果が無い、完了の合図が出ない、
 台本が読めない、回すtick数が台本の合計より短い、偽のコントローラーの予定の区間に判定するtickが無い、
@@ -192,13 +194,21 @@ def page_checks(page: dict, html_sha256: str) -> list:
     return checks
 
 
-def judge_shipped(page: dict, html_sha256: str) -> list:
-    """何も渡さずに開く筋書きの確かめ。"""
+def judge_shipped(page: dict, html_sha256: str, budgets: dict) -> list:
+    """何も渡さずに開く筋書きの確かめ。
+
+    ふつうの起動（検証の口が無い）を、実物のPyxelで通すのは、この筋書きだけ。画面の絵は、2つ見る。
+      canvas_ink     背景（いちばん多い色）と違う画素が、1つ以上（何も写っていない画面を、通さない）
+      canvas_colors  色の数が、下限（budgets の web_shipped_colors_min）以上。3Dの絵（空、山並み、路面、芝、壁、車）が載ると、色が多い。
+                     2Dの仮の表示だけ（ふつうの起動でだけ、3Dを描かない）なら、4色
+    """
     state = page.get("state") or {}
-    ink = (page.get("canvas") or {}).get("ink")
+    canvas = page.get("canvas") or {}
+    ink, colors, colors_min = canvas.get("ink"), canvas.get("colors"), budgets["web_shipped_colors_min"]
     return page_checks(page, html_sha256) + [
         ("started", page.get("clickedAt") is not None and state.get("initialized") is True, "アプリが始まっていない"),
         ("canvas_ink", type(ink) is int and ink > 0, f"画面が描かれていない（背景と違う画素が {ink}）"),
+        ("canvas_colors", type(colors) is int and colors >= colors_min, f"画面に、3Dの絵が載っていない（色の数が {colors}。{colors_min} 以上のはず）"),
         nothing_stored_check(page),
     ]
 
@@ -242,7 +252,7 @@ def summary_check(name: str, got, want, tolerance: int, periods: dict, label: st
 
     got は、ブラウザ版の世界の要約。want は、比べる相手（デスクトップ版のアプリの要約か、道具の参照）。label は、相手の呼び名。
     比べ方は、項目ごと（tools/input_reference.py の summary_differences。完全一致、許容差つき、折り返した差）。
-    3つの突き合わせ（probe の sim、script の sim と sim_reference）は、どれも、この関数で比べる。
+    5つの突き合わせ（probe の sim、script の sim と sim_reference、drive の sim と sim_reference）は、どれも、この関数で比べる。
     相手が取れていない（None）、比べ方の表に無い項目がある、は合っていない（表に無い項目は、筋書きの側が、先に2にする）。
     """
     if want is None:
@@ -260,7 +270,7 @@ def summary_fields_without_rule(*summaries) -> list:
 
 
 def scene_checks(result: dict, budgets: dict, want_palette, palette_why: str = "") -> list:
-    """3Dの絵の確かめ6つ（結果の scene。判定の関数は tools/scene_reference.py）。probe と drive が、同じ関数で見る。
+    """3Dの絵の確かめ7つ（結果の scene。判定の関数は tools/scene_reference.py）。probe と drive が、同じ関数で見る。
 
     want_palette は、道具が定義データのファイルを自分で読んだ32色（読めなかったら None。palette_why は、その理由）。
     """
@@ -660,7 +670,8 @@ def scenario_shipped(args, budgets: dict, html_sha256: str, context: dict) -> tu
     page = open_page("shipped", args.timeout, extra)
     if page is None:
         return None, [], "no_runner_result"
-    return judge_shipped(page, html_sha256), [f"canvas_ink={(page.get('canvas') or {}).get('ink')}"], ""
+    canvas = page.get("canvas") or {}
+    return judge_shipped(page, html_sha256, budgets), [f"canvas_ink={canvas.get('ink')}", f"canvas_colors={canvas.get('colors')}"], ""
 
 
 def scenario_probe(args, budgets: dict, html_sha256: str, context: dict) -> tuple:

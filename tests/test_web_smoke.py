@@ -48,14 +48,14 @@ DATA_TABLES = web_smoke.data_reference.expected_tables()[0]
 WANT_PALETTE = web_smoke.scene_reference.expected_palette()[0]
 # 正しく写った、判定用の実描画の値（実物のアプリの、スタート位置の値）。
 SCENE = {
-    "sky": 24565, "track": 43207, "car": 5082, "ink_inside": 20806, "ink_outside": 0,
+    "sky": 24565, "track": 43207, "car": 5082, "ink_inside": 20806, "ink_outside": 0, "stale": 30,
     "probes": {
         "pillar_left": {"pixels": 229, "x10": 1138}, "pillar_right": {"pixels": 211, "x10": 2052},
         "mark_right": {"pixels": 292, "x10": 2111}, "mark_nose": {"pixels": 132, "x10": 1595},
     },
     "palette": list(WANT_PALETTE), "digest": 3123312044,
 }
-SCENE_CHECKS =["backdrop", "scene3d", "mirror", "palette", "scene_same", "back_ink"]
+SCENE_CHECKS = ["backdrop", "scene3d", "mirror", "palette", "scene_same", "back_ink", "back_live"]
 
 
 def stored(blob: bytes = SELFCHECK_BLOB) -> str:
@@ -71,7 +71,7 @@ def page(**changes) -> dict:
         "clickedAt": 3500,
         "untilAt": None,
         "state": {"overlayText": None, "hasFatalError": False, "initialized": True},
-        "canvas": {"ink": 35000, "pixels": 691200},
+        "canvas": {"ink": 510750, "pixels": 691200, "colors": 19},  # 実物の、スタート位置の絵（画面の3倍のスクリーンショット）
         "localStorage": None,
     }
     return {**base, **changes}
@@ -140,6 +140,11 @@ def failed(checks) -> list:
     return [name for name, ok, _ in checks if not ok]
 
 
+def judge_shipped(a_page, sha) -> list:
+    """何も渡さずに開く筋書きの確かめ。線は、実物の道具の値（tools/budgets.json）。"""
+    return web_smoke.judge_shipped(a_page, sha, BUDGETS)
+
+
 def probe_failed(res, sim=None, a_page=None) -> list:
     desktop_sim = {"tick": TICKS} if sim is None else sim
     return failed(web_smoke.judge_probe(a_page or probe_page(), SHA, res, desktop_sim, TICKS, WARMUP, BUDGETS, DATA_TABLES, want_palette=WANT_PALETTE))
@@ -155,25 +160,42 @@ def last_line(capsys) -> str:
 
 # --- 何も渡さずに開く筋書き ---
 def test_web_smoke_clean_shipped_page_passes():
-    assert failed(web_smoke.judge_shipped(shipped_page(), SHA)) == []
+    assert failed(judge_shipped(shipped_page(), SHA)) == []
 
 
 def test_web_smoke_blank_canvas_fails():
-    assert failed(web_smoke.judge_shipped(shipped_page(canvas={"ink": 0}), SHA)) == ["canvas_ink"]
-    assert failed(web_smoke.judge_shipped(shipped_page(canvas=None), SHA)) == ["canvas_ink"]
+    assert failed(judge_shipped(shipped_page(canvas={"ink": 0, "colors": 19}), SHA)) == ["canvas_ink"]
+    assert failed(judge_shipped(shipped_page(canvas={"ink": 0, "colors": 1}), SHA)) == ["canvas_ink", "canvas_colors"]  # 1色だけの画面
+    assert failed(judge_shipped(shipped_page(canvas=None), SHA)) == ["canvas_ink", "canvas_colors"]
+
+
+def test_web_smoke_shipped_page_without_the_3d_picture_fails():
+    # ふつうの起動でだけ、3Dを描かない（黒地に、2Dの仮の表示だけ）。背景と違う画素は、ある。色の数が、少ない
+    # （段0 区切り10の実測：3Dを描かないと、4色で、背景と違う画素は 57,735。描くと、19色で 510,750）。
+    low = BUDGETS["web_shipped_colors_min"]
+    assert failed(judge_shipped(shipped_page(canvas={"ink": 57735, "colors": 4}), SHA)) == ["canvas_colors"]
+    assert failed(judge_shipped(shipped_page(canvas={"ink": 57735, "colors": low - 1}), SHA)) == ["canvas_colors"]
+    assert failed(judge_shipped(shipped_page(canvas={"ink": 57735, "colors": low}), SHA)) == []
+    assert failed(judge_shipped(shipped_page(canvas={"ink": 530451, "colors": 17}), SHA)) == []  # 走行の場面の絵
+    # 色の数を、数えていない結果（古い形）、数でない値は、通さない。
+    for colors in (None, True, 19.0, "19"):
+        assert failed(judge_shipped(shipped_page(canvas={"ink": 510750, "colors": colors}), SHA)) == ["canvas_colors"]
+    assert failed(judge_shipped(shipped_page(canvas={"ink": 510750}), SHA)) == ["canvas_colors"]
+    message = next(text for name, _, text in judge_shipped(shipped_page(canvas={"ink": 57735, "colors": 4}), SHA) if name == "canvas_colors")
+    assert "4" in message and str(low) in message
 
 
 def test_web_smoke_page_that_never_started_fails():
-    assert "started" in failed(web_smoke.judge_shipped(shipped_page(clickedAt=None), SHA))
+    assert "started" in failed(judge_shipped(shipped_page(clickedAt=None), SHA))
     not_initialized = {"overlayText": None, "hasFatalError": False, "initialized": False}
-    assert failed(web_smoke.judge_shipped(shipped_page(state=not_initialized), SHA)) == ["started"]
-    assert failed(web_smoke.judge_shipped(shipped_page(state=None), SHA)) == ["started"]  # 状態を読めなかった
+    assert failed(judge_shipped(shipped_page(state=not_initialized), SHA)) == ["started"]
+    assert failed(judge_shipped(shipped_page(state=None), SHA)) == ["started"]  # 状態を読めなかった
 
 
 @pytest.mark.parametrize("kind", list(web_smoke.FAILURE_KINDS))
 def test_web_smoke_each_failure_kind_fails_under_its_own_name(kind):
     bad = shipped_page(failures=[{"t": 5, "kind": kind, "detail": "Traceback (most recent call last):\nRuntimeError: planted"}])
-    assert failed(web_smoke.judge_shipped(bad, SHA)) == [kind]
+    assert failed(judge_shipped(bad, SHA)) == [kind]
 
 
 def test_web_smoke_unresponsive_page_is_a_failure_kind():
@@ -182,17 +204,17 @@ def test_web_smoke_unresponsive_page_is_a_failure_kind():
 
 def test_web_smoke_unknown_failure_kind_is_not_ignored():
     bad = shipped_page(failures=[{"t": 5, "kind": "something_new", "detail": "x"}])
-    assert failed(web_smoke.judge_shipped(bad, SHA)) == ["other_failure"]
+    assert failed(judge_shipped(bad, SHA)) == ["other_failure"]
 
 
 def test_web_smoke_other_html_bytes_fail():
-    assert failed(web_smoke.judge_shipped(shipped_page(htmlSha256="b" * 64), SHA)) == ["html_bytes"]
+    assert failed(judge_shipped(shipped_page(htmlSha256="b" * 64), SHA)) == ["html_bytes"]
 
 
 # --- 保存（shipped の筋書き）：ふつうの起動の後の localStorage に、このアプリの鍵が1つも無い ---
 def test_web_smoke_shipped_storage_check_comes_last_and_only_once():
-    names = [name for name, _, _ in web_smoke.judge_shipped(shipped_page(), SHA)]
-    assert names[-3:] == ["started", "canvas_ink", "storage_empty"] and names.count("storage_empty") == 1
+    names = [name for name, _, _ in judge_shipped(shipped_page(), SHA)]
+    assert names[-4:] == ["started", "canvas_ink", "canvas_colors", "storage_empty"] and names.count("storage_empty") == 1
     assert web_smoke.nothing_stored_check(shipped_page())[:2] == ("storage_empty", True)
 
 
@@ -208,7 +230,7 @@ def test_web_smoke_shipped_storage_check_comes_last_and_only_once():
     ],
 )
 def test_web_smoke_shipped_any_key_of_the_app_left_in_local_storage_fails(entries):
-    checks = web_smoke.judge_shipped(shipped_page(localStorage=local_storage(entries)), SHA)
+    checks = judge_shipped(shipped_page(localStorage=local_storage(entries)), SHA)
     assert failed(checks) == ["storage_empty"]
     message = next(text for name, _, text in checks if name == "storage_empty")
     assert all(key in message for key in entries)  # 残っている鍵の名を出す
@@ -228,14 +250,14 @@ def test_web_smoke_shipped_any_key_of_the_app_left_in_local_storage_fails(entrie
 )
 def test_web_smoke_shipped_local_storage_that_was_not_read_is_not_a_pass(seen):
     # 鍵が0件で通す確かめなので、読めていないことと、鍵が無いことを、取り違えない。
-    assert failed(web_smoke.judge_shipped(shipped_page(localStorage=seen), SHA)) == ["storage_empty"]
-    assert failed(web_smoke.judge_shipped(page(), SHA)) == ["storage_empty"]
+    assert failed(judge_shipped(shipped_page(localStorage=seen), SHA)) == ["storage_empty"]
+    assert failed(judge_shipped(page(), SHA)) == ["storage_empty"]
 
 
 def test_web_smoke_shipped_keys_of_other_pages_are_not_counted():
     # ブラウザの実行役は、鍵の頭で絞って読む。絞り漏れがあっても、このアプリの鍵でなければ数えない。
     entries = {"someone_else": "x", "clippingpoint": "y", "other/clippingpoint/main.settings": "z"}
-    assert failed(web_smoke.judge_shipped(shipped_page(localStorage=local_storage(entries)), SHA)) == []
+    assert failed(judge_shipped(shipped_page(localStorage=local_storage(entries)), SHA)) == []
 
 
 def test_web_smoke_shipped_scenario_asks_the_browser_runner_for_the_local_storage(monkeypatch):
@@ -248,7 +270,7 @@ def test_web_smoke_shipped_scenario_asks_the_browser_runner_for_the_local_storag
     monkeypatch.setattr(web_smoke, "open_page", fake_open_page)
     args = argparse.Namespace(timeout=7.0)
     checks, facts, reason = web_smoke.scenario_shipped(args, BUDGETS, SHA, {})
-    assert failed(checks) == [] and reason == "" and facts == ["canvas_ink=35000"]
+    assert failed(checks) == [] and reason == "" and facts == ["canvas_ink=510750", "canvas_colors=19"]
     (name, timeout_s, extra), = asked
     assert (name, timeout_s) == ("shipped", 7.0)
     at = extra.index("--local-storage")
@@ -500,12 +522,12 @@ def test_web_smoke_probe_data_that_the_tool_could_not_count_does_not_pass():
     assert "cars.json: ValueError" in next(message for name, _, message in checks if name == "data_tables")
 
 
-# --- 3Dの絵（probe と drive の筋書き）：結果の scene の確かめ6つ。判定の関数は tools/scene_reference.py ---
+# --- 3Dの絵（probe と drive の筋書き）：結果の scene の確かめ7つ。判定の関数は tools/scene_reference.py ---
 def test_web_smoke_probe_scene_checks_come_right_after_the_data_checks_and_before_the_lines():
     names = [name for name, _, _ in web_smoke.judge_probe(probe_page(), SHA, result(), {"tick": TICKS}, TICKS, WARMUP, BUDGETS, DATA_TABLES)]
-    at = names.index("data_namespace")
-    assert names[at + 1:at + 7] == SCENE_CHECKS == list(web_smoke.scene_reference.SCENE_CHECKS)
-    assert names[at + 7:] == ["renders", "perf_renders", *web_smoke.TIMING_CHECKS]
+    at, count = names.index("data_namespace"), len(SCENE_CHECKS)
+    assert count == 7 and names[at + 1:at + 1 + count] == SCENE_CHECKS == list(web_smoke.scene_reference.SCENE_CHECKS)
+    assert names[at + 1 + count:] == ["renders", "perf_renders", *web_smoke.TIMING_CHECKS]
     assert all(names.count(name) == 1 for name in SCENE_CHECKS)
 
 
@@ -520,6 +542,8 @@ def test_web_smoke_probe_scene_checks_come_right_after_the_data_checks_and_befor
         (with_scene(palette=[0] * 32), ["palette"]),  # パレットを当てていない
         (with_scene(ink_outside=5), ["scene_same"]),  # ふだんの実描画の3Dが、判定と違う
         (with_scene(ink_inside=0), ["back_ink"]),  # 2Dの描画命令が、描かれていない
+        (with_scene(stale=62405), ["back_live"]),  # 周期の中の実描画が、1度も描いていない（裏画面が、黒のまま）
+        (with_scene(stale=None), ["back_live"]),
         (result(scene=None), SCENE_CHECKS),
         ({key: value for key, value in result().items() if key != "scene"}, SCENE_CHECKS),  # 古い形の結果
     ],
@@ -539,6 +563,11 @@ def test_web_smoke_scene_budgets_are_in_the_tool_values():
     assert web_smoke.scene_reference.missing_budgets(BUDGETS) == []
     # コースの画素の下限は、車だけが描かれた絵（コースの画素が0）を、通さない値。空の画素の下限は、背景を写さない絵（960）を、通さない値。
     assert BUDGETS["scene_track_min_px"] > 0 and BUDGETS["scene_car_min_px"] > 0 and BUDGETS["scene_sky_min_px"] > 960
+    # 描き直す前と後の、裏画面の違う画素の上限は、走っている回の値（実測の最大は 175）を通し、1度も描いていない回（62,043〜）と、
+    # 最初の1回だけ描いて走った回（壁の台本で 3,147、走る台本で 8,094）を、通さない値。
+    assert 175 < BUDGETS["scene_stale_max_px"] < 3147
+    # 何も渡さずに開く筋書きの、色の数の下限は、3Dを描かない画面（4色）を通さず、3Dの絵（実測は 17〜19色）を通す値。
+    assert 4 < BUDGETS["web_shipped_colors_min"] <= 17
 
 
 # --- 保存先に触れると例外になるようにして開く筋書き ---
@@ -647,13 +676,13 @@ def test_web_smoke_scenarios_come_in_the_fixed_order():
 
 def test_web_smoke_input_warning_fails_the_shipped_and_the_probe_scenario():
     # 直読みは、読めないときに「未接続」と同じ値を返す。読み方の誤りは、警告の行でしか拾えない。
-    assert failed(web_smoke.judge_shipped(shipped_page(console=[WARN_LINE]), SHA)) == ["input_warn"]
+    assert failed(judge_shipped(shipped_page(console=[WARN_LINE]), SHA)) == ["input_warn"]
     assert probe_failed(result(), a_page=probe_page(console=[WARN_LINE])) == ["input_warn"]
 
 
 def test_web_smoke_other_console_lines_are_not_input_warnings():
     lines = [{"t": 1, "type": "warning", "text": "some other warning"}, {"t": 2, "type": "log", "text": "CP_PROBE_DONE"}]
-    assert failed(web_smoke.judge_shipped(shipped_page(console=lines), SHA)) == []
+    assert failed(judge_shipped(shipped_page(console=lines), SHA)) == []
 
 
 # --- 台本を渡して開く筋書き ---

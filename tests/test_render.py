@@ -512,6 +512,18 @@ def test_render_draw_blits_the_backdrop_then_calls_the_root_draw_once():
     assert target.pget(0, horizon) == palette.FAR_GROUND and target.pget(0, 100) == palette.FAR_GROUND
 
 
+@pytest.mark.parametrize("heading, shift", [(0.5, 108), (1.5, 324), (-1.0, 1143)])
+def test_render_draw_shifts_the_backdrop_by_the_heading_of_the_camera(heading, shift):
+    # 背景をずらす量は、カメラの向き（rad）から。向きが増える（左へ回る）と、絵は、右へ流れる。写す x を、数で固定する
+    # （向き0のスタート位置では、単位の取り違え（度を渡す）も、符号の逆も、ずらす量が0のままで、分からない）。
+    # 向きは、ずらす量が、画素の境目から離れる値（108.2、324.7、1143.5）。
+    scene, _ = built()
+    assert scene.backdrop_period == 1360
+    target = FakeImage(SCREEN_W, SCREEN_H)
+    scene.draw(target, scene.chase(10.0, 5.0, heading), 10.0, 5.0, heading)
+    assert [call[1] for call in target.calls if call[0] == "blt"] == [shift - 1360, shift]
+
+
 @pytest.mark.parametrize("x, z, heading", [(60.0, 0.0, 0.0), (245.0, 78.0, 2.37), (-57.2, 80.1, -2.578)])
 def test_render_draw_places_the_camera_and_the_car_through_the_flip(x, z, heading):
     scene, _ = built()
@@ -654,6 +666,29 @@ def test_render_judge_splits_the_difference_from_the_shown_picture_by_the_rectan
     no_car = FakeImage(SCREEN_W, SCREEN_H)
     scene.draw(no_car, pose, x, z, heading, (render.BACKDROP, render.GROUND, render.TRACK))
     assert scene.judge(bytes(no_car.data), (), x, z, heading)["ink_outside"] == CAR_PX
+
+
+def test_render_judge_counts_the_difference_from_the_picture_before_the_redraw_only_when_it_is_given():
+    # 描き直す前の絵（アプリは、周期の中の実描画が描いた裏画面）を渡すと、描き直した後の絵との、違う画素の数が、結果の stale に入る。
+    scene, _ = built(probes=True)
+    x, z, heading, pose = start_pose(scene)
+    picture = FakeImage(SCREEN_W, SCREEN_H)
+    scene.draw(picture, pose, x, z, heading)
+    shown = bytes(picture.data)
+    # 同じ絵（止まっている回）。違う画素は、無い。
+    result = scene.judge(shown, (), x, z, heading, shown)
+    assert result["stale"] == 0 and type(result["stale"]) is int
+    assert list(result) == ["sky", "track", "car", "ink_inside", "ink_outside", "stale", "probes", "palette", "digest"]
+    # 1度も描いていない裏画面（黒1色）。空、コース、車の、ほぼ全面が、違う。
+    never = scene.judge(shown, (), x, z, heading, bytes(SCREEN_W * SCREEN_H))
+    assert never["stale"] == SCREEN_W * SCREEN_H - shown.count(0) and never["stale"] > 50_000
+    # 車が写っていない、古い絵。車の画素の分だけ、違う。ほかの値（矩形の内と外）は、描き直した後の絵から数える。
+    old = FakeImage(SCREEN_W, SCREEN_H)
+    scene.draw(old, pose, x, z, heading, (render.BACKDROP, render.GROUND, render.TRACK))
+    stale = scene.judge(shown, (), x, z, heading, bytes(old.data))
+    assert stale["stale"] == CAR_PX and (stale["ink_inside"], stale["ink_outside"]) == (0, 0)
+    # 渡さなければ（巡回の3Dの絵）、鍵を入れない。
+    assert "stale" not in scene.judge(shown, (), x, z, heading)
 
 
 def visible_state(scene) -> tuple:
@@ -799,6 +834,38 @@ def test_render_app_draws_the_3d_scene_under_the_2d_commands_through_the_one_dra
     assert not [node for node in ast.walk(render_method) if isinstance(node, ast.Attribute) and node.attr in ("cls", "blt")]
     blits = [(name, call) for name, call in method_calls_in_app("blt")]
     assert [name for name, _ in blits] == ["draw"] and is_attribute_of(blits[0][1].func, "pyxel", "blt")
+    # 3Dと、2Dの描画命令は、どの起動でも描く（条件の下に置かない。render() の直下の文）。検証の口があるときにだけ描く形にすると、
+    # 道具（run、tour、web-smoke の検証の口つきの筋書き）は、どれも通り、ふつうの起動でだけ、3Dが出ない。
+    plain = [statement.value for statement in render_method.body if isinstance(statement, ast.Expr)]
+    assert draws[0] in plain and executes[0] in plain
+
+
+def test_render_app_renders_in_every_due_cycle_and_hands_the_back_buffer_before_the_redraw_to_the_judge():
+    # 守りのテスト。周期の中の実描画：draw() は、間引きの条件（should_render）の直下で、render() を1回呼ぶ（ほかの条件の下に置かない）。
+    # 結果を書く直前の描き直しが、裏画面を描くので、ここを消しても、3Dと2Dの確かめ（scene_same、back_ink）は通る。
+    draw = app_method("draw")
+    gates = [statement for statement in draw.body if isinstance(statement, ast.If)]
+    assert len(gates) == 1 and "self.gate.should_render(" in ast.unparse(gates[0].test) and not gates[0].orelse
+    in_gate = [
+        statement.value for statement in gates[0].body
+        if isinstance(statement, ast.Expr) and isinstance(statement.value, ast.Call) and is_self_attribute(statement.value.func, "render")
+    ]
+    everywhere = [call for call in ast.walk(draw) if isinstance(call, ast.Call) and is_self_attribute(call.func, "render")]
+    assert len(in_gate) == 1 and everywhere == in_gate
+    # 判定：描き直す前の裏画面を、先に読む。描き直してから、もう1度読む。判定用の実描画へ、描き直した後の絵を頭に、前の絵を最後に渡す。
+    report = app_method("scene_report")
+    reads = [
+        node for node in ast.walk(report)
+        if isinstance(node, ast.Call) and is_attribute_of(node.func, "render", "read_pixels") and is_self_attribute(node.args[0], "back")
+    ]
+    redraw = next(call for call in ast.walk(report) if isinstance(call, ast.Call) and is_self_attribute(call.func, "render"))
+    judge = next(call for call in ast.walk(report) if isinstance(call, ast.Call) and isinstance(call.func, ast.Attribute) and call.func.attr == "judge")
+    assert len(reads) == 2 and sorted(read.lineno for read in reads)[0] < redraw.lineno < sorted(read.lineno for read in reads)[1]
+    first, second = sorted(reads, key=lambda read: read.lineno)
+    before = [node for node in ast.walk(report) if isinstance(node, ast.Assign) and node.value is first]
+    assert len(before) == 1 and isinstance(before[0].targets[0], ast.Name)
+    assert judge.args[0] is second and isinstance(judge.args[-1], ast.Name) and judge.args[-1].id == before[0].targets[0].id
+    assert len(judge.args) == 6 and not judge.keywords
 
 
 def test_render_app_builds_the_probes_and_judges_only_behind_a_verification_switch():
