@@ -4,7 +4,9 @@
 頼らない件は、同時に何件かずつ。頼る件は、頼らない件が全部終わった後に、1件ずつ（並列に回すと、毎秒の回数や、処理時間の線が揺れる）。
 件を実際に回して、壊したら落ちることは、道具 selftest-break そのものが見る。
 """
+import ast
 import threading
+from pathlib import Path
 
 import selftest_break as selftest
 from _common import load_budgets
@@ -47,6 +49,18 @@ def test_selftest_tool_case_names_are_unique():
     # 結果の行は、件の名で引く。同じ名が2つあると、片方の結果が消える。
     names = [entry[0] for entry in selftest.CASES]
     assert len(set(names)) == len(names)
+
+
+def test_selftest_tool_no_constant_is_assigned_twice():
+    # 守りのテスト。壊す所の文字列の定数は、道具の、モジュールの直下に並ぶ。同じ名に、2度代入すると、前の定数を使う件が、
+    # 別の所を壊すか、壊す所を見つけられなくなる（段0 区切り10の直しで、1度起きた。道具は、その件を、回り切れない（2）にした）。
+    tree = ast.parse(Path(selftest.__file__).read_text(encoding="utf-8"))
+    names = [
+        name.id for node in tree.body if isinstance(node, ast.Assign)
+        for target in node.targets for name in ast.walk(target) if isinstance(name, ast.Name)
+    ]
+    assert len(names) > 100  # 数え方が、空振りしていない
+    assert sorted({name for name in names if names.count(name) > 1}) == []
 
 
 def test_selftest_tool_default_number_of_jobs_is_a_positive_integer():

@@ -641,9 +641,9 @@ RENDERS_ONLY_ONCE = rep(APP_PY, DRAW_RENDER, "            if self.renders == 1:\
 RENDERS_ONLY_WHEN_CHECKED = rep(APP_PY, DRAW_RENDER, "            if self.checked:\n                self.render()\n")
 # ふつうの起動（検証の口が無い）でだけ、3Dを描かない。
 NO_3D_ON_A_PLAIN_START = rep(APP_PY, APP_DRAW_SCENE, APP_DRAW_SCENE.replace("        self.scene.draw(", "        if self.checked:\n            self.scene.draw("))
-BACKDROP_SHIFT = "        shift = camera.backdrop_shift_px(pose.heading, period)\n"  # 描く口が、背景をずらす量を決める所
+DRAW_BACKDROP_SHIFT = "        shift = camera.backdrop_shift_px(pose.heading, period)\n"  # 描く口が、背景をずらす量を決める所
 # 背景をずらす量に、度を渡す（単位の取り違え）。
-BACKDROP_SHIFT_IN_DEGREES = rep(RENDER_PY, BACKDROP_SHIFT, BACKDROP_SHIFT.replace("pose.heading", "degrees(pose.heading)"))
+BACKDROP_SHIFT_IN_DEGREES = rep(RENDER_PY, DRAW_BACKDROP_SHIFT, DRAW_BACKDROP_SHIFT.replace("pose.heading", "degrees(pose.heading)"))
 # 車の向きの符号を、逆にする（描画の試作の決まり。向きが増えると、右旋回）。向き0では、同じ絵になる。
 HEADING_SIGN_FLIPPED = rep(RENDER_PY, CAR_HEADING, ".rotate_y(-degrees(heading))")
 # カメラの目と注視点だけ、座標の変換を通さない（z を反転しない）。z=0 では、同じ絵になる。
@@ -1471,6 +1471,8 @@ CASES = [
     ("test_selftest_timed_cases_are_not_told_apart", [rep(SELFTEST_PY, SELFTEST_IS_TIMED, "    return False\n")], TEST_SELFTEST_TOOL, {1}, "reason=failed"),
     # 時間に頼る件を、並列の件と一緒に、まとめて回す（1件ずつにしない）。
     ("test_selftest_timed_cases_run_in_the_pool", [rep(SELFTEST_PY, SELFTEST_SPLIT, "    return cases, []\n")], TEST_SELFTEST_TOOL, {1}, "reason=failed"),
+    # 壊す所の文字列の定数と、同じ名の定数を、もう1つ足す（前の定数を使う件が、別の所を壊すか、壊す所を見つけられなくなる）。
+    ("test_selftest_constant_assigned_twice", [app(SELFTEST_PY, '\nIN_UPDATE = "        pass\\n"\n')], TEST_SELFTEST_TOOL, {1}, "reason=failed"),
     # --- 縦切りの描画（段0 区切り10の前半）：純Pythonの部品。test（狙ったテストに絞る） ---
     # カメラ。後方と前方を取り違える。
     ("test_camera_back_and_ahead_swapped", CAMERA_BACK_AND_AHEAD_SWAPPED, tool("test", "-k", "camera and chase"), {1}, "reason=failed"),
