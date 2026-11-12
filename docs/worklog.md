@@ -911,6 +911,9 @@
   - `run: OK driver=flip input=script ticks=120 renders=60 sky=24585 track=43204 car=5082 ink=20806/0 digest=3335000676 screen_diff=0 … checks=26 problems=0 not_yet=0`（既定）。`--realtime`、`--pack extreme`、走る台本（900 tick。`checks=27`）、壁の台本（780 tick）も、`problems=0`。
   - `tour: OK shots=2/2 commands=34 scenes=3/3 problems=0`、`export: OK files=43 pyxapp_bytes=146107 html_bytes=195007 …`、`web_smoke: OK scenarios=6 shipped=ok probe=ok script=ok gamepad=ok storage_blocked=ok drive=ok … updates_per_s=59.95 renders_per_s=29.92 update_ms_p95=0.4 render_ms_p95=5.8 …`
   - 道具をわざと壊す確かめ（443件）は、区切りのレビューと並行で、主が、単独で回している（22:04 UTC から。約28分）。
+- 主の selftest-break（22:03〜22:29 UTC。区切りのレビューと並行）：`selftest_break: FAILED cases=443 planted=393 controls=50 wrong=1 plant_errors=0`。442件は期待どおり。外れた1件は、壊さない件 `control_web_heavy_frame_keeps_30_renders`（`web_smoke: FAILED … renders=110 updates_per_s=59.98 renders_per_s=27.81 …`。毎秒の実描画が、線の29回を下回った）。時間に頼る件で、レビュー役8体が、同じコンテナでファイルを読んでいる最中の回だった。
+  - 見立て：この件は、実描画のある周期を、15 msの空回しで重くする（3Dの実描画の約5 msと合わせて、約20 ms）。3Dの実描画の時間が、負荷で伸びると、周期が約25 msに近づいて、毎秒29回を下回る（実装役の実測：周期が約25 msで、毎秒26.5回）。余裕が、約4 msしか無い。
+  - 直しの案（レビューの直しと一緒に行う）：仕込みを「15 ms足す」から「実描画の始まりから20 msたつまで空回しする」に変える（実描画の時間を測り終えた行の後に置く）。周期が、3Dの実描画の時間によらず、約20 msにそろう（1 tickの長さ16.7 msを超え、毎秒29回を保てる長さ）。対の壊す件 `web_gate_gets_no_real_time`（実時間を、実描画の判定へ渡さない）と、2件を、ほかに何も回っていない時に、単独で回し直す。
 - 区切りのレビュー（4観点、8体）を、22:04 UTC に始めた（週の使用率は60%。見込みの約8ポイントを足して、約68%）。観点：見かけの合格、頼みの文・設計との食い違い、詰みとふつうの起動への影響、層の分離と決定性。
 
 ### 事後報告
