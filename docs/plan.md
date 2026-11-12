@@ -255,7 +255,7 @@ game-dev-pilotの初日のチェックリストは、次のように区切りへ
 | 操作補正と入力 | 操作補正、保存する項目、セッティングの順 | run、run-drive、run-wall、drive、web-smoke |
 | AI | AI、世界、指紋、乱数 | run、race-sim |
 | レース進行 | レース、世界、指紋 | run、screen-check、race-sim |
-| 描画 | 画面 | run、tour、web-smoke |
+| 描画 | 画面、3Dの場面、色の役割、メッシュ用の数値、車の形 | run、tour、web-smoke |
 | カメラと画面の状態 | カメラ、画面の状態、指紋 | run、screen-check |
 | リプレイ | リプレイ、保存、指紋 | run、web-smoke |
 | 画面（2D） | 画面 | screen-check、tour |
