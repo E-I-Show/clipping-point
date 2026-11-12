@@ -1,0 +1,58 @@
+区切り：段0 区切り8：データの検査（実装の前に、実装役への頼みの文を確かめる）
+
+== request
+■ request-1 [中/確かめた] 所：/home/user/clipping-point/docs/requests/stage0-k8.md:112「出荷物に `data/` が入らない（`export` が1、`web_smoke` が1）」と :96「出荷物の中の `data/` の下のファイルの一覧が、ソースの木の `clipping_point/data/` と同じ」／/home/user/clipping-point/tools/web_smoke.py:653-656、/home/user/clipping-point/.claude/rules/web.md:17
+   直し：件を2つに分ける。export の脚は、検査に「data/ に要るファイルが無ければ missing」を足し、ソースから消す壊し方で1にする。web_smoke の脚は、その検査を外した上で data/ を消し、`--only shipped` で `failed=shipped.error_overlay` の1にする（probe は、デスクトップ版の参照が取れずに2になる）。
+   場合：2つある。(a) web_smoke は自分で export.py を回し、終了コードが0でなければ、ページを開かずに2を返す（web_smoke.py:654-656 `if code != 0 or not HTML.is_file(): … INCOMPLETE … reason=export_failed`。web.md:17「ビルドできない…ときは2」）。export が1になる崩れでは、web_smoke は必ず2で、1にならない。同じ壊し方で、2つの脚の期待を両方は満たせない。(b) :96 の検査は「一覧がソースの木と同じ」。複製の上でソースの data/ のファイルを消す壊し方（いまの rm、rm_glob）だと、出荷物もソースも0件で一致し、export は0で通る（NOT CAUGHT）。export を1にするには、道具 export 自身を壊すしかない。
+   反証：web_smoke は自分で回した export の終了コードが0でなければ、ページを開かずに2（reason=export_failed）を返すので、同じ壊し方で「export が1、web_smoke が1」は両立しない。:96 の「一覧がソースの木と同じ」だけでは、ソースの data/ を消しても両方0件で一致して export は通る、という (b) も文のとおり。
+■ request-2 [中/確かめた] 所：/home/user/clipping-point/docs/requests/stage0-k8.md:91「最後の1行に、読めた組の数。1組も調べられなければ2」と :99-105（`check` が1）／/home/user/clipping-point/tools/check.py:74,78（`code = INCOMPLETE if count == 0 else FAIL if problems else OK`）、:12「「節=数」は、その節で調べた件数」
+   直し：件数は「調べた組の数（読み込み検査まで届いた組。問題があっても数える）」に書き直し、2にするのは、組が0のとき（節が例外で止まった、など）だけにする。`clipping_point/data/` が丸ごと無いときが1か2かも決め、2になる場合の壊す件を1つ足す。
+   場合：出荷するデータに知らない鍵を入れる（:99）→ 出荷するデータの組も、extreme を重ねた組も DataError → 「読めた組」は0。節が返す件数を「読めた組の数」にすると、check.py:74 で `count == 0` → 2（`empty=data`）になり、:99-104 の「check が1」と食い違う。試験用データが1つも無いリポジトリでも同じ。
+   反証：いまの check は節が返す件数が0なら2（empty=節）にする。:91 の「読めた組の数」を件数にすると、JSONの壊れや tracks 側の知らない鍵のように全部の組が DataError になる件で2になり、:99-104 の「check が1」と食い違う。試作の data() は自分で終了コードを返す別の形で、そのまま写すと合わない。
+■ request-3 [中/確かめた] 所：/home/user/clipping-point/docs/requests/stage0-k8.md:97-116、:126（data.md の当て先 `testpacks/**`）／/home/user/clipping-point/tools/selftest_break.py:33（COPY_ITEMS に testpacks が無い）、:794、:796（期待の語 `checks=16`）、:408（check_no_pure_sources）、/home/user/clipping-point/tools/rules_guard.py:155-160
+   直し：「やること5」に、COPY_ITEMS に `testpacks` を足す、`checks=16` の2件の期待の語を直す、check の data の節は節の関数の中でimportする、の3つを足す。
+   場合：頼みの文は COPY_ITEMS に触れていない。そのまま作ると、selftest-break の複製に testpacks/ が無い。(a) data.md の当て先 `testpacks/**` が空振りし、複製の中の check は rules の節でいつも落ちる（control_check が CONTROL FAILED。`failed=canon` や `failed=areas` を期待する件は `failed=rules,canon` になって WRONG REASON）。(b) control_verify_all の run-pack が「無い名は2」で落ちる。(c) 「testpacks/extreme/ を消す」件は、壊さなくても2になる。ほかに、run の確かめが増えると selftest_break.py:794 と :796 の期待の語 `checks=16` が当たらなくなる（:97 が挙げるのは、手順の数だけ）。check.py が datadefs を頭でimportすると、check_no_pure_sources（cp_core/*.py を全部消す。期待は2と `empty=arch`）が、ImportError の1で落ちる。約20分の selftest-break を回してから分かる。
+   反証：3つとも実物で確かめた。COPY_ITEMS に testpacks が無く、規則ファイルの当て先は複製の中の実ファイルに当たらないと問題になる。run の checks は辞書の長さなので確かめを足すと `checks=16` の2件が外れ、check.py の頭で cp_core をimportすると check_no_pure_sources が ImportError の1で落ちる。後ろの2つは全件の selftest-break でしか分からず、頼みの文（:97）が挙げるのは手順の数だけ。
+■ request-4 [中/確かめた] 所：/home/user/clipping-point/docs/requests/stage0-k8.md:84（結果の `"namespace": 保存の名前空間`）、:94「置き場に、名前空間 `main` のファイルができていない」、:111「重ねたのに、保存の名前空間が `main`（`run --pack` が1）」、:48 細目19の理由／/home/user/clipping-point/clipping_point/cp_core/profile.py:188-189、/home/user/clipping-point/clipping_point/cp_app/app.py:111、/home/user/clipping-point/.claude/rules/save.md:32
+   直し：結果の `data.namespace` は、設定を読んだ保存の口（`SaveStore.namespace`）から取る、と書く（知らせを表示用の値から取る先例と同じ形）。:111 の壊し方は「アプリが SaveStore へ渡さない」にする。:94 は、いまある save_main と同じ確かめで、切り替えの確かめではない、と書く。
+   場合：段0の起動は、設定を読むだけで書かない（profile.py:188-189 鍵が無ければ、保存先には何もしない。save.md:32）。アプリが GameData の名前空間を SaveStore へ渡し忘れても（app.py:111 が `SaveStore(selected.backend)` のまま）、main にも pack_extreme にもファイルはできない → :94 の確かめは、この崩れでは落ちようが無い。結果の namespace を GameData から取る形だと、申告は `pack_extreme` のままで、run --pack は0で通る。:111 の件は「GameData が main を返す」壊し方でしか落ちず、配線を見るのは、ソースを読む守りのテスト（:131）だけになる。細目19の「保存の名前空間の切り替えを、毎回通す」は、道具では果たせていない。
+   反証：段0の読み込みは、鍵が無ければ何も書かないので、アプリが名前空間を SaveStore へ渡し忘れても main にも pack_extreme にもファイルはできず、:94 の確かめは切り替えを見ていない。結果の namespace の出どころが決まっておらず、GameData から取る形だと :111 の件は「アプリが渡さない」壊し方では落ちない。:131 の守りのテストは配線をソースで見るだけで、SaveStore.namespace は実在するので直し方の案も成り立つ。
+■ request-5 [中/確かめた] 所：/home/user/clipping-point/docs/requests/stage0-k8.md:59-62（弾くものの並び）、:129（壊した場合の並び）、:34 細目5／/home/user/clipping-point/spikes/harness/repo/app/cp_core/datadefs.py:172-176、:194-196
+   直し：:62 に「頭の形（辞書、表の鍵、余分な鍵、並び、項目が辞書）と、id が文字列でない項目も、そのファイルの問題」と足し、:129 の壊した場合に、2つのファイルの形それぞれの分を足す。
+   場合：ファイルの頭の形の誤りが、どちらの並びにも無い。例：`cars.json` の中身が `[...]`（辞書でない）、`{"car": [...]}`（表の鍵の打ち間違い）、`{"cars": {...}}`（並びでない）、`{"cars": ["kazane"]}`（項目が辞書でない）、`id` が無いか文字列でない項目、1ファイル1項目のファイルの中身が辞書でない。試作は「top level must be …」「entry needs a string 'id'」で問題にしていた。重ね方は id で項目を突き合わせるので、id の無い項目には、検査より前に当たる。ここが KeyError や TypeError で落ちる形でも、挙げたテストは全部通る → 起動時は DataError でない例外、check の data の節は「節が例外で止まった」の2になり、ファイルと場所が並ばない（細目5に反する）。
+   反証：試作は頭の形と id の無い項目を問題の行にしていたが、頼みの文の弾くもの（:59-62）にも壊した場合（:129）にも無く、試作のテスト（BROKEN の14件）にも無い。新しく作る1ファイル1項目の形は試作に無いので、形の誤りが DataError でない例外になっても、挙げたテストは通る（細目5が見張られない）。
+■ request-6 [中/確かめた] 所：/home/user/clipping-point/docs/requests/stage0-k8.md:47 細目18、:64（`entry(表, id)`）、:129「`entry` が複製を返す」、:31 細目2、:39 細目10／/home/user/clipping-point/tools/arch_check.py:18-21
+   直し：「入れ子と並びの奥まで、新しい複製」と書き、テストは、入れ子と並びを持つ作り物の表の定義で、引いた値の奥を書き換えても次に引いた値が変わらないことを見る、とする。作り方（自前の再帰か、`copy` を理由つきで許可した一覧へ足すか）も決めて書く。
+   場合：実物の項目は id、name、data_version だけで、どれも書き換えられない値。`entry` が浅い複製（`dict(項目)`）でも、実物で書いたテストは通る。区切り9で入れ子と並び（エンジン、ギア）が入ると、使う側が `entry["gears"].append(...)` をした時に、読み込んだ定義そのものが書き換わり、次に引いた側へ響く。深い複製に `copy.deepcopy` を使うと、`copy` は許可した一覧（arch_check.py:18-21）に無いので、check の arch が落ちる。
+   反証：実物の項目は id、name、data_version だけなので、浅い複製でも「entry が複製を返す」のテストは通り、細目18の目的（書き換えてもほかへ響かない）は、同じ区切りで足す入れ子と並びでは見張られない。`copy` が許可した一覧に無いのも実物どおり。作り方まで決めるかは任意（tools.md:40 に、理由つきで足す道はある）。
+■ request-9 [低/確かめた] 所：/home/user/clipping-point/docs/requests/stage0-k8.md:91「出荷するデータ（警告も問題として数える）」、:35 細目6「出荷するデータは0件（test と check が見張る）」、:108、:120／/home/user/clipping-point/spikes/harness/repo/tools/selftest_break.py:61（check_data_unused_definition）
+   直し：:120 に、check の data の節の関数を足す。関数は、置き場、試験用データの根、表の定義を引数で受け、一時の置き場と作り物の表の定義で「警告があると問題に数える」「試験用データの問題が並ぶ」「組が0なら件数0」をテストする、と書く。
+   場合：実物の表（cars、tracks）には参照が無いので、実物の警告は、どう壊しても0件。check の data の節が、警告を問題に数え忘れても、挙げた壊す件とテストは全部通る（:108 の件は datadefs の側。:120 が挙げる判定の関数は、run の分だけ）。試作には、check が警告で落ちる件があった。参照する表が入る段で、check が警告を素通しにしていても、気づけない。
+   反証：実物の表（cars、tracks）に参照が無いので、実物の警告はどう壊しても0件で、check の data の節が警告を問題に数えなくても、挙げた件とテストは全部通る。:108 は datadefs の側、:120 の括弧は run と web_smoke の関数で、細目6の「check が見張る」を確かめる物が無い。試作には check が警告で落ちる件があった。
+■ request-10 [低/確かめた] 所：/home/user/clipping-point/docs/requests/stage0-k8.md:46 細目17「巡回の口でも、定義データを読む」、:98-116／/home/user/clipping-point/tools/selftest_break.py:800（tour_save_directory_is_relative）
+   直し：壊す件に「出荷するデータを壊す → `tour` が2（`reason=app_exit_code`）」を足す。
+   場合：定義データの読み込みを、main() の巡回の口の分かれ目より後ろに置いても、挙げた壊す件とテストは全部通る（巡回は見本データで描き、結果に data を持たない）。細目17の決めを見張る物が無い。保存のファイルの置き場には、同じ形の件がある。
+   反証：main() は、巡回の口の分かれ目の後でアプリを作る。定義データの読み込みを分かれ目より後ろに置いても、挙げた壊す件（run、check、test、export、web_smoke の脚だけ）は全部通り、細目17の「巡回の口でも読む」を見張る物が無い。保存の置き場には同じ形の件（tour が2、reason=app_exit_code）がある。
+■ request-12 [低/確かめた] 所：/home/user/clipping-point/docs/requests/stage0-k8.md:70「`*.json` と `*/*.json` を読んで」、:61「表の定義に無いファイル（知らない名、知らないディレクトリ）は、問題」／/home/user/clipping-point/tools/export.py:25
+   直し：`read_sources` は、置き場の下の全部のファイルの名を挙げ、2つの形に当たらない名も辞書に入れて渡す（datadefs が「知らないファイル」として問題にする）、と書く。
+   場合：`testpacks/extreme/cars.JSON`、`testpacks/extreme/tracks/sub/wide.json`、`clipping_point/data/tracks/akane/short.json` のように、2つの形に当たらない名は、`read_sources` が拾わないので、問題にもならず、黙って無視される。試験用データは「重ねたつもりで、重なっていない」まま、check も run --pack も通る。出荷する側は、深い階の `.json` が、読まれないまま出荷物に入る（export の種類の検査は `.json` を通す）。
+   反証：:70 のとおりに `*.json` と `*/*.json` だけを読むと、2つの形に当たらない名は datadefs へ渡らず、:61 の「表の定義に無いファイルは問題」が掛からないまま黙って無視される。試験用データの側は見張りが無い。出荷する側は分野の見張り（areas）が AREAS への登録を迫るので、「黙って出荷物に入る」は言い過ぎだが、読まれないことは拾えない。起きる場面は稀で、重さは低のまま。
+■ request-13 [低/確かめた] 所：/home/user/clipping-point/docs/requests/stage0-k8.md:30 細目1、:150／/home/user/clipping-point/docs/design/overview.md:75（`cp_core` | `datadefs` | 定義データの読み込みと検査）、/home/user/clipping-point/tools/arch_check.py:41-42
+   直し：「やること5」に、arch_check.py の REASONS の pathlib と io の文を直す（区切り7の os と同じ書き方で、`cp_app/data_files.py` に置いたと書く）を足す。主は、設計の「ディレクトリとモジュール」の表へ `data_files` を足し、`datadefs` の役割を直す。
+   場合：置き場を2つに分ける決め（細目1）で、設計のモジュールの表に無い `cp_app/data_files` ができ、`datadefs` の役割も「読み込みと検査」から変わる。arch_check.py:41 の違反の文は「pathlib … 定義データを読む区切りで、理由を書いて足す」のままで、この区切りの後は、決めと逆のことを言う（cp_core に pathlib を書いた人が、足してよいと読む）。頼みの文は、設計の表を主が直すことにも（:150 が挙げるのは、言葉の表とコマンドの表）、arch_check の文を実装役が直すことにも、触れていない。
+   反証：arch_check の違反の文は「pathlib … 定義データを読む区切りで、理由を書いて足す」のままで、細目1（純Pythonの層に pathlib、io を足さない）と逆のことを、この区切りの後も言い続ける。os の行は区切り7で「cp_app/storage_file.py に置いた」と直してあり、頼みの文には REASONS を直す指示が無い。設計の表の直し（data_files の行）は主の仕事で、実装役への文に要るのは arch_check の分だけ。
+
+== 退けた指摘
+□ request-7 [低] 仕組みは言うとおり（data/ に足したファイルは areas でも落ち、節を絞らないと failed=areas,data）だが、頼みの文が決めているのは「check が1」だけで、絞らなくても1になる。期待の語は実装役が選び、:121 の単独の回しで必ず分かってその場で直るので、食い違いでも手戻りでもない。
+□ request-8 [低] 3つとも害が小さい。空の置き場は、gitが空のディレクトリを持たないので実物では起きず、壊し方の選び方（ディレクトリごと消す壊し方を足せば :71 の ValueError で2）で決まる。44字以上の名は起動時に StorageError で大きく止まり、黙って通らない。id の形でない名の扱いは、まだ無いコードへの推測で、:71 の名の検査を通せば例外になる。
+□ request-11 [低] 挙げた6つは、頼みの文の文どうしや、いまのコードとの食い違いではなく、決めていない細目の束。頼みの文は、細目を実装役が推奨で決めて報告する形（:3、:164）で、(6) は :99、:102 の期待と :121 の単独の回しで決まり、(4) は試作が全部の組の警告を数える形、(1)(2)(3)(5) は害のある結果を示せていない。
+□ request-14 [低] 言い回しの指摘で、ふるまいは変わらない。「項目を足すとき」「省ける項目」「入れ子の項目」は、主が足した言葉の表の行（glossary.md:103-104）と同じ書き方で、:39 と :126 は括弧の中身（表の定義、壊した場合のテスト）から鍵のことと読める。glossary.md:76 の「型と単独で書かない」は、サブエージェントの型の行の注で、:117 に当たる決まりではない。
+□ request-15 [低] 引用は実物どおりだが、決めは既にある。計画の表は2行とも「データの検査」を挙げ、頼みの文は「計画の表のとおり」と指し、括弧の「全部」は2行のどちらとも食い違わない。verify.py には、はみ出しの検査を両方の分野へ並べる注と先例があり、:131 が test_verify.py への追加も頼んでいる。文のとおりに作れば両方に並ぶ。
+
+== 役が書いた、見られなかった所
+・request（レビュー役）: 規則ファイルの、いまの大きさ（バイト）。shell が無く、測れない。tools.md、save.md、web.md に行を足したときに、上限の8,000バイトを超えるかは、見られなかった（区切り7で、上限の間際になった、と budgets.json の注にある）。
+・request（レビュー役）: ブラウザ版で、展開された出荷物の中の data/ を、モジュールの場所から読めるか。pyxel package が、下のディレクトリ（data/tracks/）と空のディレクトリをどう扱うか。どちらも、動かさないと分からない（頼みの文の73行と135行が、実測を求めている）。
+・request（レビュー役）: tests/test_web_smoke.py、tests/test_rules_guard.py、tests/test_claude_tools.py、tools/test.py、tools/fingerprint.py、tools/tour.py、tools/screen_check.py の本体は、Grep で関わる語を引いただけで、全文は読んでいない。結果に data を足したときに、これらの中の、数字や形を固定したテストが落ちるかは、見られなかった。
+・request（レビュー役）: 正本（docs/canon/planning.md）は、車名とコース名の行だけを Grep で読んだ。docs/day1-checklist.md は読んでいない（計画の、初日のチェックリストの割り当ての表は読んだ）。
+・request（レビュー役）: spikes/harness/RESULT.json は【問7】の2件だけ、試作の tools/check.py は data() と SECTIONS だけ、試作の tools/run.py と selftest_break.py は、試験用データに関わる行だけを読んだ。
+review_summary: OK lenses=1 findings=15 passed=10 rejected=5 unevaluated=0 role_notes=5
