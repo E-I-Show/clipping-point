@@ -1,0 +1,87 @@
+区切り：段0 区切り9：縦切りのロジック
+
+== fakepass
+■ fakepass-2 [低/確かめた] 所：/home/user/clipping-point/tests/test_fingerprint.py:39、503〜507
+   直し：CHILD_CODE が全部の筋書きの要約を返す形にし、3つの種の間と、指紋の写しとの比べを、4本とも行う。
+   場合：ハッシュの種を変えた別プロセスの確かめは、`fingerprint.summary_of(fingerprint.SCENARIOS[0])`（script_120）だけを回す。この筋書きは、車が0.49 m動くだけで、変速、後退、壁、芝を通らない（指紋の写し：shifts 0、reverse_count 0、wall_hits 0）。この区切りで足した道（壁の押し戻し、後退、ATの変速、芝）に、集合を回した順への頼りが入っても、このテストは通る。拾うのは、fingerprint と run-drive・run-wall が、たまたま違う種で起動したときの不定期な失敗だけ。決まりの文：docs/design/overview.md:738「文字列の集合の順に頼っていないことは、ハッシュの種を変えた別プロセスで回して見張る」、.claude/rules/sim-core.md:69「止まったままの筋書きでは、何を変えても、車の項目が動かない」。いまのコードに集合を回す所は無い（vehicle.py、track.py、controls.py、sim.py を読んだ）。
+   反証：別プロセスの確かめは SCENARIOS[0]（script_120）だけを回し、写しのとおり進行距離486 mm・変速0・後退0・壁0で、この区切りで足した変速、後退、壁、芝の道を通らない。道具にも PYTHONHASHSEED を固定する所は無く、その道に集合の順への頼りが入ると、拾えるのは起動ごとの不定期な失敗だけになる（いまの vehicle.py、track.py、controls.py、sim.py に集合は無いので、今の誤りではなく見張りの穴。重さは低のまま）。
+■ fakepass-3 [低/確かめた] 所：/home/user/clipping-point/tests/test_sim.py:499〜500
+   直し：`for _ in range(120)` で回して、抜けた後に `assert sim.on_wall` を置く。
+   場合：`while not sim.on_wall: sim.step(NEUTRAL)` に上限が無い。壁の押し戻しが当たりを返さない崩れ（壊す件 test_track_wall_does_not_push_out と同じ壊し方や、`self.on_wall = hit` の付け忘れ）で、車は惰性で止まり、on_wall は False のまま。→ このテストは終わらず、tools/test.py は600秒後に `reason=timeout` の2になる。どのテストが落ちたかの報告（junit）も出ない。いまの壊す件は -k で別のテストに絞っているので、通らない道。
+   反証：`while not sim.on_wall: sim.step(NEUTRAL)` に上限が無く、当たりが返らない崩れでは on_wall が False のままで終わらない（同じファイルのほかの壁のテストは range で回している）。pytest.ini にテストごとの時間切れは無く、tools/test.py は600秒後に junit を読まずに reason=timeout の2で終わるので、どのテストかが出ない（コードを追っただけで、回してはいない）。
+■ fakepass-4 [低/確かめた] 所：/home/user/clipping-point/tests/test_vehicle.py:230、/home/user/clipping-point/clipping_point/cp_core/vehicle.py:672〜732
+   直し：MIXED の各区間の終わりに、wheel_sy、yaw_ref、yaw_err、slip_front、slip_rear、on_limit の値を足して固定する。左へ切った定常旋回での符号のテストを1つ足す。
+   場合：出す量のうち wheel_sy、yaw_err、yaw_ref、slip_front、slip_rear、on_limit、drive_util_axle、wheel_load は、値を確かめるテストが無い。test_vehicle.py:230 の `a.wheel_sy == b.wheel_sy and a.yaw_err == b.yaw_err` は、同じ入力の2台を比べるだけ（両辺が同じ計算）。参照値（STRAIGHT、MIXED）にも、世界の要約にも入らない。→ 例えば yaw_err の符号や slip_front の式を取り違えても、テスト、指紋、run が全部通る。頼みの文（94行）の「試作のまま計算する」を見張るものが無い。いまの式は、試作（spikes/vehicle/vehicle.py:636〜692）と読み比べて同じだった。使うのは段1の操作補正とアシスト。
+   反証：tests/ を検索すると、wheel_sy と yaw_err は test_vehicle.py:230 の同じ計算どうしの比べだけ、wheel_load は83行の同一性だけで、yaw_ref、slip_front、slip_rear、on_limit、drive_util_axle を読むテストは無い。出荷するコードで使う所も vehicle.py の中だけなので、頼みの文94行の「試作のまま計算する」を落とせる確かめが無く、段1で車両モデルに手を入れたときの崩れが見えない（いまの式は試作と同じであることを、読み比べて確かめた。今の誤りではない）。
+■ fakepass-7 [低/確かめた] 所：/home/user/clipping-point/tools/claude/make_drive_scripts.py:243〜246、/home/user/clipping-point/tools/fingerprint.py:14
+   直し：(1) 2本とも確かめた後で、問題が0のときだけ2本を書く。最後の1行には、書いたファイルの名を出す。(2) 注の wall_600 を wall_780 に直す。
+   場合：(1) 補助の `--write` は、筋書きごとの輪の中で `if args.write and not problems:` で書く。走る台本に問題が無く、壁の台本に問題がある（下限を満たさない、読み直した要約が違う）と、走る台本のファイルだけを書き換えた後で、最後の1行に `written=no problems=N` を出して1で終わる。「何も書いていない」と読める行と、実際が食い違う。(2) fingerprint.py の頭の注（14行）は筋書きの名を `wall_600` と書いているが、実物は `wall_780`（100行）。
+   反証：(1) 書く所（243〜245行）は筋書きごとの輪の中で、走る台本に問題が無く壁の台本に問題があると、走る台本だけを書いた後に、246行の最後の1行が `written=no problems=N` になる（最後の1行をそのまま写す報告が、実際と食い違う）。(2) fingerprint.py:14 の注は `wall_600`、実物は100行の `wall_780`。どちらも実物どおりで、直し方の案にも食い違いは無い。
+
+== spec
+■ spec-1 [低/確かめた] 所：tools/fingerprint.py:14（頭の注）
+   直し：tools/fingerprint.py の14行の `wall_600` を `wall_780` に直す。
+   場合：破る行：tools/fingerprint.py:14「  wall_600                    壁の台本。壁に当たって、止まり、後退して、向きを変えて、前進へ戻る」。実物：同じファイルの100行「Scenario("wall_780", input_reference.WALL_SCRIPT, 780, 0, floors=WALL_FLOORS)」、tests/test_fingerprint.py:121 の名の並び ["script_120", "no_script_120", "drive_900", "wall_780"]、指紋の写しの鍵 wall_780。頭の注だけが、古い名（600 tick）のまま。注を頼りに `wall_600` で写しや出力を探すと、当たらない。
+   反証：引用は実物どおり。頭の注の筋書きの一覧だけが古い名 wall_600 のままで、定義、テスト、指紋の写しの鍵は wall_780。wall_600 はリポジトリのほかのどこにも無く、注を頼りに探すと当たらない（重さは低のまま。直し方の案で別の食い違いは生まれない）。
+■ spec-3 [低/確かめた] 所：clipping_point/cp_ui/fixtures.py:19-22
+   直し：桁の数を cp_ui/screens.py の名前つきの定数にして、fixtures.py は、そこから 10**桁−1 で導く（仮の値の印を外す）。残すなら、作業記録の事後報告に、決まりの外に置いた理由を書く。
+   場合：破る行：fixtures.py:19「# 仮の値：極端な値に使う、速度（km/h。3桁）と回転数（5桁）。仮の表示の桁をいっぱいに使う値で、車の値から導いたものではない」と 21〜22行「FASTEST_KMH = 999」「HIGHEST_RPM = 99_999」。この区切りで足した行。決まりの文：CLAUDE.md:122「出荷するコードに仮の値を置いてよいのは、定義データをまだ読めない所だけ（読み込み検査を置く段0の区切り8より前に書くコード）。」、頼みの文 docs/requests/stage0-k9.md:217「出荷するコードに、仮の値を置かない（定義データに出す）。」。区切り8より後に、出荷するコードへ、仮の値の印つきの数が足されている。値そのものは、screens.py:32 の書式（`:3d` と `:5d`）の桁をいっぱいにする数で、走りには効かない。
+   反証：引用は実物どおり。区切り9で足した車の値の見本（FASTEST_KMH=999、HIGHEST_RPM=99_999）に「仮の値：」の印が付いており、CLAUDE.md:122 と言葉の表（出荷するコードに置いてよいのは区切り8より前に書くコードだけ）、頼みの文217行に、文字どおり反する。作業記録にも、採った外れとしての記載が無い（440行は区切り6の 9,999,999 だけ）。桁は screens.py:32 の書式（:3d、:5d）と別々に持っているので、書式の幅を変えると、極端な値が桁をいっぱいにしなくなる。害は小さく、低のまま。直し方の案（桁を screens.py の定数にして導く）で、循環importは起きない（screens.py は fixtures を読まない）。
+■ spec-4 [低/確かめた] 所：clipping_point/cp_core/track.py:209（Track._mu）
+   直し：`_mu` を、SURFACES の順のタプルで持ち、surface_mu() は SURFACES.index で引く（知らない名は KeyError に直す）。test_track の「書き換えられない」のテストに `_mu` を足す。
+   場合：破る行：track.py:209「self._mu = {name: float(entry["surface_mu"][name]) for name in SURFACES}」（辞書）。決まりの文：.claude/rules/track.md:13「作った後は、書き換えない（値はタプル。属性を書くと `AttributeError`）。同じ中身の項目からは、同じ表が返る。」、track.py:140「作った後は、書き換えない（値は、タプルで持つ）」。この状態 → この結果：`build_track(項目)._mu["grass"] = 1.0` は、例外にならずに通る。表は `_built`（track.py:430〜445）で覚えて、世界どうしで同じものを持つので、その後に作る世界は、全部、芝の摩擦係数が変わる。tests/test_track.py:89〜94 の「書き換えられない」のテストは、`_x`・`_k`・`_wall_l` の型だけを見ていて、`_mu` を見ていない。いま `_mu` を書いている所は、コードにもテストにも無い（grep で確かめた）。
+   反証：引用は実物どおり。_mu だけが辞書で、track.md:13 とクラスの注の「値はタプル」に反し、__setattr__ の守りは中身の書き換えを止めない。いま _mu を書く所は無い（clipping_point、tests、tools をGrep）ので、起きるのは先の話だが、表は build_track が覚えて世界どうしで共有する（主が見てほしいと挙げた、モジュールの中の状態）ので、「書き換えられない」が共有の前提になっている。テスト89〜94行も _mu を見ていない。低のまま。直すときは、知らない名で KeyError を保つこと（test_track.py:167-169 が見ている）。
+■ spec-6 [低/確かめた] 所：tools/claude/make_drive_scripts.py:225-247
+   直し：2本とも確かめ終えてから、問題が0のときだけ、まとめて書く。最後の1行の written には、実際に書いたファイルの数を出す。
+   場合：`--write` で、走る台本は成り立ち、壁の台本だけが走行の下限を満たさない状態 → 226行のループの1回目で problems が0のまま 243〜244行「if args.write and not problems: path.write_text(…)」が走り、tools/input_script_drive.json を書く。2回目で problems が増え、壁の台本は書かない。最後の1行は 246行「written={'yes' if args.write and not problems else 'no'}」で `written=no`、終了コード1。走る台本は書き換わっているのに、道具は「書いていない」と出す。sim-core.md:51 の手順（台本が成り立たなくなったら、補助で作り直し、指紋の写しを置き直す）の途中で、片方だけ新しい台本が残る。
+   反証：コードを最後まで追って、指摘のとおり。226行のループの1回目（drive_900）で problems が0なら 243〜244行で走る台本を書き、2回目（wall_780）で下限を満たさなければ、壁の台本は書かず、246行の最後の1行は written=no、終了コード1になる（逆の順では起きない）。壁の台本は決めた区間の並び（WALL_PHASES）で、式や値を変えた後に壁だけ成り立たない場面は起こりうる。報告に写す最後の1行が、実際の書き込みと食い違い、片方だけ新しい台本が作業ツリーに残る。途中の245行で「…を書いた」とは出るので、低のまま。この補助を見るテストと壊す件は無い。
+
+== determinism
+■ determinism-4 [低/確かめた] 所：/home/user/clipping-point/tools/fingerprint.py:14 と 100
+   直し：14行の名を wall_780 に直す。
+   場合：14行の注は「wall_600　壁の台本。…」。100行は `Scenario("wall_780", input_reference.WALL_SCRIPT, 780, 0, floors=WALL_FLOORS)` で、指紋の写しの鍵も `wall_780`（tests/snapshots/fingerprint.json:109）。注を読んで wall_600 を探すと、指紋の筋書きも、指紋の写しの項目も見つからない。
+   反証：14行の注は wall_600、100行の定義、指紋の写しの鍵、テスト、台本を作る補助はどれも wall_780 で、wall_600 はこの1行のほかに無い。注を信じると、筋書きの名と回すtick数（600と780）を読み違えるので、14行を wall_780 に直す案で足りる（注だけの直しで、写しは動かない）。
+
+== 退けた指摘
+□ fakepass-1 [低] 引用と仕組みは実物どおり（hint が None なら requeried は False のまま）だが、指摘自身が認めるとおり、その退行は tests/test_sim.py:536 の `sim.requery_count == 1` で必ず落ちるので、全部の検証を通る道は無い（見かけの合格にならない）。下限の注が指す形（いつも区間0から探す）は、頼みの文168行が決めた壊す件で、test と fingerprint の両方に実装済み。残るのは、見張りを重ねるかどうかの好み。
+□ fakepass-5 [低] 引用は実物どおりだが、試験用データの車とコースの走りの値を実物と同じにするのは、頼みの文の細目24で決めた形（走りの値を振る組は段1と段4）。いまは参照をどちらで作っても同じ要約なので、誤った状態が合格になる道は無く、値が違う組を足せば、指摘自身が書くとおり落ちる側に出る。案の「run.py のソースを読む守りのテスト」は、害の無い所に写しの見張りを足すだけ。
+□ fakepass-6 [低] 期待の語が reason=app_exit_code だけの件は、区切り8からの既にある形で（run_data_unknown_key、run_data_cars_file_deleted、run_pack_test_pack_broken）、道具 run が見られるのは終了コードまで。例外の型と文は tests/test_sim.py:109-129 が固定していて（空の定義の「nothing」の文も含む）、仕込みの文も実在の名に当たる（data_files.datadefs、GameData の3引数、TABLES）。アプリが落ちなくなれば件は落ちるので、落ちようの無い確かめでもない。「この区切りで failed=data_tables から変えた」は、gitを引けず、頼みの文155行で裏を取っただけ。
+□ spec-2 [低] 引用は実物どおり（CLAUDE.md:79 は約55秒、web.md:50 は約65秒、67行は約70秒・約19分、80行は約18分）だが、既に別の所で決めてある。作業記録が「根のCLAUDE.mdの、コマンドの表の時間（全体の検証は約87秒、--selftest つきで約24分半）は、レビューの後に直す」と、実測値つきで主の手に置いている（いまの値は、前半の後の並列化のときの値）。直すときに、79行（煙テスト）と80行も同じ実測でそろえ、web.md:50 と合わせること（作業記録が名指ししているのは全体と --selftest の2つだけ）。
+□ spec-5 [低] 既に別の所で決めてあり、害も無い（指摘自身が、コードは直さなくてよいと書いている）。作業記録の「実装役が、頼みの文から変えた所と、決めた所（主が採ったもの）」に「cp_core には place_car() だけ。定義データを読んで世界を作る所は、道具の make_sim()」と、案と同じ中身が既にあり、規則ファイル sim-core.md の「値を読む口」にも同じ分け方が書いてある。頼みの文の149行（細目21）も、道具が定義データから世界を作る、としている。
+□ softlock-1 [低] 引用と仕組みは実物どおり（launch_rpm が redline_rpm 以上だと全開でトルク0、shift_up_rpm が redline_rpm 以上だと1速で頭打ち）だが、実物も試験用データも 850/4500/7000/7200 で起きず、検査の範囲は細目19が「変速比の順とトルクの表の回転数の順」の最小のものと決めてある。出荷する車の値を誤れば、0-100 km/hと最高速のテスト、全ギアを上がるテスト、指紋の走る台本の下限（最高速、変速2回以上）が落ちるので、この区切りで放っても読み違えや手戻りは起きない（指摘自身も「この区切りの破れではない」と書いている）。直し方の案そのものに誤りは無く、車を足す段1の「車両モデル」の区切りへの申し送りとしてなら残してよい。
+□ determinism-1 [低] 引用は実物どおり（atan は試し値に無く、exp は cp_core で使っていない）だが、overview.md:739 はどの関数を試すかを定めておらず、並びは stage0-k7.md:118 で決めた7つのとおりなので、決まりの破れではない。害が出るのは、Pythonの版が同じまま libm だけが変わり、7つの試し値がどれも動かず atan だけが動き、その最下位ビットが量子化した要約まで届く重なりだけで、合否にも響かない（Pythonの版が変われば python の項目で env=changed になるので、指摘の「Pythonが変わって」の枝は起きない）。
+□ determinism-2 [低] 別プロセスの筋書きを「ボタンを2個押す区間を通る道具の台本」にすることは stage0-k7.md:47（細目16）と121行で決めてあり、テストの203〜207行がその前提を見張っている。走る台本と壁の台本は held／pressed を1つも持たず、controls.py・sim.py・vehicle.py・track.py は held／pressed を読まず集合も回さないので、その道にはハッシュの種で順が変わる集合が無く、足しても今は何も見ない（指摘も「いま誤るわけではない」と書いている）。
+□ determinism-3 [低] 引用は実物どおり（_mu は辞書、__delattr__ は無い、テストが見るのは代入と3つのタプルだけ）だが、_mu に触れるのは track.py の144・209・235行だけで、外へ出る口は値を返す surface_mu() の1つ。起きるのは、下線つきの内部の辞書へわざと書いたときだけで（object.__setattr__ でも同じことができる）、いまの出荷するコード、テスト、道具に書く所が無いので、起きない場面。タプルに直しても摩擦係数の値は変わらず、直し方の案そのものに害は無い。
+
+== 役が書いた、見られなかった所
+・fakepass（レビュー役）: 壊す件が、実際にその終了コードと語で落ちること：道具を回さない決まりなので、コードを追っただけ。実測は、主の報告（cases=378 wrong=0 plant_errors=0）に頼っている。
+・fakepass（レビュー役）: tools/check.py の data の節（問題の数え方、重ねた組との重なりの扱い）は読んでいない。check_data_ の件の problems=1／2／72 の数そのものは、追い切れていない。
+・fakepass（レビュー役）: tools/selftest_break.py の 220〜440行（壊す文の定数）と 806〜960行（既存の web、tour、保存の件）は、grep で見ただけ。期待の語の数字（commands=、checks= など）を直した既存の件の一部は、1件ずつ追っていない。
+・fakepass（レビュー役）: tests/test_datadefs.py は、鍵の道から作る件の作り方と、項目をまたぐ検査の3件だけを読んだ。tests/test_data_files.py、test_data_reference.py、test_fixtures.py、test_tour.py、test_verify.py、test_run_tool.py は grep だけ。tests/test_web_smoke.py は 690〜949行だけ。
+・fakepass（レビュー役）: cp_ui/screens.py、cp_ui/fixtures.py、cp_core/datadefs.py（項目をまたぐ検査を呼ぶ所のほか）、cp_core/input_frame.py、tools/data_reference.py、tools/tour.py、tools/verify.py（STEPS と AREAS のほか）、定義データ（cars.json のほか）は読んでいない。観点の外か、時間の都合。
+・fakepass（レビュー役）: 試作との突き合わせは、車両モデルの出す量の所（spikes/vehicle/vehicle.py 628〜692行）だけ。spikes/track/ は読んでいない。STRAIGHT の値が試作の値であることは、注の申告のまま。
+・fakepass（レビュー役）: docs/design/overview.md と docs/plan.md は、指紋テストの段落を grep で読んだだけ。「車両モデル」「コース」「入力と操作補正」の節と、計画の通過条件は読んでいない（頼みの文と規則ファイルを、決まりの出どころにした）。
+・fakepass（レビュー役）: 走る台本で舵が効かないと外の壁に当たる、という見立て（scope の (b)）は手計算の見積りで、回して確かめていない。
+・fakepass（レビュー役）: 全テストを並列に回す既存の件（期待の語が reason=failed だけの約35件）で、負荷によって別のテストが落ちて同じ語になる道があるかは、時間に頼るテストを全部は洗っていないので、評価していない。
+・spec（レビュー役）: 基点（e25edd3）との差分そのもの。git を引いていないので、消えた行、既定の台本 tools/input_script_smoke.json が変わっていないこと、指紋の写しが単独のコミットに分かれていることは、見ていない（主の注に頼った）。
+・spec（レビュー役）: 所要時間と実測の値。道具を回していないので、CLAUDE.md と web.md の秒数のどちらが正しいか、cars.json の peak_slip_rad（0.1308996938995747）が試作の式の値と最下位の桁まで同じかは、確かめていない（後者は tests/test_vehicle.py の STRAIGHT が見ている）。
+・spec（レビュー役）: テストの本体のうち、関数の名しか読んでいないもの：tests/test_datadefs.py、test_data_files.py、test_data_reference.py、test_run_tool.py、test_verify.py、test_web_smoke.py、test_screens.py、test_flow.py、test_tour.py、test_selftest_tool.py、test_input_script.py、test_controls.py の205行より後、test_vehicle.py の345行より後、test_track.py の310〜400行。頼みの文が求めたテストが「ある」ことは名で見たが、中身が落ちうる形かは、この観点では追っていない。
+・spec（レビュー役）: tools/selftest_break.py の 1〜329行、545〜1135行（前からある件と、直した期待の語）、1465行より後（並列に回す所）。足した件（1138〜1332行）と、その定数は読んだ。
+・spec（レビュー役）: tools/input_script_drive.json の30行より後、testpacks/extreme/tracks/wide_test_loop.json の40行より後（制御点。式との一致は tests/test_track.py:478 が見ている）、tests/count_floor.txt、tests/snapshots/profile_schema.json、tools/claude/README.md（grep の3行だけ）。
+・spec（レビュー役）: 試作のうち、spikes/track/design_akane.py（緩和区間つきの円弧の元）と、spikes/assist/input_assist.py の舵の上限の式の本体（260行付近）は、grep で当たりを見ただけ。舵の上限は、設計の式と tests/test_controls.py の設計の表の再現で照らした。
+・spec（レビュー役）: docs/ の文書（設計と計画は、照らす元として読んだだけ。直っているかは見ていない）。
+・softlock（レビュー役）: 道具とテストは回していない（役目の決まり）。釣り合いの速さ、変速の線、後退に入るまでのtick数は、コードからの手計算。変速の残り時間が12回の引き算でちょうど0を割るかどうか（小数の丸め）は、規則ファイル vehicle.md の「13 tick」をそのまま使った。
+・softlock（レビュー役）: 実機での手触り（後退、仮の表示の読みやすさ）、実物のコントローラーでのトリガーの戻りとスティックの中央の値。
+・softlock（レビュー役）: ブラウザ版で、世界を作る所の例外が、実際にPyxelのエラー表示になること。web.md の落とし穴の文と、selftest-break の件 web_data_file_is_not_in_the_shipped_html（起動時の定義データの例外が error_overlay になる）を読んだだけ。世界の id を壊してブラウザ版で開く件は、見当たらなかった（デスクトップ版の run_app_track_id_is_not_in_the_data だけ）。
+・softlock（レビュー役）: この観点の外として読んでいない所：tools/ の道具の本体（web_smoke.py の比べ方、fingerprint.py の下限、run.py、verify.py、selftest_break.py の壊す件の中身、input_reference.py、作る補助2本）、テストの本体、cp_ui/fixtures.py、testpacks/extreme/ の2本、tools/input_script_drive.json、docs/plan.md、設計の「車両モデル」「コース」「データと読み込み検査」「決定性と保存」「検証の仕組み」の本文、試作 spikes/ との行ごとの突き合わせ。
+・softlock（レビュー役）: 壁の間が車の全長（4.2 m）より狭いコース（表の定義は、幅4 m・芝0 mまで通す）で、車が横を向いたときのふるまい。仮の周回路（28 m）では起きないので、追っていない。
+・determinism（レビュー役）: gitの履歴：指紋の写しの取り直しが単独のコミットか、cp_core・cp_ui の変更と同じコミットで、ふるまいの写しが書き換わっていないか。gitを引けないので、見ていない。
+・determinism（レビュー役）: 実行して分かること：道具とテストは回していない。指摘は、どれも読んで追った結果。同じプロセスで世界を2つ作ったときの値、ブラウザ版とデスクトップ版の差は、測っていない。
+・determinism（レビュー役）: デスクトップ版（Python 3.13）とブラウザ版（Python 3.14）で、math.hypot と atan の結果が同じかどうか。読むだけでは分からない。コースの表は環境ごとに作るので、最下位ビットの差はありうる。完全一致の項目に出る道は、読んだ範囲では見つからなかった。
+・determinism（レビュー役）: 壁に接したまま止まった車を、もう一度壁へ押し込む場面で、当たり直しの数え（wall_hits）が、環境で1違うかどうか。押し戻した後のめり込みは、丸めの誤差の大きさになるが、転がり抵抗の行き過ぎで離れる量を、読むだけでは決め切れなかった。壁の台本は、この場面を通らない。走行の場面をブラウザ版で回す区切り10で、見るとよい。
+・determinism（レビュー役）: tools/selftest_break.py の本体（並列に回す形、足した壊す件の中身）。関わる件と定数をGrepで見ただけ。
+・determinism（レビュー役）: 読んでいないテスト：tests/test_vehicle.py、test_controls.py、test_selftest_tool.py、test_screens.py、test_fixtures.py、test_tour.py、test_verify.py、test_run_tool.py、test_data_files.py、test_data_reference.py、test_input_script.py。test_web_smoke.py と test_datadefs.py は、一部だけ。
+・determinism（レビュー役）: testpacks/extreme/ の2つのファイルと、tools/verify.py（STEPS と AREAS）、tools/claude/README.md、tools/web/webrun.js の本体。読んでいない。
+・determinism（レビュー役）: 元にした試作（spikes/vehicle/vehicle.py、spikes/track/track.py）との、式の突き合わせ。この観点の外として、車の値の頭だけを見た。
+・determinism（レビュー役）: 規則ファイル save.md。保存に関わる変更が無いので、読んでいない。
+review_summary: OK lenses=4 findings=18 passed=9 rejected=9 unevaluated=0 role_notes=30

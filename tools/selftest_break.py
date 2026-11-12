@@ -444,6 +444,7 @@ APP_ENV_LIST = 'APP_ENV_PREFIXES = ("CP_SMOKE", "CP_TOUR", "CP_SAVE", "CP_DATA")
 # --- 車両モデル、コース、操作補正、車とコースの定義データ（段0 区切り9） ---
 VEHICLE_PY = "clipping_point/cp_core/vehicle.py"
 TRACK_PY = "clipping_point/cp_core/track.py"
+TRACK_MU_TUPLE = '        self._mu = tuple(float(entry["surface_mu"][name]) for name in SURFACES)'  # コースの表の、路面の摩擦係数の持ち方
 CONTROLS_PY = "clipping_point/cp_core/controls.py"
 ASSISTS_JSON = "clipping_point/data/assists.json"
 TIRE_BRAKE_CLAMP = "            if fbrk > lim:\n                fbrk = lim\n"  # タイヤの制動力の、止める力の頭打ち
@@ -1165,6 +1166,20 @@ CASES = [
     (
         "test_track_query_does_not_requery", [rep(TRACK_PY, QUERY_REQUERY, QUERY_REQUERY.replace("if not found:", "if not found and hint is None:"))],
         tool("test", "-k", "track and far_segment"), {1}, "reason=failed",
+    ),
+    # 路面の摩擦係数を、辞書で持つ（中身を書き換えられる。表は、覚えて、世界どうしで同じものを持つ）。
+    (
+        "test_track_surface_friction_kept_in_a_dict",
+        [
+            rep(TRACK_PY, TRACK_MU_TUPLE, TRACK_MU_TUPLE.replace("tuple(float(", "{name: float(").replace(" for name in SURFACES)", " for name in SURFACES}")),
+            rep(TRACK_PY, "        return self._mu[SURFACES.index(surface)]\n", "        return self._mu[surface]\n"),
+        ],
+        tool("test", "-k", "track and cannot_be_changed"), {1}, "reason=failed",
+    ),
+    # 車両モデルの出す量：ヨーレートの差の符号を、逆にする（目標 − 実際）。世界の要約にも、状態の比べにも入らない量なので、値を固定したテストだけが拾う。
+    (
+        "test_vehicle_yaw_error_sign_flipped", [rep(VEHICLE_PY, "        self.yaw_err = r - yaw_ref\n", "        self.yaw_err = yaw_ref - r\n")],
+        tool("test", "-k", "vehicle and output_quantities"), {1}, "reason=failed",
     ),
     # --- 操作補正：test ---
     # 後退に入らない（後退へ入る指示を、出さない）。壁に正面から当たって止まると、抜けられない（詰み）。

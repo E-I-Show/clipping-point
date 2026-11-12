@@ -92,6 +92,10 @@ def test_track_table_cannot_be_changed_after_it_is_built():
         with pytest.raises(AttributeError):
             setattr(course, name, value)
     assert type(course._x) is tuple and type(course._k) is tuple and type(course._wall_l) is tuple
+    # 路面の摩擦係数も、タプル（辞書だと、中身を書き換えられる。表は、覚えて、世界どうしで同じものを持つ）。
+    assert type(course._mu) is tuple and len(course._mu) == len(track.SURFACES)
+    with pytest.raises(TypeError):
+        course._mu[1] = 1.0
 
 
 def test_track_table_of_the_same_entry_is_built_once_and_handed_out_again():

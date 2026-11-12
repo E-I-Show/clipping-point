@@ -206,7 +206,7 @@ class Track:
         self.n = n  # 表の点の数（＝区間の数）
         self.ds = ds  # 表の刻み（m）
         self.turning = hd[n - 1] + _wrap_pi(hd[0] - hd[n - 1]) - hd[0]  # 1周の向きの変化（rad）。ふつうの輪なら ±2π
-        self._mu = {name: float(entry["surface_mu"][name]) for name in SURFACES}  # 路面の種類 → 摩擦係数。引くのは surface_mu()
+        self._mu = tuple(float(entry["surface_mu"][name]) for name in SURFACES)  # 路面の摩擦係数。並びは SURFACES の順。引くのは surface_mu()
         self.wall_restitution = float(entry["wall"]["restitution"])  # 壁の反発（0〜1）
         self.wall_friction = float(entry["wall"]["friction"])  # 壁の摩擦
         self.start_s = float(entry["start"]["s_m"])  # スタート位置の、コースに沿った距離（m）
@@ -232,7 +232,9 @@ class Track:
 
     def surface_mu(self, surface: str) -> float:
         """路面の種類（SURFACES のどれか）の、摩擦係数。知らない名は KeyError。"""
-        return self._mu[surface]
+        if surface not in SURFACES:
+            raise KeyError(surface)
+        return self._mu[SURFACES.index(surface)]
 
     def sample(self, index: int) -> tuple:
         """表の点1つ。返すのは (x, z, 向き, 曲率, 幅の半分, 左の壁, 右の壁)。向きは、巻き戻さない値。"""

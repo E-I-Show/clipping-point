@@ -219,6 +219,71 @@ def test_vehicle_mixed_inputs_match_the_recorded_values():
         assert got == pytest.approx(want, **NEAR), inputs
 
 
+# 出す量（段1の操作補正とアシストが使う）。MIXED の各区間の終わりの値。この実装を回した値（式は、試作と読み比べて同じ。段0 区切り9）。
+# (車体の滑り角, 前軸の滑り, 後軸の滑り, ヨーレートの目標, ヨーレートの差, 限界か, 駆動の使用率（軸）, 制動の使用率,
+#  輪ごとの荷重, 輪ごとの前後の使用率, 輪ごとの横の使用率)。輪の並びは WHEELS（左前、右前、左後、右後）。
+MIXED_OUTPUTS = (
+    (
+        -0.027668332128876892, -0.046721514532906495, -0.03905488094295756, 0.3506695504469758, -0.08940113932030624, False,
+        0.28508143579073636, 0.0,
+        (1219.2813381672097, 3466.4681973423585, 1432.9168648261254, 3425.7052116418226),
+        (0.0, 0.0, 0.609091458726957, 0.13061858675659854),
+        (-0.3558676452739465, -0.3540902098382885, -0.2987479710215624, -0.2945991793915783),
+    ),
+    (
+        -0.10183276854263627, -0.1290558521337279, -0.125426964254344, 0.40881188969560944, -0.02560874944332775, True,
+        0.0, 1.113801318799236,
+        (2309.8113142035263, 3989.8358820391695, 845.6074141071986, 2335.4405214331464),
+        (-1.113801318799236, -0.7199221543894755, -1.0196928954525843, -0.40503157345297464),
+        (-0.9860351402821879, -0.9685102784792965, -0.9622334991557644, -0.9345107639742101),
+    ),
+    (
+        -0.418080248286996, -0.35416420861834164, -0.462037329336102, -0.13583766396775307, 0.8512074683517272, True,
+        0.0, 0.25610939839753044,
+        (1667.8877281417508, 3289.506821222699, 1536.762910542845, 2974.8024836523646),
+        (0.0, 0.0, -0.25610939839753044, -0.14523434155970724),
+        (-2.874128401395914, -2.683549311429759, -3.8718194381943185, -3.6261415915213284),
+    ),
+)
+
+
+def test_vehicle_output_quantities_match_the_recorded_values():
+    # 出す量は、世界の要約にも、状態の比べ（state()）にも入らない。式を取り違えても、ほかの確かめは通るので、ここで値を固定する。
+    car = new_car(25.0)
+    assert len(MIXED_OUTPUTS) == len(MIXED)
+    for (inputs, ticks, _), want in zip(MIXED, MIXED_OUTPUTS):
+        for _ in range(ticks):
+            car.step(*inputs)
+        body_slip, slip_front, slip_rear, yaw_ref, yaw_err, on_limit, drive_axle, brake_util, loads, utils, sides = want
+        got = (car.body_slip, car.slip_front, car.slip_rear, car.yaw_ref, car.yaw_err, car.drive_util_axle, car.brake_util)
+        assert got == pytest.approx((body_slip, slip_front, slip_rear, yaw_ref, yaw_err, drive_axle, brake_util), **NEAR), inputs
+        assert car.on_limit is on_limit, inputs
+        assert tuple(car.wheel_load) == pytest.approx(loads, **NEAR), inputs
+        assert tuple(car.wheel_util) == pytest.approx(utils, **NEAR), inputs
+        assert tuple(car.wheel_sy) == pytest.approx(sides, **NEAR), inputs
+
+
+def test_vehicle_output_quantities_have_the_signs_of_the_turn():
+    # 左へ切った定常旋回（限界の内）。ヨーレートと、その目標は正（左回り）。荷重は、外側（右）の輪が大きい。
+    # 横の使用率と、前後の軸の滑りは、4輪とも負で、大きさは1（限界）の内。ヨーレートの差は、実際 − 目標。
+    left, right = new_car(20.0), new_car(20.0)
+    for _ in range(180):
+        left.step(0.04, 0.3, 0.0, 1.0)
+        right.step(-0.04, 0.3, 0.0, 1.0)
+    assert left.yaw_rate > 0.2 and left.yaw_ref > 0.2 and not left.on_limit
+    front_left, front_right, rear_left, rear_right = left.wheel_load
+    assert front_right > front_left + 1000.0 and rear_right > rear_left + 1000.0
+    assert all(-1.0 < value < -0.1 for value in left.wheel_sy)
+    assert left.slip_front < 0.0 and left.slip_rear < 0.0 and left.body_slip < 0.0
+    assert left.yaw_err == pytest.approx(left.yaw_rate - left.yaw_ref, abs=1e-12) and left.yaw_err < 0.0  # 目標より回らない（アンダーステア）
+    # 右へ切ると、符号が全部逆で、左右の輪が入れ替わる。
+    assert (right.yaw_rate, right.yaw_ref, right.yaw_err) == pytest.approx((-left.yaw_rate, -left.yaw_ref, -left.yaw_err), **NEAR)
+    assert (right.slip_front, right.slip_rear, right.body_slip) == pytest.approx((-left.slip_front, -left.slip_rear, -left.body_slip), **NEAR)
+    assert tuple(right.wheel_load) == pytest.approx((front_right, front_left, rear_right, rear_left), **NEAR)
+    left_sides = left.wheel_sy
+    assert tuple(right.wheel_sy) == pytest.approx((-left_sides[1], -left_sides[0], -left_sides[3], -left_sides[2]), **NEAR)
+
+
 def test_vehicle_same_inputs_give_the_same_state():
     a, b = new_car(20.0, 0.4), new_car(20.0, 0.4)
     numbers = lcg(7)

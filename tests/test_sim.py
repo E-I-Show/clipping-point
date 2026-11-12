@@ -496,8 +496,11 @@ def test_sim_car_pressed_against_the_wall_does_not_count_a_hit_on_every_tick():
 def test_sim_summary_position_is_the_one_after_the_wall_pushed_the_car_back():
     sim = make()
     place(sim, 100.0, 9.0, turn=math.pi / 2.0, speed=20.0)
-    while not sim.on_wall:
+    for _ in range(120):  # 上限つきで回す（壁の押し戻しが当たりを返さない崩れで、終わらないテストにしない）
+        if sim.on_wall:
+            break
         sim.step(NEUTRAL)
+    assert sim.on_wall
     # 壁に当たったtick。要約の横のずれと、コースに沿った距離は、押し戻した後の位置の値（車の位置を、照会し直した値と同じ）。
     again = sim.track.query(sim.car.x, sim.car.z)
     assert (sim.s, sim.lateral) == (pytest.approx(again.s, abs=1e-9), pytest.approx(again.lateral, abs=1e-9))

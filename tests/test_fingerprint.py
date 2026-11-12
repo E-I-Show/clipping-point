@@ -36,7 +36,7 @@ CHILD_CODE = (
     "print(json.dumps({\n"
     "    'hash_seed': os.environ.get('PYTHONHASHSEED'),\n"
     "    'set_order': list(frozenset(BUTTONS)),\n"
-    "    'summary': fingerprint.summary_of(fingerprint.SCENARIOS[0]),\n"
+    "    'summaries': {scenario.name: fingerprint.summary_of(scenario) for scenario in fingerprint.SCENARIOS},\n"
     "}))\n"
 )
 
@@ -495,13 +495,17 @@ def test_fingerprint_does_not_depend_on_the_hash_seed():
     orders = [tuple(results[seed]["set_order"]) for seed in HASH_SEEDS]
     assert all(sorted(order) == sorted(BUTTONS) for order in orders)
     assert len(set(orders)) == len(HASH_SEEDS), f"集合を回した順が、ハッシュの種を変えても同じ：{orders}"
-    # (3) それでも、世界の要約は同じ。
-    summaries = [results[seed]["summary"] for seed in HASH_SEEDS]
-    assert summaries[0] == summaries[1] == summaries[2], "世界の要約が、ハッシュの種で変わる（文字列の集合を回した順に頼っている）"
+    # (3) それでも、世界の要約は同じ。筋書きは、全部（道具の台本はボタンの集合を通り、走る台本と壁の台本は、変速、後退、壁、芝を通る）。
+    summaries = [results[seed]["summaries"] for seed in HASH_SEEDS]
+    assert list(summaries[0]) == [scenario.name for scenario in fingerprint.SCENARIOS]
+    for name in summaries[0]:
+        assert summaries[0][name] == summaries[1][name] == summaries[2][name], f"{name}: 世界の要約が、ハッシュの種で変わる（文字列の集合を回した順に頼っている）"
 
 
 def test_fingerprint_of_another_process_matches_the_snapshot():
-    # 別プロセスで回した要約が、指紋の写しとも、このプロセスで回した要約とも同じ。
-    summary = run_child(HASH_SEEDS[0])["summary"]
-    assert summary == fingerprint.recorded_summary(snapshot(), SCRIPT_SCENARIO)
-    assert summary == fingerprint.summary_of(SCRIPT_SCENARIO)
+    # 別プロセスで回した要約が、指紋の写しとも、このプロセスで回した要約とも同じ。筋書きは、全部。
+    summaries = run_child(HASH_SEEDS[0])["summaries"]
+    assert len(summaries) == len(fingerprint.SCENARIOS) == 4
+    for scenario in fingerprint.SCENARIOS:
+        assert summaries[scenario.name] == fingerprint.recorded_summary(snapshot(), scenario), scenario.name
+        assert summaries[scenario.name] == fingerprint.summary_of(scenario), scenario.name

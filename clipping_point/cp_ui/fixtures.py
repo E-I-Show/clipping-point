@@ -11,15 +11,16 @@ from cp_core.input_frame import BUTTONS, InputFrame
 from cp_core.storage import NOTICES
 from cp_core.track import MAX_LENGTH_M, SURFACE_ASPHALT, SURFACES
 from cp_core.vehicle import REVERSE
+from cp_ui.screens import RPM_DIGITS, SPEED_DIGITS
 
 VARIANTS = ("typical", "extreme")
 # 仮の値：極端な値に使う、tick と実描画の回数（7桁。毎秒60 tickで約46時間ぶん）。表示の桁の上限は、まだ決めていない。
 # 定義データから極端な値を導く形にする時（段0 区切り8より後）に合わせる。
 BIGGEST_COUNT = 9_999_999
-# 仮の値：極端な値に使う、速度（km/h。3桁）と回転数（5桁）。仮の表示の桁をいっぱいに使う値で、車の値から導いたものではない
-# （実物の車は、時速213 km、毎分7,200回転まで）。HUDを作る段1で、車の定義データから導く形に合わせる。
-FASTEST_KMH = 999
-HIGHEST_RPM = 99_999
+# 極端な値に使う、速度（km/h）と回転数。仮の表示の桁（cp_ui.screens の SPEED_DIGITS、RPM_DIGITS）を、いっぱいに使う値
+# （999 と 99,999。実物の車は、時速213 km、毎分7,200回転まで）。桁を変えると、ここも付いて変わる。
+FASTEST_KMH = 10 ** SPEED_DIGITS - 1
+HIGHEST_RPM = 10 ** RPM_DIGITS - 1
 
 
 def longest_notice() -> str:

@@ -17,6 +17,8 @@ COL_BACK, COL_BAR, COL_TEXT, COL_EDGE = 0, 1, 7, 5
 NO_BUTTON = "-"  # 押しているボタンが無いときに出す字
 REVERSE_TEXT = "R"  # 後退のギアの字
 POSITION_WIDTH = 8  # 位置の字の幅（-20000.0 が収まる。コースの座標の上限は、cp_core.track の MAX_LENGTH_M）
+SPEED_DIGITS = 3  # 仮の表示の、速度（km/h）の桁の数。見本データの極端な値（cp_ui.fixtures）は、ここから導く
+RPM_DIGITS = 5  # 仮の表示の、回転数の桁の数
 
 
 def _tenths(value: int) -> str:
@@ -29,7 +31,7 @@ def car_lines(car: CarView) -> tuple:
     """車の値の2行。1行目は、速度（km/h）、ギア（後退は R）、回転数。2行目は、位置（m。小数第1位まで）と、路面の種類。"""
     gear = REVERSE_TEXT if car.gear == REVERSE else str(car.gear)
     return (
-        f"SPEED {car.speed_kmh:3d} KM/H  GEAR {gear}  RPM {car.rpm:5d}",
+        f"SPEED {car.speed_kmh:{SPEED_DIGITS}d} KM/H  GEAR {gear}  RPM {car.rpm:{RPM_DIGITS}d}",
         f"POS X {_tenths(car.x_dm):>{POSITION_WIDTH}} Z {_tenths(car.z_dm):>{POSITION_WIDTH}}  ON {car.surface.upper()}",
     )
 

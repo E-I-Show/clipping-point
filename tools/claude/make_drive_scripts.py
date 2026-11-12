@@ -222,7 +222,7 @@ def main() -> int:
         ("drive_900", input_reference.DRIVE_SCRIPT, drive_with_the_follower(DRIVE_TICKS)),
         ("wall_780", input_reference.WALL_SCRIPT, drive_the_phases(WALL_PHASES)),
     )
-    problems, facts = 0, []
+    problems, facts, texts = 0, [], []
     for name, path, (segments, sim, trail) in made:
         value = script_value(segments)
         ticks = sum(count for count, _ in segments)
@@ -240,10 +240,15 @@ def main() -> int:
             print(f"  make_drive_scripts: {name}: {line}")
         problems += len(lines)
         facts.append(f"{name}={len(segments)}segments/{ticks}ticks")
-        if args.write and not problems:
-            path.write_text(script_text(value), encoding="utf-8")
+        texts.append((path, script_text(value)))
+    # 書くのは、台本を全部確かめた後に、問題が1つも無いときだけ（片方だけを書き換えて、もう片方が古いまま残らないように）。
+    written = 0
+    if args.write and not problems:
+        for path, text in texts:
+            path.write_text(text, encoding="utf-8")
             print(f"  make_drive_scripts: {path.name} を書いた")
-    summary = " ".join(facts) + f" written={'yes' if args.write and not problems else 'no'} problems={problems}"
+            written += 1
+    summary = " ".join(facts) + f" written={written} problems={problems}"
     return finish("make_drive_scripts", FAIL if problems else OK, summary)
 
 
