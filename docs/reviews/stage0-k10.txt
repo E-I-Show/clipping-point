@@ -1,0 +1,84 @@
+区切り：段0 区切り10：縦切りの描画と計測
+
+== fakepass
+■ fakepass-1 [中/確かめた] 所：/home/user/clipping-point/clipping_point/cp_app/app.py:275-287（draw）、303-312（scene_report）、321-325（finish_run）。/home/user/clipping-point/tools/run.py:222。/home/user/clipping-point/tests/test_render.py:779-801、818-823
+   直し：finish_run と finish_probe で、描き直す前の裏画面を読み、空の役割の色の画素の数（または、描き直した後との、矩形の外の違う画素の数）を結果に入れて、道具で線を引く。あわせて、draw() の実描画の枝に self.render() が1回あることの守りのテストと、壊す件（draw() の render() を消す → run が1）を足す。
+   場合：scene_same と back_ink は、scene_report() が自分で render() を呼んで描き直した裏画面を比べる。周期の中の実描画（draw() が呼ぶ render()）が裏画面へ描いた結果を見る確かめは、screen_diff だけで、これは両方が黒でも0。
+app.py:280 の `self.render()` を消す（または、いつも偽になる条件を付ける）→ 裏画面も画面も黒のまま → screen_diff=0。renders は draw() の頭で数えるので合う。結果を書く直前の描き直しで、scene_same=0、back_ink≧1、空・コース・車・mirror も合格 → run、run --realtime、run-drive、run-wall、run-pack が OK のまま。web-smoke の probe と drive も同じ道で通り、drive.png にも、描き直した後の絵が写る。落ちるのは web-smoke の shipped（canvas_ink）だけで、1度も描かない場合に限る。守りのテストは、render() の中と scene_report() の中だけを見て、draw() が render() を呼ぶことを見ていない。壊す件も無い（run_normal_render_draws_no_3d は、render() の中を壊す）。
+   反証：引用は実物どおり。draw() の self.render()（app.py:280）を消しても、renders は278行で数え、screen_diff は黒と黒で0、scene_report() が309行で描き直すので、run の scene_same・back_ink・scene3d は通る。draw() が render() を呼ぶことを見る守りのテストも壊す件も無い（既存の run_zero_renders は門の条件、run_normal_render_draws_no_3d と run_back_buffer_blank は render() の中）。全部を消す場合は web-smoke の shipped（canvas_ink）が拾うので、穴はデスクトップ版の道具と「途中から描かない」場合。直し方の案のうち、括弧の中（描き直す前後の、矩形の外の違いを0とする線）は、走っている回では裏画面が1〜2 tick古く0にならない（細目22）ので採れない。守りのテストと壊す件、または描き直す前の裏画面の画素の下限の方を採る。
+■ fakepass-4 [低/確かめた] 所：/home/user/clipping-point/clipping_point/cp_app/render.py:399-402。/home/user/clipping-point/tests/test_render.py:491-505、515-527
+   直し：test_render の背景のテストを、向き π/2 と −2.578 のカメラでも回し、blt の x を数で固定する（π/2 なら 340−1360 と 340）。
+   場合：背景をずらす量を、描く口が正しく使っていることは、向きがほぼ0のスタート位置でしか確かめていない（test_render.py:493。向き2.37と−2.578の件は、カメラと車の変換だけを見る）。
+render.py:400 を `camera.backdrop_shift_px(degrees(pose.heading), period)`（単位の取り違え）にする → スタート位置では、ずらす量が元と同じ（0 か 1359）→ test_render は通る。実物の確かめは、空の画素の数しか見ず、ずらす量で変わるのは山並みの分（24,000〜25,300）だけ → run、run-drive、tour、web-smoke も通る。背景が、3Dと違う速さで流れる絵は、動かして目で見るまで出ない。
+   反証：引用は実物どおり。描く口が背景をずらす量を使う所（render.py:400）を通すテストは、向き0のスタート位置の1件だけ（test_render.py:491-505）で、期待も同じ関数を同じ引数で呼んで作るので、単位や符号の取り違え（degrees() を掛ける、符号を逆にする）は0→0で通る。実物の道具が見るのは空の画素の数だけで、ずらす量の誤りは拾えない（壊す件は camera.py の中だけ）。render.md:69 の落とし穴（向き0では出ない）そのもので、遠景を作り直す段1で手戻りの元になる。直し方の案（向きを振って blt の x を数で固定）は妥当。向き π/2 は、浮動小数の誤差で339か340になりうるので、境目を避けた向きで固定するとよい。
+
+== spec
+■ spec-1 [低/確かめた] 所：clipping_point/cp_app/render.py 48〜59行、114行 ／ CLAUDE.md 120〜122行、.claude/rules/render.md 35行、docs/requests/stage0-k10.md 213行
+   直し：例外として残すなら、render.md 35行に「背景と地面の寸法だけは render.py の定数。段1の「コースの描画」で定義データへ移す」を足し、54行の注を、限り（仮の絵であること）と見直す時の形に直して、GROUND_DROP_M と波の係数にも掛かると書く。残さないなら、定義データへ出して `_notes` に「仮の値：」を書く。
+   場合：破る行：render.py 54行「# 割り切り：背景は、…仮の絵。高さと波の数は、ここの定数で、定義データに出していない。」と、その値（56行 `BACKDROP_ROWS = 96`、59行 `BACKDROP_RIDGES`、53行 `GROUND_TILE_M = 100.0`）。50行 `GROUND_DROP_M = 0.05` と、114行の波の係数（0.30、0.15、0.05）には、印が無い。決まりの文：CLAUDE.md 120行「…決まりを外す書き方には使わない」、121行「根拠の薄い値は定義データ（JSON）に出し…」、122行「出荷するコードに仮の値を置いてよいのは、定義データをまだ読めない所だけ」。頼みの文 213行「出荷するコードに、仮の値を置かない」。render.md 35行「寸法と値は、定義データ：表 cameras、表 palettes、車の shape、コースの mesh」。主が採った変更そのものは指摘にしない。採った結果、割り切りの印が「定義データに出していない」ことの断りに使われ、render.md 35行にも例外が書かれていない。`仮の値：` を Grep で引く一覧に、これらの値が出ない。
+   反証：引用は実物どおり。54行の印は「定義データに出していない」ことの断りになっており、CLAUDE.md 120行（決まりを外す書き方には使わない）と121〜122行に当たる。render.md 35行にも例外が無く、`仮の値：` の一覧（出荷するコードでは fixtures.py と profile.py だけ）にも出ない。主の注の「地面の低さにも割り切りの印」は実物と違う（50行 GROUND_DROP_M の上は、実測の根拠を書いたふつうの注だけ）。ただし、53行 GROUND_TILE_M は51行の印の下で、そちらは限りと見直す時の形になっている（54行の印の値ではない）。直すのは54行の言い回しと render.md 35行で足りる。render.md に足すときは、上限8,000バイトの見張りに注意。
+■ spec-3 [低/確かめた] 所：.claude/rules/render.md 65行 ／ .claude/rules/web.md の「値を読む口」、tools/web_smoke.py 47行と245行 ／ tools/budgets.json 8行
+   直し：(1) render.md 65行に `run_normal_`、`tour_one_` を足す（または、件の名を `run_scene_`、`tour_scene_` で始まる名に変える）。(2) web.md と web_smoke.py の注に、drive の sim、sim_reference、`drive_gap=` を足す。(3) `tour_timeout_s` の注を、3Dの絵を足した後の実測で書き直す。
+   場合：区切り10で足したものが、既存の数え上げに足されていない所が3つある。(1) render.md 65行の、壊す件の名前の頭の並びに `run_normal_` と `tour_one_` が無い。selftest_break.py 1562行 `run_normal_render_draws_no_3d`（既定の run で scene_same を落とす、ただ1つの件）と、1586行 `tour_one_scene_skipped` は、render.md の頭で `--only` を回しても回らない。(2) web.md「最後の1行の probe_gap= と script_gap=」と、web_smoke.py 47行、245行「3つの突き合わせ（probe の sim、script の sim と sim_reference）」。実装は、筋書き drive でも summary_check を2回呼び（355〜356行）、`drive_gap=` を出す（789行）。(3) budgets.json 8行 `tour_timeout_s` の根拠「2枚で1秒未満」は、画面2枚だけの頃の実測。いまの巡回は、場面を組み、3Dの絵3枚と、1枚につき4回の判定用の実描画も回す。いまの所要は、わたしは測っていない。
+   反証：(1) と (2) は実物どおり。render.md 65行の頭の並びは `run_normal_render_draws_no_3d`（1562行。既定の run で scene_same だけを落とす件）と `tour_one_scene_skipped`（1586行）に掛からず（--only は startswith の1語。1767行）、ui.md にも頭の並びは無い。web_smoke.py 47行・245行は「3つ」、web.md 20行・31行は probe と script だけのままで、judge_drive の2回（355〜356行）と drive_gap（789行）が抜けている（web_smoke.py の頭の注 42行と63行には、drive の突き合わせと drive_gap の説明がある）。(3) は、注が「2枚で1秒未満」のままなのは事実だが、いまの所要は測られておらず推測なので、直すなら実測してから。
+
+== softlock
+■ softlock-2 [低/確かめた] 所：tools/web_smoke.py:195-203（judge_shipped の canvas_ink）／tools/web/webrun.js:98-134（いちばん多い色を背景とみなして数える）／tests/test_render.py:779-787／clipping_point/cp_app/app.py:298
+   直し：judge_shipped に、3Dの絵が載っていることの確かめを足す（例：2Dを置かない画面の中ほど y=33〜189 の、背景と違う画素の数に下限。または webrun.js が既に数えている色の数 `colors` に下限。値は、実測して tools/budgets.json へ）。selftest_break.py に、ふつうの起動でだけ3Dを描かない壊す件を足す。
+   場合：ふつうの起動（検証の口が無い。probes=False）を、実物のPyxelで通すのは、筋書き shipped だけ。run、tour、web-smoke の残り5本は、どれも検証の口つき。shipped が絵について見るのは「背景と違う画素が1以上」（web_smoke.py:201 `type(ink) is int and ink > 0`）だけで、上と下の帯の2Dの文字と矩形で満たす。
+例：app.py:298 の `self.scene.draw(...)` を `if self.checked:` の下に入れる → ふつうの起動は、黒地に帯だけで、3Dが出ない。
+- shipped は canvas_ink>0 で通る。
+- run、probe、drive は、検証の口つきなので、scene3d と scene_same が通る。
+- 守りのテスト（test_render.py:782-787）は、ast.walk で呼び出しを1つ数え、行の順を見るだけなので通る。tests/test_screens.py の守りのテストにも、この条件を見るものは無い。
+→ 全体の検証が合格のまま、人に送るHTMLだけ、3Dが出ない。回してはいない（読んで追った）。区切り9までは、2Dだけの画面だったので、この確かめで足りていた。
+   反証：引用と行番号は実物どおりで、読んで追ったかぎり指摘の例は全体の検証を通る。ふつうの起動を実物のPyxelで通すのは筋書き shipped だけで、絵について見るのは canvas_ink>0 だけ（絵の保存も色の数の確かめも無い）。self.checked で scene.draw を囲んでも、守りのテストは ast.walk で呼び出しの数と行の順しか見ないので通り、3Dを描かない壊す件（run_normal_render_draws_no_3d）は検証の口つきでしか回らない。重さは低のままでよい（いまのコードは無条件に描く）。直し方の案は成り立つ（絵は canvas の箱で切り取られている）。処理時間の輪と同じ形の「条件の下に無い」守りのテストでも塞げる。
+
+== determinism
+■ determinism-1 [低/確かめた] 所：/home/user/clipping-point/tools/scene_reference.py:171 と /home/user/clipping-point/tools/tour.py:45-46（/home/user/clipping-point/tests/test_screen_tools.py:370-372）
+   直し：scene_reference.py:171 の注を「2Dの描画命令を重ねない絵では、back_ink だけを外す（scene_same は、渡した絵と3枚目が同じことを見るので、残す）」に直す。
+   場合：判定の関数の注と、巡回の回し方が逆。scene_reference.py:171 の文は「names は、回す確かめ（既定は、全部。2Dの描画命令を重ねない絵では、scene_same と back_ink を外す）」。tour.py:46 の文は「SCENE_SHOT_CHECKS = tuple(name for name in scene_reference.SCENE_CHECKS if name != "back_ink")」で、scene_same は回す（tour.py:11-12 と 41-43、test_screen_tools.py:370「back_ink だけを外す。scene_same は、回す」も同じ）。合否と文は scene_reference.py の1か所（render.md:38）なので、後の区切りはこの注を読む。注のとおりに、2Dを重ねない絵の呼び出しから scene_same を外すと、「保存した絵が、判定用の3枚目と同じ」を見る確かめが消える。巡回を注に合わせて直すと、test_screen_tools.py:372 が落ちて手戻りになる。
+   反証：引用は実物と一致し、食い違いは実在する。判定の関数の注（scene_reference.py:171）は「2Dを重ねない絵では scene_same と back_ink を外す」と書くが、names を渡す唯一の呼び手である巡回は back_ink だけを外し（tour.py:46、161）、テストがそれを固定している（test_screen_tools.py:369-372）。巡回の口は、保存した絵の画素と空の矩形を judge へ渡すので（cp_app/tour.py:215-216）、scene_same は巡回でも意味を持ち、誤っているのは注の側。頼みの文（stage0-k10.md:155）も「同じ絵で、上の確かめも判定する」で、外すとは決めていない。害は小さい（低のまま）。直し方の案は妥当だが、同じ誤った文が tests/test_scene_reference.py:59 の注（「巡回の3Dの絵では、scene_same と back_ink を外す」）にもあるので、そこも一緒に直す必要がある。
+
+== 退けた指摘
+□ fakepass-2 [中] 既に決めてある。確かめの形（下限だけ）と下限の役目は、頼みの文の細目13・25と158行（「コースの画素の下限は、車だけが描かれた絵を、通さない値」）で決まり、置いた値はそれを満たし、budgets.json の _notes に仮の値・根拠・合わせる時（段1）が書いてある。絵の欠けは機械で拾わず目で見る、と tools/tour.py:26-27 と cp_app/tour.py:33 が決めている。下限0は test_web_smoke.py:541 が弾く。空の画素は1枚目（背景と地面だけ）で数えるので「3Dが空を覆っても通る」は数え方の読み違い。22,400画素は手計算の推測で、実物で数えていない。
+□ fakepass-3 [低] 引用は合っているが、見かけの合格は起きない。指摘自身の追い方でも、両方を外した絵と、模型を to_cube() に通した絵は mirror で落ちる。側の判定は、合成の値のテストと壊す件 test_scene_mirror_passes_on_either_side、実物では向きの符号の件（印のずれ）で落ちることを見ている。頼みの文の「少なくとも次の形」（165-178行）の件は全部あり、tools.md:41 の破れではない。2件を足すのは任意の強化で、無くても害が無い。
+□ fakepass-5 [低] 起きない場面（指摘も、いまは起きないと認めている）。仮の表示が画面の中ほど（y=44〜190）を覆わないことは、ui.md の約束と、test_screens.py:115-128 のテストが守っていて、全面を覆う2Dの描画命令が入ると、そのテストが先に落ちる。全面を覆う画面を作る段1で、確かめの形を見直せば足りる。
+□ fakepass-6 [低] 決めた方針の内。車は段0では仮の形で「位置と向きが分かればよい」（細目6）、車のモデルは段1の「走行画面」で作り直す。段0には車輪が写る視点が無く（後方追従だけ。0画素は頼みの文248行に記録済み）、車輪が誤っていても、誤った絵は出ない。車輪の位置は test_car_shape.py と test_render.py:436-440 が数値で見ていて、Mesh に変換を渡す使い方は試作（spikes/render/common.py:420）にある。実物で車輪を1度も見ていないことを、作業記録の「見えなかったこと」に書けば足りる（主が直す文書）。
+□ spec-2 [低] 守りのテストが cp_core を見ないのは事実だが、通ってしまう入力が示されていない。cp_core の符号の誤りは、test_camera.py（62、74、85、199、212行）、test_track.py のメッシュのテスト（588、601、679行など）、run-drive と巡回の mirror が拾い、指摘も害は小さいと認めている。直し方の案も合わない：cp_core には、ロジックの座標の正当な z 成分の符号反転が既にあり（camera.py 145行 `left_x, left_z = -fz * PILLAR_SIDE_M, …`。名が `_z` で終わらないので検出に掛からないだけ）、構文の見張りを cp_core へ広げると、変数の名に頼る確かめになって、`-left_z` のような正当な式で落ちる手戻りを生む。
+□ softlock-1 [低] 引用と行番号は実物どおりだが、起きない場面。指摘自身が「いまの値では起きない」と書いており、値と id はテストで固定されている。(1) 車が消える値は run の scene3d（車の画素の下限 3000）で落ちる。(3) は KeyError が鍵の名（'chase'）を持ち、Scene を組む道具（run、tour、web-smoke）がどれも落ちるうえ、試験用データは id を消せない。(2) は後方追従としてあり得ない値で、根拠のヘリは段2で決める範囲外（頼みの文で「指摘にしない」）。
+□ determinism-2 [低] missing_budgets が0を通し、下限0なら track=0 でも scene3d が真になる、というコードの読みは正しい（scene_reference.py:58-60、102-107）。しかし、実物の tools/budgets.json に0を書く場合は、既に別の所で守られている：tests/test_web_smoke.py:538-541 が、実物の値に「scene_track_min_px > 0、scene_car_min_px > 0、scene_sky_min_px > 960」を直接求め、tests/test_run_tool.py:171、201-203 と tests/test_screen_tools.py:336、384-386 も、実物の値で track=0・car=0・sky=960 が落ちることを求める。0を書けば test の手順が落ち、全体の検証は通らない。指摘は test_scene_reference.py:202 の1か所しか読んでいない。いまの値（15000、20000、3000）では起きず、段1のバンパーの視点で0へ下げるという場面も仮定。
+
+== 役が書いた、見られなかった所
+・fakepass（レビュー役）: 道具もテストも回していない（決まり）。画素の数（fakepass-2 の約22,400、柱と印の位置）は手計算で、実物のPyxelで数えていない。
+・fakepass（レビュー役）: 実物のPyxelの振る舞い（陰影の表の手直し、visible を偽にしたノードの on_draw、Mesh の transforms）は、試作の記録のgrepまでで、確かめられない。
+・fakepass（レビュー役）: tools/selftest_break.py の 1115〜1400行（保存、定義データ、車両、コースの既存の件）は読んでいない。screen_ で始まる件と tour の既存の件は、壊し方と期待の語を読んだが、はみ出しの種類を決める cp_ui/check.py を読んでいないので、種類（kinds=）までは追っていない。
+・fakepass（レビュー役）: tools/web_smoke.py の 380〜417、490〜578、880行より後（保存、偽のコントローラー、main の後半）と、tools/web/webrun.js（画素を数える所のgrepだけ）は読んでいない。
+・fakepass（レビュー役）: tests/test_web_smoke.py の筋書き drive のテスト（1327〜1500行）、test_screen_tools.py の3Dの絵のテスト、test_tour.py の本体、test_fixtures.py、test_data_files.py、test_data_reference.py、test_verify.py、test_datadefs.py は、関数の名のgrepまで。
+・fakepass（レビュー役）: cp_core/palette.py、cp_core/datadefs.py、cp_core/flow.py（頭打ちの関数の頭だけ）、cp_ui/fixtures.py、cp_app/web_bridge.py、tools/verify.py（grepだけ）、tools/claude/make_palette.py、testpacks/extreme/ のコースは読んでいない。
+・fakepass（レビュー役）: docs/design/overview.md と docs/plan.md は読んでいない（照らしたのは、頼みの文の細目と、規則ファイル）。docs/glossary.md は、語のgrepだけ。
+・fakepass（レビュー役）: 基点（9a65e16）との差分は引けない（git を使えない）。区切り9の back_ink の数え方は、主の注と、頼みの文の細目13・22から読んだ。
+・spec（レビュー役）: git の差分は引けない（作業ツリーを読んだ）。消えた行、既存の壊す件の直し（頼みの文159〜164行。IN_DRAW、RENDER_HEAD、幾何に頼る件、期待の語の数）が狙いどおりかは、selftest_break.py の1〜254行、285〜565行、669〜1395行を読んでおらず、道具も回さないので、未評価。
+・spec（レビュー役）: テストの中身を読んでいないもの：test_track.py のメッシュの節（名と冒頭だけ）、test_mesh.py、test_palette.py、test_car_shape.py、test_scene_reference.py、test_perf.py、test_flow.py、test_fixtures.py、test_screens.py、test_web_smoke.py、test_web_bridge.py、test_run_tool.py、test_screen_tools.py、test_verify.py、test_data_files.py、test_data_reference.py、test_datadefs.py。頼みの文が求めた件があることは、テストの名で突き合わせただけで、落ちようの無い確かめかどうかは見ていない。
+・spec（レビュー役）: tools/web_smoke.py の121〜170行、391〜416行、438〜577行、881行より後ろと、tools/web/webrun.js（画面の絵を保存する所は Grep だけ）。cp_app/canvas_pyxel.py と data_files.py は、変えていない前提で読んでいない。
+・spec（レビュー役）: 規則ファイル controls.md と save.md は読んでいない（区切り10の変更の当て先ではない）。
+・spec（レビュー役）: Pyxel 3.0.1 の3Dの口の使い方（Shading、Mesh、Node.from_mesh、on_draw の中の shaded と prim）は、試作のコードと記録の該当行を Grep で照らしただけ。実物の画素、ブラウザ版のふるまい、処理時間の実測は、道具を回さないので未評価（主の検証の行に頼る）。
+・spec（レビュー役）: 規則ファイルの大きさ（上限8,000バイト）は、数えていない（主の check の rules=10 problems=0 に頼る）。
+・spec（レビュー役）: docs/ の文書（設計のモジュールの表、作業記録、計画）と実装の食い違いは、範囲の外として見ていない。tools/verify.py 132行の注「計画の表のテストの絞りは「画面」」と、plan.md 258行のいまの文が違うことには気づいたが、どちらが先かは追っていない。
+・spec（反証役）: spec-3 の (3)：巡回のいまの所要時間（道具を回さない決まりのため、測れない。注の根拠が古いことだけを、文で確かめた）
+・spec（反証役）: spec-1 と spec-3 の直しで render.md に行を足したとき、上限8,000バイト（tools/budgets.json の rule_file_max_bytes）の見張りに当たるか（読むだけの道具では、いまのバイト数を数えられない）
+・softlock（レビュー役）: 道具もテストも回していない（決まり）。Pyxelの実物のふるまい（Mat4.from_translation().rotate_y() の掛ける順、look_at、Shading、pyxel.colors[:] への代入、100 m角の地面の三角形の手前の切り取り）は、主の検証の結果と、試作の記録（spikes/render/RESULT.json）に頼った。
+・softlock（レビュー役）: gitの差分を引けない（使える道具が Read、Grep、Glob だけ）。入力の道（app.py の read_frame、cp_app/input_pyxel.py、input_web.py）が、区切り9から変わっていないことは、いまの app.py を読んだだけ。ふるまいの写しと cp_core/sim.py が変わっていないことは、主の確かめに頼った。
+・softlock（レビュー役）: 実機のブラウザ。タブを隠して戻したときの、Pyxelのランタイムの更新の呼び方（追い付きの回数）は、コードから追えない。アプリの側は、処理時間の輪の毎秒の回数が、戻ってから約2秒（更新120回ぶん）低く出るだけで、例外にも、世界への影響にもならない、と読んだ。main() が、開始のクリックの後に始まること（PAGE に、クリックを待った時間が入ること）は、web.md の文に頼った。
+・softlock（レビュー役）: 読んでいない道具：tools/run.py、tools/tour.py、tools/verify.py、tools/claude/make_palette.py、tools/web_smoke.py の415行より後（筋書き drive を回す関数）。tools/selftest_break.py の壊す件の中身は grep だけ。
+・softlock（レビュー役）: 読んでいないテスト：tests/test_render.py の455〜490行と740〜849行のほかは未読（test_mesh、test_camera、test_palette、test_car_shape、test_scene_reference、test_track、test_perf、test_flow、test_fixtures、test_tour、test_web_smoke、test_web_bridge、test_run_tool、test_screen_tools、test_verify、test_fixed_loop、test_data_files、test_data_reference、test_datadefs）。test_screens.py は、守りのテストの名と、条件を見る行を grep しただけ。
+・softlock（レビュー役）: 読んでいない出荷コード：cp_ui/fixtures.py（grep だけ）、cp_app/canvas_pyxel.py、cp_app/data_files.py、入力アダプタ、cp_core/vehicle.py、cp_core/sim.py（grep だけ）。docs/design/overview.md の「描画」とは、突き合わせていない（頼みの文の細目の表と、規則ファイルまで）。
+・softlock（レビュー役）: 奥300 mの切れ目で、陰影の付いた地面の板の色と、背景の「遠い地面の色」（陰影なし）が、違う色で並ぶかどうかは、絵を見ていないので未確認。計算では、地平線の下1〜2画素の帯。
+・determinism（レビュー役）: ふるまいの写し（tests/snapshots/）と世界（cp_core/sim.py）が基点から変わっていないこと：gitを引けないので、主の確かめに頼った。見たのは、sim.py のimportに、足したモジュール（camera、mesh、palette、car_shape）が無いことだけ。
+・determinism（レビュー役）: 実物のPyxelでの結果（画素の数、重心、デスクトップ版とブラウザ版の絵が同じこと、判定の後に柱と印が写らないこと）：道具を回していない。コードを追っただけで、値は主の注と budgets.json の _notes に頼った。
+・determinism（レビュー役）: Pyxelの3Dの口の使い方（Primitive、Mesh、Node.from_mesh、Shading、Mat4.look_at、shaded、prim）が、試作の記録と合うか：spikes/render/ の RESULT.json、common.py、world.py を読んでいない。
+・determinism（レビュー役）: テストの中身のうち、test_mesh.py、test_camera.py、test_car_shape.py、test_scene_reference.py、test_datadefs.py、test_screens.py、test_flow.py、test_fixtures.py、test_perf.py、test_web_smoke.py、test_web_bridge.py、test_run_tool.py、test_screen_tools.py、test_verify.py、test_fixed_loop.py、test_data_files.py、test_data_reference.py：語の検索だけで、通しては読んでいない。test_render.py の331〜595行も読んでいない。
+・determinism（レビュー役）: tools/selftest_break.py の1440行より前（既存の件の洗い出し、当てる文字列の定数）、tools/verify.py、tools/web_smoke.py の136〜195行と376〜559行、tools/web/webrun.js の大半、cp_core/datadefs.py の360行より後ろ（読み込みと重ね方の本体）：読んでいない。
+・determinism（レビュー役）: render.py の背景と地面の定数（BACKDROP_ROWS、BACKDROP_RIDGES、GROUND_TILE_M、GROUND_DROP_M、114行の波の係数）を、定義データに出さずに「割り切り：」の印で置いた扱いが、根の CLAUDE.md の「書き方の約束」に合うか：この観点の外なので、評価していない。決定性には効かないことだけ見た。
+・determinism（レビュー役）: 規則ファイル controls.md、save.md、開発計画 docs/plan.md の「段0：立ち上げ」の通過条件と「検証の組」：読んでいない（plan.md は、区切り10の行だけ見た）。
+・determinism（レビュー役）: 動いている絵（ちらつき、背景の流れ方）と実機：見る手段が無い。
+review_summary: OK lenses=4 findings=13 passed=6 rejected=7 unevaluated=0 role_notes=32
