@@ -4,7 +4,9 @@
 ここでは、節の関数が、調べた組の数と、問題の一覧を、決めたとおりに返すことを見る。
   件数は、調べた組の数（読み込み検査まで届いた組。問題があった組も数える）。全部の組に問題があっても、0にならない
   （0だと、道具 check は「何も調べていない」の2にする。問題があるのだから、1のはず）。
-  出荷するデータの警告は、問題として数える。実物の表の定義には、参照が無いので、警告は、作り物の表の定義で起こす。
+  警告は、どの組でも、問題として数える（出荷するデータの組も、試験用データを重ねた組も。道具 run の --pack が、
+  警告0件を求めるのと、同じ向き）。出荷するデータの組で挙げた警告は、重ねた組で繰り返さない。
+  実物の表の定義には、参照が無いので、警告は、作り物の表の定義で起こす。
 読み込み検査そのものは tests/test_datadefs.py、ファイルを読む所は tests/test_data_files.py。
 """
 import json
@@ -63,11 +65,26 @@ def test_check_tool_warning_in_the_shipped_data_is_counted_as_a_problem(tmp_path
     assert check.data_sets(data, root, TABLES) == (1, ["(shipped) warning: sounds.sfx_unused: defined but never referenced"])
 
 
-def test_check_tool_warning_only_in_a_pack_set_is_not_counted(tmp_path):
-    # 試験用データが足した、参照されていない定義は、問題に数えない（警告0件を見張るのは、出荷するデータ）。
+def test_check_tool_warning_only_in_a_pack_set_is_counted_as_a_problem(tmp_path):
+    # 試験用データが足した、参照されていない定義も、問題に数える。同じ試験用データで、道具 run の --pack は、警告0件を
+    # 求めて落ちる（tests/test_data_reference.py）。check だけが通る、という食い違いを作らない。
     pack = {"sounds.json": {"sounds": [{"id": "sfx_trial", "name": "TRIAL"}]}}
-    data, root = places(tmp_path, packs={"trial": pack})
-    assert check.data_sets(data, root, TABLES) == (2, [])
+    data, root = places(tmp_path, packs={"trial": pack, "fine": {"tracks/extra.json": {"id": "extra", "name": "EXTRA"}}})
+    assert check.data_sets(data, root, TABLES) == (3, ["(trial) warning: sounds.sfx_trial: defined but never referenced"])
+
+
+def test_check_tool_warning_of_the_shipped_data_is_not_repeated_in_a_pack_set(tmp_path):
+    # 出荷するデータの組で挙げた警告は、試験用データを重ねた組で、もう1度は挙げない。重ねた組で増えた警告だけを、その名で挙げる。
+    more = {"sounds.json": {"sounds": [{"id": "sfx_trial", "name": "TRIAL"}]}}
+    uses = {"cars.json": {"cars": [{"id": "second", "name": "SECOND", "sound": "sfx_unused"}]}}
+    data, root = places(
+        tmp_path, sounds=[SOUND, {"id": "sfx_unused", "name": "UNUSED"}],
+        packs={"fine": {"tracks/extra.json": {"id": "extra", "name": "EXTRA"}}, "more": more, "uses": uses},
+    )
+    assert check.data_sets(data, root, TABLES) == (4, [
+        "(shipped) warning: sounds.sfx_unused: defined but never referenced",
+        "(more) warning: sounds.sfx_trial: defined but never referenced",
+    ])  # uses は、参照を足して、出荷するデータの警告を消す。何も挙げない
 
 
 def test_check_tool_problems_of_the_shipped_data_are_listed_once(tmp_path):

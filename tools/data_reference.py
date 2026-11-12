@@ -69,6 +69,7 @@ def data_checks(result: dict, want_tables, want_pack, why: str = "") -> list:
 
     want_tables は、道具が数えた、表ごとの項目の数（数えられなかったら None。合格にしない）。
     want_pack は、渡した試験用データの名（渡していなければ None）。保存の名前空間は、渡していれば pack_<名>、いなければ main。
+    警告は、試験用データを重ねていても、0件を求める（道具 check の data の節が、重ねた組の警告を問題に数えるのと、同じ向き）。
     """
     seen = result.get("data") if isinstance(result.get("data"), dict) else {}
     tables, warnings = seen.get("tables"), seen.get("warnings")

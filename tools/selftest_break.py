@@ -403,7 +403,11 @@ EXPORT_DATA_CHECK = "    problems += inspect_data(names, source_data_files(), da
 UNKNOWN_KEY_FOUND = '        found.append(((*path, key), "unknown key"))\n'  # 読み込み検査が、知らない鍵を問題にする所
 RAISE_ALL = "        raise DataError(problems)\n"  # 読み込み検査が、全部の問題を並べて止まる所
 RETURN_DATA = "    return GameData(entries, warnings, pack_name)\n"  # 読み込み検査が、警告を付けて返す所
-SHIPPED_WARNINGS = '        problems += [f"({SHIPPED_SET}) warning: {line}" for line in loaded.warnings]\n'  # check の data の節が、警告を問題に数える所
+SHIPPED_WARNINGS = '        problems += [f"({SHIPPED_SET}) warning: {line}" for line in shipped_warnings]\n'  # check の data の節が、出荷するデータの警告を問題に数える所
+# check の data の節が、試験用データを重ねた組の警告を問題に数える所。
+PACK_WARNINGS = '            problems += [f"({path.name}) warning: {line}" for line in overlaid.warnings if line not in shipped_warnings]\n'
+# 項目の中の、注の鍵の値に NaN を置く。規則の部品は、注の鍵を見ない。拾えるのは、JSONの文を読む所で NaN を受けない検査だけ。
+DATA_NAN_IN_A_NOTE = rep(CARS_JSON, CAR_NAME, CAR_NAME + '      "_trial": NaN,\n')
 APP_ENV_LIST = 'APP_ENV_PREFIXES = ("CP_SMOKE", "CP_TOUR", "CP_SAVE", "CP_DATA")'  # 道具が、子プロセスへ渡さない環境変数の名の頭
 
 # (名前, 壊し方の並び, 回す道具, 期待する終了コード, 最後の1行にあるはずの語)
@@ -472,6 +476,8 @@ CASES = [
     ("check_core_uses_os", [app(SIM_PY, "\nimport os\n")], CHECK, {1}, "failed=arch"),
     ("check_core_uses_os_urandom", [app(SIM_PY, "\nfrom os import urandom\n")], CHECK, {1}, "failed=arch"),
     ("check_core_uses_pathlib", [app(SIM_PY, "\nfrom pathlib import Path\n")], CHECK, {1}, "failed=arch"),
+    # 組み込みの open。import を1つも足さずに、ファイルに届く。呼ばれない関数の中に置いても、拾う。違反は、この1件だけ。
+    ("check_core_uses_open", [app(SIM_PY, "\n\ndef read_text(path):\n    with open(path, encoding='utf-8') as f:\n        return f.read()\n")], CHECK, {1}, "problems=1 failed=arch"),
     ("check_no_pure_sources", [rm_glob("clipping_point/cp_core/*.py"), rm_glob("clipping_point/cp_ui/*.py")], CHECK, {2}, "empty=arch"),
     # --- check：規則ファイルの見張り ---
     ("check_rules_target_matches_nothing", [rep(UI_RULE, '"clipping_point/cp_ui/**"', '"clipping_point/cp_gui/**"')], CHECK, {1}, "failed=rules"),
@@ -903,7 +909,9 @@ CASES = [
     # JSONの文を読む所で見つかる問題。標準の読み方は、重複した鍵と NaN を、黙って通す。
     ("check_data_file_is_not_json", [first_char(CARS_JSON)], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
     ("check_data_duplicate_key", [rep(CARS_JSON, CAR_NAME, CAR_NAME + CAR_NAME)], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
-    ("check_data_nan", [rep(CARS_JSON, CAR_VERSION, '"data_version": NaN')], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    # NaN は、規則の部品が見ない所（項目の中の、注の鍵の値）に置く。データの版の値に置くと、JSONの文を読む所の検査が無くても、
+    # 整数の型の検査が、同じ語（problems=1）で落とす。注の鍵なら、その検査が無くなると、問題0件で通ってしまい、この件が拾う。
+    ("check_data_nan", [DATA_NAN_IN_A_NOTE], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
     # ファイルの頭の形の誤り（表の鍵の名が違う）。知らない鍵と、表の鍵が無い、の2件。
     ("check_data_file_head_has_another_table_key", [rep(CARS_JSON, '  "cars": [', '  "car": [')], CHECK_DATA, {1}, "check: FAILED data=2 problems=2 failed=data"),
     # 1ファイル1項目のファイルが、項目そのものでない（並びで包んである）。
@@ -969,6 +977,9 @@ CASES = [
     # 道具 check の data の節が、出荷するデータの警告を、問題に数えない。実物には参照が無い（警告は、どう壊しても0件）ので、
     # 節の関数のテスト（作り物の表の定義）で拾う。
     ("test_check_data_section_does_not_count_warnings", [rep(CHECK_TOOL_PY, SHIPPED_WARNINGS, "        pass\n")], tool("test", "-k", "check_tool and warning"), {1}, "reason=failed"),
+    # 道具 check の data の節が、試験用データを重ねた組の警告を、問題に数えない。同じ試験用データで、check は通り、run --pack は
+    # 警告0件を求めて落ちる、という食い違いになる。これも、節の関数のテスト（作り物の表の定義）で拾う。
+    ("test_check_data_section_does_not_count_pack_warnings", [rep(CHECK_TOOL_PY, PACK_WARNINGS, "            pass\n")], tool("test", "-k", "check_tool and warning and pack"), {1}, "reason=failed"),
     # 道具が、外から入った CP_DATA_PACK を、子プロセスへ渡す。守りのテストで拾う。
     ("test_tools_pass_an_outside_data_pack_to_the_app", [rep(COMMON_PY, APP_ENV_LIST, APP_ENV_LIST.replace(', "CP_DATA")', ")"))], tool("test", "-k", "outside_data_pack"), {1}, "reason=failed"),
     # --- 定義データ：web-smoke（ブラウザ版） ---

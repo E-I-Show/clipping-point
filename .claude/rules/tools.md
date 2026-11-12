@@ -30,7 +30,7 @@ paths:
 - 仮の上限（HTMLの大きさ、規則ファイルの大きさ、実描画の回数の幅、全体の検証を絞り始める目安）：`tools/budgets.json`。`web_` で始まる値（ブラウザ版の煙テストの線）の読み方は `.claude/rules/web.md`
 - 分野ごとの組の表（分野、当たるファイル、テストの絞り、足す手順）：`tools/verify.py` の `AREAS`。出すのは `python3 tools/verify.py --list`
 - 全体の検証で回す手順と順：`tools/verify.py` の `STEPS`。まだ無い手順は `NOT_YET`
-- 純Pythonの層で使ってよいimportの一覧：`tools/arch_check.py` の `STDLIB_ALLOWED` と `LAYER_ALLOWED`
+- 純Pythonの層で使ってよいimportの一覧：`tools/arch_check.py` の `STDLIB_ALLOWED` と `LAYER_ALLOWED`。使えない名（`open`、`hash`、`eval` など）：`BANNED_NAMES`
 - テストの件数の下限：`tests/count_floor.txt`（増えたら自動で上がる。下げるのは `tools/test.py --update-floor`）
 - アプリの口の環境変数（`CP_SMOKE`、`CP_SMOKE_TICKS`、`CP_SMOKE_DRIVER`、`CP_SMOKE_SCRIPT`、`CP_SAVE_DIR`、`CP_DATA_PACK`）：`clipping_point/cp_app/app.py` の頭の注。外から入ったものは、子プロセスへ渡さない（`_common.py` の `APP_ENV_PREFIXES`）
 - 道具が、定義データを自分で数える所と、結果の `data` の確かめ：`tools/data_reference.py`（決まりは `.claude/rules/data.md`）

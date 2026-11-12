@@ -44,6 +44,8 @@ CORE_VIOLATIONS = {
     "stdlib_os_path_submodule": "import os.path\n",
     "stdlib_pathlib": "from pathlib import Path\n",
     "stdlib_io": "import io\n",
+    # 組み込みの open。import を1つも足さずに、ファイルに届く。呼ばれない関数の中でも拾う。
+    "builtin_open_in_uncalled_function": "def read_text(path):\n    with open(path, encoding='utf-8') as f:\n        return f.read()\n",
 }
 
 # 許される書き方。1件も拾われないこと（何でも落とす検査になっていないことの確かめ）。

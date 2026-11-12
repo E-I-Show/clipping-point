@@ -8,8 +8,9 @@
   canon    正本の見張り（tools/canon_guard.py）
   areas    出荷するコード（clipping_point/）とテスト（tests/）の全ファイルが、分野ごとの組の表
            （tools/verify.py の AREAS）のどれかの分野に当たる
-  data     定義データの読み込み検査（clipping_point/cp_core/datadefs.py）。調べる組は、出荷するデータ（clipping_point/data/。
-           警告も、問題として数える）と、testpacks/ の下の各試験用データを重ねたもの（あるだけ調べる。0個でもよい）。
+  data     定義データの読み込み検査（clipping_point/cp_core/datadefs.py）。調べる組は、出荷するデータ（clipping_point/data/）と、
+           testpacks/ の下の各試験用データを重ねたもの（あるだけ調べる。0個でもよい）。どの組でも、警告を、問題として数える
+           （道具 run の --pack も、警告0件を求める。同じ向き）。
            件数は、調べた組の数（読み込み検査まで届いた組。問題があった組も数える）
 終了コード：0＝全節が合格、1＝問題のある節がある、2＝調べた件数が0の節か、回り切れなかった節がある。
 最後の1行の「節=数」は、その節で調べた件数。
@@ -63,9 +64,10 @@ def data_sets(data_dir, packs_root, tables=None) -> tuple:
     """data の節の中身。返すのは (調べた組の数, 問題の一覧)。置き場、試験用データの根、表の定義は、引数で受ける。
 
     組は、出荷するデータと、試験用データの根の下の各試験用データを重ねたもの。件数は、読み込み検査まで届いた組の数
-    （問題があった組も数える）。出荷するデータの警告は、問題として数える。試験用データを重ねた組では、出荷するデータの
-    組で挙げた行を、もう1度は挙げない。重ねられない試験用データ（名の字が違う、空の置き場）と、根の直下の、置き場でない
-    ファイルは、問題にして、組には数えない。
+    （問題があった組も数える）。警告は、どの組でも、問題として数える（試験用データを重ねた組の警告も。道具 run の
+    --pack が、警告0件を求めるのと、同じ向き）。試験用データを重ねた組では、出荷するデータの組で挙げた行（問題も、警告も）を、
+    もう1度は挙げない。重ねられない試験用データ（名の字が違う、空の置き場）と、根の直下の、置き場でないファイルは、
+    問題にして、組には数えない。
     cp_core と cp_app は、ここでimportする（頭でimportすると、cp_core が無いときに、ほかの節まで回らなくなる）。
     """
     if str(APP) not in sys.path:
@@ -75,14 +77,15 @@ def data_sets(data_dir, packs_root, tables=None) -> tuple:
 
     tables = datadefs.TABLES if tables is None else tables
     sources = data_files.read_sources(data_dir)
-    count, problems, shipped_lines = 1, [], []
+    count, problems, shipped_lines, shipped_warnings = 1, [], [], []
     try:
         loaded = datadefs.load_game_data(sources, None, tables)
     except datadefs.DataError as exc:
         shipped_lines = list(exc.problems)
         problems += [f"({SHIPPED_SET}) {line}" for line in shipped_lines]
     else:
-        problems += [f"({SHIPPED_SET}) warning: {line}" for line in loaded.warnings]
+        shipped_warnings = list(loaded.warnings)
+        problems += [f"({SHIPPED_SET}) warning: {line}" for line in shipped_warnings]
     root = Path(packs_root)
     for path in sorted(root.iterdir()) if root.is_dir() else []:
         where = f"{datadefs.PACKS_DIR}/{path.name}"
@@ -96,9 +99,11 @@ def data_sets(data_dir, packs_root, tables=None) -> tuple:
             continue
         count += 1
         try:
-            datadefs.load_game_data(sources, pack, tables)
+            overlaid = datadefs.load_game_data(sources, pack, tables)
         except datadefs.DataError as exc:
             problems += [f"({path.name}) {line}" for line in exc.problems if line not in shipped_lines]
+        else:
+            problems += [f"({path.name}) warning: {line}" for line in overlaid.warnings if line not in shipped_warnings]
     return count, problems
 
 

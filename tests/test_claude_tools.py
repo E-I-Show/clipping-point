@@ -321,29 +321,55 @@ def test_review_out_does_not_overwrite_the_result_it_reads(tmp_path, monkeypatch
 
 # --- usage_row ---
 # 停止の線の値（90%、95%）は、ここにも書いてある。そろえる所は、usage_row.py の定数の注。
+# 週の枠は2つある。停止の線は、このモデルの週の枠（--overage-included）だけで見る。全モデルの合計の週の枠（--seven-day）は、
+# 線に使わない（90%を超えたら、最後の1行に、知らせの語が付くだけ）。
 RESETS_AT = 1794902400  # 2026-11-17 08:00 UTC
 NOW = datetime(2026, 11, 11, 8, 0, tzinfo=timezone.utc)  # 切り替わりのちょうど6日前＝週の初めから1日後
 NOW_TEXT = "2026-11-11T08:00:00Z"
 DAY_S = 24 * 60 * 60
+ALL_MODELS_NOTICE = "notice=all_models_above_90%"  # 全モデルの合計の週の枠が90%を超えたときに、最後の1行に付く語
 
 
 def row(seven_day, overage_included):
+    """seven_day は、全モデルの合計の週の枠。overage_included は、このモデルの週の枠。"""
     return usage_row.build_row(seven_day, overage_included, RESETS_AT, "段0 区切り4", "備考", NOW)
 
 
-def test_usage_row_takes_the_higher_window_and_the_elapsed_week():
-    result = row(0.21, 0.12)
-    assert result["high"] == 0.21
+def test_usage_row_puts_the_window_of_this_model_first_and_the_elapsed_week():
+    result = row(0.21, 0.12)  # 全モデルの合計が21%、このモデルが12%
+    assert (result["this_model"], result["all_models"]) == (0.12, 0.21)
     assert result["elapsed"] == pytest.approx(1 / 7)
-    assert result["row"] == "| 2026-11-11 08:00 | 段0 区切り4 | 21% | 12% | 約14% | 2026-11-17 08:00 | 備考 |"
-    assert row(0.12, 0.21)["high"] == 0.21
+    # 列は、このモデルの週の枠が先、全モデルの合計の週の枠が後（高いほうを、先にしない）。
+    assert result["row"] == "| 2026-11-11 08:00 | 段0 区切り4 | 12% | 21% | 約14% | 2026-11-17 08:00 | 備考 |"
+    swapped = row(0.12, 0.21)
+    assert (swapped["this_model"], swapped["all_models"]) == (0.21, 0.12)
+    assert swapped["row"] == "| 2026-11-11 08:00 | 段0 区切り4 | 21% | 12% | 約14% | 2026-11-17 08:00 | 備考 |"
 
 
-@pytest.mark.parametrize("high, verdict", [
+@pytest.mark.parametrize("this_model, verdict", [
     (0.89, "ok"), (0.90, "ok"), (0.91, "no_new_agents"), (0.95, "no_new_agents"), (0.96, "stop"), (1.0, "stop"),
 ])
-def test_usage_row_lines_are_strictly_above_90_and_95_percent(high, verdict):
-    assert row(0.5, high)["verdict"] == verdict
+def test_usage_row_lines_are_strictly_above_90_and_95_percent(this_model, verdict):
+    assert row(0.5, this_model)["verdict"] == verdict
+
+
+@pytest.mark.parametrize("all_models, notice", [
+    (0.50, ""), (0.90, ""), (0.91, ALL_MODELS_NOTICE), (0.96, ALL_MODELS_NOTICE), (1.0, ALL_MODELS_NOTICE), (1.5, ALL_MODELS_NOTICE),
+])
+def test_usage_row_window_of_all_models_never_moves_the_lines(all_models, notice):
+    # 全モデルの合計の週の枠は、どれだけ高くても、線の判定を変えない。90%を超えたら、知らせの語を出すだけ。
+    result = row(all_models, 0.5)
+    assert result["verdict"] == "ok" and result["notice"] == notice
+    assert usage_row.all_models_notice(all_models) == notice
+
+
+def test_usage_row_lines_follow_this_model_even_when_the_window_of_all_models_is_low():
+    # 「高いほう」ではなく、このモデルの週の枠で決める。合計の枠が低くても、線を超えた判定になる。
+    assert row(0.10, 0.96)["verdict"] == "stop" and row(0.10, 0.96)["notice"] == ""
+    assert row(0.10, 0.91)["verdict"] == "no_new_agents"
+    # 両方が高い。判定は、このモデルの週の枠から。知らせの語も付く。
+    both = row(0.97, 0.92)
+    assert both["verdict"] == "no_new_agents" and both["notice"] == ALL_MODELS_NOTICE
 
 
 def test_usage_row_reads_iso_times_with_and_without_a_zone():
@@ -362,11 +388,22 @@ def test_usage_row_line_messages_are_built_from_the_constants(monkeypatch):
     assert row(0.5, 0.85)["verdict"] == "stop"
     assert "80%を超えた" in usage_row.line_message("stop") and "95%" not in usage_row.line_message("stop")
     assert "70%を超えた" in usage_row.line_message("no_new_agents") and "90%" not in usage_row.line_message("no_new_agents")
+    # 全モデルの合計の週の枠の知らせの語も、定数から組み立てる。線の定数とは、別に持つ。
+    assert row(0.85, 0.5)["notice"] == ""
+    monkeypatch.setattr(usage_row, "ALL_MODELS_NOTICE_ABOVE", 0.60)
+    assert row(0.65, 0.5)["notice"] == "notice=all_models_above_60%" and row(0.65, 0.5)["verdict"] == "ok"
+    assert row(0.60, 0.5)["notice"] == ""
 
 
-def run_usage_main(monkeypatch, capsys, high="0.50", resets_at=RESETS_AT, now=NOW_TEXT):
-    """usage_row.main() を、引数を差し替えて通す。返すのは (戻り値, 標準出力の行)。"""
-    argv = ["--seven-day", "0.10", "--overage-included", str(high), "--resets-at", str(resets_at), "--label", "段0 区切り4", "--now", now]
+def run_usage_main(monkeypatch, capsys, this_model="0.50", all_models="0.10", resets_at=RESETS_AT, now=NOW_TEXT):
+    """usage_row.main() を、引数を差し替えて通す。返すのは (戻り値, 標準出力の行)。
+
+    this_model は、このモデルの週の枠（--overage-included）。all_models は、全モデルの合計の週の枠（--seven-day）。
+    """
+    argv = [
+        "--seven-day", str(all_models), "--overage-included", str(this_model), "--resets-at", str(resets_at),
+        "--label", "段0 区切り4", "--now", now,
+    ]
     monkeypatch.setattr(sys, "argv", ["usage_row.py", *argv])
     code = usage_row.main()
     return code, capsys.readouterr().out.splitlines()
@@ -376,13 +413,13 @@ def table_rows(lines):
     return [line for line in lines if line.startswith("|")]
 
 
-@pytest.mark.parametrize("high, code, last, message", [
-    ("0.90", 0, "usage_row: OK high=90% elapsed=14% verdict=ok", None),
-    ("0.91", 1, "usage_row: FAILED high=91% elapsed=14% verdict=no_new_agents", "線：90%を超えた"),
-    ("0.96", 1, "usage_row: FAILED high=96% elapsed=14% verdict=stop", "線：95%を超えた"),
+@pytest.mark.parametrize("this_model, code, last, message", [
+    ("0.90", 0, "usage_row: OK this_model=90% all_models=10% elapsed=14% verdict=ok", None),
+    ("0.91", 1, "usage_row: FAILED this_model=91% all_models=10% elapsed=14% verdict=no_new_agents", "線：90%を超えた"),
+    ("0.96", 1, "usage_row: FAILED this_model=96% all_models=10% elapsed=14% verdict=stop", "線：95%を超えた"),
 ])
-def test_usage_main_exit_code_follows_the_lines(monkeypatch, capsys, high, code, last, message):
-    got, lines = run_usage_main(monkeypatch, capsys, high=high)
+def test_usage_main_exit_code_follows_the_lines(monkeypatch, capsys, this_model, code, last, message):
+    got, lines = run_usage_main(monkeypatch, capsys, this_model=this_model)
     assert got == code
     assert lines[-1] == last
     assert len(table_rows(lines)) == 1 and lines[0].startswith("| 2026-11-11 08:00 | 段0 区切り4 |")
@@ -391,6 +428,24 @@ def test_usage_main_exit_code_follows_the_lines(monkeypatch, capsys, high, code,
         assert said == []
     else:
         assert len(said) == 1 and said[0].startswith(message)
+
+
+@pytest.mark.parametrize("all_models, this_model, code, last", [
+    ("0.90", "0.50", 0, "usage_row: OK this_model=50% all_models=90% elapsed=14% verdict=ok"),
+    ("0.91", "0.50", 0, f"usage_row: OK this_model=50% all_models=91% elapsed=14% verdict=ok {ALL_MODELS_NOTICE}"),
+    ("1.20", "0.50", 0, f"usage_row: OK this_model=50% all_models=120% elapsed=14% verdict=ok {ALL_MODELS_NOTICE}"),
+    ("0.99", "0.96", 1, f"usage_row: FAILED this_model=96% all_models=99% elapsed=14% verdict=stop {ALL_MODELS_NOTICE}"),
+])
+def test_usage_main_window_of_all_models_only_adds_a_notice_word(monkeypatch, capsys, all_models, this_model, code, last):
+    # 全モデルの合計の週の枠は、終了コードを変えない。90%を超えたら、最後の1行に、知らせの語が付くだけ。
+    got, lines = run_usage_main(monkeypatch, capsys, this_model=this_model, all_models=all_models)
+    assert got == code
+    assert lines[-1] == last
+    # 表の1行は、このモデルの週の枠が先、全モデルの合計の週の枠が後。
+    shown = [f"{round(float(value) * 100)}%" for value in (this_model, all_models)]
+    assert table_rows(lines) == [f"| 2026-11-11 08:00 | 段0 区切り4 | {shown[0]} | {shown[1]} | 約14% | 2026-11-17 08:00 |  |"]
+    # 線の文は、このモデルの週の枠が線を超えたときだけ出る。
+    assert len([line for line in lines if line.startswith("線：")]) == code
 
 
 @pytest.mark.parametrize("resets_at", [
@@ -403,9 +458,11 @@ def test_usage_main_accepts_both_ends_of_the_week(monkeypatch, capsys, resets_at
 
 
 @pytest.mark.parametrize("kwargs, reason", [
-    ({"high": "2.5"}, "reason=value_out_of_range"),  # 週の使用率が範囲の外
-    ({"high": "-0.1"}, "reason=value_out_of_range"),
-    ({"high": "nan"}, "reason=value_out_of_range"),
+    ({"this_model": "2.5"}, "reason=value_out_of_range"),  # 週の枠の値が範囲の外
+    ({"this_model": "-0.1"}, "reason=value_out_of_range"),
+    ({"this_model": "nan"}, "reason=value_out_of_range"),
+    ({"all_models": "2.5"}, "reason=value_out_of_range"),  # 全モデルの合計の週の枠も、範囲の外は読めない値
+    ({"all_models": "nan"}, "reason=value_out_of_range"),
     ({"now": "yesterday"}, "reason=bad_now"),  # 読めない時刻
     ({"resets_at": 0}, "reason=resets_at_outside_week"),  # 切り替わりの時刻が0
     ({"resets_at": RESETS_AT - 7 * DAY_S}, "reason=resets_at_outside_week"),  # 切り替わりを過ぎた時刻（古いイベントの値）

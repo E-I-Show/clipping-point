@@ -4,15 +4,18 @@
 辞書にする所（real_sources）だけ。実物の表の定義は、参照、並び、入れ子の項目を、まだ持たない。それらは、作り物の表の定義
 （FAKE_TABLES）で確かめる。
 壊した場合は、どれも DataError になること（ほかの例外にならない）と、問題の行が、狙ったファイルと場所を指すことを見る。
-表を足す、項目を足すときは、ここの BROKEN に、その表とその鍵の、壊した場合を足す（足さないと、最後のテストが落ちる）。
+表を足す、項目を足すときは、ここの BROKEN に、その表とその鍵の、壊した場合を足す（足さないと、末尾の節の見張りのテストが落ちる）。
+見張りは、入れ子の項目、並びの中の項目、省ける項目の中まで開いて、鍵の道（engine.idle_rpm など）の全部に、壊した場合を求める。
+壊した場合の札（どの鍵を壊したか）は、並ぶはずの行の場所と照らす（書いた人の申告のままにしない）。
 ファイルを読む所は tests/test_data_files.py、道具 check の data の節は tests/test_check_tool.py。
 """
 import json
+import re
 
 import pytest
 
 from conftest import ROOT
-from cp_core import datadefs, storage
+from cp_core import datadefs, profile, storage
 from cp_core.datadefs import (
     ONE_ENTRY,
     ONE_TABLE,
@@ -96,7 +99,9 @@ def test_datadefs_real_table_definitions_are_the_two_minimal_tables():
         assert (table.fields["data_version"].low, table.fields["data_version"].high) == (1, None)  # データの版は、1以上の整数
 
 
-# --- 実物の定義データを、1か所ずつ壊す。{名前: (表, 鍵, 壊したファイルの辞書, 並ぶはずの問題の行)} ---
+# --- 実物の定義データを、1か所ずつ壊す。{名前: (表, 札, 壊したファイルの辞書, 並ぶはずの問題の行)} ---
+# 札は、壊した鍵の道（頭の階の鍵は name、入れ子の中の鍵は engine.idle_rpm、並びの中の項目の鍵は engine.curve.rpm）。
+# どの鍵でもない所を壊した件（知らない鍵、空の表）は None。札は、並ぶはずの行の場所と照らされる（下の見張り）。
 def car(**values):
     return edited(CARS, lambda doc: doc["cars"][0].update(values))
 
@@ -184,7 +189,65 @@ def test_datadefs_duplicate_keys_and_nan_are_problems_of_the_file(name, text, wa
     assert problems_of(with_text(name, text)) == [want]
 
 
-@pytest.mark.parametrize("text", ["", "{", '{"cars": [}', "{'cars': []}", '{"cars": [1,]}', "﻿{}", "[" * 100000 + "]" * 100000])
+SECOND_CAR_BROKEN = '{"id": "second", "nmae": "X", "data_version": 0}'  # 知らない鍵、足りない鍵、範囲の外
+SECOND_CAR_LINES = ["cars.json:cars[1].nmae: unknown key", "cars.json:cars[1].name: missing", "cars.json:cars[1].data_version: 0 is outside 1.."]
+
+
+@pytest.mark.parametrize(
+    "first, want",
+    [
+        pytest.param('{"id": "kazane", "name": "A", "name": "KAZANE", "data_version": 1}', "cars.json: duplicate key 'name'", id="duplicate_key"),
+        pytest.param(
+            '{"id": "kazane", "name": "KAZANE", "_trial": NaN, "data_version": 1}', "cars.json: NaN is not accepted (not a JSON number)",
+            id="nan_in_a_note",
+        ),
+        pytest.param(
+            '{"id": "kazane", "name": "KAZANE", "data_version": Infinity}', "cars.json: Infinity is not accepted (not a JSON number)",
+            id="infinity",
+        ),
+    ],
+)
+def test_datadefs_file_with_a_duplicate_key_or_nan_is_handled_like_a_file_that_is_not_json(first, want):
+    # 決め：重複した鍵か、NaN・無限大のあるファイルは、JSONが読めないファイルと同じ扱い。そのファイルの項目は、検査へ渡さない。
+    # 1つ目の項目に重複した鍵（か NaN）、2つ目の項目に、ほかの問題。並ぶのは、JSONの文を読む所の行だけ。
+    # 後勝ちの値で検査を続ける形にはしない（誤った値を検査して、原因と違う行が並ぶ）。
+    text = f'{{"cars": [{first}, {SECOND_CAR_BROKEN}]}}'
+    assert problems_of(with_text(CARS, text)) == [want]
+    # 対：1つ目の項目が読める文なら、2つ目の項目の問題は、全部並ぶ（2つ目の項目の問題が、見本に実際にあること）。
+    plain = f'{{"cars": [{json.dumps(ENTRY)}, {SECOND_CAR_BROKEN}]}}'
+    assert problems_of(with_text(CARS, plain)) == SECOND_CAR_LINES
+    # JSONでないファイルも、同じ形（そのファイルの行が1つだけ）。
+    cut = problems_of(with_text(CARS, plain[:-1]))
+    assert len(cut) == 1 and cut[0].startswith("cars.json: cannot read: not JSON")
+    # ほかのファイルの問題は、一緒に並ぶ。
+    both = edited(LOOP, lambda doc: doc.update(data_version=0), with_text(CARS, text))
+    assert problems_of(both) == [want, "tracks/test_loop.json:data_version: 0 is outside 1.."]
+    # 試験用データの側でも、同じ。
+    assert problems_of(real_sources(), ("p", {CARS: text})) == [f"testpacks/p/{want}"]
+
+
+def test_datadefs_references_to_a_file_that_handed_no_entry_are_listed_as_missing():
+    # 参照される側の表のファイルが、項目を検査へ渡さなかった（重複した鍵、JSONでない）。その表への参照は、どれも
+    # 「無い id への参照」として並ぶ。どちらの場合も、同じ形（重複した鍵のファイルを、読めないファイルと同じに扱う）。
+    refs = ["cars.json:cars[0].sound: no sounds with id 'eng_na'"]
+    sources = fake_sources()
+    sources["sounds.json"] = '{"sounds": [{"id": "eng_na", "kind": "engine", "kind": "engine"}]}'
+    assert problems_of(sources, tables=FAKE_TABLES) == ["sounds.json: duplicate key 'kind'", *refs]
+    sources["sounds.json"] = '{"sounds": [{"id": "eng_na", "kind": "engine"}'
+    got = problems_of(sources, tables=FAKE_TABLES)
+    assert len(got) == 2 and got[0].startswith("sounds.json: cannot read: not JSON") and got[1:] == refs
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "", "{", '{"cars": [}', "{'cars': []}", '{"cars": [1,]}',
+        # BOMつきの文。見えない字（U+FEFF）は、ソースに直に置かず、名前のエスケープで書く（書き直しや整形で消えると、"{}" になって、
+        # 狙いと違う理由で落ちる）。
+        pytest.param("\N{BYTE ORDER MARK}{}", id="bom"),
+        pytest.param("[" * 100000 + "]" * 100000, id="nested_too_deep"),
+    ],
+)
 def test_datadefs_text_that_is_not_json_is_a_problem_of_the_file(text):
     # JSONでない文と、入れ子が深すぎる文。どちらも、そのファイルの問題（ほかの例外にしない）。
     got = problems_of(with_text(CARS, text))
@@ -672,11 +735,84 @@ def test_datadefs_save_namespace_is_main_or_pack_and_the_name():
         assert storage.SaveStore(storage.MemoryBackend(), data.save_namespace).namespace == f"pack_{name}"
     assert datadefs.PACK_NAME_MAX == 43 and len(datadefs.PACK_NAMESPACE_PREFIX) + datadefs.PACK_NAME_MAX == storage.KEY_MAX
     assert datadefs.PACK_NAMESPACE_PREFIX == "pack_" and datadefs.PACKS_DIR == "testpacks"
-    # 往復の名前空間（selfcheck）と、ふつうの名前空間（main）には、重ならない。
-    assert not {"main", "selfcheck"} & {f"pack_{name}" for name in ("main", "selfcheck")}
+
+
+def test_datadefs_pack_named_like_a_namespace_in_use_does_not_share_that_namespace():
+    # 名が、ふつうの保存の名前空間（main）や、保存の往復の名前空間（selfcheck）と同じ試験用データを、実際に重ねる。
+    # 保存の名前空間は、どちらとも重ならない（頭の pack_ が無いと、名 main の試験用データが、ふだんの保存に触れる）。
+    in_use = {storage.DEFAULT_NAMESPACE, profile.SELFCHECK_NAMESPACE}
+    assert in_use == {"main", "selfcheck"}
+    for name in sorted(in_use):
+        data = load_game_data(real_sources(), (name, {CARS: json.dumps(PACK_CARS)}))
+        assert data.pack == name
+        assert data.save_namespace not in in_use, name
+        # 保存の口が受ける名前空間でも、重ならない。
+        assert storage.SaveStore(storage.MemoryBackend(), data.save_namespace).namespace not in in_use, name
 
 
 # --- 表を足す、項目を足すときの手順の見張り ---
+def key_paths(fields: dict, prefix: str = "") -> list:
+    """鍵ごとの規則の、鍵の道の全部（定義の順）。入れ子の項目、並びの中の項目、省ける項目の中も開く。
+
+    {"engine": Obj({"idle_rpm": …, "curve": ListOf(Obj({"rpm": …}), …)})} なら、engine、engine.idle_rpm、engine.curve、engine.curve.rpm。
+    """
+    found = []
+    for key, rule in fields.items():
+        path = f"{prefix}{key}"
+        found.append(path)
+        while isinstance(rule, (Opt, ListOf)):  # 省ける項目と並びは、中の規則まで開く
+            rule = rule.inner if isinstance(rule, Opt) else rule.item
+        if isinstance(rule, Obj):
+            found += key_paths(rule.fields, f"{path}.")
+    return found
+
+
+def key_path_of(line: str, table: str, tables: dict) -> str:
+    """問題の行の場所を、項目の中の鍵の道にする。並びの中の番号と、1ファイル1表の頭（表の名と、項目の番号）は落とす。
+
+    「cars.json:cars[0].engine.curve[1].rpm: …」は engine.curve.rpm、「tracks/test_loop.json:name: …」は name。
+    項目の中を指さない行（ファイルの問題、表の問題）は、空の文字列。
+    """
+    where = line.split(": ", 1)[0].partition(":")[2]
+    if tables[table].layout == ONE_TABLE:
+        head = re.match(rf"{re.escape(table)}\[\d+\](\.|$)", where)
+        if head is None:
+            return ""
+        where = where[head.end():]
+    return re.sub(r"\[\d+\]", "", where)
+
+
+def broken_case_problems(tables: dict, broken: dict) -> list:
+    """壊した場合の表（{名前: (表, 札, 壊したファイルの辞書, 並ぶはずの問題の行)}）を、表の定義と照らす。返すのは、足りない所と、札の食い違い。
+
+    - 表ごとに、どの鍵でもない所を壊した件（札が None。知らない鍵か、空の表）が、1つ以上ある。
+    - 表の、鍵の道の全部（key_paths。入れ子の奥まで）に、その鍵の道を札にした件が、1つ以上ある。
+    - 札は、書いた人の申告のままにしない。並ぶはずの行は1つ以上あり、その場所（key_path_of）は、どれも、札と同じ鍵の道。
+      札が None の件の行は、表のどの鍵の道も指さない。
+    """
+    problems = []
+    for name, table in tables.items():
+        paths = key_paths(table.fields)
+        cases = {case: (tag, want) for case, (case_table, tag, _, want) in broken.items() if case_table == name}
+        tags = {tag for tag, _ in cases.values()}
+        if None not in tags:
+            problems.append(f"{name}: 知らない鍵か、空の表の、壊した場合が無い")
+        problems += [f"{name}: 壊した場合の無い鍵：{path}" for path in paths if path not in tags]
+        for case in sorted(cases):
+            tag, want = cases[case]
+            places = [key_path_of(line, name, tables) for line in want]
+            if not places:
+                problems.append(f"{case}: 並ぶはずの行が無い")
+            if tag is None:
+                problems += [f"{case}: 札は None、行の場所は、鍵 {place}" for place in places if place in paths]
+                continue
+            if tag not in paths:
+                problems.append(f"{case}: 札 {tag} は、表 {name} の鍵の道に無い")
+            problems += [f"{case}: 札は {tag}、行の場所は {place or '項目の外'}" for place in places if place != tag]
+    problems += [f"{case}: 表の定義に無い表：{value[0]}" for case, value in sorted(broken.items()) if value[0] not in tables]
+    return problems
+
+
 def test_datadefs_every_real_table_has_its_files_and_every_key_has_a_broken_case():
     sources = real_sources()
     for name, table in TABLES.items():
@@ -684,8 +820,109 @@ def test_datadefs_every_real_table_has_its_files_and_every_key_has_a_broken_case
             assert f"{name}.json" in sources, name
         else:
             assert [source for source in sources if source.startswith(f"{name}/")], name
-        covered = {key for case_table, key, _, _ in BROKEN.values() if case_table == name}
-        assert None in covered, f"{name}: 知らない鍵か、空の表の、壊した場合が無い"
-        assert set(table.fields) <= covered, f"{name}: 壊した場合の無い鍵がある：{sorted(set(table.fields) - covered)}"
+    # 鍵は、入れ子の奥まで見る（鍵の道ごとに、壊した場合が要る）。札は、並ぶはずの行の場所と照らす。
+    assert broken_case_problems(TABLES, BROKEN) == []
     assert {case_table for case_table, _, _, _ in BROKEN.values()} == set(TABLES)
     assert all(datadefs._classify(name, TABLES) is not None for name in sources)  # 実物の置き場に、知らないファイルが無い
+
+
+# 見張りそのものの確かめ。実物の表の定義は、まだ入れ子を持たないので、作り物の表の定義（入れ子の項目、並びの中の項目、
+# 省ける項目の中の項目。2つのファイルの形）で、見張りが、奥の鍵と、札の食い違いを拾うことを見る。
+GUARD_TABLES = {
+    "cars": TableDef(ONE_TABLE, {
+        "id": Ident(),
+        "engine": Obj({"idle_rpm": Int(500, 2000), "curve": ListOf(Obj({"rpm": Int(0, 9000)}), 1, 4)}),
+        "tune": Opt(Obj({"boost": Num(0, 2)})),
+    }),
+    "tracks": TableDef(ONE_ENTRY, {"id": Ident(), "gates": Opt(ListOf(Obj({"x": Num(-100, 100)}), 1, 3))}),
+}
+GUARD_CAR = {"id": "kazane", "engine": {"idle_rpm": 900, "curve": [{"rpm": 1000}]}, "tune": {"boost": 1}}
+GUARD_TRACK = {"id": "test_loop", "gates": [{"x": 0}, {"x": 5}]}
+
+
+def guard_case(table: str, tag, car=None, track=None) -> tuple:
+    """作り物の表の定義の、壊した場合1つ。並ぶはずの行は、実際に読み込み検査を通して作る（行の形を、手で書かない）。"""
+    sources = {
+        "cars.json": json.dumps({"cars": [{**GUARD_CAR, **(car or {})}]}),
+        "tracks/test_loop.json": json.dumps({**GUARD_TRACK, **(track or {})}),
+    }
+    return table, tag, sources, problems_of(sources, tables=GUARD_TABLES)
+
+
+def guard_cases() -> dict:
+    """作り物の表の定義の、鍵の道の全部に1件ずつと、表ごとに、知らない鍵の件。"""
+    engine = GUARD_CAR["engine"]
+    return {
+        "cars unknown key": guard_case("cars", None, car={"nmae": 1}),
+        "cars id": guard_case("cars", "id", car={"id": "Bad Id"}),
+        "cars engine": guard_case("cars", "engine", car={"engine": [900]}),
+        "cars idle": guard_case("cars", "engine.idle_rpm", car={"engine": {**engine, "idle_rpm": 100}}),
+        "cars curve": guard_case("cars", "engine.curve", car={"engine": {**engine, "curve": []}}),
+        "cars rpm": guard_case("cars", "engine.curve.rpm", car={"engine": {**engine, "curve": [{"rpm": 1000}, {"rpm": -1}]}}),
+        "cars tune": guard_case("cars", "tune", car={"tune": 5}),
+        "cars boost": guard_case("cars", "tune.boost", car={"tune": {"boost": 9}}),
+        "tracks unknown key": guard_case("tracks", None, track={"lenght_m": 1}),
+        "tracks id": guard_case("tracks", "id", track={"id": "other"}),
+        "tracks gates": guard_case("tracks", "gates", track={"gates": "x"}),
+        "tracks gate x": guard_case("tracks", "gates.x", track={"gates": [{"x": 0}, {"x": 999}]}),
+    }
+
+
+def test_datadefs_broken_case_guard_collects_the_key_paths_down_to_the_nested_keys():
+    assert key_paths(GUARD_TABLES["cars"].fields) == ["id", "engine", "engine.idle_rpm", "engine.curve", "engine.curve.rpm", "tune", "tune.boost"]
+    assert key_paths(GUARD_TABLES["tracks"].fields) == ["id", "gates", "gates.x"]
+    assert key_paths(FAKE_TABLES["cars"].fields) == [
+        "id", "name", "turbo", "sound", "gears", "engine", "engine.idle_rpm", "engine.curve", "engine.curve.rpm", "engine.curve.torque", "extras",
+    ]
+    assert key_paths(TABLES["cars"].fields) == ["id", "name", "data_version"]  # 実物は、まだ頭の階だけ
+    # 問題の行の場所を、鍵の道にする。
+    assert key_path_of("cars.json:cars[0].engine.curve[1].rpm: -1 is outside 0..9000", "cars", GUARD_TABLES) == "engine.curve.rpm"
+    assert key_path_of("testpacks/p/cars.json:cars[12].id: duplicate id 'kazane'", "cars", GUARD_TABLES) == "id"
+    assert key_path_of("tracks/test_loop.json:gates[1].x: 999 is outside -100..100", "tracks", GUARD_TABLES) == "gates.x"
+    assert key_path_of("tracks/Test Loop.json:id: 'Test Loop' is not an id (lowercase ASCII, digits, _)", "tracks", GUARD_TABLES) == "id"
+    for line in ("cars.json: duplicate key 'name'", "cars.json:cars: no entries", "cars.json:car: unknown key at the top level (only 'cars' and notes)"):
+        assert key_path_of(line, "cars", GUARD_TABLES) == "", line
+
+
+def test_datadefs_broken_case_guard_wants_a_case_for_every_key_path():
+    full = guard_cases()
+    # 並ぶはずの行は、1件ずつ、狙った鍵の道を指している（見本が、空振りでないこと）。
+    assert full["cars rpm"][3] == ["cars.json:cars[0].engine.curve[1].rpm: -1 is outside 0..9000"]
+    assert full["tracks gate x"][3] == ["tracks/test_loop.json:gates[1].x: 999 is outside -100..100"]
+    assert all(len(want) == 1 for _, _, _, want in full.values())
+    assert broken_case_problems(GUARD_TABLES, full) == []
+    # 件を1つ抜くと、その鍵の道が挙がる。入れ子の中の鍵も、並びの中の項目の鍵も、省ける項目の中の鍵も、同じ
+    # （頭の階の鍵 engine の件が残っていても、engine.idle_rpm の件が無ければ、通さない）。
+    for case, (table, tag, _, _) in full.items():
+        rest = {name: value for name, value in full.items() if name != case}
+        missing = f"{table}: 知らない鍵か、空の表の、壊した場合が無い" if tag is None else f"{table}: 壊した場合の無い鍵：{tag}"
+        assert broken_case_problems(GUARD_TABLES, rest) == [missing], case
+    # 壊した場合の表が、表の定義に無い表を指す。
+    stray = {**full, "sounds unknown key": ("sounds", None, {}, ["sounds.json:sounds[0].nmae: unknown key"])}
+    assert broken_case_problems(GUARD_TABLES, stray) == ["sounds unknown key: 表の定義に無い表：sounds"]
+
+
+def test_datadefs_broken_case_guard_checks_the_tag_against_the_place_of_the_lines():
+    full = guard_cases()
+    unknown_key, idle = full["cars unknown key"][3], full["cars idle"][3]
+
+    def with_case(tag, want, name="cars idle") -> list:
+        return broken_case_problems(GUARD_TABLES, {**full, name: ("cars", tag, {}, want)})
+
+    # 札の申告が、行の場所と違う。知らない鍵を壊した件に、鍵の札を付けても、通らない。
+    assert with_case("engine.idle_rpm", unknown_key) == ["cars idle: 札は engine.idle_rpm、行の場所は nmae"]
+    # 頭の階の鍵の札で、入れ子の中の鍵の件を兼ねられない（逆も）。
+    assert with_case("engine", idle, "cars engine") == ["cars engine: 札は engine、行の場所は engine.idle_rpm"]
+    assert with_case("engine.idle_rpm", full["cars engine"][3]) == ["cars idle: 札は engine.idle_rpm、行の場所は engine"]
+    # 行が2つあれば、どちらも、札の鍵の道を指す。
+    assert with_case("engine.idle_rpm", [*idle, *unknown_key]) == ["cars idle: 札は engine.idle_rpm、行の場所は nmae"]
+    # 項目の中を指さない行（ファイルの問題）。
+    assert with_case("engine.idle_rpm", ["cars.json: duplicate key 'idle_rpm'"]) == ["cars idle: 札は engine.idle_rpm、行の場所は 項目の外"]
+    # 並ぶはずの行が無い件は、札を確かめられない。
+    assert with_case("engine.idle_rpm", []) == ["cars idle: 並ぶはずの行が無い"]
+    # 札が None の件の行が、表の鍵を指している（鍵を壊した件を、知らない鍵の件として数えない）。
+    assert with_case(None, idle, "cars unknown key") == ["cars unknown key: 札は None、行の場所は、鍵 engine.idle_rpm"]
+    # 表に無い鍵の札。
+    assert with_case("mass", ["cars.json:cars[0].mass: unknown key"], "cars mass") == ["cars mass: 札 mass は、表 cars の鍵の道に無い"]
+    # レビューの見本：mass を壊していないのに、札だけ mass。
+    assert with_case("mass", unknown_key, "cars mass") == ["cars mass: 札 mass は、表 cars の鍵の道に無い", "cars mass: 札は mass、行の場所は nmae"]

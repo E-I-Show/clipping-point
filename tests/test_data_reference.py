@@ -145,6 +145,7 @@ def test_data_reference_result_without_the_data_item_fails_every_check():
         ({**PACKED, "pack": "other"}, ["data_pack"]),
         ({**PACKED, "pack": None}, ["data_pack"]),
         ({**PACKED, "tables": {"cars": 1, "tracks": 1}}, ["data_tables"]),
+        # 重ねた結果の警告も、0件を求める（道具 check の data の節も、重ねた組の警告を問題に数える。tests/test_check_tool.py）。
         ({**PACKED, "warnings": 2}, ["data_warnings"]),
     ],
 )
