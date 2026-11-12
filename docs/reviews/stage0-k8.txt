@@ -1,0 +1,93 @@
+区切り：段0 区切り8：データの検査
+
+== fakepass
+■ fakepass-1 [中/確かめた] 所：/home/user/clipping-point/tests/test_datadefs.py:680-690（test_datadefs_every_real_table_has_its_files_and_every_key_has_a_broken_case）と /home/user/clipping-point/.claude/rules/data.md:44
+   直し：見張りで、Obj と ListOf を奥までたどって鍵の道（engine.idle_rpm など）を集め、その全部に件を求める。札は、並ぶはずの行の場所の末尾が、その鍵であることと照らす（いまの20件は、どれも合う）。
+   場合：破る行：test_datadefs.py:687「covered = {key for case_table, key, _, _ in BROKEN.values() if case_table == name}」と 689「assert set(table.fields) <= covered」。決まりの文：data.md:44「項目（鍵）を足したら、表の定義、実物のファイル、`BROKEN` に足す（足さないと、テストが落ちる）」。
+(1) 見張りが見るのは、表の頭の階の鍵（table.fields）だけ。区切り9で cars に "engine": Obj({"idle_rpm": …, "curve": ListOf(Obj({…}))}) を足す（頼みの文 stage0-k8.md:32 が、入れ子を区切り9で使うとしている）→ 求められるのは「engine」の札の件が1つだけで、idle_rpm や curve の中の鍵に壊した場合が無くても、テストは通る。
+(2) 札（BROKEN の2番目の値）は書いた人の申告で、壊したファイルとも、並ぶはずの行とも照らしていない。("cars", "mass", car(nmae="X"), ["cars.json:cars[0].nmae: unknown key"]) を足せば、mass を壊していないのに通る。
+   反証：引用は実物どおりで、見張りは table.fields の頭の階だけを集合で比べ、札は書いた人の申告のまま使うので、区切り9で入れ子の項目（頼みの文32行）を足すと、中の鍵に壊した場合が無くても黙って通り、data.md:44 の「足さないと、テストが落ちる」が成り立たなくなる。直し方の案は成り立つ（札が None でない16件は、並ぶはずの行の場所の末尾が札と同じ）が、鍵の道を集めるときは Opt の中も開く必要がある。
+■ fakepass-2 [低/確かめた] 所：/home/user/clipping-point/tools/selftest_break.py:906（check_data_nan）
+   直し：NaN を、規則の部品が見ない所に置く。例：rep(CARS_JSON, CAR_NAME, CAR_NAME + '      "_trial": NaN,\n')（項目の中の注の鍵）。JSONの読みで止めなければ、問題0件で終了コード0になり、件が拾う。
+   場合：/home/user/clipping-point/clipping_point/cp_core/datadefs.py:288 の parse_constant=constant を外す（標準の読みに戻す）→ "data_version": NaN は小数の NaN になり、Int(1) の検査（datadefs.py:66-67）が「expected an integer, got float」を返す → 出荷するデータの組で問題1件、重ねた組は kazane を差し替えるので0件 → 最後の1行は同じ「check: FAILED data=2 problems=1 failed=data」→ この件は ok のまま。狙った検査（JSONの文を読む所で NaN を受けない）が無くなっても、整数の型の検査で同じ語になる。NaN を受けないこと自体は、tests/test_datadefs.py:172-184 が、問題の文まで照らしている。
+   反証：parse_constant を外した場合を追うと、data_version の NaN は小数になって Int の型の検査で1件、extreme は kazane を差し替えるので重ねた組は0件で、最後の1行は同じ「check: FAILED data=2 problems=1 failed=data」になり、この件は狙った検査で落ちたのかを見分けない。案（項目の中の注の鍵に NaN）は、検査が有れば1件・無ければ0件で期待の語も変わらず成り立つ。仕組みは test_datadefs.py:177-179 が文まで固定していて全体の検証に穴は無いので、重さは低のまま。
+■ fakepass-3 [低/確かめた] 所：/home/user/clipping-point/tests/test_datadefs.py:675-676
+   直し：実物を通す形にする。例：名 main と selfcheck で load_game_data を呼び、save_namespace が storage.DEFAULT_NAMESPACE と profile.SELFCHECK_NAMESPACE のどちらでもないことを見る。
+   場合：「assert not {"main", "selfcheck"} & {f"pack_{name}" for name in ("main", "selfcheck")}」は、両辺とも文字の定数だけで、datadefs も storage も呼ばない。落ちようが無い。PACK_NAMESPACE_PREFIX を "" に変えて、試験用データの名 main が名前空間 main に重なるようにしても、この行は通る（落ちるのは 670行と674行の、別の確かめ）。注の「往復の名前空間と、ふつうの名前空間には、重ならない」を、何も調べずに通している。
+   反証：676行は両辺が文字の定数だけで、datadefs も storage も通らず、いつも真になる（落ちようの無い確かめ）。性質そのものは 670・673・674行が守っているので害は小さいが、675行の注が言う確かめにはなっておらず、案（profile.SELFCHECK_NAMESPACE は実在する）で実物を通す形に直せる。
+
+== design
+■ design-1 [中/確かめた] 所：tools/data_reference.py:83、tools/check.py:98-101（tests/test_data_reference.py:148、tests/test_check_tool.py:66-70）
+   直し：どちらかに決めてそろえる。重ねた組の警告を許すなら、data_checks で want_pack があるときは data_warnings を外す。許さないなら、check の重ねた組でも警告を数える。決めたほうを .claude/rules/data.md の「約束」に1行書く。
+   場合：試験用データを重ねた組の警告の扱いが、2つの道具で逆。check の data の節は、重ねた組の load_game_data の返り値を捨てて、警告を数えない（check.py:98-101。test_check_tool.py:66-70 が「試験用データが足した、参照されていない定義は、問題に数えない」と固定）。run は、--pack でも data_warnings を「warnings == 0」で見る（data_reference.py:83 は want_pack を見ない。test_data_reference.py:148 が、重ねた結果の warnings=2 を落ちる側に固定）。入力：表の定義に参照が入った後、試験用データが、参照される側の表に、どこからも参照されない定義を足す → `check --only data` は0（data.md:47 の手順は通る）、`run --pack <名>` は failed=data_warnings で1。いまは、実物の表の定義に参照が無いので起きない（確かめたのは、コードとテストの食い違い。起きる時期は、参照が入る区切り次第）。頼みの文も、check（96行）は「出荷するデータ（警告も、問題として数える）」、run（101行）は「警告0」で、重ねた組の扱いを分けていない。
+   反証：引用は実物どおりで、check は重ねた組の警告を捨て（テストが「数えない」を固定）、run は --pack でも warnings==0 を求める（テストが warnings=2 を落ちる側に固定）ので、同じ状態を2つの道具が逆に扱う。いまは実物に参照が無く起きない（重さは低寄り）が、参照が入った後に data.md:47 の手順が通って run-pack が落ちる形で、どちらに直しても固定済みのテストか期待の語（checks=19）に触れるので、主が向きを決める必要がある。
+
+== deadlock
+■ deadlock-1 [低/確かめた] 所：/home/user/clipping-point/clipping_point/cp_core/datadefs.py:334-337（_parse_file）、271-272（割り切りの注）。決まりは /home/user/clipping-point/.claude/rules/data.md:18
+   直し：重複した鍵のときは、読めた値（後勝ち）で検査を続けて、ほかの問題も並べる。続けないと決めるなら、割り切りの注と data.md の落とし穴に「重複した鍵か NaN のあるファイルは、ほかの検査をしない」と書き、テストで固定する。
+   場合：入力：cars.json の1つ目の項目に重複した鍵（"name" が2つ）、2つ目の項目に知らない鍵 nmae。→ 並ぶのは「cars.json: duplicate key 'name'」の1行だけ。334〜337行の `if found: problems.extend(...); return False, []` が、重複した鍵か NaN が1つでもあると、そのファイルの項目を1つも検査へ渡さない。直して回し直すまで、同じファイルのほかの問題が見えない。さらに、その表の項目が0件になるので、参照を持つ表の定義では、ほかの表からの参照が全部「no cars with id …」と並ぶ（494〜500行。原因と違う行）。決まりの文は data.md:18「問題は、最初の1件で止めず、ファイルと場所を付けて、全部を `DataError` に並べる」。割り切りの注が書いているのは「何番目の項目かは出ない」だけで、残りを検査しないことは書いていない。テスト（tests/test_datadefs.py:172-184）は、重複した鍵だけのファイルしか見ていない。
+   反証：重複した鍵か NaN が1つでもあると `return False, []` で、そのファイルの項目を1つも検査しない。これは data.md:18 の「全部を並べる」から外れ、割り切りの注（271-272行）と落とし穴（data.md:62）は「場所が出ない」としか書いていない。直し方は「続けない」と書いて固定する案が合う。後勝ちで続ける案は、NaN が None に置き換わって同じ所の行が2つになり、1行を固定している test_datadefs.py:177・634 と selftest_break.py:906（problems=1）に当たる。
+■ deadlock-4 [低/確かめた] 所：/home/user/clipping-point/tools/check.py:98-101 と /home/user/clipping-point/tools/data_reference.py:83。固定しているテストは /home/user/clipping-point/tests/test_check_tool.py:66-70 と /home/user/clipping-point/tests/test_data_reference.py:148
+   直し：どちらかに決めてそろえる。試験用データの警告を許すなら、data_checks の data_warnings を、重ねていないときだけ0件にする。許さないなら、check の重ねた組でも、出荷する側に無い警告を問題に数える。
+   場合：入力：試験用データが、参照される側の表に、どこからも参照されない定義を足す（test_check_tool.py:68 の sfx_trial の形）。→ `check --only data` は問題0件で通る（check.py:99-101 は、重ねた組の warnings を見ない）。同じ試験用データで `run --pack` は data_warnings で落ちる（data_reference.py:83 の `type(warnings) is int and warnings == 0` は、want_pack に関わらず0件を求める）。data.md:22 は「出荷するデータは、警告0件」。いまは実物の表の定義に参照が無いので起きない。参照が入った区切りで、極端な値の定義を足した試験用データが、check は通るのに全体の検証（run-pack）で落ちる。そこで道具を直すと、selftest-break（約21分）の回し直しが要る。
+   反証：check は重ねた組の warnings を見ず（テストの注も「警告0件を見張るのは、出荷するデータ」）、run の data_warnings は want_pack に関わらず0件を求める。同じ試験用データで2つの道具の合否が割れ、それぞれが逆向きにテストで固定されている。いまは実物の表の定義に参照が無いので起きないが、参照が入る区切りで run-pack だけが落ちる。
+■ deadlock-5 [低/確かめた] 所：/home/user/clipping-point/tests/test_datadefs.py:676
+   直し：`load_game_data(real_sources(), (name, …)).save_namespace` を、名 main と selfcheck で実際に引き、storage.DEFAULT_NAMESPACE と profile.SELFCHECK_NAMESPACE のどちらでもないことを見る形に置き換える。
+   場合：落ちようの無い確かめ。`assert not {"main", "selfcheck"} & {f"pack_{name}" for name in ("main", "selfcheck")}` は、両辺ともテストの中の文字列だけで、datadefs を1度も呼ばない。save_namespace をどう壊しても、この行は通る。頭の字が pack_ であることは 670行と674行が見ているので、害は小さい。ただ、注（675行「往復の名前空間と、ふつうの名前空間には、重ならない」）が言うことを、この行は確かめていない。名が main や selfcheck の試験用データでの名前空間は、どこも引いていない。
+   反証：676行は両辺ともテストの中の文字列だけで、datadefs も実物の定数も引かないので、何を壊しても通る。675行の注が言う「往復の名前空間と、ふつうの名前空間に重ならない」は確かめていない。直し方の案が使う storage.DEFAULT_NAMESPACE と profile.SELFCHECK_NAMESPACE は実在し、名 main と selfcheck は check_pack_name を通る。
+
+== determinism
+■ determinism-2 [低/推測] 所：/home/user/clipping-point/tests/test_datadefs.py:187
+   直し：`pytest.param("[" * 100000 + "]" * 100000, id="nested_too_deep")` と `pytest.param("﻿{}", id="bom")` にする。
+   場合：parametrize の値 `"[" * 100000 + "]" * 100000` に id を付けていない。pytest は、20万字の文字列そのものをテストの名にする。→ out/test/junit.xml と、名の一覧に、20万字の行が入る。このテストが落ちた時（Pythonの版が変わって、深い入れ子が RecursionError でなくなった時など）は、tools/test.py の show_tail が出す終わりの25行が、括弧で埋まって読めない。同じ行の、BOMつきの値は、目に見えない U+FEFF を、ソースにそのまま置いている（Grep で確かめた。tests/ では、この1か所だけ）。エディタや整形で消えると `"{}"` になり、狙い（BOMつきの文）と違う理由で落ちる。追い切れていない所：pytest が、文字列の値を切り詰めずに名にすることは、回して確かめていない。
+   反証：通るのは後半だけ。187行の BOM つきの値は、U+FEFF が見えない字のまま置かれ、読むと "{}"（JSONとして読める文）に見える。Edit の突き合わせや書き直しで落ちやすいので、エスケープ（"﻿{}"）で書く。見えない字のまま id だけ付けても、読み違えは残る。前半（20万字がテストの名になる）は誤り：この環境の pytest 9.2.0 は、100字を超える文字列の値を既定（short）で「引数の名＋番号」（text6）の名にし、pytest.ini もそれを変えていないので、junit.xml にも終わりの25行にも20万字は入らない。id を付けるのは任意。
+■ determinism-3 [低/確かめた] 所：/home/user/clipping-point/tools/arch_check.py:45-52（BANNED_NAMES）、69-84
+   直し：BANNED_NAMES に `"open"`（理由：ファイルに届く。ファイルを読む所は cp_app に置く）を足す。tests/test_arch_guard.py に1件、selftest_break.py に壊す件（check_core_uses_open）を足す。
+   場合：決まりの文：.claude/rules/data.md:16「読み込み検査と重ね方は `cp_core/datadefs.py`（ファイルに触れない。受けるのは「相対の名 → 文」の辞書）。…`cp_core` に pathlib、io、os を足さない。」、.claude/rules/save.md の約束「`cp_core` に、ファイルと os を持ち込まない。」。見張りの側：arch_check.py が見るのは、import と、BANNED_NAMES の名（`__import__`、`__builtins__`、`eval`、`exec`、`compile`、`hash`）だけ。この状態で、cp_core/datadefs.py（や cp_ui）に `with open(path, encoding="utf-8") as f:` を足す（import は足さない）→ `check --only arch` は violations=0 のまま通る。tests/test_arch_guard.py にも、selftest_break.py の check_core_* の件（453〜475行）にも、open の件は無い。いまの cp_core と cp_ui に `open(` は無い（Grep で確かめた）ので、破れは起きていない。この区切りで入った穴ではない。ただ、ファイルを読む所を cp_app へ出した、この区切りの約束を、見張りが守れていない（試作は、cp_core がファイルを読んでいた）。
+   反証：引用は実物どおり。arch_check が見るのは import と6つの名だけで、cp_core に `with open(...)` を足しても violations=0 のまま通る。data.md:16、save.md:22、設計の表が約束する「cp_core はファイルに触れない」を、見張りも、守りのテストも、壊す件も守っていない。いまの cp_core と cp_ui に open という名は無いので、BANNED_NAMES に足しても誤検出は出ない。ただし、この区切りで入った穴ではなく、いまは破れていない。直すと selftest-break の回し直しが要るので、この区切りで直すか段0の仕上げへ回すかは主の判断。
+
+== 退けた指摘
+□ fakepass-4 [低] 起きない場面。いまの TABLES には Ref が無く、参照される側の表が空なので警告は必ず0件で、check と run --pack の合否は食い違えない（指摘も認めている）。参照が入った時も、黙って通るのではなく run-pack が data_warnings で落ちて気づく形で、設計が警告0件を求めるのは出荷するデータだけなので、どちらに寄せるかは参照を足す区切りで決められる。
+□ fakepass-5 [低] 置き場を移す予定は無く、移した時は PACKS_DIR を固定する test_datadefs.py:674、test_data_reference.py:89、実物の組の数を「1＋試験用データの数」で固定する test_check_tool.py:124-126 が落ちるので、check が重ねた組を調べないまま全体の検証を通ることは無い（「拾うのは…だけ」は実物より少ない）。「0個でもよい」は頼みの文96行の決めで、パスは _common の APP と ROOT から組んであり、道具の側の置き場は data_reference.py も自分で持つ形なので、残るのは文字の書き方で害が無い。
+□ design-2 [低] ふるまいは指摘どおり（found があれば return False, []）だが、重複した鍵と NaN は細目4で「JSONの読み」の問題として読めない文と同列に置かれ、テスト（175-179行、634行の `{"cars": [], "cars": []}` が1行だけ）がそのファイルを先へ回さない形を固定している。同じファイルの重複とほかのファイルの問題は全部並び、害は回し直し1回で、注の足し方の好みの範囲。
+□ design-3 [低] コードは指摘どおり（Opt は check を持たず、_check_tables は規則の木を見ない）だが、起きるのは datadefs.py:11 の決まりに反する表の定義を書いたときだけで、データの問題ではない。実物を読むテストと check（2）が最初の読み込みで例外として大きく落ち、黙って通るのは「並びの中の Opt＋実物の並びが空」という重ねた仮定のときだけなので、害は小さい。
+□ design-4 [低] テストの引用は実物どおりだが、頼みの文（やること3）が実物のファイルの頭の `_notes` に仮の値の注を置くと決めており、テストはその今の状態を固定している。落ちるのは後の区切りで別の種類の注を `_notes` に足すという仮定の場面で、数値は段4まで仮の値、ほかの注は別の `_` 鍵にも置け、落ちてもファイルの名つきで分かるので害は小さい。
+□ design-5 [低] os.walk がディレクトリへのリンクに下りないのは指摘どおりだが、置き場にディレクトリのリンクを置く場面は、この作り方（WriteとEditで書く、リンクは作らない）では起きず、限りと見直す時を書いた割り切りとして主が承知している。新しい名があれば run --pack が data_tables で落ち、開けないリンクのファイルは「cannot read the file」になるので、黙って通るのは起きない場面の中のさらに一部。
+□ design-6 [低] 文字の持ち直しは指摘どおりだが、3つの置き場（data_files、data_reference、check.data()）はテストが同じ実物の場所に固定しており、指摘自身が認めるとおり、名を変えればテストで落ちるので、古い根を見て通る場面は起きない。道具のパスは tools.md が `_common` から引くと決め、data_reference の置き場は「アプリを通さない別の読み方」として書いてあり、pack_names はテストが実物の試験用データを回すのに使っている。
+□ design-7 [低] 表に2つの行が無いのは事実だが、破られた決まりの文が示されておらず、表の頭の文（CLAUDE.md:91）が置き場の正を overview.md の「ディレクトリとモジュール」に預けている。CLAUDE.md は全文が読み込まれ、182行と、コマンドの表の `--pack` に両方の置き場が書いてあるので、読み違えは起きにくく、足すかどうかは好みの範囲。
+□ deadlock-2 [低] 引かれた data.md:18 の「ほかの例外にしない」はデータの問題を DataError にする文で、表の定義（コード）の書き誤りには当たらない。3例とも、コードを追うと AttributeError・TypeError・使う側の KeyError で最初の読み込みか最初の利用で落ち、黙って通る道は無いので、堅くする好みの範囲。
+□ deadlock-3 [低] 起きない場面。gitから取り出した作業ツリーに開けないディレクトリは生じず、細目22番は「2つの形に当たらない名のファイル」の決めで、走査の誤りは含まない。実物の extreme は、件数を数字で固定したテスト（cars 2、tracks 2）が tracks の欠けで落ちるので、全体の検証を黙っては通らない。os.walk が走査の誤りを飛ばすこと自体は実行して確かめていない。
+□ deadlock-6 [低] 5項目とも「この入力 → 誤った結果」が無く、レビュー役自身がコードを追って正しく動くと書いている。頼みの文のテストの一覧（141行）にも無い組み合わせで、(5) は新しい決めの提案なので、テストを足す好みの範囲。
+□ determinism-1 [低] 事実（BROKEN をモジュールの頭で組み立て、import の時に実物を読む）は合っているが、結果は終了コード1の reason=collection_error で、落ちた行（test_datadefs.py の42行か48行）が終わりの行に出る。見かけの合格にも読み違えにもならない。同じ崩れは check の data の節がファイルと場所つきで挙げ、モジュールの頭で実物のファイルを読む形は tests/test_web_smoke.py:29 に先例があるので、落ち方の粒度の好みと見た。「実物を壊す test の脚が書けない」は言い過ぎで、知らない鍵のようにJSONとして読める壊し方なら reason=failed になる。
+□ determinism-4 [低] 引用は実物どおりだが、害が起きる場面が無い。置き場を動かせば、test_data_files.py:182、test_data_reference.py:84-89、test_check_tool.py:126（check.data() を実物で回す）と、run の data_tables の照合が落ちるので、古い置き場を見たまま通ることは無い（指摘自身も認めている）。道具の側が _common の APP から置き場を引くのは tools.md の約束どおりで、data_reference.py は「アプリから引くのは、表の名とファイルの形だけ」の別の読み方として決めてあり、data.md:39 と tools.md の「値を読む口」にも載っている。check.py は、頭で cp_app をimportしない作りにしてある。
+
+== 役が書いた、見られなかった所
+・fakepass（レビュー役）: 差分を引けない（shell が無い）。基点 fab4f63 から、既存のテストや壊す件が弱められていないこと、ふるまいの写し3つが変わっていないことは、主の申告に頼った。
+・fakepass（レビュー役）: 道具もテストも回していない。壊す件が、狙った問題の行で落ちることは、コードを追って確かめただけ。実行に頼る3つは確かめていない：pyxel package が「.」で始まるファイルを入れないこと、ブラウザ版で起動時の例外が shipped.error_overlay を先頭にして出ること、入れ子が深すぎるJSONが RecursionError になること（Python 3.13 と、ブラウザ版の 3.14）。
+・fakepass（レビュー役）: /home/user/clipping-point/tools/selftest_break.py の 485〜839行（今回より前からある約270件）は、STALE_ と verify_ の件を Grep で見ただけ。
+・fakepass（レビュー役）: /home/user/clipping-point/tools/web_smoke.py の 131〜194、273〜499行、tests/test_web_smoke.py・test_verify.py・test_run_tool.py の data と pack に当たらない所、tools/arch_check.py・tools/tour.py・tools/fingerprint.py（Grep だけ）は読んでいない。
+・fakepass（レビュー役）: /home/user/clipping-point/docs/design/overview.md は「データと読み込み検査」の節だけ。「設計の前提」「検証の仕組み」「ビルドと配布」と docs/plan.md の「検証の組」は、根の CLAUDE.md の要約と Grep の3行で代えた。
+・fakepass（レビュー役）: 試験用データを重ねた巡回と、実機での確認は、範囲の外。
+・design（レビュー役）: 基点（fab4f63）との差分：shellが無いので引いていない。直したファイルは、いまの文を読んだだけで、どの行が変わったかは見ていない。ふるまいの写し3つが変わっていないこと、テストの名と壊す件の名が消えていないことは、主の申告のまま。
+・design（レビュー役）: tools/web_smoke.py と tools/selftest_break.py の、読んだ行の外。壊す件は、定義データの節（894〜986行）と頭の定数だけを読み、ほかの既存の件の直し（checks= の数字など）はGrepで見ただけ。
+・design（レビュー役）: tests/test_export_inspect.py、test_run_tool.py、test_verify.py、test_web_smoke.py は、Grepで当たった行だけ。tests/count_floor.txt は読んでいない。cp_core/storage.py は、名前空間と鍵の定数の行だけ。
+・design（レビュー役）: 道具もテストも回していない。壊す件が、狙った検査の狙った語で落ちることと、design-2・3・5 の起きる場合は、コードを追って確かめたもので、実行はしていない。
+・design（レビュー役）: ブラウザ版（Python 3.14）でのふるまい：入れ子が深すぎるJSONが、同じ形の問題になるか。展開された出荷物の中の data/ を読めること。どちらも、実行できないので未評価。
+・design（レビュー役）: 実装役の報告の「実測して、報告に書くこと」3点（読み込みの時間、出荷物の大きさ、検証の秒数）：作業記録を見ない指示なので、照らしていない。
+・design（レビュー役）: 元にした試作（spikes/harness/repo/）との突き合わせ：Opt と ListOf の使い方をGrepで1度引いただけ。
+・deadlock（レビュー役）: 道具とテストは1つも回していない（読むだけ）。指摘の中の、標準ライブラリのふるまい（os.walk と pathlib の glob が走査の誤りを飛ばすこと、json が4300桁を超える整数で ValueError を出すこと）は、実行して確かめていない。
+・deadlock（レビュー役）: 差分は引けない。「直したファイル」のどこが今回の変更かは、中身から推した。ふるまいの写し3つが変わっていないこと、テストの関数と壊す件の名が消えていないことは、主の申告のままで、自分では確かめていない。
+・deadlock（レビュー役）: ブラウザ版（Pyodide の Python 3.14）でのふるまいは、読むだけでは確かめられない：深すぎる入れ子が RecursionError になるか、展開された出荷物の中の data/ を os.walk が同じ名で挙げるか。
+・deadlock（レビュー役）: 読んでいないテスト：tests/test_export_inspect.py、tests/test_run_tool.py、tests/test_verify.py、tests/test_web_smoke.py、tests/count_floor.txt。
+・deadlock（レビュー役）: 一部しか読んでいない道具：tools/selftest_break.py（360〜410行と905〜987行だけ。壊す件が、狙った検査の狙った語で落ちるかは追っていない）、tools/web_smoke.py（定義データに触れる所だけ）、tools/verify.py（STEPS と AREAS だけ）、tools/arch_check.py と tools/tour.py（Grep だけ）。
+・deadlock（レビュー役）: 読んでいない出荷するコード：cp_app/storage_web.py、cp_app/tour.py、cp_core/profile.py（Grep で、SaveStore を作る所と、定義データに触れないことだけ見た）。
+・deadlock（レビュー役）: 元にした試作（spikes/harness/repo/）との突き合わせは、Opt の使い方を Grep で見ただけ。
+・deadlock（レビュー役）: 根の CLAUDE.md の「コマンド」の表と「規則ファイルの目次」の変更は、この観点の外として、照らしていない。
+・determinism（レビュー役）: ふるまいの写し3つ（tests/snapshots/）が、この区切りで変わっていないこと：差分を引けないので、自分では確かめていない（主の確かめに頼った）。
+・determinism（レビュー役）: ブラウザ版（Pyodide、Python 3.14）で、入れ子が深すぎるJSONが RecursionError になるか、深さの上限がデスクトップ版（3.13）とどれだけ違うか：読むだけでは決まらない。出荷するデータは、デスクトップ版の check と同じファイルなので、実害の道は見つからなかった。
+・determinism（レビュー役）: pytest のふるまい（集める段の例外で終了コード2、parametrize の文字列の値をそのまま名にする）：道具とテストを回せないので、実地では確かめていない（determinism-1 と determinism-2 の札を推測にした理由）。
+・determinism（レビュー役）: tools/selftest_break.py の、定義データのほかの壊す件（115〜365行、414〜885行）：読んでいない。足した件が、狙った語で落ちるかは、主の selftest-break の結果（wrong=0）に頼った。
+・determinism（レビュー役）: tools/web_smoke.py、tools/verify.py（260行より後）、tests/test_verify.py、tests/test_web_smoke.py、tests/test_export_inspect.py、tests/test_run_tool.py：結果の data と、環境・時間・別プロセスに当たる行だけを読んだ。全文は読んでいない。
+・determinism（レビュー役）: ブラウザ版で、定義データの置き場をモジュールの場所から引けること（展開された出荷物の中の data/）：コードの形だけを読んだ。実地の確かめは、主の web-smoke の結果（probe の data_tables が通っている）に頼った。
+・determinism（レビュー役）: 試験用データを重ねた巡回と、実機での確認：範囲の外。
+review_summary: OK lenses=4 findings=22 passed=9 rejected=13 unevaluated=0 role_notes=28
