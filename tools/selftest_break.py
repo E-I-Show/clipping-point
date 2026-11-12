@@ -1,9 +1,12 @@
 """道具と検査をわざと壊して、落ちることを確かめる。
 
-  python3 tools/selftest_break.py [--only 名前の頭]
+  python3 tools/selftest_break.py [--only 名前の頭] [--jobs N]
 
 件ごとに、要るファイルだけを out/selftest/ の下へ一時に複製し、複製の上で1か所壊し、
 複製の中の道具を1本回して、終了コードと最後の1行の語を期待と比べる。作業ツリーは書き換えない。
+時間に頼らない件（test、check、画面なしの run、tour、export など）は、同時に N 件ずつ回す（既定は tools/budgets.json の selftest_jobs）。
+時間に頼る件（ブラウザ版の煙テスト、本番と同じ経路の run、全体の検証。is_timed()）は、その後に、1件ずつ回す
+（並列に回すと、毎秒の回数や、処理時間の線が揺れる）。件は、どれも自分の複製の中だけを書くので、同時に回しても、取り合わない。
 壊したのに落ちない件（終了コードが違う、落ちた理由が違う）が1つでもあれば1。
 壊さない件（control）は0で通ること。何でも落とす道具になっていないことの確かめ。
 終了コード：0＝全件が期待どおり、1＝期待と違う件がある、2＝壊す所が見つからず回せない件がある・件が0。
@@ -18,6 +21,7 @@ import sys
 import tempfile
 import time
 import zlib
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import data_reference
@@ -303,6 +307,11 @@ SCREENS_SYNTAX_ERROR = rep(SCREENS_PY, SCREEN_DEF, SCREEN_DEF.replace(" -> None:
 FINGERPRINT = tool("fingerprint")
 # 指紋のテストだけに絞る。絞らないと、定数を数字で固定している入力フレームのテストが先に落ちて、指紋のテストが効いているかを見られない。
 TEST_FINGERPRINT = tool("test", "-k", "fingerprint")
+# この道具（tools/selftest_break.py）の、件の回し方のテストだけを回す。壊す所は、時間に頼る件の判定と、件の分け方。
+SELFTEST_PY = "tools/selftest_break.py"
+TEST_SELFTEST_TOOL = tool("test", "-k", "selftest_tool")
+SELFTEST_IS_TIMED = '    return "web_smoke.py" in words or "verify.py" in words or "--realtime" in words\n'
+SELFTEST_SPLIT = "    return [case for case in cases if not is_timed(case[2])], [case for case in cases if is_timed(case[2])]\n"
 # ハッシュの種を変えた別プロセスどうしを比べるテストだけに絞る（指紋の写しと比べるテストを入れない。集合の順に頼ったことだけで落ちる形にする）。
 TEST_HASH_SEED = tool("test", "-k", "fingerprint and hash_seed")
 # 保存する項目の一覧の写しのテスト1件だけに絞る。絞らないと、設定の項目と既定値を、数字と文字で固定しているテストが先に落ちて、
@@ -1163,6 +1172,11 @@ CASES = [
         "make_test_loop_point_moved_by_hand", [rep(LOOP_JSON, LOOP_POINT, LOOP_POINT.replace('"z_m": 0.0', '"z_m": 0.5'))],
         tool("claude/make_test_loop", "--check"), {1}, "same=no",
     ),
+    # --- この道具の、件の回し方（時間に頼る件は、1件ずつ。tests/test_selftest_tool.py） ---
+    # 時間に頼る件の判定が、いつも「頼らない」と答える。ブラウザ版の煙テストや全体の検証が、並列に回ってしまう。
+    ("test_selftest_timed_cases_are_not_told_apart", [rep(SELFTEST_PY, SELFTEST_IS_TIMED, "    return False\n")], TEST_SELFTEST_TOOL, {1}, "reason=failed"),
+    # 時間に頼る件を、並列の件と一緒に、まとめて回す（1件ずつにしない）。
+    ("test_selftest_timed_cases_run_in_the_pool", [rep(SELFTEST_PY, SELFTEST_SPLIT, "    return cases, []\n")], TEST_SELFTEST_TOOL, {1}, "reason=failed"),
 ]
 
 
@@ -1236,47 +1250,99 @@ def last_line(out: str, err: str) -> str:
     return "(no output)"
 
 
+PLANT_ERROR = "plant-error"  # 壊す所が見つからなかった件の、終了コードの欄に入れる語
+VERDICT_OK = "ok"
+VERDICT_PLANT_ERROR = "COULD NOT PLANT"
+
+
+def is_timed(cmd) -> bool:
+    """時間に頼る件か。ブラウザ版の煙テスト、本番と同じ経路の run（--realtime）、全体の検証（どちらも含む）。
+
+    時間に頼る件は、1件ずつ回す。並列に回すと、毎秒の回数や、処理時間の線が揺れて、壊さない件が落ちる。
+    """
+    words = [Path(str(word)).name for word in cmd]
+    return "web_smoke.py" in words or "verify.py" in words or "--realtime" in words
+
+
+def run_case(case) -> dict:
+    """件を1つ回して、結果の行を返す。自分の複製（out/selftest/<名>-<乱数>/repo）の中だけを書く。"""
+    name, faults, cmd, expected, needle = case
+    started = time.perf_counter()
+    with tempfile.TemporaryDirectory(dir=SCRATCH, prefix=name + "-") as tmp:
+        work = Path(tmp) / "repo"
+        copy_repo(work)
+        try:
+            plant(work, faults)
+        except (RuntimeError, OSError) as exc:
+            code, line = PLANT_ERROR, str(exc)
+        else:
+            code, out, err = run(cmd, timeout=CASE_TIMEOUT_S, cwd=work, env=child_env())
+            line = last_line(out, err)
+    if code == PLANT_ERROR:
+        verdict = VERDICT_PLANT_ERROR
+    elif code not in expected:
+        verdict = "CONTROL FAILED" if expected == {0} else "NOT CAUGHT"
+    elif needle not in line:
+        verdict = "WRONG REASON"
+    else:
+        verdict = VERDICT_OK
+    return {
+        "case": name, "command": " ".join(c.replace(PY, "python3") for c in cmd), "expected_exit": sorted(expected),
+        "expected_word": needle, "exit": code, "verdict": verdict, "seconds": round(time.perf_counter() - started, 2),
+        "last_line": line[:300],
+    }
+
+
+def split_cases(cases: list) -> tuple:
+    """件を、(並列に回す件, 1件ずつ回す件) に分ける。並びは、どちらも、元の順。"""
+    return [case for case in cases if not is_timed(case[2])], [case for case in cases if is_timed(case[2])]
+
+
+def run_cases(cases: list, jobs: int, runner=run_case, report=None) -> list:
+    """件を全部回して、結果の行を、元の順で返す。時間に頼らない件を、同時に jobs 件ずつ。時間に頼る件は、その後に、1件ずつ。
+
+    並列の件が全部終わってから、時間に頼る件を始める（重ねない）。report は、行が1つ出るたびに呼ぶ（進み具合の表示）。
+    """
+    free, timed = split_cases(cases)
+    rows = {}
+    with ThreadPoolExecutor(max_workers=jobs) as pool:
+        for case, row in zip(free, pool.map(runner, free)):
+            rows[case[0]] = row
+            if report:
+                report(row)
+    for case in timed:
+        rows[case[0]] = row = runner(case)
+        if report:
+            report(row)
+    return [rows[case[0]] for case in cases]
+
+
+def print_row(row: dict) -> None:
+    print(f"[{row['verdict']}] {row['case']:40s} exit={row['exit']} expected={row['expected_exit']}  {row['last_line'][:150]}", flush=True)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="道具と検査をわざと壊して、落ちることを確かめる")
     ap.add_argument("--only", default="", metavar="PREFIX", help="名前がこの語で始まる件だけ回す")
+    ap.add_argument("--jobs", type=int, default=None, metavar="N", help="時間に頼らない件を、同時に回す数（既定は tools/budgets.json の selftest_jobs）")
     args = ap.parse_args()
     cases = [case for case in CASES if case[0].startswith(args.only)]
     if not cases:
         return finish("selftest_break", INCOMPLETE, f"cases=0 only={args.only!r}")
+    if len({case[0] for case in cases}) != len(cases):
+        return finish("selftest_break", INCOMPLETE, "cases=0 reason=duplicate_case_names")
+    jobs = int(load_budgets()["selftest_jobs"]) if args.jobs is None else args.jobs
+    if jobs < 1:
+        return finish("selftest_break", INCOMPLETE, f"cases=0 jobs={jobs}")
     missing = [item for item in COPY_ITEMS if not (ROOT / item).exists()]
     if missing:
         return finish("selftest_break", INCOMPLETE, f"cases=0 missing={','.join(missing)}")
     SCRATCH.mkdir(parents=True, exist_ok=True)
-    rows, wrong, plant_errors = [], 0, 0
-    for name, faults, cmd, expected, needle in cases:
-        started = time.perf_counter()
-        with tempfile.TemporaryDirectory(dir=SCRATCH, prefix=name + "-") as tmp:
-            work = Path(tmp) / "repo"
-            copy_repo(work)
-            try:
-                plant(work, faults)
-            except (RuntimeError, OSError) as exc:
-                code, line = "plant-error", str(exc)
-            else:
-                code, out, err = run(cmd, timeout=CASE_TIMEOUT_S, cwd=work, env=child_env())
-                line = last_line(out, err)
-        if code == "plant-error":
-            verdict = "COULD NOT PLANT"
-            plant_errors += 1
-        elif code not in expected:
-            verdict = "CONTROL FAILED" if expected == {0} else "NOT CAUGHT"
-            wrong += 1
-        elif needle not in line:
-            verdict = "WRONG REASON"
-            wrong += 1
-        else:
-            verdict = "ok"
-        rows.append({
-            "case": name, "command": " ".join(c.replace(PY, "python3") for c in cmd), "expected_exit": sorted(expected),
-            "expected_word": needle, "exit": code, "verdict": verdict, "seconds": round(time.perf_counter() - started, 2),
-            "last_line": line[:300],
-        })
-        print(f"[{verdict}] {name:40s} exit={code} expected={sorted(expected)}  {line[:150]}")
+    free, timed = split_cases(cases)
+    print(f"  selftest_break: jobs={jobs} parallel_cases={len(free)} one_by_one_cases={len(timed)}", flush=True)
+    rows = run_cases(cases, jobs, report=print_row)
+    wrong = sum(1 for row in rows if row["verdict"] not in (VERDICT_OK, VERDICT_PLANT_ERROR))
+    plant_errors = sum(1 for row in rows if row["verdict"] == VERDICT_PLANT_ERROR)
     (SCRATCH / "break_results.json").write_text(json.dumps(rows, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     controls = sum(1 for row in rows if row["expected_exit"] == [0])
     summary = f"cases={len(rows)} planted={len(rows) - controls} controls={controls} wrong={wrong} plant_errors={plant_errors}"

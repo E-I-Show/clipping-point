@@ -64,7 +64,7 @@ Pyxel 3.0の3D機能（Pyxel Cube）で作る、初代PS時代風ローポリゴ
 
 | すること | コマンド |
 | --- | --- |
-| 全体の検証（約65秒。check → test → fingerprint → screen-check → run → run --realtime → run --pack extreme → tour → export → web-smoke。`--selftest` を付けると約22分） | `python3 tools/verify.py --all [--selftest]` |
+| 全体の検証（約70秒。check → test → fingerprint → screen-check → run → run --realtime → run --pack extreme → tour → export → web-smoke。`--selftest` を付けると約19分） | `python3 tools/verify.py --all [--selftest]` |
 | 変更したファイルから触れた分野を引いて回す（基点の既定は、直近の区切りのコミット） | `python3 tools/verify.py --touched [--base REV]` |
 | 分野ごとの組の表を出す | `python3 tools/verify.py --list` |
 | 静的な検査（構文、層の分離、規則ファイルの見張り、正本の見張り、分野の見張り、定義データの読み込み検査） | `python3 tools/check.py [--only syntax\|arch\|rules\|canon\|areas\|data]` |
@@ -76,7 +76,7 @@ Pyxel 3.0の3D機能（Pyxel Cube）で作る、初代PS時代風ローポリゴ
 | 画面なしで回す（本番と同じ経路。入力アダプタから読む） | `python3 tools/run.py --realtime [--ticks N]` |
 | 配布物のHTMLを作って検査する | `python3 tools/export.py` |
 | ブラウザ版の煙テスト（約55秒） | `python3 tools/web_smoke.py [--only shipped\|probe\|script\|gamepad\|storage_blocked]` |
-| 道具をわざと壊して確かめる（約21分） | `python3 tools/selftest_break.py [--only 名前の頭]` |
+| 道具をわざと壊して確かめる（約18分。時間に頼らない件は、同時に4件ずつ回す） | `python3 tools/selftest_break.py [--only 名前の頭] [--jobs N]` |
 | 環境のセットアップ（新しいコンテナで1度。環境に登録してある） | `bash tools/setup_env.sh` |
 | ランタイムの写しの取得と照合 | `python3 tools/web/fetch_runtime.py [--check]` |
 | テストの件数の下限を下げる | `python3 tools/test.py --update-floor` |

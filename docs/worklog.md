@@ -752,6 +752,12 @@
   - `check: OK syntax=93 arch=18 rules=9 canon=1 areas=78 data=2 problems=0`、`test: OK passed=2462 …`、`fingerprint: OK scenarios=2 fields=6 problems=0 env=same`、`export: OK files=36 pyxapp_bytes=104098 html_bytes=138995 …`、`web_smoke: OK scenarios=5 … updates_per_s=60.0 renders_per_s=29.95 update_ms_p95=0.3 render_ms_p95=0.3 … checks=127 problems=0`。
   - 基点（`e25edd3`）との差分：消えたテストの関数は1つ（`test_datadefs_real_table_definitions_are_the_two_minimal_tables`。表が3つになったので、名と中身を合わせた、同じ役目のテストに置き換わっている。主が、差分で確かめた）。壊す件で、行が変わったのは `check_data_duplicate_id` だけ（頼みの文のとおり、足す車を、実物の項目の複製から作る形）。ふるまいの写しは、変わっていない。
   - 主が読んだ所：エンジンブレーキの実装（`cp_core/vehicle.py` の470〜500行。頼みの文の細目3のとおり）。
+- selftest-break の短縮（主が直した。細目の39番。14:10〜14:36 UTC）：
+  - 件を、時間に頼る件（ブラウザ版の煙テスト、本番と同じ経路の run、全体の検証。`is_timed()`）と、頼らない件に分け、頼らない件を、同時に4件ずつ回す（`tools/budgets.json` の `selftest_jobs`。`--jobs N` で変えられる）。頼る件は、その後に、1件ずつ。件は、どれも自分の複製の中だけを書く。
+  - 分け方と、回す順のテスト（`tests/test_selftest_tool.py`。10件。偽の回し役で、時間に頼らずに見る）と、壊す件を2つ（判定が、いつも「頼らない」と答える。頼る件を、並列の件と一緒に回す）。
+  - 結果：`selftest_break: OK cases=343 planted=307 controls=36 wrong=0 plant_errors=0`（1,044.1秒。直す前は、341件で1,648.6秒）。並列に回した件が約4分半、1件ずつの件が約13分。
+  - 主の検証（並列化の後。14:17〜14:35 UTC）：`verify: OK mode=all steps=11 ok=11 failed=0 seconds=1111.4 not_yet=3(drive,race-sim,audio)`。`check: OK syntax=94 arch=18 rules=9 canon=1 areas=79 data=2 problems=0`、`test: OK passed=2472 …`。回せなかったものは無い。
+  - 見えなかったこと：並列に回した件が、たまたま通っただけか（1回しか回していない。揺れが出たら、`selftest_jobs` を下げる）。全テストを回す件を、狙ったテストに絞る直しは、行っていない。
 - 前半で分かった、手を打つこと：
   - selftest-break が約27分半（341件）になり、手順の時間切れ（30分）の間際。後半で件が増えると、超える。段0の仕上げに回していた短縮（細目の30番）を、後半の前に行う（細目の39番）。
   - 規則ファイル `data.md`（7,976バイト）と `controls.md`（7,949バイト）が、上限の間際。

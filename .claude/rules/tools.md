@@ -10,6 +10,7 @@ paths:
   - "tests/test_run_tool.py"
   - "tests/test_check_tool.py"
   - "tests/test_data_reference.py"
+  - "tests/test_selftest_tool.py"
 ---
 
 # 検証の道具（tools/）
@@ -54,7 +55,7 @@ paths:
 - 守りのテスト `tests/test_verify.py`：ファイルから分野を引く所、表の手順とテストの語が実在すること、回す手順の決め方、落ちた手順の数え方、基点の選び方、変更したファイルをgitから読む所（一時のリポジトリで回す）。
 - 道具 verify（`python3 tools/verify.py --all [--selftest]`、`--touched [--base REV]`）：`--touched` の基点の既定は、直近の区切りのコミット（題が「段N 区切りM：」で始まり「（途中）」を含まない）。
 - テスト `tests/test_claude_tools.py`：作業の補助（`tools/claude/`）。控えの差し込み、レビューの集計の未評価、週の使用率の線、設定と型（`.claude/`）の見張り。使い方は `tools/claude/README.md`。
-- 道具 selftest-break（`python3 tools/selftest_break.py`）：道具か検査の決まりに触れた区切りで回す。壊す件が1つでも落ちなければ不合格。古い結果ファイルを読んで合格にしないことも、ここで見る。
+- 道具 selftest-break（`python3 tools/selftest_break.py [--only 名前の頭] [--jobs N]`）：時間に頼る件（web-smoke、`--realtime`、verify。`is_timed()`）は1件ずつ、ほかは同時に `selftest_jobs` 件。分け方と順は `tests/test_selftest_tool.py`。道具か検査の決まりに触れた区切りで回す。壊す件が1つでも落ちなければ不合格。古い結果ファイルを読んで合格にしないことも、ここで見る。
 
 ## 落とし穴
 

@@ -189,7 +189,7 @@ AREAS = (
             "tools/**", "tests/conftest.py", "tests/count_floor.txt", "tests/snapshots/**", "tests/test_arch_guard.py",
             "tests/test_rules_guard.py", "tests/test_canon_guard.py", "tests/test_export_inspect.py", "tests/test_verify.py",
             "tests/test_web_smoke.py", "tests/test_claude_tools.py", "tests/test_screen_tools.py", "tests/test_fingerprint.py",
-            "tests/test_run_tool.py", "tests/test_check_tool.py", "tests/test_data_reference.py",
+            "tests/test_run_tool.py", "tests/test_check_tool.py", "tests/test_data_reference.py", "tests/test_selftest_tool.py",
             "clipping_point/cp_ui/check.py", "clipping_point/cp_ui/fixtures.py", "tests/test_ui_check.py", "tests/test_fixtures.py",
             "clipping_point/cp_core/datadefs.py", "tests/test_datadefs.py",
             "pytest.ini", "requirements-dev.txt",
