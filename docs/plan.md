@@ -250,9 +250,9 @@ game-dev-pilotの初日のチェックリストは、次のように区切りへ
 
 | 触れた分野 | テストの絞り | 足す手順 |
 | --- | --- | --- |
-| 車両 | 車両、世界、指紋、セッティングの順 | run、drive |
-| コース | コース、世界、指紋、データ | run、tour、drive |
-| 操作補正と入力 | 操作補正、保存する項目、セッティングの順 | run、drive、web-smoke |
+| 車両 | 車両、世界、指紋、セッティングの順 | run、run-drive、run-wall、drive |
+| コース | コース、世界、指紋、データ | run、run-drive、run-wall、tour、drive |
+| 操作補正と入力 | 操作補正、保存する項目、セッティングの順 | run、run-drive、run-wall、drive、web-smoke |
 | AI | AI、世界、指紋、乱数 | run、race-sim |
 | レース進行 | レース、世界、指紋 | run、screen-check、race-sim |
 | 描画 | 画面 | run、tour、web-smoke |

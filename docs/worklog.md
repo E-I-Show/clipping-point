@@ -107,6 +107,7 @@
 | 2026-11-12 11:29 | 段0 区切り9の頼みの文のレビューの後 | 17% | 44% | 約31% | 2026-11-17 08:00 | 11:21のイベントの値。頼みの文のレビュー2体（約71万トークン、約38分）、区切り10の下調べの読み手1体（約24万トークン）、主の作業で、約4ポイント進んだ。実装役（前半）の見込み約5〜7ポイントを足して、約22〜24%。Claudeのモデルは決められたものと同じ |
 | 2026-11-12 13:08 | 段0 区切り9の実装（前半）の途中 | 25% | 49% | 約32% | 2026-11-17 08:00 | 13:06のイベントの値。実装役（前半）が、約100分かかっていて、まだ終わっていない（最後の検証を回している）。ここまでで約8ポイント（見込みは約5〜7）。主が、完了を待つ間の読み直し（約9分半ごと）の分も入っている |
 | 2026-11-12 14:37 | 段0 区切り9の実装（後半）の前 | 26% | 52% | 約33% | 2026-11-17 08:00 | 14:37のイベントの値。実装役（前半。約75万トークン、約158分）は、合わせて約8ポイント。13:06 からの約90分（実装役の検証の待ち、主の selftest-break の並列化と検証、文書）は、約1ポイント。実装役（後半）の見込み約8ポイントを足して、約34%。Claudeのモデルは決められたものと同じ |
+| 2026-11-12 16:26 | 段0 区切り9の主の検証の後（区切りのレビューの前） | 32% | 56% | 約34% | 2026-11-17 08:00 | 15:56のイベントの値。実装役（後半。約65万トークン、約82分）と、主の待ちで、約6ポイント。区切りのレビュー8体の見込み約7ポイントを足して、約39%。Claudeのモデルは決められたものと同じ |
 
 ---
 
@@ -759,6 +760,49 @@
   - 結果：`selftest_break: OK cases=343 planted=307 controls=36 wrong=0 plant_errors=0`（1,044.1秒。直す前は、341件で1,648.6秒）。並列に回した件が約4分半、1件ずつの件が約13分。
   - 主の検証（並列化の後。14:17〜14:35 UTC）：`verify: OK mode=all steps=11 ok=11 failed=0 seconds=1111.4 not_yet=3(drive,race-sim,audio)`。`check: OK syntax=94 arch=18 rules=9 canon=1 areas=79 data=2 problems=0`、`test: OK passed=2472 …`。回せなかったものは無い。
   - 見えなかったこと：並列に回した件が、たまたま通っただけか（1回しか回していない。揺れが出たら、`selftest_jobs` を下げる）。全テストを回す件を、狙ったテストに絞る直しは、行っていない。
+- 実装（後半。新しい実装役。約65万トークン、道具268回、約82分。14:38〜16:00 UTC）。作ったもの：
+  - 世界（`cp_core/sim.py`。書き直し）：種、読み込んだ定義、車の id、コースの id で作る（既定の値は無い。無い id は、分かる文の `ValueError`）。1 tickの順は、入力の要約値 → 操作補正 → 車両モデル → 照会 → 壁の押し戻し → 進行距離と走行の数え。要約の項目の名、倍率、比べ方は `SUMMARY_FIELDS` の1か所。テストと道具が車を置き直す口 `Sim.place_car()`。
+  - 走る台本（`tools/input_script_drive.json`。900 tick、48区間）と、壁の台本（`tools/input_script_wall.json`。780 tick、9区間）。作る補助 `tools/claude/make_drive_scripts.py`。
+  - 指紋の筋書きは4本（`script_120`、`no_script_120`、`drive_900`、`wall_780`）。走行の下限：走る台本は、進行距離230 m以上、最高速 毎秒24 m以上、変速2回以上、最後に舗装の上、壁0回、照会の取り直し0回。壁の台本は、壁1回以上、後退1回以上、最後に前進のギア、進行距離25 m以上。`--update` は、下限を満たさなければ、書かずに1。
+  - 道具：参照（`tools/input_reference.py`）が、アプリと同じ読み方で定義データを読んで、世界を作る。道具 run に、車とコースの id の確かめ（`sim_ids`）と、走行の下限。全体の検証に `run-drive` と `run-wall`（手順は12、selftest で13）。web-smoke は、項目ごとの比べ方（完全一致、許容差つき、折り返した差。許容差は、量子化の刻みで±2）と、筋書き `script` を2度開く確かめ。
+  - 仮の表示に、車の値の2行（速度、ギア、回転数、位置、路面の種類）。世界の状態から表示用の値を作る関数（`cp_core/flow.py` の `car_view()`）。
+  - テストは2,472件から2,640件。壊す件は343件から378件（足したのは35件。既存の件の直しは、頼みの文の洗い出しのとおり）。
+- 実装役の回の検証（後半。リポジトリの上）：`verify: OK mode=all steps=13 ok=13 failed=0 seconds=1463.8`、`selftest_break: OK cases=378 planted=335 controls=43 wrong=0 plant_errors=0`（1,370.3秒）。web-smoke は、線で落ちなかった。指紋の写しの取り直しは2回（2回目は `changed=none`）。
+- 実装役が、頼みの文から変えた所と、決めた所（後半。主が採ったもの。区切りのレビューで見る）：
+  - 走る台本は、細目7の見込み（時速130 kmまでの加速、時速70 kmの旋回）に届かない。スタートからコーナーの入口まで140 mしかなく、最高速は時速98.4 km、旋回は時速59.9 km（もっと攻めると、ブレーキを残した旋回でスピンした）。台本は、最初の半円の途中（約259 m）で終わる。
+  - 比べ方は3種類（`exact`、`near`、`wrap`）。向きと、コースに沿った距離は、同じ `wrap`（1周の長さを、世界が渡す）。
+  - 変速の回数は、ギアが変わった回数（ATの上げ下げと、後退の出入り）。壁に当たった回数は、跳ね返って離れた後の当たり直しも1回（アクセルで壁に押し付けると、実測で3回に落ち着く）。
+  - 壁に押し戻したtickは、押し戻した後の位置で、もう1度照会する（要約と、次のtickの路面は、その値）。
+  - 進行距離の「1 tickで40 m」は、`sim.py` の定数（守りの値）。
+  - 世界は、Pyxelを始める前に作る（無い id で、起動時に、分かる文で止まる）。
+  - 「テストと道具が世界を作る口」は、`cp_core` には `place_car()` だけ。定義データを読んで世界を作る所は、道具（`tools/input_reference.py` の `make_sim()`）。
+  - 2つの台本のファイルは、補助が書いた（生成物の扱い）。補助は、浮動小数の結果で入力を決めるので、別の環境で作り直すと、別の台本になりうる（補助の照合の件は、入れていない）。
+- 実測（後半。実装役）：
+  - 世界の1 tick（デスクトップ版）：1.8マイクロ秒から、21〜29マイクロ秒（走る台本と壁の台本の平均は25）。
+  - ブラウザ版の、更新1回（95%点）：何も押さない筋書きで0.4〜0.5 ms（前は0.4）。走っている場面で0.3〜0.4 ms。線は4 ms。
+  - デスクトップ版とブラウザ版の、要約の差：走る台本900 tick、壁の台本780 tickとも、全部の項目で0（量子化の刻み）。許容差を0にしても、通る。ブラウザ版の2回も同じ。走る台本と壁の台本のブラウザ版は、一時のスクリプトで、1度測っただけ（リポジトリには、残していない）。
+  - 走る台本：進行距離258.7 m、最高速 時速98.4 km、変速3回。壁の台本：tick 243で左の壁に正面から当たり、287で後退、544で前進へ戻る。補助の追従での1周は、36.95秒、最高速 時速118.5 km、壁0回。
+  - 全体の検証は約87秒、`--selftest` つきで約24分半（selftest-break が約23分。378件）。HTMLは148,099バイト。
+- 指紋の写しの取り直し（細目の38番）：実装のコミット（`35b6c29`）には、写しを入れず、主が `python3 tools/fingerprint.py --update` を回し直して（`fingerprint: OK updated=2 changed=none`。実装役の写しと同じ）、写しだけの単独のコミット（`4c2ddc8`）にした。古い筋書き2本の、古い項目（tick、入力の要約値、種、乱数の流れ）は、変わっていない。環境の値も同じ。保存する項目の一覧の写しは、変わっていない。
+- 主が確かめたこと（後半の後）：
+  - 基点（`e25edd3`）との差分：消えたテストの関数は4つで、どれも、名と中身を合わせた置き換え（表が3つ、筋書きが4本、仮の表示の値に車、を見る形。主が、差分で確かめた）。消えた壊す件は1つ（`web_probe_data_is_not_loaded_only_in_browser`。同じ壊し方で、名を `web_probe_data_tables_differ_only_in_browser` に変えた）。
+  - 世界の本体（`cp_core/sim.py` の `step()`）を読んだ。順は、頼みの文のとおり。
+- 主の検証（後半と、指紋の写しの取り直しの後。16:01〜16:25 UTC）：`verify: OK mode=all steps=13 ok=13 failed=0 seconds=1437.6 not_yet=3(drive,race-sim,audio)`。回せなかったものは無い。
+  - `check: OK syntax=95 arch=18 rules=9 canon=1 areas=79 data=2 problems=0`
+  - `test: OK passed=2640 failed=0 errors=0 skipped=0 selected=2640 collected=2640 floor=2640`
+  - `fingerprint: OK scenarios=4 fields=6 problems=0 env=same`
+  - `screen_check: OK screens=2/2 violations=0 not_checked=0`
+  - `run: OK driver=flip input=script ticks=120 renders=60 back_ink=5690 screen_diff=0 wall_s=0.167 pack=none namespace=main save=file checks=21 problems=0 not_yet=2(scene3d,mirror)`
+  - `run: OK driver=run input=adapter ticks=120 renders=60 back_ink=5695 screen_diff=0 wall_s=2.015 pack=none namespace=main save=file checks=21 problems=0 not_yet=2(scene3d,mirror)`
+  - `run: OK driver=flip input=script ticks=120 renders=60 back_ink=5690 screen_diff=0 wall_s=0.161 pack=extreme namespace=pack_extreme save=file checks=20 problems=0 fingerprint=skipped not_yet=2(scene3d,mirror)`（試験用データを重ねた回）
+  - `run: OK driver=flip input=script ticks=900 renders=450 back_ink=5777 screen_diff=0 wall_s=1.041 pack=none namespace=main save=file checks=22 problems=0 not_yet=2(scene3d,mirror)`（走る台本の回）
+  - `run: OK driver=flip input=script ticks=780 renders=390 back_ink=5741 screen_diff=0 wall_s=0.896 pack=none namespace=main save=file checks=22 problems=0 not_yet=2(scene3d,mirror)`（壁の台本の回）
+  - `tour: OK shots=2/2 commands=21 problems=0`
+  - `export: OK files=36 pyxapp_bytes=110926 html_bytes=148099 html_max_bytes=1000000 checks=7 problems=0`
+  - `web_smoke: OK scenarios=5 shipped=ok probe=ok script=ok gamepad=ok storage_blocked=ok canvas_ink=51282 ticks=660 renders=330 updates_per_s=60.01 renders_per_s=29.96 update_ms_p95=0.5 render_ms_p95=0.4 with_warmup=60.01/30.05/0.5/0.4 python=3.14.2 save=localstorage probe_gap=0 script_changes=23 script_gap=0 pad_lag=1 blocked_save=memory checks=128 problems=0`
+  - `selftest_break: OK cases=378 planted=335 controls=43 wrong=0 plant_errors=0`（1,346.4秒）
+- 区切りのレビュー（4観点、8体）を、16:27 UTC に始めた（週の使用率は32%。見込みの約7ポイントを足して、約39%）。観点：見かけの合格、頼みの文・設計との食い違い、詰み、層の分離と決定性。
+- 後半の報告で挙がった、文書の直し（主が直した）：設計の「検証の仕組み」の表の run と web-smoke の行、言葉の表の run の行と「許容差つき／折り返した差」、計画の「検証の組」の表（3つの分野に、run-drive と run-wall）。根のCLAUDE.mdの、コマンドの表の時間（全体の検証は約87秒、`--selftest` つきで約24分半）は、レビューの後に直す。
 - 前半で分かった、手を打つこと：
   - selftest-break が約27分半（341件）になり、手順の時間切れ（30分）の間際。後半で件が増えると、超える。段0の仕上げに回していた短縮（細目の30番）を、後半の前に行う（細目の39番）。
   - 規則ファイル `data.md`（7,976バイト）と `controls.md`（7,949バイト）が、上限の間際。
