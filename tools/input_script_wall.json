@@ -1,0 +1,13 @@
+{
+  "segments": [
+    {"ticks": 30},
+    {"ticks": 50, "throttle_analog": 0.5},
+    {"ticks": 105, "throttle_analog": 0.4, "steer_digital": 1},
+    {"ticks": 70, "throttle_analog": 0.5},
+    {"ticks": 85, "brake_digital": 1},
+    {"ticks": 140, "brake_digital": 1, "steer_digital": 1},
+    {"ticks": 60, "throttle_digital": 1},
+    {"ticks": 60, "throttle_analog": 0.5, "steer_analog": -0.2},
+    {"ticks": 180, "throttle_analog": 0.8}
+  ]
+}

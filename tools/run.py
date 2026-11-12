@@ -10,14 +10,18 @@
 
 終了コード：0＝合格、1＝回ったが合わない、2＝全tickを回り切れない（時間切れ、結果ファイルが無い）・
 台本が読めない・回すtick数が台本の合計より短い・指紋の写しが無い（読めない）・--pack の名の試験用データが無い（置き場が無い、
-置き場にファイルが1つも無い、名の字が違う）。
+置き場にファイルが1つも無い、名の字が違う）・参照の世界を作れない（道具が、定義データを読めない）。
 アプリの終了コードが0でも、それだけでは合格にしない。pyxel.quit() は常に0で終わるため。
 失敗にする条件：アプリの終了コード、結果ファイルが無い、回したtickが違う、世界のtickが違う、
 実描画の回数が範囲の外（tickの半分の前後）、裏画面が空、画面が裏画面と違う、回した経路が違う、
 入力の出どころが違う（台本か入力アダプタか）、入力アダプタを呼んだ回数と、直読みを呼んだ回数が違う
 （どちらも、台本なら0、入力アダプタなら回したtickと同じ。直読みは、デスクトップ版では値を返さないが、呼んだ回数は数える）、
-世界の要約が参照（tools/input_reference.py。台本なしなら、何も押していない入力）と違う、
+世界の要約が参照（tools/input_reference.py。台本なしなら、何も押していない入力。世界は、アプリと同じ読み方で読んだ定義データから作る。
+--pack の回は、同じ試験用データを重ねて作る）と違う、
+世界の要約の、車とコースの id が、道具の既定（tools/input_reference.py の CAR_ID、TRACK_ID）と違う（確かめの名は sim_ids）、
 世界の要約が、指紋の写し（tests/snapshots/fingerprint.json）の、同じ筋書き（台本の有無と中身、回したtick数が同じもの）の要約と違う、
+同じ筋書きに、走行の下限（tools/fingerprint.py の Scenario.floors）があって、アプリの世界の要約が、それを満たさない（確かめの名は floor。
+指紋を照らさない --pack の回でも、筋書きが同じなら見る）、
 保存の往復が通っていない・保存先の名が file でない、道具が自分で読んだ保存のファイルが往復の見本と違う、
 名前空間 main のファイルができている、
 結果の data が合わない（表ごとの件数が、道具が定義データのファイルを自分で読んで数えた件数と違う。警告が0件でない。
@@ -110,7 +114,7 @@ def main() -> int:
         # 台本の終わりまで回さないと、台本の後ろの入力が世界へ届いたことを見られない。
         if args.ticks < script.total_ticks:
             return finish("run", INCOMPLETE, f"{head} reason=ticks_shorter_than_script script_ticks={script.total_ticks}")
-    scenario = snapshot = None
+    snapshot = None
     if args.pack is not None:
         # 試験用データを重ねて回す。名に当たる置き場が無い、置き場にファイルが1つも無い、名の字が違う、は回り切れない
         # （アプリは、起動時に ValueError にする。道具は、同じ所を先に見て、2にする）。指紋は照らさない。
@@ -124,12 +128,14 @@ def main() -> int:
         if snapshot is None:
             print(f"  run: 指紋の写し（{fingerprint.FINGERPRINT_SNAPSHOT}）が無いか、読めない")
             return finish("run", INCOMPLETE, f"{head} reason=no_fingerprint_snapshot")
-        try:
-            # 同じ筋書き（台本の有無と中身、回すtick数が同じもの）。無ければ、指紋の確かめを外す。
-            scenario = fingerprint.scenario_for(script_value, args.ticks)
-        except ValueError as exc:
-            print(f"  run: 指紋の筋書きの台本が読めない：{exc}")
-            return finish("run", INCOMPLETE, f"{head} reason=script_unreadable")
+    try:
+        # 同じ筋書き（台本の有無と中身、回すtick数が同じもの）。無ければ、指紋の確かめを外す。
+        # 試験用データを重ねた回は、指紋を照らさないが、筋書きの走行の下限は見る。
+        scenario = fingerprint.scenario_for(script_value, args.ticks)
+    except ValueError as exc:
+        print(f"  run: 指紋の筋書きの台本が読めない：{exc}")
+        return finish("run", INCOMPLETE, f"{head} reason=script_unreadable")
+    compare_fingerprint = scenario is not None and snapshot is not None
     # 実時間で回す分（tick数÷60秒）の3倍に、起動の分を足す。
     timeout = args.timeout if args.timeout is not None else 30 + args.ticks / 20
 
@@ -162,7 +168,14 @@ def main() -> int:
 
     want_renders = args.ticks // 2
     want_reads = 0 if script is not None else args.ticks
-    want_sim = input_reference.sim_summary(script, args.ticks)  # 参照。台本なしなら、何も押していない入力
+    try:
+        # 参照。台本なしなら、何も押していない入力。世界は、アプリと同じ読み方で読んだ定義データ（--pack の回は、同じ試験用データを
+        # 重ねたもの）と、道具の既定の車とコースの id から作る。
+        want_sim = input_reference.sim_summary(script, args.ticks, 0, args.pack)
+    except ValueError as exc:
+        print(f"  run: 参照の世界を作れない（定義データが読めない）：{exc}")
+        return finish("run", INCOMPLETE, f"{head} reason=no_reference")
+    ids_problem = input_reference.world_ids_problem(data.get("sim"))
     checks = {  # 名前: (合っているか, 合わないときの文)
         "app_exit": (True, ""),  # ここまで来たら、終了コードは0で、結果ファイルは読めている
         "result_file": (True, ""),
@@ -193,9 +206,14 @@ def main() -> int:
             data.get("direct_reads") == want_reads,
             f"直読みを呼んだ回数が {data.get('direct_reads')}（{want_reads} のはず。入力アダプタから読むなら1 tickに1度、台本なら呼ばない）",
         ),
-        "sim": (data.get("sim") == want_sim, f"世界の要約が {data.get('sim')}（参照は {want_sim}。入力フレームが、順のまま世界へ届いていない）"),
+        "sim": (
+            data.get("sim") == want_sim,
+            f"世界の要約が {data.get('sim')}（参照は {want_sim}。入力フレームが、順のまま世界へ届いていないか、アプリの世界が、別の車かコースで回っている）",
+        ),
+        # アプリの世界の、車とコースの id。道具の既定と違えば、参照と、アプリの世界が、別のデータで回っている。
+        "sim_ids": (not ids_problem, ids_problem),
     }
-    if scenario is not None:
+    if compare_fingerprint:
         # 指紋。参照（上の sim）は、いまのコードで計算し直した値。こちらは、保存してある指紋の写し。世界の式が変わると、こちらだけが落ちる。
         recorded = fingerprint.recorded_summary(snapshot, scenario)
         checks["fingerprint"] = (
@@ -203,6 +221,10 @@ def main() -> int:
             f"世界の要約が {data.get('sim')}（指紋の写しの筋書き {scenario.name} は {recorded}。"
             "意図した変更なら、単独のコミットで python3 tools/fingerprint.py --update）",
         )
+    if scenario is not None and scenario.floors:
+        # 走行の下限。アプリを通した回でも、走行が成り立っていること（指紋を照らさない回でも、筋書きが同じなら見る）。
+        below = fingerprint.floor_problems(scenario, data.get("sim"))
+        checks["floor"] = (not below, "。".join(below))
     # 保存の往復。アプリの申告（通ったか、保存先の名）と、道具が自分で読んだファイル。
     saved = data.get("storage") if isinstance(data.get("storage"), dict) else {}
     checks["save"] = (
@@ -229,7 +251,7 @@ def main() -> int:
     )
     if failed:
         summary += " failed=" + ",".join(failed)
-    if scenario is None:
+    if not compare_fingerprint:
         summary += " fingerprint=skipped"
     summary += f" not_yet={len(NOT_YET)}({','.join(NOT_YET)})"
     return finish("run", FAIL if failed else OK, summary)

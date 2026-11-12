@@ -9,7 +9,6 @@ import pytest
 import input_reference
 from cp_core import input_script
 from cp_core.input_frame import BUTTONS, DIGEST_START, NEUTRAL, QUANTIZED_FIELDS, InputFrame, fold, quantize
-from cp_core.sim import Sim
 
 ANALOG_KEYS = ("steer_analog", "throttle_analog", "brake_analog")
 SMOKE_MAX_TICKS = 100  # 道具の台本の合計の上限
@@ -220,11 +219,24 @@ def test_input_script_smoke_file_reads_the_same_after_the_trip_through_javascrip
     assert frames(input_script.parse(tripped), 120) == frames(parsed, 120)
 
 
+# --- 走る台本と、壁の台本（tools/input_script_drive.json、tools/input_script_wall.json） ---
+@pytest.mark.parametrize("path, ticks", [(input_reference.DRIVE_SCRIPT, 900), (input_reference.WALL_SCRIPT, 780)], ids=["drive", "wall"])
+def test_input_script_drive_and_wall_files_hold_inputs_only(path, ticks):
+    # 台本は、出来上がった入力だけを持つ（区間の並び）。作ったのは、作業の補助（tools/claude/make_drive_scripts.py）。
+    value, parsed = input_reference.load_script(path)
+    assert parsed.total_ticks == ticks  # 指紋の筋書きと、全体の検証の手順（run-drive、run-wall）が回すtick数
+    assert set(value) == {"segments"} and len(value["segments"]) >= 5
+    assert all(set(segment) <= {"ticks", *input_script.VALUE_KEYS} for segment in value["segments"])  # ボタンは、押さない
+    rows = [quantize(frame) for frame in frames(parsed)]
+    assert any(row[2] or row[3] for row in rows) and any(row[4] or row[5] for row in rows)  # アクセルも、ブレーキも、踏む
+    assert any(row[0] or row[1] for row in rows)  # 舵を切る
+
+
 # --- 道具の参照（tools/input_reference.py） ---
 def test_input_reference_summary_is_the_world_fed_with_the_script_frames():
     _, parsed = smoke()
     ticks = parsed.total_ticks + 10
-    sim = Sim()
+    sim = input_reference.make_sim()
     for tick in range(ticks):
         sim.step(parsed.frame_at(tick))
     assert input_reference.sim_summary(parsed, ticks) == sim.summary()
@@ -232,11 +244,50 @@ def test_input_reference_summary_is_the_world_fed_with_the_script_frames():
 
 
 def test_input_reference_without_a_script_feeds_neutral_frames():
-    sim = Sim()
+    sim = input_reference.make_sim()
     for _ in range(50):
         sim.step(NEUTRAL)
     assert input_reference.sim_summary(None, 50) == sim.summary()
     assert input_reference.quantized_rows(None, 3) == [(0,) * 8] * 3
+
+
+def test_input_reference_makes_the_world_from_the_data_the_app_reads_with_the_default_ids():
+    # 道具の世界は、アプリと同じ読み方（cp_app/data_files.py）で読んだ定義データから作る。車とコースの id の既定は、道具の1か所。
+    from cp_app import data_files
+    from cp_core.datadefs import GameData
+
+    assert (input_reference.CAR_ID, input_reference.TRACK_ID) == ("kazane", "test_loop")
+    data = input_reference.load_data()
+    assert type(data) is GameData and data.pack is None and data.counts() == data_files.load({}, None).counts()
+    assert input_reference.load_data() is data  # 読むのは、1度（読み込んだ定義は、引くたびに複製を渡す）
+    sim = input_reference.make_sim()
+    assert (sim.car_id, sim.track_id, sim.seed) == ("kazane", "test_loop", 0)
+    assert input_reference.make_sim(7).seed == 7
+    summary = input_reference.sim_summary(None, 3)
+    assert (summary["car"], summary["track"], summary["tick"]) == ("kazane", "test_loop", 3)
+
+
+def test_input_reference_with_a_test_pack_overlays_the_same_pack_the_app_would():
+    # 試験用データを重ねた回（run --pack）の参照は、同じ試験用データを重ねて作る。重ねた定義には、足した車とコースがある。
+    packed = input_reference.load_data("extreme")
+    assert packed.pack == "extreme" and "wide_test_car" in packed.ids("cars") and "wide_test_loop" in packed.ids("tracks")
+    assert input_reference.make_sim(0, "extreme", "wide_test_car", "wide_test_loop").summary()["track"] == "wide_test_loop"
+    with pytest.raises(ValueError):
+        input_reference.make_sim(0, None, "wide_test_car")  # 重ねなければ、無い id
+    with pytest.raises(ValueError):
+        input_reference.load_data("no_such_pack_zz")
+    # 試験用データ（extreme）の車とコースは、走りの値が実物と同じなので、既定の id の要約は、重ねても同じ。
+    _, parsed = smoke()
+    assert input_reference.sim_summary(parsed, 100, 0, "extreme") == input_reference.sim_summary(parsed, 100)
+
+
+def test_input_reference_world_ids_problem_names_the_ids_when_they_differ_from_the_defaults():
+    summary = input_reference.sim_summary(None, 1)
+    assert input_reference.world_ids_problem(summary) == ""
+    for bad in ({**summary, "track": "wide_test_loop"}, {**summary, "car": "wide_test_car"}, {"tick": 1}, None, []):
+        problem = input_reference.world_ids_problem(bad)
+        assert "kazane" in problem and "test_loop" in problem
+    assert "wide_test_loop" in input_reference.world_ids_problem({**summary, "track": "wide_test_loop"})
 
 
 def test_input_reference_digest_of_the_rows_is_the_input_digest():
@@ -252,7 +303,7 @@ def test_input_reference_summary_changes_when_the_script_is_shifted_by_one_tick(
     # 参照と照らす確かめが、1 tickのずれを拾えること。
     _, parsed = smoke()
     ticks = parsed.total_ticks + 5
-    shifted = Sim()
+    shifted = input_reference.make_sim()
     for tick in range(ticks):
         shifted.step(parsed.frame_at(tick + 1))
     assert shifted.summary() != input_reference.sim_summary(parsed, ticks)

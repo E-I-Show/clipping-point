@@ -22,7 +22,9 @@ UI = "画面（2D）"
 WEB = "ブラウザ連携"
 LOOP = "メインループと世界の状態"
 TOOLS_AREA = "検証の道具と検査の決まり"
-FULL_STEPS = ["check", "test", "fingerprint", "screen-check", "run", "run-realtime", "run-pack", "tour", "export", "web-smoke"]
+FULL_STEPS = [
+    "check", "test", "fingerprint", "screen-check", "run", "run-realtime", "run-pack", "run-drive", "run-wall", "tour", "export", "web-smoke",
+]
 UI_WORDS = "canvas or screens or ui_check or fixtures or tour"
 FLOW_WORDS = "flow or fixtures or screens or fingerprint"
 INPUT_WORDS = "input_frame or input_script or input_pyxel or input_trace or controls or profile"
@@ -164,10 +166,11 @@ def test_verify_input_files_map_to_the_input_area_and_the_direct_read_to_the_web
 
 
 def test_verify_focused_plan_for_the_input_area_follows_the_plan_table():
-    # 計画の表の「操作補正と入力」：run、drive、web-smoke。drive は、まだ無い手順。
+    # 計画の表の「操作補正と入力」：run、drive、web-smoke。drive は、まだ無い手順。走る台本の回と、壁の台本の回を足してある
+    # （操作補正の、舵の上限と、後退の出入りを、アプリを通して通すのは、この2つの回）。
     plan, kind, not_yet = verify.plan_for([area(INPUT)], [], focused=True)
     assert kind == "focused"
-    assert step_names(plan) == ["check", "test", "run", "web-smoke"]
+    assert step_names(plan) == ["check", "test", "run", "run-drive", "run-wall", "web-smoke"]
     # 計画の表の「操作補正、保存する項目、セッティングの順」のうち、操作補正（controls）と、保存する項目（profile）まで入っている。
     assert plan[1][1][-2:] == ["-k", INPUT_WORDS]
     assert not_yet == ["drive"]
@@ -175,16 +178,17 @@ def test_verify_focused_plan_for_the_input_area_follows_the_plan_table():
 
 def test_verify_vehicle_and_track_files_map_to_their_areas_and_follow_the_plan_table():
     # 計画の表の「車両」：テストの絞りは、車両、世界、指紋（セッティングの順は、まだ無い）。足す手順は run、drive。
+    # 計画の表に無い run-drive と run-wall（走る台本の回と、壁の台本の回）を足してある。既定の run では、車が、ほとんど動かない。
     for path in ("clipping_point/cp_core/vehicle.py", "tests/test_vehicle.py"):
         assert names_of(path) == [VEHICLE], path
     plan, kind, not_yet = verify.plan_for([area(VEHICLE)], [], focused=True)
-    assert kind == "focused" and step_names(plan) == ["check", "test", "run"] and not_yet == ["drive"]
+    assert kind == "focused" and step_names(plan) == ["check", "test", "run", "run-drive", "run-wall"] and not_yet == ["drive"]
     assert plan[1][1][-2:] == ["-k", VEHICLE_WORDS]
-    # 計画の表の「コース」：テストの絞りは、コース、世界、指紋、データ。足す手順は run、tour、drive。
+    # 計画の表の「コース」：テストの絞りは、コース、世界、指紋、データ。足す手順は run、tour、drive（と、run-drive、run-wall）。
     for path in ("clipping_point/cp_core/track.py", "tests/test_track.py"):
         assert names_of(path) == [TRACK], path
     plan, kind, not_yet = verify.plan_for([area(TRACK)], [], focused=True)
-    assert kind == "focused" and step_names(plan) == ["check", "test", "run", "tour"] and not_yet == ["drive"]
+    assert kind == "focused" and step_names(plan) == ["check", "test", "run", "run-drive", "run-wall", "tour"] and not_yet == ["drive"]
     assert plan[1][1][-2:] == ["-k", TRACK_WORDS]
     # 並びは、計画の表の順（車両、コース、操作補正と入力、…）。
     assert [a.name for a in verify.AREAS][:3] == [VEHICLE, TRACK, INPUT]
@@ -256,6 +260,18 @@ def test_verify_run_with_the_test_pack_is_a_step_of_the_full_verification_right_
     assert names[names.index("run-realtime") + 1] == "run-pack" and "run-pack" not in verify.NOT_YET
     assert [str(part) for part in verify.STEPS["run-pack"][1:]] == [str(ROOT / "tools" / "run.py"), "--pack", "extreme"]
     assert (ROOT / "testpacks" / "extreme").is_dir()  # 手順が渡す名の、試験用データがある
+
+
+def test_verify_runs_with_the_drive_script_and_the_wall_script_are_steps_of_the_full_verification():
+    # 走る台本の回と、壁の台本の回。アプリを通して、車が走る道（変速、芝、壁、後退のギアが、仮の表示の値になる道）を、毎回通す。
+    names = list(verify.STEPS)
+    assert names[names.index("run-pack") + 1:names.index("run-pack") + 3] == ["run-drive", "run-wall"]
+    assert [str(part) for part in verify.STEPS["run-drive"][1:]] == [str(ROOT / "tools" / "run.py"), "--script", str(ROOT / "tools" / "input_script_drive.json"), "--ticks", "900"]
+    assert [str(part) for part in verify.STEPS["run-wall"][1:]] == [str(ROOT / "tools" / "run.py"), "--script", str(ROOT / "tools" / "input_script_wall.json"), "--ticks", "780"]
+    assert (ROOT / "tools" / "input_script_drive.json").is_file() and (ROOT / "tools" / "input_script_wall.json").is_file()
+    # 画面なしの速い経路（本番と同じ経路の印を、付けない）。まだ無い手順の drive（運転役の周回。段1）とは、別の手順。
+    assert "--realtime" not in verify.STEPS["run-drive"] and "--realtime" not in verify.STEPS["run-wall"]
+    assert "drive" in verify.NOT_YET and "run-drive" not in verify.NOT_YET and "run-wall" not in verify.NOT_YET
 
 
 def test_verify_fingerprint_is_a_step_of_the_full_verification_right_after_the_tests():
@@ -371,7 +387,8 @@ def test_verify_focused_plan_does_not_repeat_a_word_two_areas_share():
 def test_verify_screen_check_and_tour_are_no_longer_waiting_to_be_built():
     assert "screen-check" in verify.STEPS and "tour" in verify.STEPS
     assert "screen-check" not in verify.NOT_YET and "tour" not in verify.NOT_YET
-    # 全体の検証での順：check → test → fingerprint → screen-check → run → run-realtime → run-pack → tour → export → web-smoke。
+    # 全体の検証での順：check → test → fingerprint → screen-check → run → run-realtime → run-pack → run-drive → run-wall
+    # → tour → export → web-smoke。
     assert list(verify.STEPS) == FULL_STEPS
 
 

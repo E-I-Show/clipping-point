@@ -5,7 +5,9 @@
 合否は、世界の要約だけで決める。環境の値（Pythonの版、数学関数の試し値）が、指紋の写しと違っても、ここでは落とさない。
 文字列の集合の順に頼っていないことは、ハッシュの種（PYTHONHASHSEED）を変えた別プロセスで回して見る。
 保存する項目の一覧の写しのテストは tests/test_profile.py。
+走行の下限（筋書きの、走行が成り立っていることの確かめ）も、ここで見る。満たさなければ、道具は1で、--update は、何も書かない。
 """
+import dataclasses
 import functools
 import json
 import os
@@ -18,9 +20,11 @@ import fingerprint
 import input_reference
 from conftest import ROOT
 from cp_core.input_frame import BUTTONS, NEUTRAL, InputFrame
-from cp_core.sim import Sim
 
 SCRIPT_SCENARIO = fingerprint.SCENARIOS[0]  # 道具の台本を回す筋書き。ボタンを2個押す区間を通る
+NO_SCRIPT_SCENARIO = fingerprint.SCENARIOS[1]  # 台本なしの筋書き。車は、止まったまま
+DRIVE_SCENARIO = fingerprint.SCENARIOS[2]  # 走る台本の筋書き
+WALL_SCENARIO = fingerprint.SCENARIOS[3]  # 壁の台本の筋書き
 HASH_SEEDS = ("0", "1", "12345")
 # 別プロセスで回すコード。筋書きの要約と、文字列の集合（ボタンの名の集合）を回した順と、受け取ったハッシュの種を返す。
 CHILD_CODE = (
@@ -46,7 +50,7 @@ def snapshot() -> dict:
 def run_scenario(scenario, extra_ticks: int = 0, seed=None, change_tick=None) -> dict:
     """筋書きを、手で回す。extra_ticks は、余分に回すtick数。change_tick は、入力を1つ変えるtick。"""
     _, script = fingerprint.load_scenario_script(scenario)
-    sim = Sim(scenario.seed if seed is None else seed)
+    sim = input_reference.make_sim(scenario.seed if seed is None else seed, None, scenario.car, scenario.track)
     for tick in range(scenario.ticks + extra_ticks):
         frame = input_reference.frame_at(script, tick)
         if tick == change_tick:
@@ -97,7 +101,7 @@ def test_fingerprint_environment_differences_do_not_fail_the_world_comparison():
 
 # --- 筋書き ---
 def test_fingerprint_scenarios_are_the_two_runs_of_the_full_verification():
-    script, no_script = fingerprint.SCENARIOS
+    script, no_script = fingerprint.SCENARIOS[:2]
     assert (script.name, script.script, script.ticks, script.seed) == ("script_120", input_reference.SMOKE_SCRIPT, 120, 0)
     assert (no_script.name, no_script.script, no_script.ticks, no_script.seed) == ("no_script_120", None, 120, 0)
     assert fingerprint.script_name(script) == "tools/input_script_smoke.json" and fingerprint.script_name(no_script) is None
@@ -108,6 +112,92 @@ def test_fingerprint_scenarios_are_the_two_runs_of_the_full_verification():
     # 同じ筋書きが無い回し方。
     assert fingerprint.scenario_for(script_value, 200) is None and fingerprint.scenario_for(None, 121) is None
     assert fingerprint.scenario_for({"segments": [{"ticks": 3}]}, 120) is None
+    assert script.floors == () and no_script.floors == ()  # 車が、ほとんど動かない筋書き。走行の下限は、持たない
+
+
+def test_fingerprint_drive_and_wall_scenarios_come_last_and_are_the_two_script_runs_of_the_full_verification():
+    import verify
+
+    assert [scenario.name for scenario in fingerprint.SCENARIOS] == ["script_120", "no_script_120", "drive_900", "wall_780"]
+    assert (DRIVE_SCENARIO.script, DRIVE_SCENARIO.ticks, DRIVE_SCENARIO.seed) == (input_reference.DRIVE_SCRIPT, 900, 0)
+    assert (WALL_SCENARIO.script, WALL_SCENARIO.ticks, WALL_SCENARIO.seed) == (input_reference.WALL_SCRIPT, 780, 0)
+    assert fingerprint.script_name(DRIVE_SCENARIO) == "tools/input_script_drive.json"
+    assert fingerprint.script_name(WALL_SCENARIO) == "tools/input_script_wall.json"
+    for scenario, step in ((DRIVE_SCENARIO, "run-drive"), (WALL_SCENARIO, "run-wall")):
+        value, script = fingerprint.load_scenario_script(scenario)
+        assert script.total_ticks == scenario.ticks  # 台本の終わりまで、回す
+        assert fingerprint.scenario_for(value, scenario.ticks) is scenario
+        # 全体の検証の手順が、同じ台本を、同じtick数で、アプリに通す（道具 run が、指紋の写しと、走行の下限を照らす）。
+        words = [str(part) for part in verify.STEPS[step][1:]]
+        assert words == [str(ROOT / "tools" / "run.py"), "--script", str(scenario.script), "--ticks", str(scenario.ticks)]
+
+
+def test_fingerprint_every_scenario_names_the_car_and_the_track_of_the_one_place_in_the_tools():
+    for scenario in fingerprint.SCENARIOS:
+        assert (scenario.car, scenario.track) == (input_reference.CAR_ID, input_reference.TRACK_ID) == ("kazane", "test_loop")
+        summary = fingerprint.summary_of(scenario)
+        assert (summary["car"], summary["track"]) == (scenario.car, scenario.track)  # 要約だけで、どの車とコースで回ったかを照らせる
+    other = dataclasses.replace(NO_SCRIPT_SCENARIO, car="no_such_car")
+    with pytest.raises(ValueError):
+        fingerprint.summary_of(other)
+
+
+# --- 走行の下限 ---
+def test_fingerprint_drive_and_wall_scenarios_meet_their_floors():
+    for scenario in (DRIVE_SCENARIO, WALL_SCENARIO):
+        assert scenario.floors and fingerprint.floor_problems(scenario, fingerprint.summary_of(scenario)) == []
+    assert fingerprint.floor_lines(fingerprint.current_scenarios()) == []
+    # 走る台本：進行距離、最高速、変速の回数、最後に舗装の上、壁に当たっていない、照会を取り直していない。
+    assert {name for name, _, _ in DRIVE_SCENARIO.floors} == {"odometer_mm", "top_speed_mm_s", "shifts", "surface", "wall_hits", "requery_count"}
+    assert ("requery_count", "==", 0) in DRIVE_SCENARIO.floors and ("wall_hits", "==", 0) in DRIVE_SCENARIO.floors
+    # 壁の台本：壁に当たった回数、後退に入った回数、最後に前進に戻っている、最後の進行距離。
+    assert {name for name, _, _ in WALL_SCENARIO.floors} == {"wall_hits", "reverse_count", "gear", "odometer_mm"}
+    # 下限は、要約の項目の名で書いてある。
+    names = set(fingerprint.summary_of(NO_SCRIPT_SCENARIO))
+    assert all(name in names and op in fingerprint.FLOOR_OPS for scenario in fingerprint.SCENARIOS for name, op, _ in scenario.floors)
+
+
+def test_fingerprint_floors_are_real_bounds_not_the_values_of_a_car_that_stands_still():
+    # 止まったままの車の要約（台本なしの筋書き）は、走る台本の下限も、壁の台本の下限も、満たさない。
+    still = fingerprint.summary_of(NO_SCRIPT_SCENARIO)
+    drive_lines = fingerprint.floor_problems(DRIVE_SCENARIO, still)
+    assert len(drive_lines) == 3 and all("drive_900" in line for line in drive_lines)
+    assert [line.split("：")[1].split(" ")[0] for line in drive_lines] == ["odometer_mm", "top_speed_mm_s", "shifts"]
+    assert len(fingerprint.floor_problems(WALL_SCENARIO, still)) == 3  # 壁に当たっていない、後退に入っていない、進んでいない
+    # 走る台本の要約は、壁の台本の下限を満たさない（逆も）。
+    drive, wall = fingerprint.summary_of(DRIVE_SCENARIO), fingerprint.summary_of(WALL_SCENARIO)
+    assert fingerprint.floor_problems(WALL_SCENARIO, drive) and fingerprint.floor_problems(DRIVE_SCENARIO, wall)
+
+
+@pytest.mark.parametrize(
+    "change, name",
+    [
+        ({"odometer_mm": 229_999}, "odometer_mm"),
+        ({"top_speed_mm_s": 23_999}, "top_speed_mm_s"),
+        ({"shifts": 1}, "shifts"),
+        ({"surface": "grass"}, "surface"),
+        ({"wall_hits": 1}, "wall_hits"),
+        ({"requery_count": 1}, "requery_count"),  # 照会を、1度でも取り直した
+        ({"requery_count": 900}, "requery_count"),  # 毎tick、全部を探した（答えは同じで、遅いだけの退行）
+        ({"odometer_mm": 258687.0}, "odometer_mm"),  # 小数は、満たさない（要約は、整数と文字列だけ）
+        ({"shifts": True}, "shifts"),
+        ({"wall_hits": False}, "wall_hits"),  # 0 と false を、同じに見ない
+        ({"surface": None}, "surface"),
+    ],
+)
+def test_fingerprint_each_drive_floor_fails_under_the_name_of_its_item(change, name):
+    summary = {**fingerprint.summary_of(DRIVE_SCENARIO), **change}
+    lines = fingerprint.floor_problems(DRIVE_SCENARIO, summary)
+    assert len(lines) == 1 and f"：{name} が" in lines[0] and "drive_900" in lines[0]
+
+
+def test_fingerprint_floor_of_a_missing_item_or_of_no_summary_is_not_met():
+    summary = fingerprint.summary_of(WALL_SCENARIO)
+    without = {key: value for key, value in summary.items() if key != "reverse_count"}
+    assert len(fingerprint.floor_problems(WALL_SCENARIO, without)) == 1
+    for nothing in (None, [], "summary", {}):
+        assert len(fingerprint.floor_problems(WALL_SCENARIO, nothing)) == len(WALL_SCENARIO.floors)
+    assert fingerprint.floor_problems(NO_SCRIPT_SCENARIO, None) == []  # 下限の無い筋書き
 
 
 def test_fingerprint_script_scenario_goes_through_segments_with_two_buttons_held():
@@ -145,14 +235,27 @@ def test_fingerprint_another_seed_changes_the_stream_states():
     assert base["tick"] == other["tick"] and base["input_digest"] == other["input_digest"]  # 入力の側は、種に頼らない
 
 
-def test_fingerprint_the_two_scenarios_have_different_summaries():
-    script, no_script = (fingerprint.summary_of(scenario) for scenario in fingerprint.SCENARIOS)
-    assert script["input_digest"] != no_script["input_digest"]
+def test_fingerprint_the_scenarios_have_different_summaries():
+    script, no_script, drive, wall = (fingerprint.summary_of(scenario) for scenario in fingerprint.SCENARIOS)
+    assert len({summary["input_digest"] for summary in (script, no_script, drive, wall)}) == 4
     assert no_script == input_reference.sim_summary(None, 120)
-    neutral = Sim()
+    neutral = input_reference.make_sim()
     for _ in range(120):
         neutral.step(NEUTRAL)
     assert no_script == neutral.summary()
+    # 台本なしの筋書きでは、車は、スタート位置から動かない。走る台本と壁の台本では、車の項目が、大きく動く。
+    assert (no_script["x_mm"], no_script["odometer_mm"], no_script["top_speed_mm_s"]) == (60000, 0, 0)
+    assert drive["odometer_mm"] > 200_000 and drive["z_mm"] > 50_000 and wall["reverse_count"] == 1
+
+
+def test_fingerprint_a_changed_input_moves_the_car_items_of_the_drive_scenario():
+    # 走る台本の途中で、入力を1つ変える（コーナーの手前の、ブレーキの1 tickを、全開のアクセルに替える）。入力の要約値だけでなく、
+    # 車の項目も変わる（止まったままの筋書きでは、何を変えても、車の項目が動かない）。
+    _, script = fingerprint.load_scenario_script(DRIVE_SCENARIO)
+    assert script.frame_at(500).brake_analog > 0.0
+    base, changed = run_scenario(DRIVE_SCENARIO), run_scenario(DRIVE_SCENARIO, change_tick=500)
+    moved = {name for name in base if base[name] != changed[name]}
+    assert {"input_digest", "x_mm", "z_mm", "s_mm", "odometer_mm"} <= moved
 
 
 # --- 比べ方 ---
@@ -293,6 +396,40 @@ def test_fingerprint_check_says_the_environment_changed_first_when_the_world_dif
     assert "環境が変わった" in lines[0]  # 先に出す
     assert any("筋書き no_script_120 の要約.input_digest" in line for line in lines[1:])
     assert "problems=1 failed=world env=changed" in lines[-1]
+
+
+def with_an_unmet_floor() -> tuple:
+    """筋書きの一覧の、台本なしの筋書きに、満たせない下限（止まったままの車に、進行距離1 mm以上）を足したもの。"""
+    stuck = dataclasses.replace(NO_SCRIPT_SCENARIO, floors=(("odometer_mm", ">=", 1),))
+    return tuple(stuck if scenario is NO_SCRIPT_SCENARIO else scenario for scenario in fingerprint.SCENARIOS)
+
+
+def test_fingerprint_check_fails_on_an_unmet_floor_even_when_the_snapshot_is_the_same(tmp_path, capsys):
+    fingerprint.update(tmp_path)
+    capsys.readouterr()
+    assert fingerprint.check(tmp_path) == 0
+    assert fingerprint.check(tmp_path, with_an_unmet_floor()) == 1  # 写しと同じでも、走行が成り立っていなければ、落とす
+    out = capsys.readouterr().out
+    assert "筋書き no_script_120 の走行の下限：odometer_mm が 0（>= 1 のはず）" in out
+    assert "scenarios=4 fields=6 problems=1 failed=floor env=same" in out.strip().splitlines()[-1]
+
+
+def test_fingerprint_update_writes_nothing_when_a_floor_is_not_met(tmp_path, capsys):
+    # 走行が成り立っていない筋書きの要約を、写しにしない。何も書かずに、1。
+    assert fingerprint.update(tmp_path, with_an_unmet_floor()) == 1
+    out = capsys.readouterr().out
+    assert "updated=0 reason=floor_not_met floors=1" in out.strip().splitlines()[-1] and "no_script_120" in out
+    assert not (tmp_path / "tests").exists()
+    # 前の写しがあれば、そのまま残す（2つとも、書き換えない）。
+    assert fingerprint.update(tmp_path) == 0
+    before = {rel: (tmp_path / rel).read_bytes() for rel in (fingerprint.FINGERPRINT_SNAPSHOT, fingerprint.SCHEMA_SNAPSHOT)}
+    (tmp_path / fingerprint.SCHEMA_SNAPSHOT).write_text(json.dumps({"version": 1, "fields": {}}), encoding="utf-8")
+    stale = (tmp_path / fingerprint.SCHEMA_SNAPSHOT).read_bytes()
+    capsys.readouterr()
+    assert fingerprint.update(tmp_path, with_an_unmet_floor()) == 1
+    assert "reason=floor_not_met" in last_line(capsys)
+    assert (tmp_path / fingerprint.FINGERPRINT_SNAPSHOT).read_bytes() == before[fingerprint.FINGERPRINT_SNAPSHOT]
+    assert (tmp_path / fingerprint.SCHEMA_SNAPSHOT).read_bytes() == stale  # 保存する項目の一覧の写しも、書かない
 
 
 def test_fingerprint_check_never_rewrites_the_snapshots(tmp_path, capsys):

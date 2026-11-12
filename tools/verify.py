@@ -1,7 +1,8 @@
 """検証の道具を決まった順に、1本ずつ回して、表を1つ出す。分野ごとの組の表は、ここの AREAS だけに持つ。
 
   python3 tools/verify.py --all [--selftest]                 全体の検証（check → test → fingerprint → screen-check → run
-                                                             → run --realtime → run --pack extreme → tour → export → web-smoke）
+                                                             → run --realtime → run --pack extreme → run（走る台本）→ run（壁の台本）
+                                                             → tour → export → web-smoke）
   python3 tools/verify.py --touched [--base REV] [--selftest] 変更したファイルから触れた分野を引いて回す
   python3 tools/verify.py --list                             分野ごとの組の表を出す
 
@@ -47,6 +48,11 @@ STEPS = {
     # 試験用データ（testpacks/extreme/）を重ねて回す。重ねる口と、保存の名前空間の切り替えを、毎回通す。
     # 巡回を重ねて回すのは、車名を出す画面ができる段1。
     "run-pack": [PY, TOOLS / "run.py", "--pack", "extreme"],
+    # 走る台本の回と、壁の台本の回（段0 区切り9）。画面なしの速い経路。アプリを通して、車が走る道（変速、芝、壁、後退のギアが、
+    # 仮の表示の値になる道を含む）を、毎回通す。指紋の写しと、筋書きの走行の下限を照らす。tick数は、指紋の筋書き（tools/fingerprint.py）と同じ。
+    # まだ無い手順の drive（運転役の周回。段1）とは、別の手順。
+    "run-drive": [PY, TOOLS / "run.py", "--script", TOOLS / "input_script_drive.json", "--ticks", "900"],
+    "run-wall": [PY, TOOLS / "run.py", "--script", TOOLS / "input_script_wall.json", "--ticks", "780"],
     "tour": [PY, TOOLS / "tour.py"],
     "export": [PY, TOOLS / "export.py"],
     "web-smoke": [PY, TOOLS / "web_smoke.py"],
@@ -83,8 +89,9 @@ AREAS = (
         ("clipping_point/cp_core/vehicle.py", "tests/test_vehicle.py"),
         # 計画の表のテストの絞りは「車両、世界、指紋、セッティングの順」。セッティングの順（段1）は、まだテストが無い。作る区切りで足す。
         "vehicle or sim or fingerprint",
-        # 計画の表のとおり。drive は段1で作る（いまは NOT_YET）。
-        ("run", "drive"),
+        # 計画の表は run、drive。drive は段1で作る（いまは NOT_YET）。計画の表に無い run-drive と run-wall を足した（段0 区切り9）。
+        # 既定の run（入力の跡の確かめ用の台本）では、車が、ほとんど動かない。アプリを通して車が走るのは、この2つの回だけ。
+        ("run", "run-drive", "run-wall", "drive"),
     ),
     Area(
         # コースの表、照会、壁の押し戻し、形の検査（段0 区切り9）。コースの形（clipping_point/data/tracks/ の下）は、
@@ -93,8 +100,8 @@ AREAS = (
         ("clipping_point/cp_core/track.py", "tests/test_track.py"),
         # 計画の表のテストの絞りは「コース、世界、指紋、データ」。データは、読み込み検査（datadefs）と、ファイルを読む所（data_files）。
         "track or sim or fingerprint or datadefs or data_files",
-        # 計画の表のとおり。drive は段1で作る（いまは NOT_YET）。
-        ("run", "tour", "drive"),
+        # 計画の表は run、tour、drive。drive は段1で作る（いまは NOT_YET）。run-drive と run-wall を足した（上の「車両」と同じ理由）。
+        ("run", "run-drive", "run-wall", "tour", "drive"),
     ),
     Area(
         "操作補正と入力",
@@ -107,8 +114,9 @@ AREAS = (
         # 計画の表のテストの絞りは「操作補正、保存する項目、セッティングの順」。保存する項目（profile）は、段0 区切り7で足した。
         # 操作補正（controls）は、最小版を、段0 区切り9で足した（本体は、段1 区切り4）。セッティングの順（段1）は、まだテストが無い。
         "input_frame or input_script or input_pyxel or input_trace or controls or profile",
-        # 計画の表のとおり。drive は段1で作る（いまは NOT_YET）。
-        ("run", "drive", "web-smoke"),
+        # 計画の表は run、drive、web-smoke。drive は段1で作る（いまは NOT_YET）。run-drive と run-wall を足した（上の「車両」と同じ理由。
+        # 操作補正の、舵の上限と、後退の出入りを、アプリを通して通すのは、この2つの回）。
+        ("run", "run-drive", "run-wall", "drive", "web-smoke"),
     ),
     Area(
         # 計画の表の「カメラと画面の状態」。いまあるのは、画面の状態（cp_core/flow.py）の最小の形だけ。

@@ -33,6 +33,7 @@ RENDERS, MEASURED_RENDERS = TICKS // 2, (TICKS - WARMUP) // 2
 # 台本を渡す筋書きと、偽のコントローラーの筋書きの値。
 SCRIPT_VALUE, SCRIPT = input_reference.load_script(input_reference.SMOKE_SCRIPT)
 SCRIPT_TICKS = BUDGETS["web_script_ticks"]
+SIM_TOLERANCE = BUDGETS["web_summary_tolerance"]  # 世界の要約の、許容差つきの項目に許す差（量子化の刻みで数える）
 STAGE, SETTLE = BUDGETS["web_pad_stage_ticks"], BUDGETS["web_pad_settle_ticks"]
 PAD_TICKS = web_smoke.pad_ticks(STAGE)
 FIELD = {name: index for index, name in enumerate(QUANTIZED_FIELDS)}
@@ -626,9 +627,14 @@ def script_result(**changes) -> dict:
     return {**base, **changes}
 
 
-def script_failed(res, desktop_sim=None, a_page=None) -> list:
+SAME = object()  # 2回目に開いたときの世界の要約が、1回目と同じ、という印
+
+
+def script_failed(res, desktop_sim=None, a_page=None, again_sim=SAME, tolerance: int = SIM_TOLERANCE) -> list:
+    """台本の筋書きの判定で、落ちた確かめの名。again_sim は、同じ値を渡して、もう1度開いたときの、世界の要約（既定は、1回目と同じ）。"""
     sim = input_reference.sim_summary(SCRIPT, SCRIPT_TICKS) if desktop_sim is None else desktop_sim
-    return failed(web_smoke.judge_script(a_page or page(untilAt=6000), SHA, res, sim, SCRIPT, SCRIPT_TICKS))
+    again = res.get("sim") if again_sim is SAME else again_sim
+    return failed(web_smoke.judge_script(a_page or page(untilAt=6000), SHA, res, sim, SCRIPT, SCRIPT_TICKS, tolerance, again))
 
 
 def changed_row(rows: list, tick: int, **values) -> list:
@@ -662,7 +668,7 @@ def test_web_smoke_script_scenario_runs_past_the_end_of_the_script():
         (script_result(direct_reads=1), ["direct_reads"]),
         (script_result(direct_reads=None), ["direct_reads"]),
         (script_result(sim={"tick": SCRIPT_TICKS, "input_digest": 1}), ["sim", "sim_reference"]),
-        (script_result(sim=None), ["sim", "sim_reference"]),
+        (script_result(sim=None), ["sim", "sim_reference", "sim_repeat"]),
         (script_result(inputs=None), ["trace_complete", "trace"]),
         (script_result(inputs=trace_report(script_rows(), max_changes=5)), ["trace_complete", "trace"]),
         (script_result(inputs={**trace_report(script_rows()), "truncated": True}), ["trace_complete", "trace"]),
@@ -682,6 +688,251 @@ def test_web_smoke_script_summary_must_equal_the_desktop_one_and_the_reference()
     # 何も押していない入力で回した世界の要約は、台本の参照と違う。
     neutral = input_reference.sim_summary(None, SCRIPT_TICKS)
     assert script_failed(script_result(sim=neutral), desktop_sim=neutral) == ["sim_reference"]
+
+
+# --- 世界の要約の突き合わせ（デスクトップ版とブラウザ版。項目ごとの比べ方） ---
+def drive_summary() -> dict:
+    """走る台本を回した、世界の要約（車の項目が、0でない値を持つ見本）。"""
+    return input_reference.sim_summary(input_reference.load_script(input_reference.DRIVE_SCRIPT)[1], 900)
+
+
+PERIODS = input_reference.summary_periods()
+LAP_MM = PERIODS["s_mm"]
+NEAR_FIELDS = ("x_mm", "z_mm", "vx_mm_s", "vz_mm_s", "yaw_rate_e5", "steer_e5", "rpm", "lateral_mm", "odometer_mm", "top_speed_mm_s")
+EXACT_FIELDS = ("tick", "input_digest", "seed", "rng_ai", "car", "track", "gear", "surface", "shifts", "wall_hits", "reverse_count", "requery_count")
+
+
+def differences(got, want, tolerance: int = SIM_TOLERANCE) -> list:
+    return input_reference.summary_differences(got, want, tolerance, PERIODS)
+
+
+def test_web_smoke_summary_tolerance_is_two_steps_of_the_quantization():
+    assert SIM_TOLERANCE == 2 and type(SIM_TOLERANCE) is int
+    assert PERIODS == {"heading_e5": 628319, "s_mm": LAP_MM} and 700_000 < LAP_MM < 760_000  # 仮の周回路は、約733 m
+
+
+def test_web_smoke_summaries_that_are_the_same_have_no_difference_even_with_no_tolerance():
+    summary = drive_summary()
+    assert differences(summary, dict(summary)) == [] and differences(summary, dict(summary), 0) == []
+    assert set(NEAR_FIELDS) | set(EXACT_FIELDS) | {"heading_e5", "s_mm"} == set(summary)  # 下のテストが、全部の項目を通る
+
+
+@pytest.mark.parametrize("name", NEAR_FIELDS)
+@pytest.mark.parametrize("sign", [1, -1])
+def test_web_smoke_near_fields_may_differ_by_the_tolerance_and_no_more(name, sign):
+    summary = drive_summary()
+    assert differences({**summary, name: summary[name] + sign * SIM_TOLERANCE}, summary) == []
+    lines = differences({**summary, name: summary[name] + sign * (SIM_TOLERANCE + 1)}, summary)
+    assert len(lines) == 1 and lines[0].startswith(f"{name}: ") and "3" in lines[0]
+    assert len(differences({**summary, name: summary[name] + sign}, summary, 0)) == 1  # 許容差が0なら、1つの違いも通さない
+
+
+@pytest.mark.parametrize("name", EXACT_FIELDS)
+def test_web_smoke_exact_fields_must_be_the_same(name):
+    # 回数の項目を、許容差つきにしない（変速の回数が1違っても、通ってしまう）。
+    summary = drive_summary()
+    other = summary[name] + 1 if type(summary[name]) is int else summary[name] + "x"
+    lines = differences({**summary, name: other}, summary)
+    assert len(lines) == 1 and lines[0].startswith(f"{name}: ") and "完全一致" in lines[0]
+
+
+def test_web_smoke_heading_is_compared_around_the_turn():
+    summary = drive_summary()
+    # 向きは、−π〜π に折り返した値。π の両側（+314159 と −314159）は、1刻みの違い。
+    assert differences({**summary, "heading_e5": 314159}, {**summary, "heading_e5": -314159}) == []
+    assert differences({**summary, "heading_e5": -314158}, {**summary, "heading_e5": 314159}) == []
+    assert len(differences({**summary, "heading_e5": 314159}, {**summary, "heading_e5": -314150})) == 1
+    assert len(differences({**summary, "heading_e5": 100}, {**summary, "heading_e5": 103})) == 1  # 折り返さない所でも、許容差まで
+    assert differences({**summary, "heading_e5": 100}, {**summary, "heading_e5": 102}) == []
+    assert len(differences({**summary, "heading_e5": 0}, {**summary, "heading_e5": 314159})) == 1  # 逆向きは、違い
+
+
+def test_web_smoke_distance_along_the_track_is_compared_around_the_lap():
+    summary = drive_summary()
+    # コースに沿った距離は、0以上、全長未満。スタートの線の両側（全長の手前1 mm と、0 mm）は、1刻みの違い。
+    assert differences({**summary, "s_mm": LAP_MM - 1}, {**summary, "s_mm": 0}) == []
+    assert differences({**summary, "s_mm": 1}, {**summary, "s_mm": LAP_MM - 1}) == []
+    assert len(differences({**summary, "s_mm": 2}, {**summary, "s_mm": LAP_MM - 1})) == 1
+    assert len(differences({**summary, "s_mm": 0}, {**summary, "s_mm": LAP_MM // 2})) == 1  # 半周の違い
+    # 進行距離は、折り返さない（1周ぶんの違いは、違い）。
+    assert len(differences({**summary, "odometer_mm": summary["odometer_mm"] + LAP_MM}, summary)) == 1
+
+
+@pytest.mark.parametrize("bad", [258687.0, "258687", None, True, [258687]])
+def test_web_smoke_a_quantized_field_that_is_not_an_integer_is_a_difference(bad):
+    summary = drive_summary()
+    for name in ("odometer_mm", "heading_e5", "s_mm"):
+        lines = differences({**summary, name: bad}, summary)
+        assert len(lines) == 1 and "整数" in lines[0], name
+
+
+def test_web_smoke_a_field_on_one_side_only_or_no_summary_is_a_difference():
+    summary = drive_summary()
+    without = {key: value for key, value in summary.items() if key != "gear"}
+    assert len(differences(without, summary)) == 1 and len(differences(summary, without)) == 1
+    assert len(differences({"tick": 900}, summary)) == len(summary) - 1
+    for nothing in (None, [], "sim", 5):
+        assert len(differences(nothing, summary)) == 1 and len(differences(summary, nothing)) == 1
+
+
+def test_web_smoke_a_field_without_a_compare_rule_is_an_error_not_a_pass():
+    # 比べ方の表（cp_core/sim.py の SUMMARY_FIELDS）に無い項目が、要約にあれば、見ずに通さない。道具は、2にする。
+    summary = drive_summary()
+    grown = {**summary, "lap": 1}
+    assert input_reference.unknown_summary_fields(grown, summary, None) == ["lap"]
+    assert web_smoke.summary_fields_without_rule(summary, {**summary, "zz": 1, "aa": 2}) == ["aa", "zz"]
+    assert input_reference.unknown_summary_fields(summary, dict(summary)) == []
+    for got, want in ((grown, summary), (summary, grown), (grown, grown)):
+        with pytest.raises(ValueError, match="lap"):
+            differences(got, want)
+    # 判定の関数は、例外にせず、落とす（筋書きの側が、先に、回り切れないにする）。
+    name, ok, message = web_smoke.summary_check("sim", grown, grown, SIM_TOLERANCE, PERIODS, "デスクトップ版")
+    assert (name, ok) == ("sim", False) and "lap" in message
+    # 折り返して比べる項目の、1周の長さが無い。
+    with pytest.raises(ValueError, match="s_mm"):
+        input_reference.summary_differences(summary, summary, SIM_TOLERANCE, {"heading_e5": 628319})
+
+
+def test_web_smoke_summary_check_names_the_other_side_and_fails_without_it():
+    summary = drive_summary()
+    assert web_smoke.summary_check("sim", summary, dict(summary), SIM_TOLERANCE, PERIODS, "デスクトップ版")[:2] == ("sim", True)
+    name, ok, message = web_smoke.summary_check("sim_reference", {**summary, "shifts": 4}, summary, SIM_TOLERANCE, PERIODS, "参照")
+    assert (name, ok) == ("sim_reference", False) and "参照" in message and "shifts" in message
+    assert web_smoke.summary_check("sim", summary, None, SIM_TOLERANCE, PERIODS, "デスクトップ版")[1] is False  # 相手が、取れていない
+
+
+def test_web_smoke_summary_gap_is_the_largest_difference_in_steps_of_the_quantization():
+    summary = drive_summary()
+    gap = input_reference.summary_gap
+    assert gap(summary, dict(summary), PERIODS) == 0
+    assert gap({**summary, "x_mm": summary["x_mm"] + 1, "rpm": summary["rpm"] - 3}, summary, PERIODS) == 3
+    assert gap({**summary, "heading_e5": 314159}, {**summary, "heading_e5": -314159}, PERIODS) == 1  # 折り返して数える
+    assert gap({**summary, "shifts": 99}, summary, PERIODS) == 0  # 完全一致の項目は、数えない（判定は、別にする）
+    for broken in ({**summary, "x_mm": 1.5}, {"tick": 900}, None):
+        assert gap(broken, summary, PERIODS) is None  # 比べられない
+
+
+def test_web_smoke_script_summary_within_the_tolerance_of_the_desktop_and_the_reference_passes():
+    reference = input_reference.sim_summary(SCRIPT, SCRIPT_TICKS)
+    near = {**reference, "x_mm": reference["x_mm"] + SIM_TOLERANCE, "vx_mm_s": reference["vx_mm_s"] - SIM_TOLERANCE, "rpm": reference["rpm"] + 1}
+    assert script_failed(script_result(sim=near)) == []
+    far = {**reference, "x_mm": reference["x_mm"] + SIM_TOLERANCE + 1}
+    assert script_failed(script_result(sim=far)) == ["sim", "sim_reference"]
+    assert script_failed(script_result(sim=near), tolerance=0) == ["sim", "sim_reference"]
+    # 完全一致の項目（ギア）は、1つ違っても落ちる。
+    assert script_failed(script_result(sim={**reference, "gear": reference["gear"] + 1})) == ["sim", "sim_reference"]
+
+
+def test_web_smoke_script_second_run_must_give_exactly_the_same_summary():
+    # 同じ環境の中では、同じ入力から、同じ結果が出る。2回目との比べは、許容差なし（全部の項目が、完全に同じ）。
+    reference = input_reference.sim_summary(SCRIPT, SCRIPT_TICKS)
+    assert script_failed(script_result(), again_sim=dict(reference)) == []
+    assert script_failed(script_result(), again_sim={**reference, "x_mm": reference["x_mm"] + 1}) == ["sim_repeat"]
+    assert script_failed(script_result(), again_sim={**reference, "requery_count": 1}) == ["sim_repeat"]
+    assert script_failed(script_result(), again_sim={key: value for key, value in reference.items() if key != "rpm"}) == ["sim_repeat"]
+    for nothing in (None, [], "sim"):
+        assert script_failed(script_result(), again_sim=nothing) == ["sim_repeat"]  # 2回目の要約が、取れていない
+    name, ok, message = web_smoke.repeat_check(reference, {**reference, "x_mm": reference["x_mm"] + 1})
+    assert (name, ok) == ("sim_repeat", False) and "['x_mm']" in message
+
+
+def test_web_smoke_script_summary_checks_come_in_a_fixed_order():
+    names = [name for name, _, _ in web_smoke.judge_script(
+        page(untilAt=6000), SHA, script_result(), input_reference.sim_summary(SCRIPT, SCRIPT_TICKS), SCRIPT, SCRIPT_TICKS, SIM_TOLERANCE,
+        input_reference.sim_summary(SCRIPT, SCRIPT_TICKS),
+    )]
+    at = names.index("sim")
+    assert names[at:] == ["sim", "sim_reference", "sim_repeat", "trace_complete", "trace"]
+
+
+def test_web_smoke_probe_summary_is_compared_field_by_field_too():
+    desktop = input_reference.sim_summary(None, TICKS)
+    assert probe_failed(result(sim=dict(desktop)), sim=desktop) == []
+    assert probe_failed(result(sim={**desktop, "x_mm": desktop["x_mm"] + SIM_TOLERANCE}), sim=desktop) == []
+    assert probe_failed(result(sim={**desktop, "x_mm": desktop["x_mm"] + SIM_TOLERANCE + 1}), sim=desktop) == ["sim"]
+    assert probe_failed(result(sim={**desktop, "track": "wide_test_loop"}), sim=desktop) == ["sim"]
+    assert probe_failed(result(sim=dict(desktop)), sim=None) == ["sim"]  # デスクトップ版の要約が、取れていない
+
+
+def test_web_smoke_the_three_comparisons_with_the_desktop_go_through_one_function(monkeypatch):
+    # probe の sim、script の sim と sim_reference。比べる関数は、1つ。
+    seen = []
+
+    def spy(name, got, want, tolerance, periods, label):
+        seen.append((name, tolerance, periods, label))
+        return name, True, ""
+
+    monkeypatch.setattr(web_smoke, "summary_check", spy)
+    assert probe_failed(result(sim={"anything": 1})) == []
+    assert script_failed(script_result(sim={"anything": 1})) == []
+    assert seen == [
+        ("sim", SIM_TOLERANCE, PERIODS, "デスクトップ版"), ("sim", SIM_TOLERANCE, PERIODS, "デスクトップ版"), ("sim_reference", SIM_TOLERANCE, PERIODS, "参照"),
+    ]
+
+
+# --- 台本の筋書きの流れ（もう1度開く、比べ方の表に無い項目）。ブラウザは開かない ---
+def fake_openings(monkeypatch, results: list, desktop_sim) -> list:
+    """web_smoke の、ページを開く所と、デスクトップ版を回す所を、偽物に替える。返すのは、開いた名の記録。"""
+    opened = []
+
+    def open_with_probe(name, timeout_s, init_script, html_sha256, extra=()):
+        opened.append((name, init_script))
+        res = results[len(opened) - 1]
+        return (page(untilAt=6000), res, None, "") if res is not None else (None, None, None, "no_runner_result")
+
+    monkeypatch.setattr(web_smoke, "open_with_probe", open_with_probe)
+    monkeypatch.setattr(web_smoke, "desktop_reference", lambda name, ticks, script_path=None: desktop_sim)
+    return opened
+
+
+def run_script_scenario() -> tuple:
+    args = argparse.Namespace(timeout=30, ticks=TICKS)
+    context = {"script_value": SCRIPT_VALUE, "script": SCRIPT, "periods": PERIODS}
+    return web_smoke.scenario_script(args, BUDGETS, SHA, context)
+
+
+def test_web_smoke_script_scenario_opens_the_page_twice_with_the_same_values(monkeypatch):
+    reference = input_reference.sim_summary(SCRIPT, SCRIPT_TICKS)
+    opened = fake_openings(monkeypatch, [script_result(), script_result()], reference)
+    checks, facts, reason = run_script_scenario()
+    assert reason == "" and failed(checks) == []
+    assert [name for name, _ in opened] == ["script", "script_again"] and opened[0][1] == opened[1][1]
+    assert facts == [f"script_changes={len(script_result()['inputs']['changes'])} script_gap=0"]
+
+
+def test_web_smoke_script_scenario_fails_when_the_second_run_differs(monkeypatch):
+    reference = input_reference.sim_summary(SCRIPT, SCRIPT_TICKS)
+    second = script_result(sim={**reference, "odometer_mm": reference["odometer_mm"] + 1})
+    fake_openings(monkeypatch, [script_result(), second], reference)
+    checks, _, reason = run_script_scenario()
+    assert reason == "" and failed(checks) == ["sim_repeat"]
+
+
+def test_web_smoke_script_scenario_is_incomplete_when_the_second_run_gives_no_result(monkeypatch):
+    fake_openings(monkeypatch, [script_result(), None], input_reference.sim_summary(SCRIPT, SCRIPT_TICKS))
+    assert run_script_scenario() == (None, [], "no_runner_result")
+
+
+@pytest.mark.parametrize("where", ["browser", "browser_again", "desktop"])
+def test_web_smoke_script_scenario_is_incomplete_when_a_summary_has_a_field_without_a_rule(monkeypatch, capsys, where):
+    reference = input_reference.sim_summary(SCRIPT, SCRIPT_TICKS)
+    grown = {**reference, "lap": 0}
+    results = [script_result(sim=grown if where == "browser" else reference), script_result(sim=grown if where == "browser_again" else reference)]
+    fake_openings(monkeypatch, results, grown if where == "desktop" else reference)
+    assert run_script_scenario() == (None, [], "summary_field_without_rule")  # 見ずに通さない（道具は、2になる）
+    assert "lap" in capsys.readouterr().out
+
+
+def test_web_smoke_probe_scenario_is_incomplete_when_a_summary_has_a_field_without_a_rule(monkeypatch, capsys):
+    desktop = input_reference.sim_summary(None, TICKS)
+    fake_openings(monkeypatch, [result(sim={**desktop, "lap": 0})], desktop)
+    args = argparse.Namespace(timeout=30, ticks=TICKS)
+    assert web_smoke.scenario_probe(args, BUDGETS, SHA, {"periods": PERIODS}) == (None, [], "summary_field_without_rule")
+    assert "lap" in capsys.readouterr().out
+    # 表にある項目だけなら、判定まで進む（最後の1行に、デスクトップ版との差の最大を出す）。
+    fake_openings(monkeypatch, [result(sim=dict(desktop))], desktop)
+    checks, facts, reason = web_smoke.scenario_probe(args, BUDGETS, SHA, {"periods": PERIODS})
+    assert reason == "" and "sim" not in failed(checks) and facts[0].endswith(" probe_gap=0")
 
 
 def test_web_smoke_script_python_error_and_input_warning_are_reported():

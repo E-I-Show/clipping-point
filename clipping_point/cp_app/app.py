@@ -41,7 +41,10 @@ trace_max が1以上のときだけ、入力の跡を取り（cp_app/input_trace
   CP_DATA_PACK=<試験用データの名>   あれば、testpacks/<名>/ を重ねる。置き場が無い、空、名の字が違う、は起動時に ValueError
 重ねている間、設定を読む保存の口の名前空間は pack_<名>（main の代わり）。保存の往復の名前空間（selfcheck）は、そのまま。
 結果の data に {tables, warnings, pack, namespace} を入れる。namespace は、設定を読んだ保存の口（SaveStore.namespace）から取る。
-読み込んだ定義は、世界（Sim）へは、まだ渡さない（段0 区切り9）。
+
+世界（Sim）は、読み込んだ定義と、車とコースの id（CAR_ID、TRACK_ID。いまは、ここの定数）から作る。Pyxelを始める前に作る
+（無い id は、分かる文の例外で、ここで止まる）。仮の表示には、車の値（速度、ギア、回転数、位置、路面の種類）を2行で出す。
+車の値は、世界の状態から、cp_core.flow の car_view() が作る（ここでは、小数を丸めない）。
 """
 import json
 import os
@@ -53,7 +56,7 @@ import pyxel
 
 from cp_core import input_script, profile
 from cp_core.fixed_loop import TICK_HZ, RenderGate
-from cp_core.flow import Flow, PlaceholderView
+from cp_core.flow import Flow, PlaceholderView, car_view
 from cp_core.input_frame import NEUTRAL, InputFrame, quantize
 from cp_core.sim import Sim
 from cp_core.storage import SaveStore
@@ -73,6 +76,10 @@ FAST_FPS = 1000
 # 割り切り：世界の種は、いつも0。乱数を引く所が、まだ無い（AIのばらつきは段3）。
 # レースを作る段3で、レースの通し番号と設定から決める形に見直す。
 WORLD_SEED = 0
+# 割り切り：車とコースは、いつも、この id（車1台、仮の周回路1本）。選ぶ画面が、まだ無い。
+# 車とコースを選ぶ画面を作る段1で、選んだ id を渡す形に見直す。道具の既定（tools/input_reference.py）と、同じ値にする。
+CAR_ID = "kazane"
+TRACK_ID = "test_loop"
 
 
 @dataclass(frozen=True)
@@ -114,8 +121,10 @@ class App:
         self.probe = probe  # ブラウザ版で外から渡された、回すtick数などの指定。無ければ None
         self.js = js  # ブラウザの機能（js のモジュール）。デスクトップ版では None
         self.probe_reported = False
-        # 読み込んだ定義（cp_core.datadefs の GameData）。読み込み検査は、main() で済んでいる。世界へは、まだ渡さない（段0 区切り9）。
+        # 読み込んだ定義（cp_core.datadefs の GameData）。読み込み検査は、main() で済んでいる。
         self.data = data
+        # 世界。読み込んだ定義と、車とコースの id から作る（定義は、世界が、ここで1度だけ引く）。無い id は、分かる文の例外で、ここで止まる。
+        self.sim = Sim(WORLD_SEED, data, CAR_ID, TRACK_ID)
         # 保存。選んだ保存先（selected）から、設定を読み込む。壊れた値の退避と、既定値での書き直しは、読み込みの中で済む。
         self.storage_name = selected.name  # 保存先の名。結果に入れる
         # 設定を読む保存の口。名前空間は、読み込んだ定義から取る（試験用データを重ねている間は pack_<名>。ふだんの保存に触れない）。
@@ -148,7 +157,6 @@ class App:
         pyxel.integer_scale(True)  # 拡大は整数倍にする
         self.adapter = PyxelInput(pyxel)  # 入力アダプタ。割り当ての表の名前を、ここ（起動時）で全部引く
         self.triggers = TriggerReader(js)  # 直読み。デスクトップ版では、いつも None を返す
-        self.sim = Sim(WORLD_SEED)
         self.flow = Flow()  # 画面の状態。いまの画面の名を持つ
         self.gate = RenderGate()
         self.back = pyxel.Image(SCREEN_W, SCREEN_H)  # 裏画面。3DとHUDに当たる絵はここへ描く
@@ -238,8 +246,8 @@ class App:
 
     def render(self) -> None:
         canvas = Canvas()
-        # 表示用の値。実描画の回数は、表示にだけ使う（世界へは渡さない）。
-        view = PlaceholderView(self.sim.tick, self.renders, self.frame, self.notice)
+        # 表示用の値。実描画の回数は、表示にだけ使う（世界へは渡さない）。車の値は、世界の状態から作る。
+        view = PlaceholderView(self.sim.tick, self.renders, self.frame, self.notice, car_view(self.sim))
         self.view = view
         SCREENS[self.flow.screen](canvas, view)
         self.back.cls(COL_BACK)

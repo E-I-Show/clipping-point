@@ -7,9 +7,10 @@ import dataclasses
 
 import pytest
 
-from cp_core import storage
-from cp_core.flow import SCREEN_NAMES, Flow, PlaceholderView
+from cp_core import storage, track
+from cp_core.flow import SCREEN_NAMES, CarView, Flow, PlaceholderView
 from cp_core.input_frame import BUTTONS, quantize
+from cp_core.vehicle import REVERSE
 from cp_ui import fixtures
 from cp_ui.canvas import Canvas
 from cp_ui.check import find_violations
@@ -51,12 +52,30 @@ def test_fixtures_longest_notice_follows_the_notices_of_the_storage(monkeypatch)
     assert fixtures.build("placeholder", "extreme").notice == longer
 
 
+def test_fixtures_placeholder_extreme_carries_the_widest_car_values():
+    # 車の値は、仮の表示の桁をいっぱいに使う。ギアは後退（R）。位置は、コースの座標の上限の、負の側（符号の分、1字長い）。
+    car = fixtures.build("placeholder", "extreme").car
+    assert car == CarView(speed_kmh=999, gear=REVERSE, rpm=99_999, x_dm=-200_000, z_dm=-200_000, surface="asphalt")
+    assert fixtures.farthest_position_dm() == -round(track.MAX_LENGTH_M * 10) == -200_000
+    # 路面の種類は、コース（cp_core/track.py）の組から引く。種類を足すと、極端な値も一緒に変わる。
+    assert car.surface == fixtures.longest_surface() and car.surface in track.SURFACES
+    assert all(len(car.surface) >= len(name) for name in track.SURFACES)
+
+
+def test_fixtures_longest_surface_follows_the_surfaces_of_the_track(monkeypatch):
+    monkeypatch.setattr(fixtures, "SURFACES", (*track.SURFACES, "wet_asphalt"))
+    assert fixtures.longest_surface() == "wet_asphalt"
+
+
 def test_fixtures_placeholder_typical_is_not_the_extreme():
     typical, extreme = fixtures.build("placeholder", "typical"), fixtures.build("placeholder", "extreme")
     assert typical != extreme
     assert typical.tick < extreme.tick and typical.renders < extreme.renders
     assert 0 < len(typical.frame.held) < len(extreme.frame.held)
     assert typical.notice == "" and extreme.notice  # ふつうの値は、知らせが無い
+    # ふつうの値の車は、舗装の上を、前進のギアで走っている。
+    assert typical.car == CarView(speed_kmh=87, gear=3, rpm=5200, x_dm=1234, z_dm=-56, surface="asphalt")
+    assert typical.car.speed_kmh < extreme.car.speed_kmh and typical.car.rpm < extreme.car.rpm
 
 
 def test_fixtures_build_gives_the_same_value_every_time():

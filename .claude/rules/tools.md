@@ -52,6 +52,7 @@ paths:
 - テスト `tests/test_run_tool.py`：道具 run が、保存のファイルを自分で読む関数（往復の見本と同じ、違う値、違う形式バージョン、壊れた封筒、無い。名前空間 `main` のファイル）。
 - テスト `tests/test_check_tool.py`（check の data の節の関数。件数は、調べた組の数）、`tests/test_data_reference.py`（道具が数える所、結果の `data` の確かめ）。
 - 手順 `run-pack`（`python3 tools/run.py --pack extreme`）：試験用データを重ねて回す。指紋は照らさない。無い名は2。
+- 手順 `run-drive`、`run-wall`（`run.py --script 台本 --ticks N`）：走る台本と壁の台本を、アプリに通す。tick数は、指紋の筋書きと同じにする。
 - 守りのテスト `tests/test_verify.py`：ファイルから分野を引く所、表の手順とテストの語が実在すること、回す手順の決め方、落ちた手順の数え方、基点の選び方、変更したファイルをgitから読む所（一時のリポジトリで回す）。
 - 道具 verify（`python3 tools/verify.py --all [--selftest]`、`--touched [--base REV]`）：`--touched` の基点の既定は、直近の区切りのコミット（題が「段N 区切りM：」で始まり「（途中）」を含まない）。
 - テスト `tests/test_claude_tools.py`：作業の補助（`tools/claude/`）。控えの差し込み、レビューの集計の未評価、週の使用率の線、設定と型（`.claude/`）の見張り。使い方は `tools/claude/README.md`。

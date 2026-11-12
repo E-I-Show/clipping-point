@@ -64,7 +64,7 @@ Pyxel 3.0の3D機能（Pyxel Cube）で作る、初代PS時代風ローポリゴ
 
 | すること | コマンド |
 | --- | --- |
-| 全体の検証（約70秒。check → test → fingerprint → screen-check → run → run --realtime → run --pack extreme → tour → export → web-smoke。`--selftest` を付けると約19分） | `python3 tools/verify.py --all [--selftest]` |
+| 全体の検証（約70秒。check → test → fingerprint → screen-check → run → run --realtime → run --pack extreme → run（走る台本）→ run（壁の台本）→ tour → export → web-smoke。`--selftest` を付けると約19分） | `python3 tools/verify.py --all [--selftest]` |
 | 変更したファイルから触れた分野を引いて回す（基点の既定は、直近の区切りのコミット） | `python3 tools/verify.py --touched [--base REV]` |
 | 分野ごとの組の表を出す | `python3 tools/verify.py --list` |
 | 静的な検査（構文、層の分離、規則ファイルの見張り、正本の見張り、分野の見張り、定義データの読み込み検査） | `python3 tools/check.py [--only syntax\|arch\|rules\|canon\|areas\|data]` |
@@ -74,6 +74,7 @@ Pyxel 3.0の3D機能（Pyxel Cube）で作る、初代PS時代風ローポリゴ
 | 各画面の画像を保存し、描画命令と画素を照らす（画像は `out/tour/`。目で見る） | `python3 tools/tour.py [--only 画面の名]` |
 | 画面なしで回す（速い経路。道具の台本を渡す。`--pack` は、試験用データを重ねる） | `python3 tools/run.py [--ticks N] [--script FILE\|--no-script] [--pack 名]` |
 | 画面なしで回す（本番と同じ経路。入力アダプタから読む） | `python3 tools/run.py --realtime [--ticks N]` |
+| 走る台本と、壁の台本を、画面なしで回す（全体の検証の run-drive と run-wall。指紋の写しと、走行の下限を照らす） | `python3 tools/run.py --script tools/input_script_drive.json --ticks 900`、`python3 tools/run.py --script tools/input_script_wall.json --ticks 780` |
 | 配布物のHTMLを作って検査する | `python3 tools/export.py` |
 | ブラウザ版の煙テスト（約55秒） | `python3 tools/web_smoke.py [--only shipped\|probe\|script\|gamepad\|storage_blocked]` |
 | 道具をわざと壊して確かめる（約18分。時間に頼らない件は、同時に4件ずつ回す） | `python3 tools/selftest_break.py [--only 名前の頭] [--jobs N]` |
@@ -174,7 +175,7 @@ Pyxel 3.0の3D機能（Pyxel Cube）で作る、初代PS時代風ローポリゴ
 | ファイル | 当たる所 |
 | --- | --- |
 | `.claude/rules/tools.md` | `tools/` の検証の道具 |
-| `.claude/rules/sim-core.md` | 固定刻みの間引き（`cp_core/fixed_loop.py`）、世界（`cp_core/sim.py`）、乱数（`cp_core/rng.py`）、指紋の照合（`tools/fingerprint.py`）、そのテスト |
+| `.claude/rules/sim-core.md` | 固定刻みの間引き（`cp_core/fixed_loop.py`）、世界（`cp_core/sim.py`）、乱数（`cp_core/rng.py`）、指紋の照合（`tools/fingerprint.py`）、走る台本と壁の台本（`tools/input_script_drive.json`、`input_script_wall.json`）と、作る補助（`tools/claude/make_drive_scripts.py`）、そのテスト |
 | `.claude/rules/ui.md` | `cp_ui/`（描画命令、画面、はみ出しの検査、見本データ）、描画命令の実行（`cp_app/canvas_pyxel.py`）、画面の名の一覧（`cp_core/flow.py`）、巡回の口（`cp_app/tour.py`）、道具 screen-check と tour、そのテスト |
 | `.claude/rules/web.md` | ブラウザ版の煙テスト（`tools/web_smoke.py`、`tools/web/`）とブラウザ連携（`cp_app/web_bridge.py`）、そのテスト |
 | `.claude/rules/controls.md` | 入力フレームと台本（`cp_core/input_frame.py`、`input_script.py`）、入力アダプタ、直読み、入力の跡（`cp_app/input_pyxel.py`、`input_web.py`、`input_trace.py`）、偽のコントローラー、操作補正の最小版（`cp_core/controls.py`、`data/assists.json`）、そのテスト |

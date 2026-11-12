@@ -13,7 +13,8 @@
   probe    ページを開く前に差し込むスクリプトで、回すtick数（window.CP_PROBE）を置いて開く。
            アプリがコンソールへ出す結果の1行と完了の合図を待つ。見るもの：上に加えて、回したtick、
            入力の出どころが入力アダプタで、入力アダプタと直読みを呼んだ回数が回したtickと同じ（時間の線が、入力を読んだ更新の値であること）、
-           世界の要約がデスクトップ版と同じ、実描画の回数、更新と実描画の毎秒の回数、更新1回と実描画1回の時間（95%点）、
+           世界の要約がデスクトップ版と合う（項目ごとの比べ方。下の「世界の要約の突き合わせ」）、
+           実描画の回数、更新と実描画の毎秒の回数、更新1回と実描画1回の時間（95%点）、
            ブラウザ版であること（sys.platform が emscripten）、Pythonの版。線は tools/budgets.json。
            保存：保存先の名が localstorage、保存の往復が通っている、知らせの1行が空。道具が、ブラウザの localStorage の
            往復の鍵（clippingpoint/selfcheck.settings）の値を自分で読み（ブラウザの実行役が、結果に入れる）、base64 と封筒を開けて、
@@ -22,8 +23,10 @@
            試験用データを重ねていない（null）、設定を読んだ保存の口の名前空間が main。数え方と確かめは tools/data_reference.py。
   script   window.CP_PROBE に、回すtick数、道具の台本（tools/input_script_smoke.json）、入力の跡の件数の上限を置いて開く。
            見るもの：ブラウザ版であること、回したtick、入力の出どころが台本で、入力アダプタも直読みも呼んでいない、
-           世界の要約がデスクトップ版（同じ台本を渡して回した）と同じで、参照（tools/input_reference.py）とも同じ、
+           世界の要約がデスクトップ版（同じ台本を渡して回した）と合い、参照（tools/input_reference.py）とも合う（項目ごとの比べ方）、
            入力の跡が打ち切られていない、入力の跡が、台本を入力フレームへ直して量子化した列と、全tickで同じ。
+           同じ値を渡して、もう1度開き、2回の世界の要約が、完全に同じことも見る（確かめの名は sim_repeat。同じ環境の中では、
+           同じ入力から、同じ結果が出る。世界が、実時間や標準の乱数を読むと、ここで落ちる）。
   gamepad  偽のコントローラー（tools/web/fake_gamepad.js）を差し込んで開く。台本は渡さない。予定と、判定に使う値は PAD_STAGES。
            見るもの：ブラウザ版であること、回したtick、入力の出どころが入力アダプタで、入力アダプタと直読みを呼んだ回数が回したtickと同じ、
            偽のコントローラーが予定の区間を境目のtickで通った、入力の跡が打ち切られていない、
@@ -33,10 +36,17 @@
            見るもの：ブラウザ版であること、回したtick、入力の出どころ、保存先の名が memory（試し書きが通らず、切り替えた）、
            知らせの1行が、メモリへ切り替えた文と同じ（空でない）、メモリの上での保存の往復が通っている。
 script、gamepad、storage_blocked は、処理時間と回数の線を見ない（見るのは probe）。慣らしは0。
+世界の要約の突き合わせ（デスクトップ版とブラウザ版。probe の sim、script の sim と sim_reference の3つとも、同じ関数 summary_check で比べる）：
+  浮動小数の結果は、デスクトップ版とブラウザ版で一致しない前提。項目ごとの比べ方は、世界（cp_core/sim.py の SUMMARY_FIELDS）から引く。
+  完全一致（tick、入力の要約値、種、乱数の流れの状態、車とコースの id、ギア、路面の種類、回数の項目）、
+  許容差つき（位置、速度、ヨーレート、実舵角、回転数、横のずれ、進行距離、最高速。量子化の刻みで、tools/budgets.json の
+  web_summary_tolerance まで）、折り返した差（向きと、コースに沿った距離。1周で折り返した差が、同じ許容差まで）。
+  比べ方の表に無い項目が、要約にあれば、見ずに通さない（2。incomplete=<筋書き>.summary_field_without_rule）。
+  最後の1行の probe_gap= と script_gap= は、量子化する項目の、デスクトップ版との差の最大（許容差の余裕を見るための値）。
 終了コード：0＝合格、1＝問題あり、2＝回り切れない（ランタイムの写しが無い・照合が合わない、node が無い、
-ビルドできない、デスクトップ版の参照が取れない、ブラウザの実行役の結果が無い、完了の合図が出ない、台本が読めない、
-回すtick数が台本の合計より短い、偽のコントローラーの予定の区間に判定するtickが無い、偽のコントローラーのスクリプトが読めない、
-保存先に触れると例外にするスクリプトが読めない）。
+ビルドできない、デスクトップ版の参照が取れない、道具の参照の世界を作れない、ブラウザの実行役の結果が無い、完了の合図が出ない、
+台本が読めない、回すtick数が台本の合計より短い、偽のコントローラーの予定の区間に判定するtickが無い、
+偽のコントローラーのスクリプトが読めない、保存先に触れると例外にするスクリプトが読めない、世界の要約に、比べ方の表に無い項目がある）。
 2を合格にしない。
 ページが返らない（Pythonが主スレッドを握ったまま。失敗の種類 unresponsive）は、1にする。
 線の判定に使うのは、慣らし（頭の測らないtick）を除いた値。慣らしを入れた値は、最後の1行の with_warmup= に
@@ -212,11 +222,37 @@ def read_probe_result(page: dict):
     return (data, "") if isinstance(data, dict) else (None, "result_unreadable")
 
 
-def judge_probe(page: dict, html_sha256: str, result: dict, desktop_sim, ticks: int, warmup_ticks: int, budgets: dict, data_tables, data_why: str = "") -> list:
+def summary_check(name: str, got, want, tolerance: int, periods: dict, label: str) -> tuple:
+    """デスクトップ版とブラウザ版の、世界の要約の突き合わせ。返すのは (名前, 合っているか, 合わないときの文)。
+
+    got は、ブラウザ版の世界の要約。want は、比べる相手（デスクトップ版のアプリの要約か、道具の参照）。label は、相手の呼び名。
+    比べ方は、項目ごと（tools/input_reference.py の summary_differences。完全一致、許容差つき、折り返した差）。
+    3つの突き合わせ（probe の sim、script の sim と sim_reference）は、どれも、この関数で比べる。
+    相手が取れていない（None）、比べ方の表に無い項目がある、は合っていない（表に無い項目は、筋書きの側が、先に2にする）。
+    """
+    if want is None:
+        return name, False, f"世界の要約を比べる相手（{label}）が、取れていない"
+    try:
+        lines = input_reference.summary_differences(got, want, tolerance, periods)
+    except ValueError as exc:
+        return name, False, f"世界の要約を、{label}と比べられない：{exc}"
+    return name, not lines, f"世界の要約が{label}と違う（ブラウザ版 {got}、{label} {want}）：{'。'.join(lines)}"
+
+
+def summary_fields_without_rule(*summaries) -> list:
+    """世界の要約の項目のうち、比べ方の表（cp_core/sim.py）に無い名。あれば、筋書きは、見ずに通さず、回り切れない（2）にする。"""
+    return input_reference.unknown_summary_fields(*summaries)
+
+
+def judge_probe(
+    page: dict, html_sha256: str, result: dict, desktop_sim, ticks: int, warmup_ticks: int, budgets: dict, data_tables, data_why: str = "", periods=None,
+) -> list:
     """回すtick数を渡して開く筋書きの確かめ。result は、アプリがコンソールへ出した結果。
 
     data_tables は、道具が定義データのファイルを自分で読んで数えた、表ごとの項目の数（数えられなかったら None。data_why は、その理由）。
+    periods は、折り返して比べる項目の、1周の長さ（無ければ、道具の既定の世界から引く）。
     """
+    periods = input_reference.summary_periods() if periods is None else periods
     perf = result.get("perf") if isinstance(result.get("perf"), dict) else {}
     renders, tolerance = result.get("renders"), budgets["web_renders_tolerance"]
     measured_renders, measured_ticks = perf.get("renders"), ticks - warmup_ticks
@@ -236,7 +272,7 @@ def judge_probe(page: dict, html_sha256: str, result: dict, desktop_sim, ticks: 
             perf.get("updates") == ticks - warmup_ticks,
             f"測ったtickが {perf.get('updates')}（慣らしの {warmup_ticks} を除いて {ticks - warmup_ticks} のはず）",
         ),
-        ("sim", desktop_sim is not None and result.get("sim") == desktop_sim, f"世界の要約がデスクトップ版と違う（ブラウザ版 {result.get('sim')}、デスクトップ版 {desktop_sim}）"),
+        summary_check("sim", result.get("sim"), desktop_sim, budgets["web_summary_tolerance"], periods, "デスクトップ版"),
         # 保存。アプリの申告（保存先の名、往復が通ったか、知らせ）と、道具が自分で読んだ localStorage の値。
         *storage_checks(result, storage_select.BACKEND_WEB, ""),
         *stored_value_checks(page),
@@ -351,16 +387,34 @@ def first_difference(rows: list, want_rows: list):
     return None if len(rows) == len(want_rows) else min(len(rows), len(want_rows))
 
 
-def judge_script(page: dict, html_sha256: str, result: dict, desktop_sim, script, ticks: int) -> list:
-    """台本を渡して開く筋書きの確かめ。script は検査済みの台本。desktop_sim は、同じ台本を渡したデスクトップ版の世界の要約。"""
+def repeat_check(sim, again_sim) -> tuple:
+    """同じ値を渡して、もう1度開いたときの、世界の要約が、1回目と完全に同じことの確かめ（同じ環境の中では、同じ入力から、同じ結果）。"""
+    same = isinstance(sim, dict) and isinstance(again_sim, dict) and sim == again_sim
+    names = sorted(set(sim) | set(again_sim)) if isinstance(sim, dict) and isinstance(again_sim, dict) else []
+    differing = [name for name in names if sim.get(name) != again_sim.get(name)]
+    return (
+        "sim_repeat", same,
+        f"同じ台本を、もう1度回した世界の要約が、1回目と違う（違う項目 {differing}。1回目 {sim}、2回目 {again_sim}）。"
+        "世界が、入力のほか（実時間、標準の乱数、集合を回した順）を読んでいる",
+    )
+
+
+def judge_script(page: dict, html_sha256: str, result: dict, desktop_sim, script, ticks: int, tolerance: int, again_sim, periods=None) -> list:
+    """台本を渡して開く筋書きの確かめ。script は検査済みの台本。desktop_sim は、同じ台本を渡したデスクトップ版の世界の要約。
+
+    tolerance は、許容差つきの項目の、量子化の刻みで数えた差の上限。again_sim は、同じ値を渡して、もう1度開いたときの、世界の要約。
+    periods は、折り返して比べる項目の、1周の長さ（無ければ、道具の既定の世界から引く）。
+    """
+    periods = input_reference.summary_periods() if periods is None else periods
     want_sim, want_rows = input_reference.sim_summary(script, ticks), input_reference.quantized_rows(script, ticks)
     rows, why = read_trace(result, ticks)
     bad_tick = None if rows is None else first_difference(rows, want_rows)
     detail = "" if rows is None or bad_tick is None else f"tick {bad_tick} が {rows[bad_tick]}（台本は {want_rows[bad_tick]}。並びは {QUANTIZED_FIELDS}）"
     sim = result.get("sim")
     return page_checks(page, html_sha256) + input_checks(result, ticks, "script") + [
-        ("sim", desktop_sim is not None and sim == desktop_sim, f"世界の要約がデスクトップ版と違う（ブラウザ版 {sim}、デスクトップ版 {desktop_sim}）"),
-        ("sim_reference", sim == want_sim, f"世界の要約が参照と違う（ブラウザ版 {sim}、参照 {want_sim}）"),
+        summary_check("sim", sim, desktop_sim, tolerance, periods, "デスクトップ版"),
+        summary_check("sim_reference", sim, want_sim, tolerance, periods, "参照"),
+        repeat_check(sim, again_sim),
         ("trace_complete", rows is not None, f"入力の跡が使えない（{why}）"),
         ("trace", rows is not None and bad_tick is None, f"入力の跡が台本と違う：{detail or '入力の跡が使えない'}"),
     ]
@@ -548,6 +602,12 @@ def scenario_probe(args, budgets: dict, html_sha256: str, context: dict) -> tupl
     page, result, checks, reason = open_with_probe("probe", args.timeout, init_script, html_sha256, ("--local-storage", storage_web.PREFIX))
     if result is None:
         return checks, [], reason
+    # 世界の要約に、比べ方の表に無い項目があれば、見ずに通さない（回り切れない）。
+    strange = summary_fields_without_rule(result.get("sim"), desktop_sim)
+    if strange:
+        print(f"  web_smoke: [probe] 世界の要約に、比べ方の表（cp_core/sim.py の SUMMARY_FIELDS）に無い項目がある：{strange}")
+        return None, [], "summary_field_without_rule"
+    periods = context["periods"]
     perf = result.get("perf") if isinstance(result.get("perf"), dict) else {}
     whole = perf.get("with_warmup") if isinstance(perf.get("with_warmup"), dict) else {}
     saved = result.get("storage") if isinstance(result.get("storage"), dict) else {}
@@ -556,10 +616,11 @@ def scenario_probe(args, budgets: dict, html_sha256: str, context: dict) -> tupl
         + " ".join(f"{key}={perf.get(key)}" for key in TIMING_CHECKS)
         + " with_warmup=" + "/".join(str(whole.get(key)) for key in TIMING_CHECKS)
         + f" python={result.get('python')} save={saved.get('backend')}"
+        + f" probe_gap={input_reference.summary_gap(result.get('sim'), desktop_sim, periods)}"
     )
     # 定義データの、表ごとの項目の数。道具が、ソースの木のファイルを自分で読んで数える（出荷物の中身がソースと同じことは export が見る）。
     data_tables, data_why = data_reference.expected_tables()
-    return judge_probe(page, html_sha256, result, desktop_sim, args.ticks, warmup_ticks, budgets, data_tables, data_why), [fact], ""
+    return judge_probe(page, html_sha256, result, desktop_sim, args.ticks, warmup_ticks, budgets, data_tables, data_why, periods), [fact], ""
 
 
 def scenario_script(args, budgets: dict, html_sha256: str, context: dict) -> tuple:
@@ -572,10 +633,24 @@ def scenario_script(args, budgets: dict, html_sha256: str, context: dict) -> tup
     page, result, checks, reason = open_with_probe("script", args.timeout, init_script, html_sha256)
     if result is None:
         return checks, [], reason
+    # 同じ値を渡して、もう1度開く。2回の世界の要約が、完全に同じことを見る（設計の「同じ台本を2回回して一致」）。
+    _, again, again_checks, again_reason = open_with_probe("script_again", args.timeout, init_script, html_sha256)
+    if again is None:
+        return again_checks, [], again_reason
+    # 世界の要約に、比べ方の表に無い項目があれば、見ずに通さない（回り切れない）。
+    strange = summary_fields_without_rule(result.get("sim"), again.get("sim"), desktop_sim)
+    if strange:
+        print(f"  web_smoke: [script] 世界の要約に、比べ方の表（cp_core/sim.py の SUMMARY_FIELDS）に無い項目がある：{strange}")
+        return None, [], "summary_field_without_rule"
+    periods = context["periods"]
     inputs = result.get("inputs") if isinstance(result.get("inputs"), dict) else {}
     changes = inputs.get("changes")
-    fact = f"script_changes={len(changes) if isinstance(changes, list) else None}"
-    return judge_script(page, html_sha256, result, desktop_sim, script, ticks), [fact], ""
+    fact = (
+        f"script_changes={len(changes) if isinstance(changes, list) else None}"
+        f" script_gap={input_reference.summary_gap(result.get('sim'), desktop_sim, periods)}"
+    )
+    checks = judge_script(page, html_sha256, result, desktop_sim, script, ticks, budgets["web_summary_tolerance"], again.get("sim"), periods)
+    return checks, [fact], ""
 
 
 def scenario_gamepad(args, budgets: dict, html_sha256: str, context: dict) -> tuple:
@@ -618,6 +693,14 @@ def main() -> int:
     if "probe" in names and args.ticks < min_ticks:
         return finish("web_smoke", INCOMPLETE, f"scenarios=0 reason=too_few_ticks min={min_ticks}")
     context = {}
+    if "probe" in names or "script" in names:
+        # 世界の要約を、デスクトップ版と突き合わせる筋書き。折り返して比べる項目の、1周の長さを、道具の既定の世界から引く
+        # （定義データを、アプリと同じ読み方で読む。読めなければ、回り切れない）。
+        try:
+            context["periods"] = input_reference.summary_periods()
+        except ValueError as exc:
+            print(f"  web_smoke: 参照の世界を作れない（定義データが読めない）：{exc}")
+            return finish("web_smoke", INCOMPLETE, "scenarios=0 reason=no_reference")
     if "script" in names:
         try:
             context["script_value"], context["script"] = input_reference.load_script(input_reference.SMOKE_SCRIPT)
