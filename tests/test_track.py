@@ -501,7 +501,7 @@ def test_track_shape_problems_come_as_key_paths_and_texts():
 
 # --- メッシュ用の数値（Track.mesh_chunks）。頂点は、ロジックの座標。面の向きは、(b−a)×(c−a) が外向き ---
 MESH_STEP_M, MESH_STRIPS, MESH_LINE_M, MESH_WALL_HEIGHT_M, MESH_CHUNK_M = 4.0, 4, 0.2, 0.9, 60.0  # 実物のコースの、メッシュの寸法
-MESH_SEGMENTS, MESH_CHUNKS = 183, 12  # 1周の区切りの数（全長÷4 m）と、塊の数（全長÷60 m）
+MESH_SEGMENTS, MESH_CHUNKS = 183, 12  # 1周の断面の数（全長÷4 m。断面の間の数も同じ）と、塊の数（全長÷60 m）
 MESH_TRIANGLES_PER_SEGMENT = 2 * (MESH_STRIPS + 2 + 2 + 2)  # 路面4、白線2、芝2、壁2 の四角形
 
 
@@ -541,7 +541,7 @@ def test_track_mesh_of_the_test_loop_has_twelve_chunks_and_about_3600_triangles(
         assert [part.name for part in chunk.parts] == list(track.MESH_PARTS) == ["road", "line", "grass", "wall"]
         assert [part.role for part in chunk.parts] == ["asphalt_mid", "white", "grass_mid", "silver"]
         assert all(type(part) is track.MeshPart and part.role in palette.ROLES for part in chunk.parts)
-        # 区切り1つに、路面の四角形が4つ、白線と芝と壁が、左右に1つずつ。
+        # 隣り合う断面の間1つに、路面の四角形が4つ、白線と芝と壁が、左右に1つずつ。
         segments = chunk.triangle_count // MESH_TRIANGLES_PER_SEGMENT
         assert [part.triangle_count for part in chunk.parts] == [segments * 2 * MESH_STRIPS, segments * 4, segments * 4, segments * 4]
         assert segments in (15, 16)  # 約60 m
@@ -554,7 +554,7 @@ def test_track_mesh_of_the_test_loop_has_twelve_chunks_and_about_3600_triangles(
 
 def test_track_mesh_chunks_cover_the_lap_once_and_their_circles_hold_every_vertex():
     course, chunks = loop(), loop_mesh()
-    # コースに沿った範囲は、0 から全長まで、すき間も重なりも無い（どの区切りも、塊のどれか1つに入る）。
+    # コースに沿った範囲は、0 から全長まで、すき間も重なりも無い（どの断面の間も、塊のどれか1つに入る）。
     assert chunks[0].s_start == 0.0 and chunks[-1].s_end == course.length
     for before, after in zip(chunks, chunks[1:]):
         assert before.s_end == after.s_start
@@ -577,9 +577,9 @@ def test_track_mesh_joins_the_chunks_and_closes_the_seam_of_the_lap():
     for name, across in (("road", MESH_STRIPS + 1), ("line", 4), ("grass", 4), ("wall", 4)):
         rows = [next(part.vertices for part in chunk.parts if part.name == name) for chunk in chunks]
         for index, vertices in enumerate(rows):
-            # 塊の終わりの区切りの線は、次の塊の頭の線と、同じ頂点（最後の塊は、頭の塊へ戻る。1周の継ぎ目）。
+            # 塊の終わりの断面は、次の塊の頭の断面と、同じ頂点（最後の塊は、頭の塊へ戻る。1周の継ぎ目）。
             assert vertices[-across:] == rows[(index + 1) % len(rows)][:across], (name, index)
-    # 継ぎ目の区切りも、ほかの区切りと同じ長さ（約4 m）。
+    # 継ぎ目の、断面の間も、ほかと同じ長さ（約4 m）。
     last = next(part.vertices for part in chunks[-1].parts if part.name == "road")
     step = math.hypot(last[-1][0] - last[-1 - (MESH_STRIPS + 1)][0], last[-1][2] - last[-1 - (MESH_STRIPS + 1)][2])
     assert step == pytest.approx(MESH_STEP_M, abs=0.05)
@@ -653,7 +653,7 @@ def test_track_mesh_is_the_same_for_the_same_entry_and_follows_the_sizes():
     def triangles(chunks) -> int:
         return sum(chunk.triangle_count for chunk in chunks)
 
-    assert triangles(mesh_with(step_m=8.0)) == 92 * MESH_TRIANGLES_PER_SEGMENT  # 区切りが、約半分
+    assert triangles(mesh_with(step_m=8.0)) == 92 * MESH_TRIANGLES_PER_SEGMENT  # 断面が、約半分
     assert triangles(mesh_with(road_strips=2)) == MESH_SEGMENTS * 2 * (2 + 6)
     assert len(mesh_with(chunk_m=120.0)) == 6 and triangles(mesh_with(chunk_m=120.0)) == 3660
     assert len(mesh_with(chunk_m=500.0)) == 1  # 塊は、1つ以上
@@ -662,7 +662,7 @@ def test_track_mesh_is_the_same_for_the_same_entry_and_follows_the_sizes():
     wide = mesh_with(line_m=1.0)
     row = next(part.vertices for part in wide[0].parts if part.name == "road")[:MESH_STRIPS + 1]
     assert abs(loop().query(row[0][0], row[0][2]).lateral) == pytest.approx(HALF_M - 1.0, abs=1e-6)
-    # 塊の数は、区切りの数を超えない（塊の長さの目安が、区切りの間隔より短くても、空の塊を作らない）。
+    # 塊の数は、断面の数を超えない（塊の長さの目安が、断面の間隔より短くても、空の塊を作らない）。
     coarse = mesh_with(step_m=20.0, chunk_m=10.0)
     assert len(coarse) == 37 and triangles(coarse) == 37 * MESH_TRIANGLES_PER_SEGMENT
     assert all(chunk.triangle_count == MESH_TRIANGLES_PER_SEGMENT for chunk in coarse)

@@ -35,7 +35,7 @@ ALL = "ALL"  # テストの絞りでは「全部」、足す手順では「全�
 # 割り切り：全体の検証が、絞り始める目安（tools/budgets.json の verify_full_limit_s）を超えるまでは、
 # どの分野に触れても全体を回す。超えた時に True にする（docs/plan.md の「検証の組」）。
 FOCUS_ENABLED = False
-STEP_TIMEOUT_S = 1800
+STEP_TIMEOUT_S = 3600  # 手順1つの時間切れ（秒）。いちばん長い手順（selftest-break）で約30分（段0 区切り10の実測）。その2倍に置く
 SUMMARY_MAX = 400  # 表に出す、道具の最後の1行の長さの上限
 # 手順の名前と、回すコマンド。並びは、全体の検証で回す順。
 STEPS = {
@@ -120,17 +120,18 @@ AREAS = (
     ),
     Area(
         # 計画の表の「描画」（段0 区切り10）。色の役割（cp_core/palette.py）、メッシュ用の数値の型と面の向きの決まり（cp_core/mesh.py）、
-        # 車の仮の形（cp_core/car_shape.py）。Pyxelの3Dに触れる所（cp_app/render.py）は、作る区切りで、ここへ足す。
+        # 車の仮の形（cp_core/car_shape.py）、Pyxelの3Dに触れる所（cp_app/render.py。3Dの場面、座標の変換、描く口、判定用の実描画）。
         # コースのメッシュ用の数値は、上の「コース」（cp_core/track.py）、カメラは、下の「カメラと画面の状態」。
         # パレットとカメラの値（clipping_point/data/ の下）は、下の「メインループと世界の状態」に並べてある（全部を回す）。
         "描画",
         (
             "clipping_point/cp_core/palette.py", "clipping_point/cp_core/mesh.py", "clipping_point/cp_core/car_shape.py",
-            "tests/test_palette.py", "tests/test_mesh.py", "tests/test_car_shape.py",
+            "clipping_point/cp_app/render.py",
+            "tests/test_palette.py", "tests/test_mesh.py", "tests/test_car_shape.py", "tests/test_render.py",
         ),
-        # 計画の表のテストの絞りは「画面」。画面（2D）の語に、ここのテスト（色の役割、面の向き、車の仮の形）と、
+        # 計画の表のテストの絞りは「画面」。画面（2D）の語に、ここのテスト（色の役割、面の向き、車の仮の形、3Dの場面）と、
         # メッシュ用の数値とカメラ（どちらも、面の向きの決まりと、色の役割の名を使う）を足した。
-        "palette or mesh or car_shape or camera or canvas or screens or ui_check or fixtures or tour",
+        "palette or mesh or car_shape or camera or render or canvas or screens or ui_check or fixtures or tour",
         # 計画の表のとおり。
         ("run", "tour", "web-smoke"),
     ),

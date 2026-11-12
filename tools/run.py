@@ -13,7 +13,7 @@
 置き場にファイルが1つも無い、名の字が違う）・参照の世界を作れない（道具が、定義データを読めない）。
 アプリの終了コードが0でも、それだけでは合格にしない。pyxel.quit() は常に0で終わるため。
 失敗にする条件：アプリの終了コード、結果ファイルが無い、回したtickが違う、世界のtickが違う、
-実描画の回数が範囲の外（tickの半分の前後）、裏画面が空、画面が裏画面と違う、回した経路が違う、
+実描画の回数が範囲の外（tickの半分の前後）、3Dの絵の判定（下の6つ）が合わない、画面が裏画面と違う、回した経路が違う、
 入力の出どころが違う（台本か入力アダプタか）、入力アダプタを呼んだ回数と、直読みを呼んだ回数が違う
 （どちらも、台本なら0、入力アダプタなら回したtickと同じ。直読みは、デスクトップ版では値を返さないが、呼んだ回数は数える）、
 世界の要約が参照（tools/input_reference.py。台本なしなら、何も押していない入力。世界は、アプリと同じ読み方で読んだ定義データから作る。
@@ -32,7 +32,18 @@
 「名前空間 main のファイルができていない」は、保存の往復が main に触れないことの確かめ。試験用データを重ねたときの、
 名前空間の切り替えは、結果の data の namespace で見る（段0の起動は、設定を書かないので、ファイルでは分からない）。
 指紋の筋書きに無い回し方（--ticks N、--script FILE、--pack 名 など）では、指紋の確かめを外して、最後の1行に fingerprint=skipped と出す。
-3Dが描かれていること、左右の向きは、後の区切りで足す（最後の1行の not_yet）。
+3Dの絵の判定（結果の scene。アプリが、結果を書く直前に、判定用の実描画で数えた値。判定の関数と、値の形は tools/scene_reference.py）：
+  backdrop    背景が写っている（空の役割の色の画素が、下限以上）
+  scene3d     3Dが描かれている（コースの画素と、車の画素が、どちらも下限以上。車だけの絵、コースだけの絵を、通さない）
+  mirror      左右と前後が、正しく写っている（判定用の柱と印の重心）。スタート位置（向き0、z=0）では、向きの符号の誤りと、
+              カメラや車の位置だけの反転の付け忘れは、絵に出ない。拾うのは、走る台本の回（全体の検証の run-drive）と、巡回
+  palette     当てたパレットが、道具が定義データのファイルを自分で読んだ32色と同じ（--pack の回は、同じ試験用データを重ねて読む）
+  scene_same  ふだんの実描画が、判定と同じ3Dを描いている（裏画面と、判定用の3枚目の、2Dの描画命令の矩形の外の違う画素が0）
+  back_ink    2Dの描画命令が、裏画面に描かれている（矩形の内の違う画素が1以上）
+下限と余裕は tools/budgets.json（無ければ2。reason=no_scene_budgets）。
+最後の1行には、3Dの絵の値（sky、track、car、ink、digest）、処理時間の要約（update_ms と render_ms は「平均/95%点/最大」。
+cycles_over_tick は、実描画のある周期が、1 tickの長さを超えた回数）、場面の数（描いた三角形の数、場面を組む時間、メッシュを作る時間、
+起動にかかった時間）も出す。処理時間と場面の数は、判定に使わない（線の判定は、ブラウザ版の煙テスト）。
 """
 import argparse
 import json
@@ -43,12 +54,13 @@ from pathlib import Path
 import data_reference
 import fingerprint
 import input_reference
+import scene_reference
 from _common import APP, FAIL, INCOMPLETE, OK, OUT, ROOT, child_env, finish, load_budgets, run, show_tail
 
 from cp_app import data_files, storage_file, storage_select  # noqa: E402 - cp_app への道は、input_reference が足す。pyxel を読み込まないモジュールだけ
 from cp_core import profile, storage  # noqa: E402
 
-NOT_YET = ("scene3d", "mirror")  # 後の区切りで足す確かめ
+NOT_YET = ()  # 後の区切りで足す確かめ。いまは、無い（scene3d と mirror は、段0 区切り10で足した）
 
 
 def read_saved_settings(save_dir: Path) -> tuple:
@@ -78,6 +90,16 @@ def main_namespace_files(save_dir: Path) -> list:
         return []
 
 
+def scene_checks_of(data: dict, budgets: dict, pack=None) -> dict:
+    """3Dの絵の判定。返すのは {確かめの名: (合っているか, 合わないときの文)}。並びは scene_reference.SCENE_CHECKS の順。
+
+    data は、アプリの結果。budgets は、道具の値（下限と余裕がそろっていること）。pack は、重ねた試験用データの名（無ければ None）。
+    """
+    want_palette, why = scene_reference.expected_palette(pack=pack)
+    checks = scene_reference.scene_checks(data, budgets, want_palette, f"（読めなかった：{why}）" if why else "")
+    return {name: (ok, message) for name, ok, message in checks}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="デスクトップ版を画面なしで回す")
     ap.add_argument("--ticks", type=int, default=120)
@@ -99,11 +121,17 @@ def main() -> int:
     head = f"driver={driver} input={want_source} ticks_wanted={args.ticks}"
     if args.pack is not None:
         head += f" pack_wanted={args.pack}"
-    tolerance = load_budgets()["run_renders_tolerance"]
+    budgets = load_budgets()
+    tolerance = budgets["run_renders_tolerance"]
     # 実描画が0回でも幅の中に入ってしまう短さでは、判定にならない。
     min_ticks = 2 * (tolerance + 1)
     if args.ticks < min_ticks:
         return finish("run", INCOMPLETE, f"{head} reason=too_few_ticks min={min_ticks}")
+    # 3Dの絵の判定に要る、下限と余裕（道具の値）。無ければ、判定できない（黙って、外さない）。
+    missing_budgets = scene_reference.missing_budgets(budgets)
+    if missing_budgets:
+        print(f"  run: 3Dの絵の判定の下限と余裕が、道具の値（tools/budgets.json）に無い：{missing_budgets}")
+        return finish("run", INCOMPLETE, f"{head} reason=no_scene_budgets")
     script_value = script = None
     if script_path is not None:
         try:
@@ -188,10 +216,9 @@ def main() -> int:
             isinstance(data.get("renders"), int) and abs(data["renders"] - want_renders) <= tolerance,
             f"実描画が {data.get('renders')} 回（{want_renders} 回の前後 {tolerance} 回のはず。毎秒30回）",
         ),
-        "back_ink": (
-            isinstance(data.get("back_ink"), int) and data["back_ink"] > 0,
-            f"裏画面が空（背景色と違う画素が {data.get('back_ink')}）",
-        ),
+        # 3Dの絵の判定（backdrop、scene3d、mirror、palette、scene_same、back_ink）。判定の関数は、道具 tour、web-smoke と同じ。
+        # パレットは、道具が、定義データのファイルを自分で読んで照らす（--pack の回は、同じ試験用データを重ねて読む）。
+        **scene_checks_of(data, budgets, args.pack),
         "screen_diff": (data.get("screen_diff") == 0, f"画面が裏画面と違う（違う画素が {data.get('screen_diff')}）"),
         "driver": (data.get("driver") == driver, f"回した経路が {data.get('driver')!r}（{driver!r} のはず）"),
         "input_source": (
@@ -245,7 +272,8 @@ def main() -> int:
         print(f"  run: {checks[name][1]}")
     summary = (
         f"driver={driver} input={data.get('input_source')} ticks={data.get('ticks')} renders={data.get('renders')} "
-        f"back_ink={data.get('back_ink')} screen_diff={data.get('screen_diff')} wall_s={data.get('wall_s')} "
+        f"{scene_reference.scene_words(data)} screen_diff={data.get('screen_diff')} wall_s={data.get('wall_s')} "
+        f"{scene_reference.perf_words(data)} {scene_reference.stats_words(data)} "
         f"pack={'none' if loaded.get('pack') is None else loaded.get('pack')} namespace={loaded.get('namespace')} "
         f"save={saved.get('backend')} checks={len(checks)} problems={len(failed)}"
     )
@@ -253,7 +281,7 @@ def main() -> int:
         summary += " failed=" + ",".join(failed)
     if not compare_fingerprint:
         summary += " fingerprint=skipped"
-    summary += f" not_yet={len(NOT_YET)}({','.join(NOT_YET)})"
+    summary += f" not_yet={len(NOT_YET)}" + (f"({','.join(NOT_YET)})" if NOT_YET else "")
     return finish("run", FAIL if failed else OK, summary)
 
 

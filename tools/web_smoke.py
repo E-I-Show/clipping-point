@@ -1,10 +1,10 @@
 """ブラウザ版の煙テスト。出荷するHTMLそのものを、ヘッドレスのChromiumで開く。
 
-  python3 tools/web_smoke.py [--only shipped|probe|script|gamepad|storage_blocked] [--ticks N] [--timeout 秒]
+  python3 tools/web_smoke.py [--only shipped|probe|script|gamepad|storage_blocked|drive] [--ticks N] [--timeout 秒]
 
 開くのは、この道具が tools/export.py を回して作らせた dist/clipping_point.html そのもの（同じバイト列）。
 煙テスト用に作り直したHTMLは開かない。ランタイムへの要求は、ランタイムの写し（.cache/pyxel_web/mirror/）へ差し替える。
-筋書きは5本。順に、1本ずつ回す。どの筋書きでも、直読みの警告（cp_app/input_web.py の WARN_MARK の付いたコンソールの行）が0件であることを見る。
+筋書きは6本。順に、1本ずつ回す。どの筋書きでも、直読みの警告（cp_app/input_web.py の WARN_MARK の付いたコンソールの行）が0件であることを見る。
   shipped  何も渡さずに開く。見るもの：Pythonの例外が無い、エラー表示が無い、読み込みの失敗が無い、
            ランタイムの写しの外への要求が無い、開始のクリックの後の決めた秒数で画面が描かれている（背景と違う画素がある）。
            保存：終わりの localStorage を、ブラウザの実行役に読ませ、このアプリの鍵（頭が clippingpoint/）が1つも無いことを見る。
@@ -21,6 +21,8 @@
            往復の見本と比べる。ふつうの保存（名前空間 main）の鍵が、できていないことも見る。
            定義データ：結果の data の、表ごとの件数が、道具が定義データのファイルを自分で読んで数えた件数と同じ、警告が0件、
            試験用データを重ねていない（null）、設定を読んだ保存の口の名前空間が main。数え方と確かめは tools/data_reference.py。
+           3Dの絵：結果の scene（アプリが、結果を出す直前に、判定用の実描画で数えた値）の確かめ6つ（backdrop、scene3d、mirror、palette、
+           scene_same、back_ink。判定の関数は tools/scene_reference.py。道具 run、tour と同じ）。何も押さないので、車は、スタート位置のまま。
   script   window.CP_PROBE に、回すtick数、道具の台本（tools/input_script_smoke.json）、入力の跡の件数の上限を置いて開く。
            見るもの：ブラウザ版であること、回したtick、入力の出どころが台本で、入力アダプタも直読みも呼んでいない、
            世界の要約がデスクトップ版（同じ台本を渡して回した）と合い、参照（tools/input_reference.py）とも合う（項目ごとの比べ方）、
@@ -35,7 +37,13 @@
   storage_blocked  差し込むスクリプト（tools/web/block_storage.js）で、localStorage に触れると例外になるようにして開く。
            見るもの：ブラウザ版であること、回したtick、入力の出どころ、保存先の名が memory（試し書きが通らず、切り替えた）、
            知らせの1行が、メモリへ切り替えた文と同じ（空でない）、メモリの上での保存の往復が通っている。
-script、gamepad、storage_blocked は、処理時間と回数の線を見ない（見るのは probe）。慣らしは0。
+  drive    走行の場面。window.CP_PROBE に、走る台本（tools/input_script_drive.json。指紋の筋書き drive_900 と同じ台本、同じtick数）と、
+           慣らしを置いて開く。入力の跡は、取らない。見るもの：ブラウザ版であること、回したtick、入力の出どころが台本、
+           世界の要約がデスクトップ版（同じ台本を渡して回した）と合い、参照とも合う（項目ごとの比べ方）、走行の下限（指紋の筋書き
+           drive_900 の下限を、そのまま。tools/fingerprint.py）、実描画の回数、更新と実描画の毎秒の回数、更新1回と実描画1回の時間（95%点）、
+           3Dの絵の確かめ6つ（車が、コーナーの中まで走った所。向きは約2.37 rad、z は約78 m。向きの符号の誤りと、反転の付け忘れを拾う）。
+           画面の絵は out/web_smoke/drive.png（目で見る）。
+script、gamepad、storage_blocked は、処理時間と回数の線を見ない（見るのは probe と drive）。慣らしは0。
 世界の要約の突き合わせ（デスクトップ版とブラウザ版。probe の sim、script の sim と sim_reference の3つとも、同じ関数 summary_check で比べる）：
   浮動小数の結果は、デスクトップ版とブラウザ版で一致しない前提。項目ごとの比べ方は、世界（cp_core/sim.py の SUMMARY_FIELDS）から引く。
   完全一致（tick、入力の要約値、種、乱数の流れの状態、車とコースの id、ギア、路面の種類、回数の項目）、
@@ -51,6 +59,10 @@ script、gamepad、storage_blocked は、処理時間と回数の線を見ない
 ページが返らない（Pythonが主スレッドを握ったまま。失敗の種類 unresponsive）は、1にする。
 線の判定に使うのは、慣らし（頭の測らないtick）を除いた値。慣らしを入れた値は、最後の1行の with_warmup= に
 「更新の毎秒の回数/実描画の毎秒の回数/更新1回のms/実描画1回のms」の順で出す（判定には使わない）。
+最後の1行の drive_ の付いた値は、走行の場面の筋書きの値（判定には使わないものを含む）：drive_update_ms= と drive_render_ms= は
+「平均/95%点/最大」、drive_cycles_over_tick= は、実描画のある周期が、1 tickの長さを超えた回数、drive_gap= は、デスクトップ版との差の最大、
+drive_picture= は、判定用の3枚目の画素の要約値が、デスクトップ版の参照（同じ台本を、同じtick数で回したアプリ）と同じか（same か differs。
+合否には、使わない）、drive_triangles= などは、場面の数と、起動にかかった時間（ms）。
 最後の1行の script_changes= は、台本の筋書きの入力の跡の件数。pad_lag= は、偽のコントローラーの筋書きで、
 見えるはずの値が、予定の区間の境目から何tick遅れて見えたかの最大（判定しないtick数の余裕を見るための値）。
 結果は out/web_smoke/ に書く。前回の結果は、回す前に消す。
@@ -67,7 +79,9 @@ import sys
 from dataclasses import dataclass
 
 import data_reference
+import fingerprint
 import input_reference
+import scene_reference
 from _common import APP, DIST, FAIL, INCOMPLETE, OK, OUT, TOOLS, child_env, finish, load_budgets, run, show_tail
 
 # fetch_runtime（ランタイムの写しの置き場と照合）と、cp_app の、pyxel を読み込まないモジュール（外から渡す値の名前、
@@ -87,7 +101,8 @@ HTML = DIST / f"{APP.name}.html"
 WEBRUN = TOOLS / "web" / "webrun.js"
 FAKE_PAD_JS = TOOLS / "web" / "fake_gamepad.js"
 BLOCK_STORAGE_JS = TOOLS / "web" / "block_storage.js"  # localStorage に触れると例外になるようにする、差し込むスクリプト
-SCENARIOS = ("shipped", "probe", "script", "gamepad", "storage_blocked")
+SCENARIOS = ("shipped", "probe", "script", "gamepad", "storage_blocked", "drive")
+DRIVE_SCENARIO = "drive_900"  # 走行の場面の筋書きが使う、指紋の筋書きの名（tools/fingerprint.py。台本、回すtick数、走行の下限を、ここから引く）
 # 保存の往復が残す値の、localStorage での鍵（clippingpoint/selfcheck.settings）と、ふつうの保存の鍵の頭（clippingpoint/main.）。
 SELFCHECK_STORAGE_KEY = f"{storage_web.PREFIX}{profile.SELFCHECK_NAMESPACE}{storage.NAMESPACE_SEPARATOR}{profile.SETTINGS_KEY}"
 MAIN_STORAGE_PREFIX = f"{storage_web.PREFIX}{storage.DEFAULT_NAMESPACE}{storage.NAMESPACE_SEPARATOR}"
@@ -244,23 +259,55 @@ def summary_fields_without_rule(*summaries) -> list:
     return input_reference.unknown_summary_fields(*summaries)
 
 
+def scene_checks(result: dict, budgets: dict, want_palette, palette_why: str = "") -> list:
+    """3Dの絵の確かめ6つ（結果の scene。判定の関数は tools/scene_reference.py）。probe と drive が、同じ関数で見る。
+
+    want_palette は、道具が定義データのファイルを自分で読んだ32色（読めなかったら None。palette_why は、その理由）。
+    """
+    return scene_reference.scene_checks(result, budgets, want_palette, f"（読めなかった：{palette_why}）" if palette_why else "")
+
+
+def timing_checks(result: dict, ticks: int, warmup_ticks: int, budgets: dict) -> list:
+    """実描画の回数と、処理時間と回数の4本の線の確かめ。probe と drive が、同じ関数で見る。線は tools/budgets.json。"""
+    perf = result.get("perf") if isinstance(result.get("perf"), dict) else {}
+    renders, tolerance = result.get("renders"), budgets["web_renders_tolerance"]
+    measured_renders, measured_ticks = perf.get("renders"), ticks - warmup_ticks
+    ups, rps = perf.get("updates_per_s"), perf.get("renders_per_s")
+    update_ms, render_ms = perf.get("update_ms_p95"), perf.get("render_ms_p95")
+    ups_min, rps_min = budgets["web_updates_per_s_min"], budgets["web_renders_per_s_min"]
+    update_max, render_max = budgets["web_update_ms_p95_max"], budgets["web_render_ms_p95_max"]
+    return [
+        (
+            "renders",
+            type(renders) is int and abs(renders - ticks // 2) <= tolerance,
+            f"実描画が {renders} 回（{ticks // 2} 回の前後 {tolerance} 回のはず。毎秒30回）",
+        ),
+        (
+            # 時間を測る所が、実描画のたびに1度だけ呼ばれていること（数える所の付け間違いを拾う）。
+            "perf_renders",
+            type(measured_renders) is int and abs(measured_renders - measured_ticks // 2) <= tolerance,
+            f"時間を測った実描画が {measured_renders} 回（慣らしを除いて {measured_ticks // 2} 回の前後 {tolerance} 回のはず）",
+        ),
+        ("updates_per_s", is_number(ups) and ups >= ups_min, f"更新が毎秒 {ups} 回（{ups_min} 回以上のはず）"),
+        ("renders_per_s", is_number(rps) and rps >= rps_min, f"実描画が毎秒 {rps} 回（{rps_min} 回以上のはず）"),
+        ("update_ms_p95", is_number(update_ms) and update_ms <= update_max, f"更新1回が {update_ms} ms（95%点。{update_max} ms以内のはず）"),
+        ("render_ms_p95", is_number(render_ms) and render_ms <= render_max, f"実描画1回が {render_ms} ms（95%点。{render_max} ms以内のはず）"),
+    ]
+
+
 def judge_probe(
     page: dict, html_sha256: str, result: dict, desktop_sim, ticks: int, warmup_ticks: int, budgets: dict, data_tables, data_why: str = "", periods=None,
+    want_palette=None, palette_why: str = "",
 ) -> list:
     """回すtick数を渡して開く筋書きの確かめ。result は、アプリがコンソールへ出した結果。
 
     data_tables は、道具が定義データのファイルを自分で読んで数えた、表ごとの項目の数（数えられなかったら None。data_why は、その理由）。
     periods は、折り返して比べる項目の、1周の長さ（無ければ、道具の既定の世界から引く）。
+    want_palette は、道具が定義データのファイルを自分で読んだ32色（読めなかったら None。合格にしない。palette_why は、その理由）。
     """
     periods = input_reference.summary_periods() if periods is None else periods
     perf = result.get("perf") if isinstance(result.get("perf"), dict) else {}
-    renders, tolerance = result.get("renders"), budgets["web_renders_tolerance"]
-    measured_renders, measured_ticks = perf.get("renders"), ticks - warmup_ticks
     python = str(result.get("python", ""))
-    ups, rps = perf.get("updates_per_s"), perf.get("renders_per_s")
-    update_ms, render_ms = perf.get("update_ms_p95"), perf.get("render_ms_p95")
-    ups_min, rps_min = budgets["web_updates_per_s_min"], budgets["web_renders_per_s_min"]
-    update_max, render_max = budgets["web_update_ms_p95_max"], budgets["web_render_ms_p95_max"]
     return page_checks(page, html_sha256) + [
         ("platform", result.get("platform") == web_bridge.WEB_PLATFORM, f"ブラウザ版でない（sys.platform が {result.get('platform')!r}）"),
         ("python", python.startswith(fetch_runtime.WEB_PYTHON + "."), f"Pythonの版が {python!r}（{fetch_runtime.WEB_PYTHON} のはず）"),
@@ -278,21 +325,40 @@ def judge_probe(
         *stored_value_checks(page),
         # 定義データ。ブラウザ版は、試験用データを重ねない（名は null、保存の名前空間は main）。
         *data_reference.data_checks(result, data_tables, None, f"（数えられなかった：{data_why}）" if data_why else ""),
+        # 3Dの絵。何も押さないので、車は、スタート位置のまま（向きの符号の誤りを拾うのは、走行の場面の筋書き drive）。
+        *scene_checks(result, budgets, want_palette, palette_why),
+        *timing_checks(result, ticks, warmup_ticks, budgets),
+    ]
+
+
+def judge_drive(
+    page: dict, html_sha256: str, result: dict, desktop_sim, script, scenario, warmup_ticks: int, budgets: dict, periods=None,
+    want_palette=None, palette_why: str = "",
+) -> list:
+    """走行の場面の筋書きの確かめ。result は、アプリがコンソールへ出した結果。
+
+    script は、検査済みの走る台本。scenario は、指紋の筋書き（tools/fingerprint.py の Scenario。回すtick数と、走行の下限を持つ）。
+    desktop_sim は、同じ台本を渡したデスクトップ版の世界の要約。periods は、折り返して比べる項目の、1周の長さ。
+    want_palette は、道具が定義データのファイルを自分で読んだ32色（読めなかったら None。合格にしない）。
+    """
+    periods = input_reference.summary_periods() if periods is None else periods
+    ticks, tolerance = scenario.ticks, budgets["web_summary_tolerance"]
+    perf = result.get("perf") if isinstance(result.get("perf"), dict) else {}
+    sim = result.get("sim")
+    below = fingerprint.floor_problems(scenario, sim)
+    return page_checks(page, html_sha256) + input_checks(result, ticks, "script") + [
         (
-            "renders",
-            type(renders) is int and abs(renders - ticks // 2) <= tolerance,
-            f"実描画が {renders} 回（{ticks // 2} 回の前後 {tolerance} 回のはず。毎秒30回）",
+            "measured_ticks",
+            perf.get("updates") == ticks - warmup_ticks,
+            f"測ったtickが {perf.get('updates')}（慣らしの {warmup_ticks} を除いて {ticks - warmup_ticks} のはず）",
         ),
-        (
-            # 時間を測る所が、実描画のたびに1度だけ呼ばれていること（数える所の付け間違いを拾う）。
-            "perf_renders",
-            type(measured_renders) is int and abs(measured_renders - measured_ticks // 2) <= tolerance,
-            f"時間を測った実描画が {measured_renders} 回（慣らしを除いて {measured_ticks // 2} 回の前後 {tolerance} 回のはず）",
-        ),
-        ("updates_per_s", is_number(ups) and ups >= ups_min, f"更新が毎秒 {ups} 回（{ups_min} 回以上のはず）"),
-        ("renders_per_s", is_number(rps) and rps >= rps_min, f"実描画が毎秒 {rps} 回（{rps_min} 回以上のはず）"),
-        ("update_ms_p95", is_number(update_ms) and update_ms <= update_max, f"更新1回が {update_ms} ms（95%点。{update_max} ms以内のはず）"),
-        ("render_ms_p95", is_number(render_ms) and render_ms <= render_max, f"実描画1回が {render_ms} ms（95%点。{render_max} ms以内のはず）"),
+        summary_check("sim", sim, desktop_sim, tolerance, periods, "デスクトップ版"),
+        summary_check("sim_reference", sim, input_reference.sim_summary(script, ticks), tolerance, periods, "参照"),
+        # 走行の下限。車が、実際に走っていること（台本が渡っていない、世界へ届いていない、を拾う）。
+        ("floor", not below, "。".join(below)),
+        # 3Dの絵。車は、コーナーの中まで走っている（向きが、0、π/2、π から離れ、z が0でない）。
+        *scene_checks(result, budgets, want_palette, palette_why),
+        *timing_checks(result, ticks, warmup_ticks, budgets),
     ]
 
 
@@ -566,6 +632,12 @@ def open_with_probe(name: str, timeout_s: float, init_script: str, html_sha256: 
 
 def desktop_reference(name: str, ticks: int, script_path=None):
     """デスクトップ版を同じtick数だけ画面なしで回し、世界の要約を返す。取れなければ None。script_path があれば、その台本を渡す。"""
+    data = desktop_result(name, ticks, script_path)
+    return None if data is None else data["sim"]
+
+
+def desktop_result(name: str, ticks: int, script_path=None):
+    """デスクトップ版を同じtick数だけ画面なしで回し、結果の全部（辞書）を返す。取れなければ None。script_path があれば、その台本を渡す。"""
     result_path = WORK / f"desktop_{name}.json"
     env = child_env(CP_SMOKE=result_path, CP_SMOKE_TICKS=ticks, CP_SMOKE_DRIVER="flip")
     if script_path is not None:
@@ -578,7 +650,7 @@ def desktop_reference(name: str, ticks: int, script_path=None):
     if not isinstance(data, dict) or data.get("ticks") != ticks or not isinstance(data.get("sim"), dict):
         show_tail(out, err)
         return None
-    return data["sim"]
+    return data
 
 
 def scenario_shipped(args, budgets: dict, html_sha256: str, context: dict) -> tuple:
@@ -620,7 +692,11 @@ def scenario_probe(args, budgets: dict, html_sha256: str, context: dict) -> tupl
     )
     # 定義データの、表ごとの項目の数。道具が、ソースの木のファイルを自分で読んで数える（出荷物の中身がソースと同じことは export が見る）。
     data_tables, data_why = data_reference.expected_tables()
-    return judge_probe(page, html_sha256, result, desktop_sim, args.ticks, warmup_ticks, budgets, data_tables, data_why, periods), [fact], ""
+    print(f"  web_smoke: [probe] ブラウザ版 {scene_reference.scene_words(result)} probes={scene_reference.probe_words(result)} {scene_reference.stats_words(result)}")
+    # パレットの32色。道具が、定義データのファイルを自分で読む（ブラウザ版は、試験用データを重ねない）。
+    want_palette, palette_why = scene_reference.expected_palette()
+    checks = judge_probe(page, html_sha256, result, desktop_sim, args.ticks, warmup_ticks, budgets, data_tables, data_why, periods, want_palette, palette_why)
+    return checks, [fact], ""
 
 
 def scenario_script(args, budgets: dict, html_sha256: str, context: dict) -> tuple:
@@ -674,9 +750,53 @@ def scenario_storage_blocked(args, budgets: dict, html_sha256: str, context: dic
     return judge_storage_blocked(page, html_sha256, result, budgets["web_blocked_ticks"]), [fact], ""
 
 
+def picture_word(result: dict, desktop: dict) -> str:
+    """判定用の3枚目の画素の要約値が、デスクトップ版の参照と同じか（same か differs。読めなければ unknown）。合否には、使わない。"""
+    seen = (result.get("scene") or {}).get("digest") if isinstance(result.get("scene"), dict) else None
+    want = (desktop.get("scene") or {}).get("digest") if isinstance(desktop.get("scene"), dict) else None
+    if type(seen) is not int or type(want) is not int:
+        return "unknown"
+    return "same" if seen == want else "differs"
+
+
+def scenario_drive(args, budgets: dict, html_sha256: str, context: dict) -> tuple:
+    """走行の場面。走る台本を渡して開き、処理時間と回数の線と、3Dの絵を見る。台本と筋書きは、main() が先に読んで検査したもの。"""
+    scenario, script_value, script = context["drive_scenario"], context["drive_script_value"], context["drive_script"]
+    warmup_ticks = budgets["web_probe_warmup_ticks"]
+    desktop = desktop_result("drive", scenario.ticks, scenario.script)
+    if desktop is None:
+        return None, [], "no_desktop_reference"
+    init_script = probe_script({"ticks": scenario.ticks, "warmup_ticks": warmup_ticks, "script": script_value})
+    page, result, checks, reason = open_with_probe("drive", args.timeout, init_script, html_sha256)
+    if result is None:
+        return checks, [], reason
+    # 世界の要約に、比べ方の表に無い項目があれば、見ずに通さない（回り切れない）。
+    strange = summary_fields_without_rule(result.get("sim"), desktop["sim"])
+    if strange:
+        print(f"  web_smoke: [drive] 世界の要約に、比べ方の表（cp_core/sim.py の SUMMARY_FIELDS）に無い項目がある：{strange}")
+        return None, [], "summary_field_without_rule"
+    periods = context["periods"]
+    perf = result.get("perf") if isinstance(result.get("perf"), dict) else {}
+    whole = perf.get("with_warmup") if isinstance(perf.get("with_warmup"), dict) else {}
+    print(f"  web_smoke: [drive] ブラウザ版 {scene_reference.scene_words(result)} probes={scene_reference.probe_words(result)}")
+    print(f"  web_smoke: [drive] デスクトップ版 {scene_reference.scene_words(desktop)} probes={scene_reference.probe_words(desktop)} {scene_reference.perf_words(desktop)}")
+    fact = (
+        f"drive_ticks={result.get('ticks')} drive_renders={result.get('renders')} "
+        + " ".join(f"drive_{key}={perf.get(key)}" for key in TIMING_CHECKS)
+        + " drive_with_warmup=" + "/".join(str(whole.get(key)) for key in TIMING_CHECKS)
+        + " " + " ".join("drive_" + word for word in scene_reference.perf_words(result).split())
+        + " " + " ".join("drive_" + word for word in scene_reference.stats_words(result).split())
+        + f" drive_gap={input_reference.summary_gap(result.get('sim'), desktop['sim'], periods)}"
+        + f" drive_picture={picture_word(result, desktop)}"
+    )
+    want_palette, palette_why = scene_reference.expected_palette()
+    checks = judge_drive(page, html_sha256, result, desktop["sim"], script, scenario, warmup_ticks, budgets, periods, want_palette, palette_why)
+    return checks, [fact], ""
+
+
 RUNNERS = {
     "shipped": scenario_shipped, "probe": scenario_probe, "script": scenario_script, "gamepad": scenario_gamepad,
-    "storage_blocked": scenario_storage_blocked,
+    "storage_blocked": scenario_storage_blocked, "drive": scenario_drive,
 }
 
 
@@ -693,7 +813,13 @@ def main() -> int:
     if "probe" in names and args.ticks < min_ticks:
         return finish("web_smoke", INCOMPLETE, f"scenarios=0 reason=too_few_ticks min={min_ticks}")
     context = {}
-    if "probe" in names or "script" in names:
+    if "probe" in names or "drive" in names:
+        # 3Dの絵の判定に要る、下限と余裕（道具の値）。無ければ、判定できない（黙って、外さない）。
+        missing_budgets = scene_reference.missing_budgets(budgets)
+        if missing_budgets:
+            print(f"  web_smoke: 3Dの絵の判定の下限と余裕が、道具の値（tools/budgets.json）に無い：{missing_budgets}")
+            return finish("web_smoke", INCOMPLETE, "scenarios=0 reason=no_scene_budgets")
+    if "probe" in names or "script" in names or "drive" in names:
         # 世界の要約を、デスクトップ版と突き合わせる筋書き。折り返して比べる項目の、1周の長さを、道具の既定の世界から引く
         # （定義データを、アプリと同じ読み方で読む。読めなければ、回り切れない）。
         try:
@@ -711,6 +837,21 @@ def main() -> int:
         script_ticks, total = budgets["web_script_ticks"], context["script"].total_ticks
         if script_ticks < total:
             return finish("web_smoke", INCOMPLETE, f"scenarios=0 reason=ticks_shorter_than_script ticks={script_ticks} script_ticks={total}")
+    if "drive" in names:
+        # 走行の場面。台本、回すtick数、走行の下限は、指紋の筋書き（tools/fingerprint.py）から引く（同じ台本、同じtick数でなければ、下限が掛からない）。
+        scenario = next((entry for entry in fingerprint.SCENARIOS if entry.name == DRIVE_SCENARIO), None)
+        if scenario is None or scenario.script is None or not scenario.floors:
+            return finish("web_smoke", INCOMPLETE, f"scenarios=0 reason=no_drive_scenario name={DRIVE_SCENARIO}")
+        try:
+            context["drive_script_value"], context["drive_script"] = fingerprint.load_scenario_script(scenario)
+        except ValueError as exc:
+            print(f"  web_smoke: 走る台本が読めない：{exc}")
+            return finish("web_smoke", INCOMPLETE, "scenarios=0 reason=script_unreadable")
+        context["drive_scenario"] = scenario
+        # 台本の終わりまで回す。慣らしの後に、測るtickが、下限より多く残ること。
+        total = context["drive_script"].total_ticks
+        if scenario.ticks < total or scenario.ticks < min_ticks:
+            return finish("web_smoke", INCOMPLETE, f"scenarios=0 reason=ticks_shorter_than_script ticks={scenario.ticks} script_ticks={total} min={min_ticks}")
     if "gamepad" in names:
         # 予定のどの区間にも、判定するtickが1個以上あること。無ければ、何も見ずに合格になる。
         stage_ticks, settle_ticks = budgets["web_pad_stage_ticks"], budgets["web_pad_settle_ticks"]

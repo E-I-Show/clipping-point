@@ -27,7 +27,9 @@ from pathlib import Path
 import data_reference
 import fingerprint
 import input_reference
+import scene_reference
 import screen_check
+import tour as tour_tool
 from _common import FAIL, INCOMPLETE, OK, OUT, ROOT, child_env, finish, load_budgets, run
 
 from cp_core import profile, storage  # noqa: E402 - cp_core への道は、input_reference が足す
@@ -37,7 +39,7 @@ SCRATCH = OUT / "selftest"
 # 複製するもの。道具、テスト、見張りが読むファイルの全部。足りなければ control の件が落ちる。
 # testpacks（試験用データ）が無いと、複製の中で、規則ファイルの当て先（testpacks/**）が空振りし、run --pack が2になる。
 COPY_ITEMS = ("clipping_point", "tools", "tests", "testpacks", ".claude/rules", ".claude/agents", ".claude/settings.json","docs/canon", "docs/handoff.md", "CLAUDE.md", "pytest.ini")
-CASE_TIMEOUT_S = 180  # 1件の時間切れ（秒）。いちばん長い件（verify --all。ブラウザ版の煙テストの5本を含む）で約95秒
+CASE_TIMEOUT_S = 300  # 1件の時間切れ（秒）。いちばん長い件（verify --all。ブラウザ版の煙テストの6本を含む）で約130秒
 
 RUNTIME_CACHE = ".cache"  # ランタイムの写しの置き場。複製には、ここへのリンクだけを置く（中身は書き換えない）
 
@@ -80,11 +82,21 @@ STALE_JUNIT = (
     '<?xml version="1.0" encoding="utf-8"?><testsuites>'
     '<testsuite name="pytest" errors="0" failures="0" skipped="0" tests="999"></testsuite></testsuites>\n'
 )
-# いまの結果の形に合わせる（入力の出どころ、入力アダプタと直読みを呼んだ回数、種と乱数の流れの状態つきの世界の要約、保存の往復、
-# 定義データ）。読まれたら合格になる形。保存の往復が残したファイル（STALE_SAVE）も、一緒に置く。
+# 前回の実行が残した、合格の形の、3Dの絵の判定の値（結果の scene）。読まれたら合格になる形（パレットは、道具が、いまの定義データから
+# 自分で読んだ32色。柱と印は、正しい側）。
+STALE_SCENE = {
+    "sky": 22000, "track": 43000, "car": 5000, "ink_inside": 20000, "ink_outside": 0,
+    "probes": {
+        "pillar_left": {"pixels": 229, "x10": 1138}, "pillar_right": {"pixels": 211, "x10": 2052},
+        "mark_right": {"pixels": 292, "x10": 2111}, "mark_nose": {"pixels": 132, "x10": 1595},
+    },
+    "palette": scene_reference.expected_palette()[0], "digest": 1,
+}
+# いまの結果の形に合わせる（入力の出どころ、入力アダプタと直読みを呼んだ回数、種と乱数の流れの状態つきの世界の要約、3Dの絵の判定の値、
+# 保存の往復、定義データ）。読まれたら合格になる形。保存の往復が残したファイル（STALE_SAVE）も、一緒に置く。
 STALE_FIELDS = {
     "ticks": 120, "renders": 60, "sim": input_reference.sim_summary(input_reference.load_script(input_reference.SMOKE_SCRIPT)[1], 120),
-    "back_ink": 4321, "screen_diff": 0, "driver": "flip", "input_source": "script", "adapter_reads": 0, "direct_reads": 0,
+    "scene": STALE_SCENE, "screen_diff": 0, "driver": "flip", "input_source": "script", "adapter_reads": 0, "direct_reads": 0,
     "storage": {"backend": "file", "ok": True, "notice": "", "detail": ""},
 }
 # 定義データの件数は、道具が自分で数えた値（いまの定義データで、読まれたら合格になる値）。
@@ -104,6 +116,7 @@ STALE_WEB_RESULT = {
     "perf": {"updates": 180, "renders": 90, "updates_per_s": 60.0, "renders_per_s": 30.0, "update_ms_p95": 0.1, "render_ms_p95": 0.2},
     "storage": {"backend": "localstorage", "ok": True, "notice": "", "detail": ""},
     "data": STALE_DATA,
+    "scene": STALE_SCENE,
 }
 STALE_WEB_PAGE = json.dumps({
     "htmlSha256": "", "failures": [], "clickedAt": 3500, "untilAt": 7000, "state": {"initialized": True}, "canvas": {"ink": 35000},
@@ -136,8 +149,14 @@ def snapshot_with_another_environment() -> str:
 OTHER_ENVIRONMENT_SNAPSHOT = snapshot_with_another_environment()
 
 
+SCENE_SHOT_NAMES, _, SCENE_FILE_HEAD = tour_tool.load_scene_plan()  # 巡回の、3Dの絵の見本の名と、画像の名の頭
+
+
 def stale_tour_result() -> str:
-    """前回の実行が残した、合格の形の、巡回の結果ファイル。命令の数は、いまの画面と見本データから数える（読まれたら合格になる形）。"""
+    """前回の実行が残した、合格の形の、巡回の結果ファイル。命令の数は、いまの画面と見本データから数える（読まれたら合格になる形）。
+
+    3Dの絵の件（scenes）も、いまの見本の名で、合格の形の値を入れる。
+    """
     screens, variants, build, canvas_type, _ = screen_check.load_ui()
     shots = []
     for screen, variant in screen_check.plan(screens, variants):
@@ -147,7 +166,11 @@ def stale_tour_result() -> str:
             "screen": screen, "variant": variant, "file": f"{screen}_{variant}.png", "commands": count, "checked": count,
             "margin_ink": 0, "screen_ink": 5000, "command_problems": [], "violations": [], "check_ms": 1.0,
         })
-    return json.dumps({"shots": shots, "margin": 16, "scale": 2, "wall_s": 0.1}) + "\n"
+    scenes = [
+        {"name": name, "file": f"{SCENE_FILE_HEAD}{name}.png", "x_mm": 0, "z_mm": 0, "heading_mrad": 0, "scene": {**STALE_SCENE, "ink_inside": 0}}
+        for name in SCENE_SHOT_NAMES
+    ]
+    return json.dumps({"shots": shots, "scenes": scenes, "margin": 16, "scale": 2, "wall_s": 0.1}) + "\n"
 
 
 def blank_png(width: int, height: int) -> bytes:
@@ -242,9 +265,11 @@ def busy_on_web(ms: int, indent: str = "        ") -> str:
 FETCH_OUTSIDE = "\nif sys.platform == 'emscripten':\n    import js\n\n    js.fetch('https://example.com/ping')\n"
 RENDER_COUNT = "            self.renders += 1\n"
 RENDER_HEAD = "        canvas = Canvas()\n"  # render() の頭
-METER_RENDER = "                self.meter.on_render(started_s, time.perf_counter())\n"
-# 実描画のある周期を20 ms重くする（測る区間の外に置く。更新と実描画の時間の線には掛からない）。
-HEAVY_FRAME = busy_on_web(20, indent="            ")
+METER_RENDER = "                self.meter.on_render(started_s, ended_s)\n"
+# 実描画のある周期を15 ms重くする（測る区間の外に置く。更新と実描画の時間の線には掛からない）。3Dの実描画（ブラウザ版で約5 ms）と
+# 合わせて、周期は約20 ms（1 tickの長さ 16.7 ms を超える）。20 ms重くすると、周期が約25 msになり、実時間を渡していても、
+# 毎秒の実描画が29回を下回る（段0 区切り10の実測：240 tickで104回、毎秒26.5回）。壊さない件が通る重さに、置いている。
+HEAVY_FRAME = busy_on_web(15, indent="            ")
 # 入力の土台。台本を渡す筋書きと、偽のコントローラーの筋書きは、1本ずつ回す（偽のコントローラーの予定の区間の長さは縮めない）。
 WEB_SCRIPT, WEB_PAD = tool("web_smoke", "--only", "script"), tool("web_smoke", "--only", "gamepad")
 FROM_SCRIPT = "            return self.script.frame_at(self.sim.tick)\n"  # 台本から入力フレームを作る所
@@ -254,8 +279,11 @@ DIRECT_READ = "self.triggers.read()\n"  # 直読みを、余分に1度呼ぶ文
 # 実在しないパスだと、アプリの絶対パスの検査が無くても、ファイルが見つからずに同じ落ち方になり、検査の有無を見分けられない。
 RELATIVE_SCRIPT = rep("tools/run.py", '        env["CP_SMOKE_SCRIPT"] = str(script_path)\n', f'        env["CP_SMOKE_SCRIPT"] = "../../{SMOKE_SCRIPT_JSON}"\n')
 ABS_SCRIPT_CHECK = "        if not os.path.isabs(script_path):\n"  # アプリの、台本の絶対パスの検査
-# 仮の表示の、表示用の値へ、入力フレームと、知らせと、車の値を入れる所。
-DRAW_FRAME = "        view = PlaceholderView(self.sim.tick, self.renders, self.frame, self.notice, car_view(self.sim))\n"
+# 仮の表示の、表示用の値へ、入力フレームと、知らせと、車の値と、処理時間の値を入れる所。
+DRAW_FRAME = (
+    "        view = PlaceholderView(self.sim.tick, self.renders, self.frame, self.notice, car_view(self.sim), "
+    "view_of(self.update_ring, self.render_ring, self.boot_s, self.page_s))\n"
+)
 STEER_AXIS_READ = "steer_analog=_clamp(-btnv(self._steer_axis) / AXIS_MAX, -1.0, 1.0)"
 DIRECT_ANALOG = "            throttle_analog, brake_analog = _clamp(float(right), 0.0, 1.0), _clamp(float(left), 0.0, 1.0)\n"
 # 直読みができたtickにも、Pyxel経由の2値のトリガーをデジタル値へ入れる。
@@ -273,10 +301,12 @@ RENDER_TEXT = 'f"RENDER {view.renders}"'  # 仮の表示の、実描画の回数
 TITLE_TEXT = "canvas.text(4, 3, TITLE, COL_TEXT)"
 UNDER_BAR = "canvas.line(0, 12, SCREEN_W - 1, 12, COL_EDGE)"  # 帯の下の線
 SCREEN_HEAD = '    with canvas.box("title", 0, 0, SCREEN_W, 12):\n'  # 仮の表示の組み立ての頭
-# 文字を、囲み（status。幅64）より長くする。ふつうの値でも、極端な値でも、はみ出す。
-TEXT_TOO_LONG = rep(SCREENS_PY, TICK_TEXT, 'f"TICKS SINCE START {view.tick}"')
-# 極端な値のときだけ、はみ出す。ふつうの値（RENDER COUNT 60）は、囲みの内に収まる。
-TEXT_TOO_LONG_WHEN_EXTREME = rep(SCREENS_PY, RENDER_TEXT, 'f"RENDER COUNT {view.renders}"')
+# 文字を、囲み（status。x=2〜63）より長くする。ふつうの値でも、極端な値でも、16字（x=4〜66）で、右へ3ピクセルはみ出す。
+# 右隣の囲み（perf）の文字は x=72 から。16字なら、隣の文字とは重ならない（出るのは、囲みの外、の1種類だけ）。
+TEXT_TOO_LONG = rep(SCREENS_PY, TICK_TEXT, 'f"TICK {view.tick:011d}"')
+# 極端な値のときだけ、はみ出す。ふつうの値（RENDER NO 60。12字）は、囲みの内に収まる。極端な値（RENDER NO 9999999。17字で x=4〜70）は、
+# 囲みの外へ出るが、右隣の囲みの文字（x=72 から）とは、重ならない。
+TEXT_TOO_LONG_WHEN_EXTREME = rep(SCREENS_PY, RENDER_TEXT, 'f"RENDER NO {view.renders}"')
 TEXT_OFF_SCREEN = rep(SCREENS_PY, TITLE_TEXT, TITLE_TEXT.replace("(4, 3,", "(300, 3,"))
 TEXT_NOT_ASCII = rep(SCREENS_PY, TICK_TEXT, 'f"ティック {view.tick}"')
 NO_VARIANTS = rep(FIXTURES_PY, 'VARIANTS = ("typical", "extreme")', "VARIANTS = ()")
@@ -298,9 +328,9 @@ TOUR_BOTH_SWITCHES = rep(TOUR_TOOL_PY, TOUR_ENV, TOUR_ENV.replace("CP_TOUR_DIR=W
 TOUR_CLEAR_WHOLE = "    whole.cls(COL_BACK)\n"  # 巡回が、全体の絵を、描く前に消す所
 TOUR_BUILD = "fixtures.build(screen, variant)"  # 巡回が、見本データを作る所
 TOUR_WRITE_RESULT = "        json.dump(result, f, indent=1, sort_keys=True)\n"  # 巡回が、結果ファイルの中身を書く所
-RENDER_TEXT_AT = 'canvas.text(4, 28, f"RENDER {view.renders}", COL_TEXT)'  # 仮の表示の、実描画の回数の文字を置く所
+RENDER_TEXT_AT = 'canvas.text(4, 25, f"RENDER {view.renders}", COL_TEXT)'  # 仮の表示の、実描画の回数の文字を置く所（tick の文字は、その上の (4, 17)）
 BAR_RECT = "canvas.rect(0, 0, SCREEN_W, 12, COL_BAR)"  # 仮の表示の、タイトルの帯
-STATUS_BOX = '    with canvas.box("status", 2, 18, 64, 18):\n'  # 仮の表示の、状態の2行の囲み
+STATUS_BOX = '    with canvas.box("status", 2, 15, 62, 17):\n'  # 仮の表示の、状態の2行の囲み
 SCREEN_DEF = "def build_placeholder(canvas: Canvas, view: PlaceholderView) -> None:\n"
 # 画面の組み立てのモジュールに、構文の誤りを入れる（行末の「:」を落とす）。道具は、画面の登録を読み込めない。
 SCREENS_SYNTAX_ERROR = rep(SCREENS_PY, SCREEN_DEF, SCREEN_DEF.replace(" -> None:\n", " -> None\n"))
@@ -338,7 +368,7 @@ PROBE_TOUCH = (  # 試し書きが、localStorage に触れたときの例外を
 PROBE_CALL = "        state, _ = backend.probe()\n"  # 保存先を選ぶ所の、試し書き
 FALLBACK = "            return Selected(MemoryBackend(), BACKEND_MEMORY, NOTICE_MEMORY_FALLBACK)\n"  # メモリへ切り替える所
 SAVE_DIR_READ = '    directory = env.get(SAVE_DIR_ENV, "")\n'  # デスクトップ版が、保存のファイルの置き場を読む所
-SELFCHECK_CALL = "profile.selfcheck(selected.backend) if run_config is not None or probe is not None else None"  # アプリが、保存の往復を回す所
+SELFCHECK_CALL = "profile.selfcheck(selected.backend) if self.checked else None"  # アプリが、保存の往復を回す所（検証の口があるときだけ）
 SAVE_DIR_ENV_ARG = "**{storage_select.SAVE_DIR_ENV: save_dir})"  # 道具 run が、置き場を絶対パスで渡す所
 HELD_BITS = "        button_bits(frame.held),\n"  # 入力の量子化の、押しているボタンのビット
 # 押しているボタンを、ビットの和でなく、名の集合を回した順の番号の列（16進の桁）で返す。2個以上を押していると、回した順で値が変わる。
@@ -559,7 +589,7 @@ CHUNK_AHEAD = "    return (dx * fx + dz * fz) / flat > -radius\n"  # 塊が見�
 BACKDROP_SHIFT = "    return int(floor(heading / TWO_PI * period_px)) % period_px\n"  # 背景を、右へずらす量
 MESH_ROAD_QUAD = "                road_triangles += quad(a, a + 1, b + 1, b)\n"  # コースのメッシュの、路面の四角形（上向き）
 MESH_WALL_QUADS = "            wall_triangles += quad(a, b, b + 1, a + 1) + quad(a + 2, a + 3, b + 3, b + 2)\n"  # 同じく、右の壁と左の壁
-MESH_SEAM = "            parts = self._chunk_parts([rows[k % count] for k in range(first, last + 1)])\n"  # 最後の区切りを、頭の区切りの線へつなぐ所
+MESH_SEAM = "            parts = self._chunk_parts([rows[k % count] for k in range(first, last + 1)])\n"  # 最後の断面を、頭の断面へつなぐ所
 BOX_FIRST_FACE = "BOX_FACES = ((1, 2, 6, 5), "  # 箱の面の表の、頭の面（+x）
 MARK_RIGHT_CENTER = "MARK_RIGHT: (0.0, 1.0, 1.5)"  # 判定用の、模型の右の印の中心（模型の座標。右が +Z）
 FRONT_WHEELS = '        "front_left": (front_x, radius, -half_track), "front_right": (front_x, radius, half_track),\n'  # 車の仮の形の、前の2輪の中心
@@ -575,6 +605,37 @@ PALETTE_WHITE = "15848639"  # 実物のパレットの、白
 PALETTE_UNSHADED = '"unshaded": [15, 30]'  # 実物のパレットの、陰影で暗くしない色の番号
 LOOP_MESH = '  "mesh": {\n    "step_m": 4.0,\n    "road_strips": 4,\n    "line_m": 0.2,\n    "wall_height_m": 0.9,\n    "chunk_m": 60.0\n  },\n'  # コースの、メッシュの寸法
 CAR_ROOF_FRONT = '"roof_front_m": 0.42'  # 実物の車の、屋根の箱の前の端
+
+# --- 縦切りの描画（段0 区切り10の後半。3Dの場面、座標の変換、アプリの実描画、判定用の実描画、巡回の3Dの絵、走行の場面の筋書き） ---
+RENDER_PY = "clipping_point/cp_app/render.py"
+WEB_SMOKE_PY = "tools/web_smoke.py"
+TOUR_SCENES = tool("tour", "--only", "scene")  # 3Dの絵だけを回す
+WEB_DRIVE = tool("web_smoke", "--only", "drive")  # 走行の場面の筋書きだけを回す
+FLIP_Z = "tuple((x, y, -z) for x, y, z in points)"  # 座標の変換の、z の反転
+SWAP_ORDER = "tuple((a, c, b) for a, b, c in triangles)"  # 座標の変換の、頂点の順の入れ替え
+CAR_HEADING = ".rotate_y(degrees(heading))"  # 車の姿勢の、向き
+CAMERA_FLIP = "        (eye, look), _ = to_cube((pose.eye, pose.target))\n"  # カメラの目と注視点を、座標の変換に通す所
+MODEL_SHAPES = "(part.vertices, part.triangles, palette.number(part.role))"  # 模型の座標の形を、そのまま渡す所
+SHOW_CAR = "            node.visible = CAR in layers\n"  # 描く口が、車を見せるか隠すかを決める所
+SHOW_CHUNK = "            node.visible = TRACK in layers and camera.chunk_visible(pose, chunk.center[0], chunk.center[1], chunk.radius)\n"  # 同じく、塊
+BLIT_BACKDROP = "            target.blt(left, top, self.backdrop, 0, 0, period, BACKDROP_ROWS)\n"  # 背景の絵を写す所
+SET_PALETTE = "    pyxel.colors[:] = list(colors.colors)\n"  # パレットを差し替える所
+JUDGE_RESTORE = "        finally:\n            self.show(NORMAL, pose)\n"  # 判定の後に、柱と印を隠して、コースと車を戻す所
+APP_DRAW_SCENE = "        self.scene.draw(self.back, self.scene.chase(car.x, car.z, car.heading), car.x, car.z, car.heading)\n"  # アプリの実描画が、3Dを描く所
+APP_REDRAW = "        self.render()\n        car = self.sim.car\n        rects = "  # 判定の前に、裏画面を、いまの世界で描き直す所
+APP_BUILD_SCENE = "        self.scene.build(probes=self.checked, clock=time.perf_counter)\n"  # アプリが、場面を組む所
+APP_UPDATE_RING = "        self.update_ring.add(started_s, ended_s)\n"  # アプリが、更新1回の時間を、処理時間の輪へ足す所
+PERF_TEXTS = "        canvas.text(72, 17, times, COL_TEXT)\n        canvas.text(72, 25, rates, COL_TEXT)\n"  # 仮の表示の、処理時間の2行
+TOUR_SCENE_LOOP = "        for sample in SCENE_SHOTS:\n"  # 巡回が、3Dの絵の見本を順に回す所
+TOUR_SCENE_SAVE = "    shot.save(os.path.join(shot_dir, file), SHOT_SCALE)\n"  # 巡回が、3Dの絵を保存する所
+DRIVE_PROBE = 'probe_script({"ticks": scenario.ticks, "warmup_ticks": warmup_ticks, "script": script_value})'  # 走行の場面の筋書きが、台本を渡す所
+SCENE_CAR_BUDGET = '  "scene_car_min_px": 3000,\n'  # 道具の値の、車の画素の下限
+# 車の向きの符号を、逆にする（描画の試作の決まり。向きが増えると、右旋回）。向き0では、同じ絵になる。
+HEADING_SIGN_FLIPPED = rep(RENDER_PY, CAR_HEADING, ".rotate_y(-degrees(heading))")
+# カメラの目と注視点だけ、座標の変換を通さない（z を反転しない）。z=0 では、同じ絵になる。
+CAMERA_NOT_FLIPPED = rep(RENDER_PY, CAMERA_FLIP, "        eye, look = pose.eye, pose.target\n")
+# 車を、いつも隠す。
+CAR_NEVER_SHOWN = rep(RENDER_PY, SHOW_CAR, "            node.visible = False\n")
 
 # (名前, 壊し方の並び, 回す道具, 期待する終了コード, 最後の1行にあるはずの語)
 CASES = [
@@ -592,16 +653,19 @@ CASES = [
     ("control_export", [], EXPORT, {0}, "export: OK"),
     ("control_export_leaves_out_caches", [add("clipping_point/cp_core/__pycache__/sim.cpython-313.pyc", "x")], EXPORT, {0}, "export: OK"),
     ("control_fetch_runtime_check", [], FETCH_CHECK, {0}, "fetch_runtime: OK"),
-    ("control_web_smoke", [], WEB, {0}, "web_smoke: OK scenarios=5 shipped=ok probe=ok script=ok gamepad=ok storage_blocked=ok"),
+    ("control_web_smoke", [], WEB, {0}, "web_smoke: OK scenarios=6 shipped=ok probe=ok script=ok gamepad=ok storage_blocked=ok drive=ok"),
     ("control_web_smoke_short_probe", [], WEB_PROBE, {0}, "web_smoke: OK scenarios=1 probe=ok"),
     ("control_web_heavy_frame_keeps_30_renders", [rep(APP_PY, RENDER_COUNT, RENDER_COUNT + HEAVY_FRAME)], WEB_PROBE, {0}, "web_smoke: OK scenarios=1 probe=ok"),
     ("control_verify_list", [], tool("verify", "--list"), {0}, "verify: OK mode=list"),
     ("control_verify_all", [], VERIFY_ALL, {0}, "verify: OK mode=all steps=12 ok=12 failed=0"),
     ("control_screen_check", [], SCREEN, {0}, "screen_check: OK screens=2/2 violations=0 not_checked=0"),
     ("control_screen_check_only_one_screen", [], tool("screen_check", "--only", "placeholder"), {0}, "screen_check: OK screens=2/2 violations=0 not_checked=0"),
-    # 命令の数は、ふつうの値で10（車の値の2行を含む）、極端な値で11（知らせの1行）。
-    ("control_tour", [], TOUR, {0}, "tour: OK shots=2/2 commands=21 problems=0"),
-    ("control_tour_only_one_screen", [], tool("tour", "--only", "placeholder"), {0}, "tour: OK shots=2/2 commands=21 problems=0"),
+    # 命令の数は、ふつうの値で16（文字9、下地の矩形5、縁だけの矩形1、線1）、極端な値で18（知らせの1行と、その下地）。3Dの絵は、3枚。
+    ("control_tour", [], TOUR, {0}, "tour: OK shots=2/2 commands=34 scenes=3/3 problems=0"),
+    # 画面を1つだけ回す。3Dの絵は、回さない。
+    ("control_tour_only_one_screen", [], tool("tour", "--only", "placeholder"), {0}, "tour: OK shots=2/2 commands=34 scenes=0/0 problems=0"),
+    # 3Dの絵だけを回す。画面は、回さない。
+    ("control_tour_only_the_scenes", [], TOUR_SCENES, {0}, "tour: OK shots=0/0 commands=0 scenes=3/3 problems=0"),
     # 期待の語は `env=` で止める（下の、世界の式や設定の項目を変える件も同じ）。環境の値（Pythonの版、数学関数の試し値）が、
     # 指紋の写しと違うだけで、この道具を落とさない。env=same になることは、一時の置き場で取り直して照らすテスト（tests/test_fingerprint.py）が見る。
     # 筋書きは4本（道具の台本、台本なし、走る台本、壁の台本）。
@@ -615,14 +679,14 @@ CASES = [
     # 定義データの読み込み検査だけを回す。調べた組は、出荷するデータと、試験用データ（extreme）を重ねたものの2つ。
     ("control_check_data", [], CHECK_DATA, {0}, "check: OK data=2 problems=0"),
     # 試験用データを重ねて回す。重ねた名と、保存の名前空間（pack_extreme）が結果に出る。指紋は照らさない（確かめは1つ少ない）。
-    ("control_run_pack", [], RUN_PACK, {0}, "pack=extreme namespace=pack_extreme save=file checks=20 problems=0 fingerprint=skipped not_yet="),
-    # 重ねずに回す。重ねた名は無く、保存の名前空間は main。
-    ("control_run_reports_no_pack", [], RUN, {0}, "pack=none namespace=main save=file checks=21 problems=0 not_yet="),
+    ("control_run_pack", [], RUN_PACK, {0}, "pack=extreme namespace=pack_extreme save=file checks=25 problems=0 fingerprint=skipped not_yet="),
+    # 重ねずに回す。重ねた名は無く、保存の名前空間は main。確かめは26（3Dの絵の判定の6つを含む）。
+    ("control_run_reports_no_pack", [], RUN, {0}, "pack=none namespace=main save=file checks=26 problems=0 not_yet="),
     # 走る台本の回と、壁の台本の回（全体の検証の run-drive と run-wall）。指紋の写しと、筋書きの走行の下限を照らす（確かめは1つ多い）。
-    ("control_run_drive", [], RUN_DRIVE, {0}, "pack=none namespace=main save=file checks=22 problems=0 not_yet="),
-    ("control_run_wall", [], RUN_WALL, {0}, "pack=none namespace=main save=file checks=22 problems=0 not_yet="),
+    ("control_run_drive", [], RUN_DRIVE, {0}, "pack=none namespace=main save=file checks=27 problems=0 not_yet="),
+    ("control_run_wall", [], RUN_WALL, {0}, "pack=none namespace=main save=file checks=27 problems=0 not_yet="),
     # 試験用データを重ねて、走る台本を回す。指紋は照らさないが、筋書きが同じなので、走行の下限は見る。
-    ("control_run_pack_drive_checks_the_floor", [], RUN_PACK_DRIVE, {0}, "pack=extreme namespace=pack_extreme save=file checks=21 problems=0 fingerprint=skipped not_yet="),
+    ("control_run_pack_drive_checks_the_floor", [], RUN_PACK_DRIVE, {0}, "pack=extreme namespace=pack_extreme save=file checks=26 problems=0 fingerprint=skipped not_yet="),
     # 指紋の写しを取り直しても、変わらない（いまの写しは、いまのコードの値）。期待の語に、変わったファイルの名を入れない
     # （環境の値が、写しを取ったときと違うと、fingerprint.json だけが変わる）。
     ("control_fingerprint_update", [], tool("fingerprint", "--update"), {0}, "fingerprint: OK updated=2 changed="),
@@ -705,7 +769,8 @@ CASES = [
     ("run_sim_steps_two_ticks", [rep(SIM_PY, "        self.tick += 1\n", "        self.tick += 2\n")], RUN, {1}, "failed=sim_tick"),
     ("run_zero_renders", [rep(APP_PY, IN_DRAW, "        if False:\n")], RUN, {1}, "failed=renders"),
     ("run_renders_every_tick", [rep(APP_PY, IN_DRAW, "        if True:\n")], RUN, {1}, "failed=renders"),
-    ("run_back_buffer_blank", [rep(APP_PY, EXECUTE, "        len(canvas.commands)\n")], RUN, {1}, "failed=back_ink"),
+    # 2Dの描画命令を、実行しない。3Dは描かれているので、落ちるのは、2Dの描画命令の矩形の内の画素を数える確かめだけ。
+    ("run_back_buffer_blank", [rep(APP_PY, EXECUTE, "        len(canvas.commands)\n")], RUN, {1}, "problems=1 failed=back_ink not_yet="),
     ("run_not_presented", [rep(APP_PY, PRESENT, "        pass\n")], RUN, {1}, "failed=screen_diff"),
     (
         "run_stale_result_is_not_reused",
@@ -873,8 +938,8 @@ CASES = [
     ("screen_text_not_ascii", [TEXT_NOT_ASCII], SCREEN, {1}, "violations=2 not_checked=0 failed=placeholder/typical,placeholder/extreme kinds=bad_char"),
     # 極端な値のときだけ、はみ出す。落ちるのは extreme だけ（ふつうの値だけを回す検査なら、通ってしまう）。
     ("screen_overflow_only_in_extreme_variant", [TEXT_TOO_LONG_WHEN_EXTREME], SCREEN, {1}, "violations=1 not_checked=0 failed=placeholder/extreme kinds=out_of_box"),
-    # 文字を2つ、同じ位置に置く（文字どうしの重なり）。
-    ("screen_two_texts_at_the_same_place", [rep(SCREENS_PY, RENDER_TEXT_AT, RENDER_TEXT_AT.replace("(4, 28,", "(4, 20,"))], SCREEN, {1}, "violations=2 not_checked=0 failed=placeholder/typical,placeholder/extreme kinds=text_overlap"),
+    # 文字を2つ、同じ位置に置く（文字どうしの重なり）。実描画の回数の文字を、tick の文字の位置 (4, 17) へ動かす。
+    ("screen_two_texts_at_the_same_place", [rep(SCREENS_PY, RENDER_TEXT_AT, RENDER_TEXT_AT.replace("(4, 25,", "(4, 17,"))], SCREEN, {1}, "violations=2 not_checked=0 failed=placeholder/typical,placeholder/extreme kinds=text_overlap"),
     # 矩形の幅を0にする（空の矩形）。
     ("screen_rectangle_without_width", [rep(SCREENS_PY, BAR_RECT, BAR_RECT.replace("SCREEN_W, 12", "0, 12"))], SCREEN, {1}, "violations=2 not_checked=0 failed=placeholder/typical,placeholder/extreme kinds=empty"),
     # 囲みの1つから `with` を外す（開かれなかった囲み）。中の文字は囲みに入らないので、囲みの外へ出ても数えられなくなる。
@@ -912,41 +977,42 @@ CASES = [
     ("test_tour_draws_the_typical_values_for_every_variant", [rep(TOUR_APP_PY, TOUR_BUILD, 'fixtures.build(screen, "typical")')], TEST, {1}, "reason=failed"),
     # --- 巡回：tour（実物の画素と照らす。問題があれば1） ---
     # 文字の幅の計算を小さく間違える。screen_check は通る（control_screen_check_passes_with_text_metrics_too_small）。
-    # 文字の命令は、ふつうの値で7つ、極端な値で8つ（知らせの1行）。合わせて15。
-    ("tour_text_metrics_too_small", [FONT_TOO_NARROW], TOUR, {1}, "shots=2/2 commands=21 problems=15 failed=ink_outside"),
+    # 文字の命令は、ふつうの値で9つ、極端な値で10（知らせの1行）。合わせて19。
+    ("tour_text_metrics_too_small", [FONT_TOO_NARROW], TOUR, {1}, "shots=2/2 commands=34 scenes=3/3 problems=19 failed=ink_outside"),
     # 実行の側で、縁だけの矩形を、命令より2ピクセル広く描く。
-    ("tour_outline_drawn_wider_than_its_command", [rep(EXECUTE_PY, EXEC_RECTB, EXEC_RECTB.replace("command.w,", "command.w + 2,"))], TOUR, {1}, "shots=2/2 commands=21 problems=2 failed=ink_outside"),
+    ("tour_outline_drawn_wider_than_its_command", [rep(EXECUTE_PY, EXEC_RECTB, EXEC_RECTB.replace("command.w,", "command.w + 2,"))], TOUR, {1}, "shots=2/2 commands=34 scenes=3/3 problems=2 failed=ink_outside"),
     # 実行の側で、文字の命令を描かない。全体の絵は空にならないので、命令ごとに照らさないと見えない。
-    ("tour_text_commands_not_drawn", [rep(EXECUTE_PY, EXEC_TEXT, "            pass\n")], TOUR, {1}, "shots=2/2 commands=21 problems=15 failed=no_ink"),
+    ("tour_text_commands_not_drawn", [rep(EXECUTE_PY, EXEC_TEXT, "            pass\n")], TOUR, {1}, "shots=2/2 commands=34 scenes=3/3 problems=19 failed=no_ink"),
     # 実行の側で、線を、命令より1ピクセル下に描く。
     (
         "tour_line_drawn_at_another_place",
         [rep(EXECUTE_PY, EXEC_LINE, EXEC_LINE.replace("command.y1 + oy,", "command.y1 + oy + 1,").replace("command.y2 + oy,", "command.y2 + oy + 1,"))],
-        TOUR, {1}, "shots=2/2 commands=21 problems=4 failed=ink_outside,no_ink",
+        TOUR, {1}, "shots=2/2 commands=34 scenes=3/3 problems=4 failed=ink_outside,no_ink",
     ),
     # 画面が、余白へ描く（線が、画面の右へ4ピクセル出る）。はみ出しの検査も数える。
     ("tour_screen_draws_into_the_margin", [rep(SCREENS_PY, UNDER_BAR, UNDER_BAR.replace("SCREEN_W - 1", "SCREEN_W + 3"))], TOUR, {1}, "problems=4 failed=margin_ink,violation"),
-    ("tour_overflow_only_in_extreme_variant", [TEXT_TOO_LONG_WHEN_EXTREME], TOUR, {1}, "shots=2/2 commands=21 problems=1 failed=violation"),
+    ("tour_overflow_only_in_extreme_variant", [TEXT_TOO_LONG_WHEN_EXTREME], TOUR, {1}, "shots=2/2 commands=34 scenes=3/3 problems=1 failed=violation"),
     # --- 巡回：tour（回り切れなければ2。合格にしない） ---
-    # ふつうの値を飛ばして、極端な値（命令は11）だけを回す。
-    ("tour_one_variant_skipped", [rep(TOUR_APP_PY, TOUR_VARIANTS, TOUR_VARIANTS.replace("VARIANTS:", "VARIANTS[1:]:"))], TOUR, {2}, "shots=1/2 commands=11 problems=0 incomplete=missing_shot"),
+    # ふつうの値を飛ばして、極端な値（命令は18）だけを回す。
+    ("tour_one_variant_skipped", [rep(TOUR_APP_PY, TOUR_VARIANTS, TOUR_VARIANTS.replace("VARIANTS:", "VARIANTS[1:]:"))], TOUR, {2}, "shots=1/2 commands=18 scenes=3/3 problems=0 incomplete=missing_shot"),
     (
         "tour_exception_midway",
         [rep(TOUR_APP_PY, TOUR_VARIANTS, TOUR_VARIANTS + "            if variant == 'extreme':\n                raise RuntimeError('planted')\n")],
         TOUR, {2}, "reason=app_exit_code",
     ),
     ("tour_only_unknown_name", [], tool("tour", "--only", "nosuch"), {2}, "reason=unknown_screen"),
-    ("tour_no_variants", [NO_VARIANTS], TOUR, {2}, "shots=0/0 commands=0 problems=0 reason=nothing_planned"),
+    # 見本データの変種が無い。画面の予定が0件（3Dの絵の予定はあっても、合格にしない）。
+    ("tour_no_variants", [NO_VARIANTS], TOUR, {2}, "shots=0/0 commands=0 scenes=0/3 problems=0 reason=nothing_planned"),
     ("tour_screen_registered_without_fixtures", [SCREEN_WITHOUT_FIXTURES], TOUR, {2}, "reason=cannot_build"),
     # 画面の組み立てのモジュールが、読み込めない（構文の誤り）。アプリを回す前に、道具が止まる。
-    ("tour_screen_module_cannot_be_loaded", [SCREENS_SYNTAX_ERROR], TOUR, {2}, "shots=0/0 commands=0 problems=0 reason=cannot_load"),
+    ("tour_screen_module_cannot_be_loaded", [SCREENS_SYNTAX_ERROR], TOUR, {2}, "shots=0/0 commands=0 scenes=0/0 problems=0 reason=cannot_load"),
     # 巡回の口が、画面を回す前に止まる。時間切れ。
     ("tour_stall_hits_timeout", [rep(TOUR_APP_PY, TOUR_READY, TOUR_READY + "    time.sleep(3600)\n")], tool("tour", "--timeout", "4"), {2}, "reason=timeout timeout_s=4"),
     # 巡回の口が、結果ファイルに、JSONでない字を書く。
     ("tour_result_file_is_not_json", [rep(TOUR_APP_PY, TOUR_WRITE_RESULT, "        f.write('not json')\n")], TOUR, {2}, "reason=result_unreadable"),
     # 巡回が、命令ごとの照合を飛ばす（1つ飛ばす。全部飛ばす）。照らした命令の数が、道具が組み立てた命令の数と合わない。
-    ("tour_one_command_not_checked", [rep(TOUR_APP_PY, TOUR_COMMANDS, TOUR_COMMANDS.replace("(commands)", "(commands[1:])"))], TOUR, {2}, "shots=0/2 commands=0 problems=0 incomplete=commands_checked"),
-    ("tour_no_command_checked", [rep(TOUR_APP_PY, TOUR_COMMANDS, TOUR_COMMANDS.replace("(commands)", "(commands[:0])"))], TOUR, {2}, "shots=0/2 commands=0 problems=0 incomplete=commands_checked"),
+    ("tour_one_command_not_checked", [rep(TOUR_APP_PY, TOUR_COMMANDS, TOUR_COMMANDS.replace("(commands)", "(commands[1:])"))], TOUR, {2}, "shots=0/2 commands=0 scenes=3/3 problems=0 incomplete=commands_checked"),
+    ("tour_no_command_checked", [rep(TOUR_APP_PY, TOUR_COMMANDS, TOUR_COMMANDS.replace("(commands)", "(commands[:0])"))], TOUR, {2}, "shots=0/2 commands=0 scenes=3/3 problems=0 incomplete=commands_checked"),
     # 巡回が、全体の絵でない絵を保存する（余白ごとの大きさ）。画像を保存しない。全体の絵を描かない（画面が空）。
     ("tour_saves_the_picture_with_its_margin", [rep(TOUR_APP_PY, TOUR_SAVE, "    whole.save(path, SHOT_SCALE)\n")], TOUR, {2}, "incomplete=image_size"),
     ("tour_saves_no_picture", [rep(TOUR_APP_PY, TOUR_SAVE, "    pass\n")], TOUR, {2}, "incomplete=no_image"),
@@ -958,6 +1024,7 @@ CASES = [
             add("out/tour/result.json", STALE_TOUR_RESULT),
             add_bytes("out/tour/placeholder_typical.png", STALE_TOUR_PNG),
             add_bytes("out/tour/placeholder_extreme.png", STALE_TOUR_PNG),
+            *(add_bytes(f"out/tour/{SCENE_FILE_HEAD}{name}.png", STALE_TOUR_PNG) for name in SCENE_SHOT_NAMES),
             rep(TOUR_APP_PY, TOUR_READY, TOUR_READY + "    pyxel.quit()\n"),
         ],
         TOUR, {2}, "reason=no_result_file",
@@ -977,7 +1044,7 @@ CASES = [
     (
         "control_tour_both_app_switches_pass_without_the_check",
         [TOUR_BOTH_SWITCHES, rep(TOUR_APP_PY, '    if env.get("CP_SMOKE", ""):\n', "    if False:\n")],
-        TOUR, {0}, "tour: OK shots=2/2 commands=21 problems=0",
+        TOUR, {0}, "tour: OK shots=2/2 commands=34 scenes=3/3 problems=0",
     ),
     # --- 保存の口と保存する項目：test ---
     # 封筒のチェックサムを見ない。1ビットの違いを、壊れた値にしなくなる。
@@ -1044,9 +1111,9 @@ CASES = [
     ("run_round_trip_is_not_run", [rep(APP_PY, SELFCHECK_CALL, "None")], RUN, {1}, "failed=save,save_file not_yet="),
     # 保存の往復の終わりに、既定値で書き直す。ファイルはあり、封筒も読める。落ちるのは、道具が本体を往復の見本と比べる所だけ
     # （ほかの save_file の件は、ファイルが無いか、封筒が読めないかで落ちる。「封筒が読めれば合格」の道具では、この件だけが通ってしまう）。
-    ("run_round_trip_ends_with_the_defaults", [ROUND_TRIP_ENDS_WITH_DEFAULTS], RUN, {1}, "save=file checks=21 problems=1 failed=save_file not_yet="),
+    ("run_round_trip_ends_with_the_defaults", [ROUND_TRIP_ENDS_WITH_DEFAULTS], RUN, {1}, "save=file checks=26 problems=1 failed=save_file not_yet="),
     # デスクトップ版が、保存のファイルの置き場を読まない（メモリの保存先になる）。
-    ("run_save_directory_is_ignored", [rep(SELECT_PY, SAVE_DIR_READ, '    directory = ""\n')], RUN, {1}, "save=memory checks=21 problems=2 failed=save,save_file not_yet="),
+    ("run_save_directory_is_ignored", [rep(SELECT_PY, SAVE_DIR_READ, '    directory = ""\n')], RUN, {1}, "save=memory checks=26 problems=2 failed=save,save_file not_yet="),
     # 道具が、置き場を相対パスで渡す。アプリは、起動時に例外にする（pyxel.init が作業ディレクトリを変えるため）。
     ("run_save_directory_is_relative", [rep(RUN_TOOL_PY, SAVE_DIR_ENV_ARG, '**{storage_select.SAVE_DIR_ENV: "saves"})')], RUN, {1}, "reason=app_exit_code"),
     # 巡回の口でも、置き場の環境変数を読む（相対パスなら、起動時に例外）。
@@ -1126,18 +1193,18 @@ CASES = [
     ("run_data_is_not_loaded_at_start", [rep(APP_PY, LOAD_DATA, NO_DATA_AT_START)], RUN, {1}, "reason=app_exit_code"),
     # アプリが読み込んだ定義に、ファイルに無い車が1台ある。起動して、最後まで回る。落ちるのは、表ごとの件数が、道具が、定義データの
     # ファイルを自分で読んで数えた件数と違う、という確かめだけ。
-    ("run_data_tables_differ_from_the_files", [rep(APP_PY, LOAD_DATA, LOAD_DATA + ENTRY_NOT_ON_DISK)], RUN, {1}, "checks=21 problems=1 failed=data_tables not_yet="),
+    ("run_data_tables_differ_from_the_files", [rep(APP_PY, LOAD_DATA, LOAD_DATA + ENTRY_NOT_ON_DISK)], RUN, {1}, "checks=26 problems=1 failed=data_tables not_yet="),
     # --- 試験用データを重ねて回す：run --pack extreme ---
     # 試験用データが壊れている。重ねない run は通り（上の check の件と対）、重ねた run は、起動時の例外で落ちる。
     ("control_run_passes_with_a_broken_test_pack", [PACK_NAME_TOO_LONG], RUN, {0}, "run: OK driver=flip input=script"),
     ("run_pack_test_pack_broken", [PACK_NAME_TOO_LONG], RUN_PACK, {1}, "reason=app_exit_code"),
     # デスクトップ版が、重ねる口（CP_DATA_PACK）を読まない。重ねていない結果が返る。
-    ("run_pack_variable_is_not_read", [rep(DATA_FILES_PY, READ_PACK_ENV, '        name = ""\n')], RUN_PACK, {1}, "pack=none namespace=main save=file checks=20 problems=3 failed=data_tables,data_pack,data_namespace fingerprint=skipped"),
+    ("run_pack_variable_is_not_read", [rep(DATA_FILES_PY, READ_PACK_ENV, '        name = ""\n')], RUN_PACK, {1}, "pack=none namespace=main save=file checks=25 problems=3 failed=data_tables,data_pack,data_namespace fingerprint=skipped"),
     # 重ねたのに、アプリが、設定を読む保存の口へ、名前空間を渡さない。結果の名前空間が main になる。段0の起動は、設定を書かないので、
     # 保存のファイルでは分からない（save_main は通る）。落ちるのは、結果の名前空間の確かめだけ。
-    ("run_pack_namespace_is_not_passed_to_the_settings_store", [NAMESPACE_NOT_PASSED], RUN_PACK, {1}, "pack=extreme namespace=main save=file checks=20 problems=1 failed=data_namespace fingerprint=skipped"),
+    ("run_pack_namespace_is_not_passed_to_the_settings_store", [NAMESPACE_NOT_PASSED], RUN_PACK, {1}, "pack=extreme namespace=main save=file checks=25 problems=1 failed=data_namespace fingerprint=skipped"),
     # 上の件の対。同じ壊し方でも、重ねない run は通る（重ねて回す手順が要る理由）。守りのテスト（app.py のソースを読む）は落ちる。
-    ("control_run_passes_when_the_namespace_is_not_passed", [NAMESPACE_NOT_PASSED], RUN, {0}, "pack=none namespace=main save=file checks=21 problems=0 not_yet="),
+    ("control_run_passes_when_the_namespace_is_not_passed", [NAMESPACE_NOT_PASSED], RUN, {0}, "pack=none namespace=main save=file checks=26 problems=0 not_yet="),
     ("test_app_does_not_pass_the_namespace_to_the_settings_store", [NAMESPACE_NOT_PASSED], tool("test", "-k", "data_files and namespace"), {1}, "reason=failed"),
     # 試験用データの置き場が無い、置き場にファイルが1つも無い、無い名。回り切れない（2）。重ねずに回して、合格にしない。
     ("run_pack_directory_deleted", [rm_tree(PACK_DIR)], RUN_PACK, {2}, "reason=no_such_pack"),
@@ -1334,20 +1401,20 @@ CASES = [
     ),
     # 車の値を1つ変える（質量。走りに効く値）。道具 run は、参照（いまのデータで計算し直す値）とは合い、指紋の写しとの確かめだけが落ちる。
     ("fingerprint_car_value_changed", [rep(CARS_JSON, CAR_MASS, '"mass_kg": 1000.0')], FINGERPRINT, {1}, "failed=world"),
-    ("run_car_value_changed", [rep(CARS_JSON, CAR_MASS, '"mass_kg": 1000.0')], RUN, {1}, "checks=21 problems=1 failed=fingerprint not_yet="),
+    ("run_car_value_changed", [rep(CARS_JSON, CAR_MASS, '"mass_kg": 1000.0')], RUN, {1}, "checks=26 problems=1 failed=fingerprint not_yet="),
     # コースの制御点を1つ動かす（1本目の直線の途中。走る台本が通る所）。読み込み検査は通る（check_data_track_radius_too_small は、8 m動かす）。
     ("fingerprint_track_point_moved", [rep(LOOP_JSON, LOOP_POINT, LOOP_POINT.replace('"z_m": 0.0', '"z_m": 0.5'))], FINGERPRINT, {1}, "failed=world"),
     ("control_check_data_passes_with_a_track_point_moved_a_little", [rep(LOOP_JSON, LOOP_POINT, LOOP_POINT.replace('"z_m": 0.0', '"z_m": 0.5'))], CHECK_DATA, {0}, "check: OK data=2 problems=0"),
     # --- 世界への組み込み：run（走る台本の回、壁の台本の回、車とコースの id） ---
     # 走る台本を、アクセルを踏まない台本に替える。アプリを通した回でも、指紋の写しと、走行の下限で落ちる。
-    ("run_drive_script_does_not_drive", DRIVE_SCRIPT_DOES_NOT_DRIVE, RUN_DRIVE, {1}, "checks=22 problems=2 failed=fingerprint,floor not_yet="),
+    ("run_drive_script_does_not_drive", DRIVE_SCRIPT_DOES_NOT_DRIVE, RUN_DRIVE, {1}, "checks=27 problems=2 failed=fingerprint,floor not_yet="),
     # 試験用データを重ねた回は、指紋を照らさない。筋書きが同じなら、走行の下限は見る。
-    ("run_pack_drive_script_does_not_drive", DRIVE_SCRIPT_DOES_NOT_DRIVE, RUN_PACK_DRIVE, {1}, "checks=21 problems=1 failed=floor fingerprint=skipped"),
+    ("run_pack_drive_script_does_not_drive", DRIVE_SCRIPT_DOES_NOT_DRIVE, RUN_PACK_DRIVE, {1}, "checks=26 problems=1 failed=floor fingerprint=skipped"),
     # アプリのコースの id を、試験用データ（extreme）にだけあるコースに変える。重ねた回は、起動して回る（コースの形は、同じ）。
     # 要約の、車とコースの id が、道具の既定と違う（参照と、アプリの世界が、別のコースで回っている）。
     (
         "run_pack_app_track_id_differs_from_the_tools", [rep(APP_PY, APP_TRACK_ID, 'TRACK_ID = "wide_test_loop"\n')],
-        RUN_PACK, {1}, "checks=20 problems=2 failed=sim,sim_ids fingerprint=skipped",
+        RUN_PACK, {1}, "checks=25 problems=2 failed=sim,sim_ids fingerprint=skipped",
     ),
     # 上の件の対。同じ id のまま、重ねずに回すと、その id のコースが無い。起動時に、例外で止まる（分かる文は tests/test_sim.py が見る）。
     ("run_app_track_id_is_not_in_the_data", [rep(APP_PY, APP_TRACK_ID, 'TRACK_ID = "wide_test_loop"\n')], RUN, {1}, "reason=app_exit_code"),
@@ -1418,7 +1485,7 @@ CASES = [
         [rep(TRACK_PY, MESH_WALL_QUADS, MESH_WALL_QUADS.replace("quad(a, b, b + 1, a + 1) + quad(a + 2, a + 3, b + 3, b + 2)", "quad(a, a + 1, b + 1, b) + quad(a + 2, b + 2, b + 3, a + 3)"))],
         tool("test", "-k", "track_mesh"), {1}, "reason=failed",
     ),
-    # 1周の継ぎ目を、つながない（最後の区切りが、頭の区切りの線へ戻らない）。
+    # 1周の継ぎ目を、つながない（最後の断面が、頭の断面へ戻らない）。
     (
         "test_track_mesh_seam_is_left_open", [rep(TRACK_PY, MESH_SEAM, MESH_SEAM.replace("rows[k % count]", "rows[min(k, count - 1)]"))],
         tool("test", "-k", "track_mesh"), {1}, "reason=failed",
@@ -1471,6 +1538,83 @@ CASES = [
     ("make_palette_unshaded_changed_by_hand", [rep(PALETTES_JSON, PALETTE_UNSHADED, '"unshaded": [15]')], MAKE_PALETTE_CHECK, {1}, "same=no"),
     # パレットのファイルが無い。照らせない（合格にしない）。
     ("make_palette_file_deleted", [rm(PALETTES_JSON)], MAKE_PALETTE_CHECK, {2}, "reason=cannot_read"),
+    # --- 縦切りの描画（段0 区切り10の後半）：run（アプリが、結果を書く直前に、判定用の実描画で数えた値。tools/scene_reference.py） ---
+    # 座標の変換が、z を反転しない。頂点の順だけが入れ替わるので、コースも、判定用の柱も、裏返って、描かれない。
+    ("run_scene_z_is_not_flipped", [rep(RENDER_PY, FLIP_Z, "tuple((x, y, z) for x, y, z in points)")], RUN, {1}, "problems=2 failed=scene3d,mirror not_yet="),
+    # 座標の変換が、頂点の順を入れ替えない（z の反転だけ）。同じく、コースと柱が、裏返る。
+    ("run_scene_vertex_order_is_not_swapped", [rep(RENDER_PY, SWAP_ORDER, "tuple((a, b, c) for a, b, c in triangles)")], RUN, {1}, "problems=2 failed=scene3d,mirror not_yet="),
+    # 模型の座標の形（車と印）にも、頂点の順の入れ替えを掛ける。箱の輪郭は変わらない（車の画素は、下限を超える）。片面の印が、写らなくなる。
+    (
+        "run_scene_model_vertex_order_is_swapped",
+        [rep(RENDER_PY, MODEL_SHAPES, "(part.vertices, tuple((a, c, b) for a, b, c in part.triangles), palette.number(part.role))")],
+        RUN, {1}, "problems=1 failed=mirror not_yet=",
+    ),
+    # 車の向きの符号が、逆。既定の run（車は、スタート位置の近く。向きは、ほぼ0）は、通る。走る台本の回（終わりの向きは、約2.37 rad）と、
+    # 巡回（コーナーの途中と、壁の近く）が、模型の印の位置で拾う。
+    ("control_run_passes_with_the_heading_sign_flipped", [HEADING_SIGN_FLIPPED], RUN, {0}, "run: OK driver=flip input=script"),
+    ("run_drive_heading_sign_flipped", [HEADING_SIGN_FLIPPED], RUN_DRIVE, {1}, "problems=1 failed=mirror not_yet="),
+    ("tour_heading_sign_flipped", [HEADING_SIGN_FLIPPED], TOUR, {1}, "shots=2/2 commands=34 scenes=3/3 problems=2 failed=mirror"),
+    # カメラの目と注視点だけ、z を反転しない。既定の run（z は、ほぼ0）は、通る。走る台本の回（z は、約78 m）は、カメラが、別の所を見る。
+    ("control_run_passes_when_the_camera_is_not_flipped", [CAMERA_NOT_FLIPPED], RUN, {0}, "run: OK driver=flip input=script"),
+    ("run_drive_camera_is_not_flipped", [CAMERA_NOT_FLIPPED], RUN_DRIVE, {1}, "failed=scene3d,mirror not_yet="),
+    # アプリの、ふだんの実描画が、3Dを描かない（裏画面を消すだけ）。判定用の絵は、別に描くので、3Dの確かめは通る。落ちるのは、
+    # 裏画面と、判定用の3枚目を比べる確かめだけ。
+    ("run_normal_render_draws_no_3d", [rep(APP_PY, APP_DRAW_SCENE, "        self.back.cls(0)\n")], RUN, {1}, "problems=1 failed=scene_same not_yet="),
+    # 判定の前に、裏画面を、いまの世界で描き直さない（1〜2 tick前の世界の絵と比べる）。車が走っている回で、落ちる。
+    ("run_drive_judges_a_stale_back_buffer", [rep(APP_PY, APP_REDRAW, "        car = self.sim.car\n        rects = ")], RUN_DRIVE, {1}, "problems=1 failed=scene_same not_yet="),
+    # 車を描かない。コースを描かない。
+    ("run_scene_car_is_not_drawn", [CAR_NEVER_SHOWN], RUN, {1}, "problems=1 failed=scene3d not_yet="),
+    ("run_scene_track_is_not_drawn", [rep(RENDER_PY, SHOW_CHUNK, "            node.visible = False\n")], RUN, {1}, "problems=1 failed=scene3d not_yet="),
+    # 見えない塊を隠す判定を、逆にする（前の塊を隠し、後ろの塊を見せる）。
+    (
+        "run_scene_chunk_culling_is_inverted", [rep(RENDER_PY, SHOW_CHUNK, SHOW_CHUNK.replace("and camera.chunk_visible(", "and not camera.chunk_visible("))],
+        RUN, {1}, "problems=1 failed=scene3d not_yet=",
+    ),
+    # 背景の絵を、写さない（遠い地面の色と、画面の上の3行の空だけ）。
+    ("run_scene_backdrop_is_not_blitted", [rep(RENDER_PY, BLIT_BACKDROP, "            pass\n")], RUN, {1}, "problems=1 failed=backdrop not_yet="),
+    # パレットを、当てない（Pyxelの既定の16色を、2度並べた32色のまま）。色の番号は同じなので、画素の数は変わらない。読み戻した色で拾う。
+    ("run_scene_palette_is_not_applied", [rep(RENDER_PY, SET_PALETTE, "    pyxel.colors[:] = list(pyxel.colors) * 2\n")], RUN, {1}, "problems=1 failed=palette not_yet="),
+    # 3Dの絵の判定の下限が、道具の値に無い。判定を、黙って外さない（回り切れない）。
+    ("run_scene_budget_left_out", [rep(BUDGETS_JSON, SCENE_CAR_BUDGET, "")], RUN, {2}, "reason=no_scene_budgets"),
+    ("tour_scene_budget_left_out", [rep(BUDGETS_JSON, SCENE_CAR_BUDGET, "")], TOUR, {2}, "reason=no_scene_budgets"),
+    ("web_scene_budget_left_out", [rep(BUDGETS_JSON, SCENE_CAR_BUDGET, "")], WEB_DRIVE, {2}, "scenarios=0 reason=no_scene_budgets"),
+    # --- 縦切りの描画：tour（3Dの絵） ---
+    # 車を描かない。3枚とも、車の画素が0。
+    ("tour_scene_car_is_not_drawn", [CAR_NEVER_SHOWN], TOUR, {1}, "shots=2/2 commands=34 scenes=3/3 problems=3 failed=scene3d"),
+    # 3Dの絵を、1枚飛ばす。3Dの絵を、保存しない。
+    (
+        "tour_one_scene_skipped", [rep(TOUR_APP_PY, TOUR_SCENE_LOOP, TOUR_SCENE_LOOP.replace("SCENE_SHOTS:", "SCENE_SHOTS[1:]:"))],
+        TOUR, {2}, "shots=2/2 commands=34 scenes=2/3 problems=0 incomplete=missing_shot",
+    ),
+    ("tour_scene_picture_is_not_saved", [rep(TOUR_APP_PY, TOUR_SCENE_SAVE, "    pass\n")], TOUR, {2}, "scenes=0/3 problems=0 incomplete=no_image"),
+    # --- 縦切りの描画：test（偽の Pyxel で回すテストと、守りのテスト。狙ったテストに絞る） ---
+    # 判定の後に、柱と印を隠さない（コースと車も、隠れたまま）。ブラウザ版は、結果を出した後も動き続ける。
+    ("test_render_judge_does_not_restore_the_scene", [rep(RENDER_PY, JUDGE_RESTORE, "        finally:\n            pass\n")], tool("test", "-k", "render and judge"), {1}, "reason=failed"),
+    # ふつうの起動（検証の口が無い）でも、判定用の柱と印を作る。隠してあるので、道具（run、web-smoke）は、どれも通る。守りのテストで拾う。
+    (
+        "test_render_app_builds_the_probes_on_every_start", [rep(APP_PY, APP_BUILD_SCENE, APP_BUILD_SCENE.replace("probes=self.checked", "probes=True"))],
+        tool("test", "-k", "render and verification_switch"), {1}, "reason=failed",
+    ),
+    ("control_run_passes_when_the_probes_are_built_on_every_start", [rep(APP_PY, APP_BUILD_SCENE, APP_BUILD_SCENE.replace("probes=self.checked", "probes=True"))], RUN, {0}, "run: OK driver=flip input=script"),
+    # z の反転を、座標の変換のほかの所にも書く（アプリが、車の位置の z を、反転して渡す）。2か所の反転は、打ち消し合うことがある。
+    (
+        "test_render_z_flipped_in_a_second_place",
+        [rep(APP_PY, APP_DRAW_SCENE, APP_DRAW_SCENE.replace("car.x, car.z, car.heading), car.x, car.z, car.heading)", "car.x, car.z, car.heading), car.x, -car.z, car.heading)"))],
+        tool("test", "-k", "render and flipped_in_one"), {1}, "reason=failed",
+    ),
+    # 仮の表示に、処理時間の2行を出さない。はみ出しの検査は通る（文字が減るだけ）。画面の組み立てのテストで拾う。
+    ("test_placeholder_measured_times_are_not_shown", [rep(SCREENS_PY, PERF_TEXTS, "        len(times + rates)\n")], tool("test", "-k", "screens and measured_times"), {1}, "reason=failed"),
+    ("control_screen_check_passes_when_the_measured_times_are_not_shown", [rep(SCREENS_PY, PERF_TEXTS, "        len(times + rates)\n")], SCREEN, {0}, "screen_check: OK screens=2/2 violations=0 not_checked=0"),
+    # アプリが、更新1回の時間を、処理時間の輪へ足さない（仮の表示の値が、測れていないままになる）。道具は、どれも通る。守りのテストで拾う。
+    ("test_app_measured_times_are_not_fed", [rep(APP_PY, APP_UPDATE_RING, "")], tool("test", "-k", "screens and app_shows_the_times"), {1}, "reason=failed"),
+    # --- 縦切りの描画：web-smoke の筋書き drive（走行の場面。ブラウザ版） ---
+    # 車の向きの符号が、逆。ブラウザ版でも、走った後の、模型の印の位置で拾う（デスクトップ版の道具は run_drive_heading_sign_flipped）。
+    ("web_drive_heading_sign_flipped", [HEADING_SIGN_FLIPPED], WEB_DRIVE, {1}, "problems=1 failed=drive.mirror"),
+    # 筋書きが、台本を渡さない。入力アダプタから、何も押していない入力を読んで、車は動かない。走行の下限で落ちる。
+    (
+        "web_drive_script_is_not_passed", [rep(WEB_SMOKE_PY, DRIVE_PROBE, 'probe_script({"ticks": scenario.ticks, "warmup_ticks": warmup_ticks})')],
+        WEB_DRIVE, {1}, "failed=drive.input_source,drive.adapter_reads,drive.direct_reads,drive.sim,drive.sim_reference,drive.floor",
+    ),
 ]
 
 

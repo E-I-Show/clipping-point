@@ -16,6 +16,7 @@ import urllib.error
 
 import pytest
 
+import fingerprint
 import input_reference
 import web_smoke
 from conftest import ROOT
@@ -43,6 +44,18 @@ SELFCHECK_KEY = "clippingpoint/selfcheck.settings"
 SELFCHECK_BLOB = storage.wrap(profile.encode(profile.SELFCHECK_SETTINGS), profile.SETTINGS_VERSION)
 # 道具が、定義データのファイルを自分で読んで数えた、表ごとの項目の数（実物）。probe の筋書きが、結果の data と照らす。
 DATA_TABLES = web_smoke.data_reference.expected_tables()[0]
+# 道具が、定義データのファイルを自分で読んだ、パレットの32色（実物）。probe と drive の筋書きが、結果の scene と照らす。
+WANT_PALETTE = web_smoke.scene_reference.expected_palette()[0]
+# 正しく写った、判定用の実描画の値（実物のアプリの、スタート位置の値）。
+SCENE = {
+    "sky": 24565, "track": 43207, "car": 5082, "ink_inside": 20806, "ink_outside": 0,
+    "probes": {
+        "pillar_left": {"pixels": 229, "x10": 1138}, "pillar_right": {"pixels": 211, "x10": 2052},
+        "mark_right": {"pixels": 292, "x10": 2111}, "mark_nose": {"pixels": 132, "x10": 1595},
+    },
+    "palette": list(WANT_PALETTE), "digest": 3123312044,
+}
+SCENE_CHECKS =["backdrop", "scene3d", "mirror", "palette", "scene_same", "back_ink"]
 
 
 def stored(blob: bytes = SELFCHECK_BLOB) -> str:
@@ -101,8 +114,14 @@ def result(**changes) -> dict:
         "storage": {"backend": "localstorage", "ok": True, "notice": "", "detail": ""},
         # 定義データ。警告は無く、試験用データを重ねていない（ブラウザ版は重ねない）。設定を読んだ保存の口の名前空間は main。
         "data": {"tables": dict(DATA_TABLES), "warnings": 0, "pack": None, "namespace": "main"},
+        # 3Dの絵。判定用の実描画の値。
+        "scene": {**SCENE, "probes": dict(SCENE["probes"])},
     }
     return {**base, **changes}
+
+
+def with_scene(**changes) -> dict:
+    return result(scene={**result()["scene"], **changes})
 
 
 def with_perf(**changes) -> dict:
@@ -123,7 +142,7 @@ def failed(checks) -> list:
 
 def probe_failed(res, sim=None, a_page=None) -> list:
     desktop_sim = {"tick": TICKS} if sim is None else sim
-    return failed(web_smoke.judge_probe(a_page or probe_page(), SHA, res, desktop_sim, TICKS, WARMUP, BUDGETS, DATA_TABLES))
+    return failed(web_smoke.judge_probe(a_page or probe_page(), SHA, res, desktop_sim, TICKS, WARMUP, BUDGETS, DATA_TABLES, want_palette=WANT_PALETTE))
 
 
 def console_page(*lines, done=True) -> dict:
@@ -476,9 +495,50 @@ def test_web_smoke_probe_each_data_deviation_fails_under_its_own_name(res, names
 
 def test_web_smoke_probe_data_that_the_tool_could_not_count_does_not_pass():
     # 道具が、定義データのファイルを数えられなかった（読めない）。アプリの申告だけで通さない。
-    checks = web_smoke.judge_probe(probe_page(), SHA, result(), {"tick": TICKS}, TICKS, WARMUP, BUDGETS, None, "cars.json: ValueError")
+    checks = web_smoke.judge_probe(probe_page(), SHA, result(), {"tick": TICKS}, TICKS, WARMUP, BUDGETS, None, "cars.json: ValueError", want_palette=WANT_PALETTE)
     assert failed(checks) == ["data_tables"]
     assert "cars.json: ValueError" in next(message for name, _, message in checks if name == "data_tables")
+
+
+# --- 3Dの絵（probe と drive の筋書き）：結果の scene の確かめ6つ。判定の関数は tools/scene_reference.py ---
+def test_web_smoke_probe_scene_checks_come_right_after_the_data_checks_and_before_the_lines():
+    names = [name for name, _, _ in web_smoke.judge_probe(probe_page(), SHA, result(), {"tick": TICKS}, TICKS, WARMUP, BUDGETS, DATA_TABLES)]
+    at = names.index("data_namespace")
+    assert names[at + 1:at + 7] == SCENE_CHECKS == list(web_smoke.scene_reference.SCENE_CHECKS)
+    assert names[at + 7:] == ["renders", "perf_renders", *web_smoke.TIMING_CHECKS]
+    assert all(names.count(name) == 1 for name in SCENE_CHECKS)
+
+
+@pytest.mark.parametrize(
+    "res, names",
+    [
+        (with_scene(sky=960), ["backdrop"]),  # 背景を写していない
+        (with_scene(track=0), ["scene3d"]),  # コースを描いていない（車だけの絵）
+        (with_scene(car=0), ["scene3d"]),
+        (with_scene(probes={**SCENE["probes"], "pillar_left": {"pixels": 229, "x10": 2052}}), ["mirror"]),  # 左の柱が、右に写った
+        (with_scene(probes={**SCENE["probes"], "mark_right": {"pixels": 0, "x10": 0}}), ["mirror"]),  # 模型の右の印が、写っていない
+        (with_scene(palette=[0] * 32), ["palette"]),  # パレットを当てていない
+        (with_scene(ink_outside=5), ["scene_same"]),  # ふだんの実描画の3Dが、判定と違う
+        (with_scene(ink_inside=0), ["back_ink"]),  # 2Dの描画命令が、描かれていない
+        (result(scene=None), SCENE_CHECKS),
+        ({key: value for key, value in result().items() if key != "scene"}, SCENE_CHECKS),  # 古い形の結果
+    ],
+)
+def test_web_smoke_probe_each_scene_deviation_fails_under_its_own_name(res, names):
+    assert probe_failed(res) == names
+
+
+def test_web_smoke_probe_palette_that_the_tool_could_not_read_does_not_pass():
+    # 道具が、パレットの定義データを読めなかった。アプリが読み戻した色だけで、通さない。
+    checks = web_smoke.judge_probe(probe_page(), SHA, result(), {"tick": TICKS}, TICKS, WARMUP, BUDGETS, DATA_TABLES, want_palette=None, palette_why="palettes.json: OSError")
+    assert failed(checks) == ["palette"]
+    assert "palettes.json: OSError" in next(message for name, _, message in checks if name == "palette")
+
+
+def test_web_smoke_scene_budgets_are_in_the_tool_values():
+    assert web_smoke.scene_reference.missing_budgets(BUDGETS) == []
+    # コースの画素の下限は、車だけが描かれた絵（コースの画素が0）を、通さない値。空の画素の下限は、背景を写さない絵（960）を、通さない値。
+    assert BUDGETS["scene_track_min_px"] > 0 and BUDGETS["scene_car_min_px"] > 0 and BUDGETS["scene_sky_min_px"] > 960
 
 
 # --- 保存先に触れると例外になるようにして開く筋書き ---
@@ -581,7 +641,7 @@ def test_web_smoke_browser_runner_reads_local_storage_only_when_asked_and_throug
 
 # --- 筋書きの並びと、直読みの警告（どの筋書きでも見る） ---
 def test_web_smoke_scenarios_come_in_the_fixed_order():
-    assert web_smoke.SCENARIOS == ("shipped", "probe", "script", "gamepad", "storage_blocked")
+    assert web_smoke.SCENARIOS == ("shipped", "probe", "script", "gamepad", "storage_blocked", "drive")
     assert tuple(web_smoke.RUNNERS) == web_smoke.SCENARIOS
 
 
@@ -1241,6 +1301,173 @@ def test_web_smoke_pad_budgets_leave_ticks_to_judge_and_room_in_the_trace():
     assert web_smoke.PAD_PRESS_BUTTON in BUTTONS
 
 
+# --- 走行の場面の筋書き（走る台本を渡して開く。処理時間と回数の線、走行の下限、3Dの絵） ---
+DRIVE = next(scenario for scenario in fingerprint.SCENARIOS if scenario.name == web_smoke.DRIVE_SCENARIO)
+DRIVE_VALUE, DRIVE_SCRIPT = fingerprint.load_scenario_script(DRIVE)
+DRIVE_TICKS = DRIVE.ticks
+DRIVE_SIM = input_reference.sim_summary(DRIVE_SCRIPT, DRIVE_TICKS)  # 走る台本を回した、世界の要約（参照）
+DRIVE_LINES = ["renders", "perf_renders", *web_smoke.TIMING_CHECKS]
+
+
+def drive_result(**changes) -> dict:
+    """問題の無い、走行の場面の筋書きの結果。台本から読み、慣らしの後の840 tickを測っている。"""
+    measured = {"updates": DRIVE_TICKS - WARMUP, "renders": (DRIVE_TICKS - WARMUP) // 2, "span_s": 13.98, "updates_per_s": 60.0, "renders_per_s": 29.97, "update_ms_p95": 0.3, "render_ms_p95": 6.0}
+    base = result(
+        ticks=DRIVE_TICKS, renders=DRIVE_TICKS // 2, sim=dict(DRIVE_SIM), perf={**measured, "with_warmup": dict(measured)},
+        input_source="script", adapter_reads=0, direct_reads=0,
+    )
+    return {**base, **changes}
+
+
+def drive_failed(res, desktop_sim=None, want_palette=WANT_PALETTE) -> list:
+    desktop_sim = DRIVE_SIM if desktop_sim is None else desktop_sim
+    return failed(web_smoke.judge_drive(page(untilAt=20000), SHA, res, desktop_sim, DRIVE_SCRIPT, DRIVE, WARMUP, BUDGETS, PERIODS, want_palette))
+
+
+def test_web_smoke_clean_drive_passes():
+    assert drive_failed(drive_result()) == []
+
+
+def test_web_smoke_drive_uses_the_script_the_ticks_and_the_floors_of_the_fingerprint_scenario():
+    # 走行の下限は、台本と、回すtick数が同じ筋書きにだけ付く。指紋の筋書き drive_900 から、そのまま引く。
+    assert web_smoke.DRIVE_SCENARIO == "drive_900"
+    assert DRIVE.script == input_reference.DRIVE_SCRIPT and DRIVE_TICKS == 900 == DRIVE_SCRIPT.total_ticks
+    assert DRIVE.floors and fingerprint.floor_problems(DRIVE, DRIVE_SIM) == []
+    assert DRIVE_TICKS - WARMUP >= web_smoke.MIN_MEASURED_TICKS + 600  # 慣らしの後に、600 tick以上を測る（計画の通過条件）
+
+
+def test_web_smoke_drive_checks_come_in_a_fixed_order():
+    names = [name for name, _, _ in web_smoke.judge_drive(page(untilAt=20000), SHA, drive_result(), DRIVE_SIM, DRIVE_SCRIPT, DRIVE, WARMUP, BUDGETS, PERIODS, WANT_PALETTE)]
+    at = names.index("platform")
+    assert names[at:] == [
+        "platform", "ticks", "input_source", "adapter_reads", "direct_reads", "measured_ticks", "sim", "sim_reference", "floor",
+        *SCENE_CHECKS, *DRIVE_LINES,
+    ]
+    assert len(set(names)) == len(names)
+
+
+def test_web_smoke_drive_without_the_script_fails_on_the_input_the_summary_and_the_floor():
+    # 台本を渡さずに開いた形。入力アダプタから、何も押していない入力を読んで、車は、スタート位置から動かない。
+    parked = input_reference.sim_summary(None, DRIVE_TICKS)
+    res = drive_result(sim=parked, input_source="adapter", adapter_reads=DRIVE_TICKS, direct_reads=DRIVE_TICKS)
+    assert drive_failed(res) == ["input_source", "adapter_reads", "direct_reads", "sim", "sim_reference", "floor"]
+
+
+def test_web_smoke_drive_floor_is_judged_from_the_summary_of_the_browser():
+    # デスクトップ版の要約と同じでも、走行が成り立っていなければ、落とす（どちらも、同じ壊れ方で回った場合）。
+    slow = {**DRIVE_SIM, "odometer_mm": 1000}
+    assert drive_failed(drive_result(sim=slow), desktop_sim=slow) == ["sim_reference", "floor"]
+    assert drive_failed(drive_result(sim=None)) == ["sim", "sim_reference", "floor"]
+
+
+def test_web_smoke_drive_summary_is_compared_field_by_field_with_the_desktop_and_the_reference():
+    near = {**DRIVE_SIM, "x_mm": DRIVE_SIM["x_mm"] + SIM_TOLERANCE}
+    assert drive_failed(drive_result(sim=near)) == []
+    far = {**DRIVE_SIM, "x_mm": DRIVE_SIM["x_mm"] + SIM_TOLERANCE + 1}
+    assert drive_failed(drive_result(sim=far)) == ["sim", "sim_reference"]
+    assert drive_failed(drive_result(), desktop_sim={**DRIVE_SIM, "shifts": DRIVE_SIM["shifts"] + 1}) == ["sim"]
+
+
+@pytest.mark.parametrize(
+    "res, name",
+    [
+        (drive_result(platform="linux"), "platform"),
+        (drive_result(ticks=DRIVE_TICKS - 1), "ticks"),
+        (drive_result(renders=DRIVE_TICKS // 2 - TOLERANCE - 1), "renders"),
+        (drive_result(perf={**drive_result()["perf"], "updates": DRIVE_TICKS}), "measured_ticks"),
+        (drive_result(perf={**drive_result()["perf"], "renders": 0}), "perf_renders"),
+        (drive_result(perf={**drive_result()["perf"], "updates_per_s": 58.9}), "updates_per_s"),
+        (drive_result(perf={**drive_result()["perf"], "renders_per_s": 28.9}), "renders_per_s"),
+        (drive_result(perf={**drive_result()["perf"], "update_ms_p95": 4.1}), "update_ms_p95"),
+        (drive_result(perf={**drive_result()["perf"], "render_ms_p95": 12.1}), "render_ms_p95"),
+        (drive_result(scene={**SCENE, "track": 0}), "scene3d"),
+        (drive_result(scene={**SCENE, "sky": 960}), "backdrop"),
+        (drive_result(scene={**SCENE, "probes": {**SCENE["probes"], "mark_nose": {"pixels": 132, "x10": 600}}}), "mirror"),  # 車の向きの符号が、逆
+        (drive_result(scene={**SCENE, "ink_outside": 1}), "scene_same"),
+    ],
+)
+def test_web_smoke_drive_each_deviation_fails_under_its_own_name(res, name):
+    assert drive_failed(res) == [name]
+
+
+def test_web_smoke_drive_palette_that_the_tool_could_not_read_does_not_pass():
+    assert drive_failed(drive_result(), want_palette=None) == ["palette"]
+
+
+def fake_drive_openings(monkeypatch, res, desktop) -> list:
+    """web_smoke の、ページを開く所と、デスクトップ版を回す所を、偽物に替える。返すのは、開いた (名, 差し込むスクリプト) の記録。"""
+    opened = []
+
+    def open_with_probe(name, timeout_s, init_script, html_sha256, extra=()):
+        opened.append((name, init_script))
+        return (page(untilAt=20000), res, None, "") if res is not None else (None, None, None, "no_runner_result")
+
+    def desktop_result(name, ticks, script_path=None):
+        opened.append(("desktop", name, ticks, script_path))
+        return desktop
+
+    monkeypatch.setattr(web_smoke, "open_with_probe", open_with_probe)
+    monkeypatch.setattr(web_smoke, "desktop_result", desktop_result)
+    return opened
+
+
+def run_drive_scenario() -> tuple:
+    args = argparse.Namespace(timeout=30, ticks=TICKS)
+    context = {"drive_scenario": DRIVE, "drive_script_value": DRIVE_VALUE, "drive_script": DRIVE_SCRIPT, "periods": PERIODS}
+    return web_smoke.scenario_drive(args, BUDGETS, SHA, context)
+
+
+def test_web_smoke_drive_scenario_passes_the_script_and_the_warmup_and_takes_no_trace(monkeypatch):
+    desktop = {"ticks": DRIVE_TICKS, "sim": dict(DRIVE_SIM), "scene": dict(SCENE)}
+    opened = fake_drive_openings(monkeypatch, drive_result(), desktop)
+    checks, facts, reason = run_drive_scenario()
+    assert reason == "" and failed(checks) == []
+    # デスクトップ版の参照は、同じ台本を、同じtick数で回したアプリ。
+    assert opened[0] == ("desktop", "drive", DRIVE_TICKS, input_reference.DRIVE_SCRIPT)
+    name, init_script = opened[1]
+    assert name == "drive" and len(opened) == 2
+    value = json.loads(init_script[len(f"window.{web_bridge.PROBE_NAME} = "):-1])
+    assert value == {"ticks": DRIVE_TICKS, "warmup_ticks": BUDGETS["web_probe_warmup_ticks"], "script": DRIVE_VALUE}  # 入力の跡は、取らない
+    # 最後の1行に出す値。絵の要約値が、デスクトップ版の参照と同じ。
+    assert len(facts) == 1
+    words = dict(word.split("=", 1) for word in facts[0].split())
+    assert words["drive_ticks"] == str(DRIVE_TICKS) and words["drive_gap"] == "0" and words["drive_picture"] == "same"
+    assert words["drive_update_ms_p95"] == "0.3" and words["drive_render_ms_p95"] == "6.0"
+    assert all(word.startswith("drive_") for word in words)
+
+
+def test_web_smoke_drive_scenario_says_when_the_picture_differs_from_the_desktop_without_failing(monkeypatch):
+    # 絵の要約値の違いは、最後の1行に出すだけ。合否には、使わない。
+    desktop = {"ticks": DRIVE_TICKS, "sim": dict(DRIVE_SIM), "scene": {**SCENE, "digest": SCENE["digest"] + 1}}
+    fake_drive_openings(monkeypatch, drive_result(), desktop)
+    checks, facts, reason = run_drive_scenario()
+    assert reason == "" and failed(checks) == [] and "drive_picture=differs" in facts[0]
+    assert web_smoke.picture_word(drive_result(), {"sim": {}}) == "unknown"
+    assert web_smoke.picture_word({"scene": {"digest": True}}, desktop) == "unknown"
+
+
+def test_web_smoke_drive_scenario_is_incomplete_without_the_desktop_reference_or_the_runner_result(monkeypatch):
+    fake_drive_openings(monkeypatch, drive_result(), None)
+    assert run_drive_scenario() == (None, [], "no_desktop_reference")
+    fake_drive_openings(monkeypatch, None, {"ticks": DRIVE_TICKS, "sim": dict(DRIVE_SIM), "scene": dict(SCENE)})
+    assert run_drive_scenario() == (None, [], "no_runner_result")
+
+
+def test_web_smoke_drive_scenario_is_incomplete_when_the_summary_has_a_field_without_a_compare_rule(monkeypatch, capsys):
+    strange = {**DRIVE_SIM, "tyre_temp_c": 80}
+    fake_drive_openings(monkeypatch, drive_result(sim=strange), {"ticks": DRIVE_TICKS, "sim": dict(DRIVE_SIM), "scene": dict(SCENE)})
+    assert run_drive_scenario() == (None, [], "summary_field_without_rule")
+    assert "tyre_temp_c" in capsys.readouterr().out
+
+
+def test_web_smoke_desktop_reference_is_the_summary_of_the_desktop_result(monkeypatch):
+    whole = {"ticks": 120, "sim": {"tick": 120}, "scene": dict(SCENE)}
+    monkeypatch.setattr(web_smoke, "desktop_result", lambda name, ticks, script_path=None: whole)
+    assert web_smoke.desktop_reference("probe", 120) == {"tick": 120}
+    monkeypatch.setattr(web_smoke, "desktop_result", lambda name, ticks, script_path=None: None)
+    assert web_smoke.desktop_reference("probe", 120) is None
+
+
 # --- 回す前の守り。何も開かずに2 ---
 def guarded_main(monkeypatch, capsys, argv: list, **budget_changes) -> tuple:
     """道具の値を差し替えて main() を回す。何かを回そうとしたら失敗にする。返すのは (終了コード, 最後の1行)。"""
@@ -1254,6 +1481,19 @@ def guarded_main(monkeypatch, capsys, argv: list, **budget_changes) -> tuple:
     monkeypatch.setattr(web_smoke, "run", must_not_run)
     monkeypatch.setattr(sys, "argv", ["web_smoke.py", *argv])
     return web_smoke.main(), last_line(capsys)
+
+
+@pytest.mark.parametrize("argv", [[], ["--only", "probe"], ["--only", "drive"]])
+def test_web_smoke_without_the_scene_budgets_is_2_before_anything_is_opened(monkeypatch, capsys, argv):
+    # 3Dの絵の判定の下限が、道具の値に無い（数でない）。判定を、黙って外さない。
+    code, line = guarded_main(monkeypatch, capsys, argv, scene_track_min_px=None)
+    assert code == 2 and "reason=no_scene_budgets" in line and "scenarios=0" in line
+
+
+def test_web_smoke_drive_too_short_a_warmup_window_is_2_before_anything_is_opened(monkeypatch, capsys):
+    # 慣らしが長すぎて、走る台本の900 tickの中に、測るtickが足りない。
+    code, line = guarded_main(monkeypatch, capsys, ["--only", "drive"], web_probe_warmup_ticks=DRIVE_TICKS - 10)
+    assert code == 2 and "reason=ticks_shorter_than_script" in line and "scenarios=0" in line
 
 
 @pytest.mark.parametrize("settle", [STAGE, STAGE + 5, -1])

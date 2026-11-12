@@ -19,6 +19,7 @@ paths:
 - 線の判定に使うのは、慣らしを除いた値。慣らしを入れた値も、結果の1行（`with_warmup`）に出す。
 - 世界の要約の、デスクトップ版との突き合わせ（probe の `sim`、script の `sim` と `sim_reference`）は、1つの関数（`summary_check()`）で、項目ごとに比べる（完全一致、許容差つき、折り返した差。比べ方の表は `cp_core/sim.py` の `SUMMARY_FIELDS`）。表に無い項目が要約にあれば、見ずに通さず、2にする。
 - 筋書き `script` は、同じ値で、もう1度開き、2回の要約が、完全に同じことを見る（`sim_repeat`）。
+- 筋書き `drive`（走行の場面）は、走る台本を、指紋の筋書き `drive_900` と同じtick数で回す（走行の下限が掛かる）。線と、3Dの絵の確かめ（`render.md`。向きの符号の誤りを拾う）を見る。線を見るのは `probe` と `drive`。
 - `web_bridge.py` は pyxel を読み込まない。ブラウザの機能（js のモジュール）は引数で受ける。js をimportするのは `browser_js()` の中だけ。
 - 外から渡す値が無ければ、普通に起動する。形が違えば `ValueError`。
 - ブラウザ版では `sys.exit` と `pyxel.quit` を呼ばない。結果を出した後も動き続ける。
@@ -31,7 +32,7 @@ paths:
 - ランタイムの版、置き場、取得元：`tools/web/fetch_runtime.py` の頭の定数。置き場と取得の関数は、`main()` の引数で替えられる。
 - 失敗の種類：`tools/web_smoke.py` の `FAILURE_KINDS`（`webrun.js` の頭の注と同じ）
 - 結果の `data`（`tables`、`warnings`、`pack`、`namespace`）：筋書き `probe` が、道具が自分で数えた件数（`tools/data_reference.py`）と照らす。ブラウザ版は、試験用データを重ねない（`pack` は null、`namespace` は `main`）。決まりは `.claude/rules/data.md`
-- 結果：`out/web_smoke/`（筋書きごとのJSONと、画面のPNG）
+- 結果：`out/web_smoke/`（筋書きごとのJSONと、画面のPNG。走行の絵は `drive.png`）
 
 ## Xを足したらYも
 
@@ -47,7 +48,7 @@ paths:
 
 - テスト `tests/test_web_bridge.py`：値がある、値が無い、形が違う、js が無い（デスクトップ版）。偽の js を渡す。
 - テスト `tests/test_web_smoke.py`：判定の関数（失敗の種類ごと、線を外れた値ごと）、node が無い場合、取得と照合（一時の置き場と偽の取得の関数で通す）。ブラウザもネットワークも使わない。
-- 道具 web-smoke（`python3 tools/web_smoke.py [--only shipped|probe|script|gamepad|storage_blocked] [--ticks N] [--timeout 秒]`）：筋書きは5本で、約65秒（`script` は、2度開く）。入力の2本の決まりは `.claude/rules/controls.md`、保存（結果の `storage`）は `save.md`。
+- 道具 web-smoke（`python3 tools/web_smoke.py [--only 筋書きの名] [--ticks N] [--timeout 秒]`）：筋書きは6本（`shipped`、`probe`、`script`、`gamepad`、`storage_blocked`、`drive`）で、約90秒（`script` は、2度開く）。入力の2本の決まりは `controls.md`、保存は `save.md`。
 - 道具 `python3 tools/web/fetch_runtime.py [--check]`：ランタイムの写しの取得と照合。`bash tools/setup_env.sh` が呼ぶ。
 - 道具 selftest-break の `web_` と `fetch_` で始まる件：ブラウザ版でだけ起きる崩れを、web-smoke が拾うこと。
 
@@ -60,5 +61,5 @@ paths:
 - JavaScriptの undefined と null は、Pyodideでは別々の物になる。値は `JSON.stringify` で文字列にしてから受け取る。
 - ブラウザ版は実時間で回る。600 tickを測るのに10秒かかる。時計は0.1 ms刻み。
 - 回数と時間の線は、単独で回したときの値で見る。全体の検証の中で外れたら、単独で1度回し直す。
-- 要約の、デスクトップ版との差は、段0 区切り9の実測では0（120 tick、走る台本900 tick、壁の台本780 tick）。それでも、位置や速度に完全一致を求めない（丸めの境目で、1刻み違いうる）。回数の項目は、許容差つきにしない。
+- 要約の、デスクトップ版との差は、段0 区切り9と10の実測では0（120 tick、走る台本900 tick、壁の台本780 tick）。走行の絵の画素も、同じ（`drive_picture=same`）。それでも、位置や速度に完全一致を求めない（丸めの境目で、1刻み違いうる）。回数の項目は、許容差つきにしない。
 - 取得の途中で切れた接続は `http.client.IncompleteRead` になる。`OSError` の子ではない。

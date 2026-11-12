@@ -58,7 +58,7 @@ paths:
 - 守りのテスト `tests/test_fingerprint.py`：指紋の写しと同じ。1 tick、入力1つ、種の違いを拾う。走行の下限。`PYTHONHASHSEED` を変えた別プロセスで、要約が同じ。
 - 道具 `python3 tools/fingerprint.py`：指紋、走行の下限、保存する項目の一覧を照らす。写しが無ければ2。
 - 道具 `python3 tools/run.py`：世界のtick、世界の要約（参照、指紋の写し、車とコースの id、走行の下限）、実描画の回数を、画面なしで照らす。全体の検証の `run-drive` と `run-wall` が、走る台本と壁の台本を通す。
-- アプリが実時間を `RenderGate` へ渡していることは、守りのテスト（`tests/test_fixed_loop.py` が `app.py` のソースを読む）と、selftest-break の `web_gate_gets_no_real_time` で見る。段0 区切り10で、web-smoke の実描画の回数で見える形に置き換える。
+- アプリが実時間を `RenderGate` へ渡していることは、守りのテスト（`tests/test_fixed_loop.py` が `app.py` のソースを読む）と、selftest-break の `web_gate_gets_no_real_time` で見る。実描画が重い場面ができた段で、見直す（走行の場面で、実描画のある周期が、1 tickの長さを超えるのは、600〜840 tickに0〜1回。結果の `perf` の `cycles_over_tick`）。
 
 ## 落とし穴
 

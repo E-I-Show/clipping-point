@@ -8,10 +8,10 @@ import dataclasses
 import pytest
 
 from cp_core import storage, track
-from cp_core.flow import SCREEN_NAMES, CarView, Flow, PlaceholderView
+from cp_core.flow import SCREEN_NAMES, CarView, Flow, PerfView, PlaceholderView
 from cp_core.input_frame import BUTTONS, quantize
 from cp_core.vehicle import REVERSE
-from cp_ui import fixtures
+from cp_ui import fixtures, screens
 from cp_ui.canvas import Canvas
 from cp_ui.check import find_violations
 from cp_ui.screens import SCREENS
@@ -65,6 +65,20 @@ def test_fixtures_placeholder_extreme_carries_the_widest_car_values():
 def test_fixtures_longest_surface_follows_the_surfaces_of_the_track(monkeypatch):
     monkeypatch.setattr(fixtures, "SURFACES", (*track.SURFACES, "wet_asphalt"))
     assert fixtures.longest_surface() == "wet_asphalt"
+
+
+def test_fixtures_placeholder_extreme_carries_the_widest_measured_times():
+    # 処理時間の値は、仮の表示の桁をいっぱいに使う（99.9 ms、毎秒999.9回、999.9秒）。桁を変えると、ここも付いて変わる。
+    perf = fixtures.build("placeholder", "extreme").perf
+    assert perf == PerfView(999, 999, 999, 999, 9999, 9999, 9999, 9999)
+    assert fixtures.widest_measured(screens.MS_DIGITS) == 999 and fixtures.widest_measured(screens.RATE_DIGITS) == 9999
+    assert fixtures.widest_measured(screens.SECONDS_DIGITS) == 9999
+    # どの項目も、測れている（「-」より、長い字になる）。
+    assert all(value is not None for value in dataclasses.astuple(perf))
+    # ふつうの値は、デスクトップ版の形（PAGE は、測れていない）。ほかは、測れている。
+    typical = fixtures.build("placeholder", "typical").perf
+    assert typical == PerfView(3, 12, 24, 41, 600, 300, 12, None)
+    assert all(a < b for a, b in zip(dataclasses.astuple(typical)[:-1], dataclasses.astuple(perf)[:-1]))
 
 
 def test_fixtures_placeholder_typical_is_not_the_extreme():

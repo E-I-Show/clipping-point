@@ -28,7 +28,7 @@ FULL_STEPS = [
 ]
 UI_WORDS = "canvas or screens or ui_check or fixtures or tour"
 FLOW_WORDS = "camera or flow or fixtures or screens or fingerprint"
-RENDER_WORDS = "palette or mesh or car_shape or camera or canvas or screens or ui_check or fixtures or tour"
+RENDER_WORDS = "palette or mesh or car_shape or camera or render or canvas or screens or ui_check or fixtures or tour"
 INPUT_WORDS = "input_frame or input_script or input_pyxel or input_trace or controls or profile"
 VEHICLE_WORDS = "vehicle or sim or fingerprint"
 TRACK_WORDS = "track or sim or fingerprint or datadefs or data_files"
@@ -109,10 +109,11 @@ def test_verify_flow_files_map_to_the_camera_and_screen_state_area():
 
 
 def test_verify_palette_mesh_and_car_shape_files_map_to_the_render_area():
-    # 計画の表の「描画」：色の役割、メッシュ用の数値の型と面の向きの決まり、車の仮の形。
+    # 計画の表の「描画」：色の役割、メッシュ用の数値の型と面の向きの決まり、車の仮の形、Pyxelの3Dに触れる所（3Dの場面）。
     for path in (
         "clipping_point/cp_core/palette.py", "clipping_point/cp_core/mesh.py", "clipping_point/cp_core/car_shape.py",
-        "tests/test_palette.py", "tests/test_mesh.py", "tests/test_car_shape.py",
+        "clipping_point/cp_app/render.py",
+        "tests/test_palette.py", "tests/test_mesh.py", "tests/test_car_shape.py", "tests/test_render.py",
     ):
         assert names_of(path) == [RENDER], path
     # 足す手順は、計画の表のとおり：run、tour、web-smoke。テストの絞りは、画面（2D）の語に、描画とカメラのテストを足したもの。

@@ -13,6 +13,7 @@
 値が無ければ None を返し、アプリは普通に起動する。出荷するHTMLは、この値を自分では置かない。
 値の形が違えば ValueError。黙って普通に起動すると、煙テストが完了の合図を待ち続けるため。
 ブラウザ版では、結果を出した後も終了しない（sys.exit と pyxel.quit を呼ぶと、メインループが止まり戻れない）。
+ブラウザの時計（performance.now()。ページを開いてからの時間）を読む所（page_elapsed_s）も、ここに置く。仮の表示の PAGE に使う。
 """
 import json
 from dataclasses import dataclass
@@ -81,6 +82,22 @@ def read_probe(js) -> Probe | None:
     except ValueError as exc:
         raise ValueError(f"{PROBE_NAME}.script: {exc}") from exc
     return Probe(ticks, warmup_ticks, parsed, trace_max)
+
+
+def page_elapsed_s(js):
+    """ページを開いてから、いままでの時間（秒）。ブラウザの時計（performance.now()）で読む。js が None（デスクトップ版）なら None。
+
+    アプリの main() の頭で1度だけ呼ぶ（仮の表示の PAGE。ランタイムの読み込みと、開始のクリックを待った時間を含む）。
+    時計が読めない、数でない値が返った、のどちらでも None（測れていない）。起動を、表示のための値で止めない。
+    読んだ値は、表示にだけ使う。世界へは渡さない。
+    """
+    if js is None:
+        return None
+    try:
+        elapsed_ms = float(js.performance.now())
+    except Exception:  # noqa: BLE001 - 時計が無いブラウザ、数にならない値
+        return None
+    return elapsed_ms / 1000.0 if elapsed_ms == elapsed_ms and elapsed_ms >= 0.0 else None
 
 
 def mark_tick(js, ticks: int) -> None:

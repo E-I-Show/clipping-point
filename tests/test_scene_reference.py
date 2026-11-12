@@ -250,3 +250,28 @@ def test_scene_reference_missing_palette_file_or_id_gives_no_colours_and_a_reaso
 def test_scene_reference_words_for_the_last_line():
     assert scene_reference.scene_words({"scene": SCENE}) == "sky=21000 track=30000 car=2400 ink=3500/0 digest=123456789"
     assert scene_reference.scene_words({}) == "sky=None track=None car=None ink=None/None digest=None"
+
+
+def test_scene_reference_words_for_the_probes():
+    # 柱と印は、「名:画素の数@重心の x（画素）」を、決まった順に並べる。字の間に、空白を入れない（最後の1行の語になる）。
+    words = scene_reference.probe_words({"scene": SCENE})
+    assert words == "pillar_left:180@113.8,pillar_right:180@205.2,mark_right:300@211.9,mark_nose:130@159.5"
+    assert " " not in words
+    assert scene_reference.probe_words({}) == "pillar_left:None@None,pillar_right:None@None,mark_right:None@None,mark_nose:None@None"
+    assert scene_reference.probe_words(probes(mark_nose=(0, 0))).endswith("mark_nose:0@0.0")
+
+
+def test_scene_reference_words_for_the_measured_times_and_the_scene_numbers():
+    # 処理時間の要約は「平均/95%点/最大」。判定には、使わない（出すだけ）。
+    perf = {
+        "update_ms_mean": 0.07, "update_ms_p95": 0.11, "update_ms_max": 0.9, "render_ms_mean": 2.5, "render_ms_p95": 3.4, "render_ms_max": 5.9,
+        "cycles_over_tick": 0,
+    }
+    assert scene_reference.perf_words({"perf": perf}) == "update_ms=0.07/0.11/0.9 render_ms=2.5/3.4/5.9 cycles_over_tick=0"
+    assert scene_reference.perf_words({}) == "update_ms=None/None/None render_ms=None/None/None cycles_over_tick=None"
+    assert scene_reference.perf_words({"perf": None}) == scene_reference.perf_words(None)
+    stats = {"triangles_drawn": 2972, "build_ms": 9.4, "mesh_ms": 2.5, "boot_ms": 131.2, "page_ms": None, "chunks": 12}
+    assert scene_reference.stats_words({"scene_stats": stats}) == "triangles=2972 build_ms=9.4 mesh_ms=2.5 boot_ms=131.2 page_ms=None"
+    assert scene_reference.stats_words({}) == "triangles=None build_ms=None mesh_ms=None boot_ms=None page_ms=None"
+    for words in (scene_reference.perf_words({"perf": perf}), scene_reference.stats_words({"scene_stats": stats})):
+        assert all("=" in word for word in words.split())  # どの語も「名=値」（道具が、頭に筋書きの名を付けて並べる）

@@ -167,6 +167,62 @@ def test_run_tool_pack_that_is_missing_or_empty_is_found_before_the_app_runs(tmp
     assert reason("empty", tmp_path) and reason("nosuch", tmp_path)
 
 
+# --- 3Dの絵の判定（結果の scene）。判定の関数は tools/scene_reference.py。数え方と確かめの1つずつは tests/test_scene_reference.py ---
+BUDGETS = run_tool.load_budgets()
+PALETTE = run_tool.scene_reference.expected_palette()[0]
+# 実物のアプリの、既定の run（道具の台本。120 tick）の値。
+SCENE = {
+    "sky": 24585, "track": 43204, "car": 5082, "ink_inside": 20806, "ink_outside": 0,
+    "probes": {
+        "pillar_left": {"pixels": 229, "x10": 1138}, "pillar_right": {"pixels": 211, "x10": 2052},
+        "mark_right": {"pixels": 292, "x10": 2111}, "mark_nose": {"pixels": 132, "x10": 1595},
+    },
+    "palette": list(PALETTE), "digest": 3335000676,
+}
+
+
+def scene_failed(scene, pack=None) -> list:
+    return [name for name, (ok, _) in run_tool.scene_checks_of({"scene": scene}, BUDGETS, pack).items() if not ok]
+
+
+def test_run_tool_scene_checks_are_the_six_of_the_scene_reference_in_their_order():
+    checks = run_tool.scene_checks_of({"scene": SCENE}, BUDGETS)
+    assert list(checks) == ["backdrop", "scene3d", "mirror", "palette", "scene_same", "back_ink"] == list(run_tool.scene_reference.SCENE_CHECKS)
+    assert scene_failed(SCENE) == []
+    assert all(type(message) is str and message for _, message in checks.values())
+    # まだ無い確かめの一覧から、scene3d と mirror は、外れた。
+    assert run_tool.NOT_YET == ()
+    assert run_tool.scene_reference.missing_budgets(BUDGETS) == []
+
+
+@pytest.mark.parametrize(
+    "changes, names",
+    [
+        ({"sky": 960}, ["backdrop"]),  # 背景を写さない（画面の上の3行だけが、空の色）
+        ({"track": 0}, ["scene3d"]),  # コースを描かない。車だけの絵
+        ({"car": 0}, ["scene3d"]),  # 車を描かない
+        ({"probes": {**SCENE["probes"], "pillar_left": {"pixels": 229, "x10": 2052}, "pillar_right": {"pixels": 211, "x10": 1138}}}, ["mirror"]),  # 鏡写し
+        ({"probes": {name: {"pixels": 0, "x10": 0} for name in SCENE["probes"]}}, ["mirror"]),  # 頂点の順の取り違え（片面の板が、写らない）
+        ({"palette": list(range(32))}, ["palette"]),  # パレットを当てていない
+        ({"ink_outside": 61234}, ["scene_same"]),  # ふだんの実描画が、3Dを描いていない
+        ({"ink_inside": 0}, ["back_ink"]),  # 2Dの描画命令を、実行していない
+    ],
+)
+def test_run_tool_each_broken_picture_fails_under_its_own_name(changes, names):
+    assert scene_failed({**SCENE, **changes}) == names
+
+
+def test_run_tool_result_without_a_scene_fails_every_scene_check():
+    for data in ({}, {"scene": None}, {"scene": []}, {"back_ink": 4321}):  # 古い形の結果（back_ink が、結果の頭にある）も
+        assert [name for name, (ok, _) in run_tool.scene_checks_of(data, BUDGETS).items() if not ok] == list(run_tool.scene_reference.SCENE_CHECKS)
+
+
+def test_run_tool_palette_of_a_pack_run_is_read_with_the_pack_overlaid():
+    # 試験用データ（extreme）は、パレットを持たない。重ねた回でも、出荷するデータの32色と照らす。無い名の試験用データでも、同じ。
+    assert run_tool.scene_reference.expected_palette(pack="extreme") == (PALETTE, "")
+    assert scene_failed(SCENE, "extreme") == []
+
+
 def test_run_tool_main_namespace_files_of_a_missing_or_empty_directory_are_none(tmp_path):
     assert run_tool.main_namespace_files(tmp_path / "no_such_saves") == []
     assert run_tool.main_namespace_files(tmp_path) == []

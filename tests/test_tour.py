@@ -2,12 +2,16 @@
 
 画素を照らす関数（矩形の外の画素、内の画素が無い、余白の画素、空白だけの文字）には、画素の並びを直に与える。
 巡回の流れ（描く、数える、保存する、結果ファイルを書く）は、偽の Pyxel（純Pythonで矩形を塗るだけの画像）で通す。
+3Dの絵（見本ごとに、描く、保存する、判定用の実描画を回す）は、偽の場面（FakeScene）を渡して通す（None を渡して、3Dを飛ばす形にしない）。
+3Dの場面そのもの（座標の変換、描く口、判定）のテストは tests/test_render.py。
 実物のPyxelの画素と照らすこと（文字の大きさの式、線、縁だけの矩形）は、道具 tour と selftest-break が見る。
 """
 import json
+import math
 
 import pytest
 
+import input_reference
 from cp_app import tour
 from cp_app.canvas_pyxel import execute
 from cp_ui import fixtures
@@ -136,6 +140,9 @@ def test_tour_config_holds_the_result_file_the_shot_dir_and_the_screen():
     assert tour.read_config({"CP_TOUR": "/tmp/t/result.json", "CP_TOUR_DIR": "/tmp/t"}) == tour.TourConfig("/tmp/t/result.json", "/tmp/t", "")
     config = tour.read_config({"CP_TOUR": "/tmp/t/result.json", "CP_TOUR_DIR": "/tmp/t", "CP_TOUR_ONLY": "placeholder"})
     assert config.only == "placeholder"
+    # 3Dの絵だけを回す名。画面の名と、重ならない。
+    config = tour.read_config({"CP_TOUR": "/tmp/t/result.json", "CP_TOUR_DIR": "/tmp/t", "CP_TOUR_ONLY": "scene"})
+    assert config.only == tour.SCENE_ONLY == "scene" and tour.SCENE_ONLY not in SCREENS
 
 
 @pytest.mark.parametrize(
@@ -228,10 +235,45 @@ class FakePyxel:
         return image
 
 
-def run_tour(tmp_path, pyxel=None, only: str = ""):
+SKY_COL, GROUND_COL = 16, 6  # 偽の場面が塗る色（空と地面）。仮の表示が使わない色
+
+
+class FakeScene:
+    """3Dの場面（cp_app.render の Scene）の代わり。Pyxelの3Dには触れない。描く口は、絵を、空と地面の2色で塗り、車の位置に点を打つだけ。
+
+    コースの表は、本物（純Python）。呼ばれた順を、log に残す。
+    """
+
+    def __init__(self, log=None) -> None:
+        self.track = input_reference.make_sim().track
+        self.log = [] if log is None else log
+        self.stats = {"chunks": 12}
+        self.judged = []  # judge() へ渡された (絵の画素, 矩形の並び, x, z, 向き)
+
+    def build(self, probes=False, clock=None) -> None:
+        self.log.append(("build", probes, clock is not None))
+
+    def chase(self, x, z, heading):
+        return ("pose", x, z, heading)
+
+    def draw(self, target, pose, x, z, heading, layers=None) -> None:
+        assert pose == ("pose", x, z, heading)
+        self.log.append(("draw", round(x, 3), round(z, 3), round(heading, 3), layers))
+        target.cls(GROUND_COL)
+        target.rect(0, 0, SCREEN_W, 100, SKY_COL)
+        target.pset(int(x) % SCREEN_W, 120 + int(z) % 100, 7)  # 見本ごとに、違う絵になるように
+        self.stats = {**self.stats, "chunks_drawn": 9, "triangles_drawn": 2972}
+
+    def judge(self, shown, rects, x, z, heading) -> dict:
+        self.log.append(("judge", round(x, 3), round(z, 3), round(heading, 3)))
+        self.judged.append((shown, tuple(rects), x, z, heading))
+        return {"sky": shown.count(SKY_COL), "track": 40000, "car": 5000, "ink_inside": 0, "ink_outside": 0, "probes": {}, "palette": [], "digest": 1}
+
+
+def run_tour(tmp_path, pyxel=None, only: str = "", scene=None):
     pyxel = pyxel or FakePyxel()
     config = tour.TourConfig(str(tmp_path / "result.json"), str(tmp_path), only)
-    return pyxel, tour.run(pyxel, config)
+    return pyxel, tour.run(pyxel, config, scene or FakeScene())
 
 
 def test_tour_run_starts_pyxel_without_a_window(tmp_path):
@@ -246,8 +288,8 @@ def test_tour_run_writes_one_entry_per_screen_and_variant(tmp_path):
     assert json.loads((tmp_path / "result.json").read_text(encoding="utf-8")) == result
     assert not (tmp_path / "result.json.tmp").exists()
     assert [(shot["screen"], shot["variant"]) for shot in result["shots"]] == [("placeholder", "typical"), ("placeholder", "extreme")]
-    # 命令の数は、ふつうの値で10（車の値の2行を含む）。極端な値は、知らせの1行の分、文字の命令が1つ多い。
-    for shot, commands in zip(result["shots"], (10, 11), strict=True):
+    # 命令の数は、ふつうの値で16（文字9、下地の矩形5、縁だけの矩形1、線1）。極端な値は、知らせの1行の分、文字と下地の矩形が1つずつ多い。
+    for shot, commands in zip(result["shots"], (16, 18), strict=True):
         assert shot["commands"] == shot["checked"] == commands  # どの命令も、1つずつ照らしている
         assert shot["margin_ink"] == 0 and shot["screen_ink"] > 0
         assert shot["command_problems"] == [] and shot["violations"] == []
@@ -262,17 +304,17 @@ def test_tour_run_saves_the_whole_picture_cut_to_the_screen_size(tmp_path):
     assert (shot.width, shot.height) == (SCREEN_W, SCREEN_H)
     # 保存するのは、画面の大きさの画像だけ。全体の絵そのもの（余白つき）と、命令を1つずつ描く裏画面は、保存しない。
     assert whole.saved == [] and single.saved == []
-    assert [(path, scale) for path, scale, _ in shot.saved] == [
+    assert [(path, scale) for path, scale, _ in shot.saved[:2]] == [
         (str(tmp_path / "placeholder_typical.png"), 2), (str(tmp_path / "placeholder_extreme.png"), 2),
     ]
     # 保存した絵は、全部の命令を描いた絵（最後の1つだけを描いた絵ではない）。背景と違う画素の数が、数えた値と同じ。
-    for (_, _, pixels), entry in zip(shot.saved, result["shots"]):
+    for (_, _, pixels), entry in zip(shot.saved[:2], result["shots"], strict=True):
         assert len(pixels) - pixels.count(COL_BACK) == entry["screen_ink"]
 
 
 def saved_pictures(pyxel) -> list:
-    """保存した絵の画素。保存した順。"""
-    return [pixels for _, _, pixels in pyxel.images[2].saved]
+    """保存した、画面の絵の画素。保存した順（3Dの絵は、その後ろに保存されるので、含めない）。"""
+    return [pixels for path, _, pixels in pyxel.images[2].saved if not path.rsplit("/", 1)[-1].startswith(tour.SCENE_FILE_HEAD)]
 
 
 def test_tour_run_clears_the_whole_picture_before_each_screen(tmp_path):
@@ -342,6 +384,105 @@ def test_tour_run_writes_no_result_file_when_a_screen_fails_midway(tmp_path):
     assert not (tmp_path / "result.json").exists() and not (tmp_path / "result.json.tmp").exists()
 
 
+# --- 3Dの絵。偽の場面で通す ---
+def test_tour_run_builds_the_scene_with_the_probes_after_starting_pyxel(tmp_path):
+    # 場面は、Pyxelを始めた後に、組む（パレットも、ここで当たる）。巡回の口は、検証の口なので、判定用の柱と印も作る。
+    log = []
+
+    class LoggingPyxel(FakePyxel):
+        def init(self, *args, **kwargs):
+            log.append(("init",))
+            super().init(*args, **kwargs)
+
+    run_tour(tmp_path, LoggingPyxel(), scene=FakeScene(log))
+    assert log[:2] == [("init",), ("build", True, True)]
+    assert [entry[0] for entry in log].count("build") == 1
+
+
+def test_tour_run_shoots_every_scene_sample_after_the_screens(tmp_path):
+    scene = FakeScene()
+    pyxel, result = run_tour(tmp_path, scene=scene)
+    names = [sample[0] for sample in tour.SCENE_SHOTS]
+    assert names == ["straight", "corner", "wall"]
+    assert [entry["name"] for entry in result["scenes"]] == names
+    assert [entry["file"] for entry in result["scenes"]] == [f"scene_{name}.png" for name in names]
+    # 画像は、画面の絵の後ろに、同じ拡大率で保存する。
+    saved = pyxel.images[2].saved
+    assert [(path, scale) for path, scale, _ in saved[2:]] == [(str(tmp_path / f"scene_{name}.png"), 2) for name in names]
+    # 見本ごとに、描く（ふだんの実描画と同じ描く口。描くものは、既定）→ 判定、の順。車の位置と向きは、コースの表から引いた値。
+    steps = [entry for entry in scene.log if entry[0] in ("draw", "judge")]
+    assert [entry[0] for entry in steps] == ["draw", "judge"] * 3
+    for sample, draw, judge, entry in zip(tour.SCENE_SHOTS, steps[0::2], steps[1::2], result["scenes"], strict=True):
+        x, z, heading = tour.scene_pose(scene.track, sample)
+        assert draw == ("draw", round(x, 3), round(z, 3), round(heading, 3), None)
+        assert judge == ("judge", round(x, 3), round(z, 3), round(heading, 3))
+        assert (entry["x_mm"], entry["z_mm"], entry["heading_mrad"]) == (round(x * 1000), round(z * 1000), round(heading * 1000))
+        assert (entry["chunks_drawn"], entry["triangles_drawn"]) == (9, 2972)
+    assert result["scene_stats"]["chunks"] == 12
+
+
+def test_tour_run_judges_the_very_picture_it_saved(tmp_path):
+    # 判定用の実描画へ渡す絵は、保存した絵と同じ画素（別に描き直した絵ではない）。2Dの描画命令は、重ねていない（矩形は、空）。
+    scene = FakeScene()
+    pyxel, result = run_tour(tmp_path, scene=scene)
+    saved = [pixels for _, _, pixels in pyxel.images[2].saved[2:]]
+    assert len(saved) == len(scene.judged) == 3 and len(set(saved)) == 3  # 見本ごとに、違う絵
+    for pixels, (shown, rects, _, _, _), entry in zip(saved, scene.judged, result["scenes"], strict=True):
+        assert shown == pixels and rects == ()
+        assert entry["scene"]["sky"] == pixels.count(SKY_COL) == SCREEN_W * 100
+
+
+def test_tour_run_can_be_limited_to_the_scenes_or_to_one_screen(tmp_path):
+    pyxel, result = run_tour(tmp_path, only=tour.SCENE_ONLY)
+    assert result["shots"] == [] and len(result["scenes"]) == 3
+    assert [path for path, _, _ in pyxel.images[2].saved] == [str(tmp_path / f"scene_{sample[0]}.png") for sample in tour.SCENE_SHOTS]
+    scene = FakeScene()
+    _, result = run_tour(tmp_path, only="placeholder", scene=scene)
+    assert len(result["shots"]) == 2 and result["scenes"] == []
+    assert [entry[0] for entry in scene.log] == ["build"]  # 場面は組む（パレットを当てる）が、3Dの絵は描かない
+
+
+def test_tour_run_writes_no_result_file_when_a_scene_fails_midway(tmp_path):
+    class FailsOnTheSecondJudge(FakeScene):
+        def judge(self, shown, rects, x, z, heading):
+            if self.judged:
+                raise RuntimeError("planted")
+            return super().judge(shown, rects, x, z, heading)
+
+    with pytest.raises(RuntimeError):
+        run_tour(tmp_path, scene=FailsOnTheSecondJudge())
+    assert not (tmp_path / "result.json").exists() and not (tmp_path / "result.json.tmp").exists()
+
+
+def distance_from(heading: float, angle: float) -> float:
+    """向き heading と、角度 angle の差（rad。折り返して、0〜π）。"""
+    return abs((heading - angle + math.pi) % (2.0 * math.pi) - math.pi)
+
+
+def test_tour_scene_samples_are_a_straight_a_corner_and_a_place_by_the_wall():
+    # 見本は、仮の周回路の寸法で決めた値。コースが変わって、狙った所から外れたら、ここで落ちる。
+    track = input_reference.make_sim().track
+    poses = {sample[0]: tour.scene_pose(track, sample) for sample in tour.SCENE_SHOTS}
+    assert len(poses) == len(tour.SCENE_SHOTS) == 3  # 名は、重ならない
+    queries = {name: track.query(x, z, None) for name, (x, z, _) in poses.items()}
+    # 直線。スタート位置（向き0、z=0）。
+    x, z, heading = poses["straight"]
+    start_x, start_z, start_heading = track.start_pose()
+    assert (round(x, 6), round(z, 6), round(heading, 6)) == (round(start_x, 6), round(start_z, 6), round(start_heading, 6))
+    assert abs(heading) < 1e-6 and abs(z) < 1e-6 and abs(queries["straight"].curvature) < 1e-6
+    # コーナーの途中。舗装の上。向きが π/4〜3π/4 の間で、z が0でない（向きの符号の誤りと、z の反転の付け忘れが、絵に出る）。
+    x, z, heading = poses["corner"]
+    assert abs(queries["corner"].curvature) > 0.01 and queries["corner"].surface == "asphalt"
+    assert math.pi / 4 < heading < 3 * math.pi / 4 and abs(z) > 10.0
+    # 壁の近く。芝の上で、右の壁まで3 m以内。壁の側へ向いている（コースの向きより、右）。
+    x, z, heading = poses["wall"]
+    assert queries["wall"].surface == "grass" and 0.0 < queries["wall"].to_wall_right < 3.0
+    assert distance_from(heading, queries["wall"].heading) > 0.3
+    assert (heading - queries["wall"].heading + math.pi) % (2.0 * math.pi) - math.pi < 0.0
+    # 向きが、0、π/2、π（と −π/2）のどれからも、0.3 rad以上離れている。
+    assert all(distance_from(heading, angle) >= 0.3 for angle in (0.0, math.pi / 2, math.pi, -math.pi / 2))
+
+
 def problems_of(result: dict) -> list:
     return [(entry["kind"], entry["problem"]) for shot in result["shots"] for entry in shot["command_problems"]]
 
@@ -366,7 +507,7 @@ def test_tour_run_reports_commands_that_were_recorded_but_not_drawn(tmp_path):
     pyxel = FakePyxel()
     pyxel.image_type = NoText
     _, result = run_tour(tmp_path, pyxel)
-    assert problems_of(result) == [("text", "no_ink")] * 15  # 文字の命令は、ふつうの値で7つ、極端な値で8つ（知らせの1行）
+    assert problems_of(result) == [("text", "no_ink")] * 19  # 文字の命令は、ふつうの値で9つ、極端な値で10（知らせの1行）
     # 全体の数（余白の画素、画面が空でないこと）だけでは、見えない。
     assert all(shot["margin_ink"] == 0 and shot["screen_ink"] > 0 for shot in result["shots"])
 
@@ -391,7 +532,7 @@ def test_tour_run_reports_text_wider_than_the_computed_ink_box_even_on_a_filled_
     pyxel = FakePyxel()
     pyxel.image_type = WideGlyphs
     _, result = run_tour(tmp_path, pyxel)
-    assert problems_of(result) == [("text", "ink_outside")] * 15  # 文字の命令の全部（ふつうの値で7つ、極端な値で8つ）
+    assert problems_of(result) == [("text", "ink_outside")] * 19  # 文字の命令の全部（ふつうの値で9つ、極端な値で10）
     assert all(shot["margin_ink"] == 0 for shot in result["shots"])
 
 

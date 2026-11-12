@@ -6,9 +6,16 @@
 環境変数（tools/tour.py が使う）。CP_TOUR が無ければ、普通に起動する。
   CP_TOUR=<結果ファイル（JSON）の絶対パス>   あれば、画面なしでPyxelを始め、巡回して、結果ファイルを書いて終わる
   CP_TOUR_DIR=<画像の置き場の絶対パス>       要る。置き場は、道具が先に作る
-  CP_TOUR_ONLY=<画面の名>                    省けば、全部の画面
+  CP_TOUR_ONLY=<画面の名 か scene>           省けば、全部の画面と、3Dの絵。画面の名なら、その画面だけ。scene なら、3Dの絵だけ
 CP_TOUR と CP_TOUR_DIR が絶対パスでない、CP_TOUR_ONLY の名の画面が無い、CP_SMOKE と CP_TOUR の両方がある、
 のどれでも、起動時に ValueError（pyxel.init が作業ディレクトリを変えるので、相対パスは受けない）。
+
+3Dの場面（cp_app/render.py の Scene）は、run() の引数で受ける（作るのは main()）。Pyxelを始めた後に、場面を組む
+（Scene.build。パレットも、ここで当たる。保存する画像の色は、アプリと同じ）。判定用の柱と印も作る（巡回の口は、検証の口）。
+
+3Dの絵（見本は SCENE_SHOTS。決めた車の位置と向き）ごとに、次を行う。2Dの描画命令は、重ねない。
+  絵        ふだんの実描画と同じ描く口（Scene.draw）で、走行の絵を描いて、SHOT_SCALE 倍で保存する（scene_<見本の名>.png）。
+  判定      同じ車の位置と向きで、判定用の実描画（Scene.judge）を回し、数えた値を、結果の scenes に入れる（形は tools/scene_reference.py）。
 
 画面 × 変種ごとに、次を行う。入力の注入では進めない（画面の状態を作る段1で足す）。
   全体      余白（MARGIN）つきの検査用の裏画面へ、(MARGIN, MARGIN) ずらして全部の命令を描く。
@@ -21,9 +28,9 @@ CP_TOUR と CP_TOUR_DIR が絶対パスでない、CP_TOUR_ONLY の名の画面�
   画像      全体の絵（命令ごとの照合で描き直した絵ではない）から、画面の大きさを切り出して、SHOT_SCALE 倍で保存する。
 結果ファイルは、全部の画面を回した後にだけ書く（一時ファイルに書いて、差し替える）。合否は決めない（決めるのは tools/tour.py）。
 pyxel.run も pyxel.flip も呼ばない。終わるときは、呼ぶ側（main()）が sys.exit を使う（pyxel.quit は、常に終了コード0で終わる）。
-画素は、pyxel.Image.data_ptr() でまとめて読む（1画素1バイト、左上から行ごと）。1画素ずつ読む pget の約260倍速い（実測）。
-描く順の誤り（文字が、後から描いた下地に隠れる）は、ここでは拾えない。保存した画像を、目で見る。
-パレットを変えたら、ここでも同じパレットを当てる（保存する画像の色のため）。
+画素は、pyxel.Image.data_ptr() でまとめて読む（1画素1バイト、左上から行ごと。読む口は cp_app/render.py の read_pixels）。
+1画素ずつ読む pget の約260倍速い（実測）。
+描く順の誤り（文字が、後から描いた下地に隠れる）と、3Dの絵の見た目（色、欠け、向き）は、ここでは拾えない。保存した画像を、目で見る。
 """
 import json
 import os
@@ -37,11 +44,26 @@ from cp_ui.check import find_violations
 from cp_ui.screens import COL_BACK, SCREENS, TITLE
 
 from .canvas_pyxel import execute
+from .render import read_pixels
 
 MARGIN = 16  # 検査用の裏画面で、画面の外側に取る余白（ピクセル）
 SHOT_SCALE = 2  # 保存する画像の拡大率
 CHECK_BACK, CHECK_BACK_ALT = 0, 1  # 命令ごとの照合で、検査用の裏画面を消す色。命令の色と同じなら、もう一方を使う
 PROBLEM_OUTSIDE, PROBLEM_NO_INK = "ink_outside", "no_ink"  # 命令ごとの照合の、問題の種類
+SCENE_ONLY = "scene"  # CP_TOUR_ONLY に渡すと、3Dの絵だけを回す名。画面の名と、重ならないこと
+SCENE_FILE_HEAD = "scene_"  # 3Dの絵の、画像の名の頭（scene_<見本の名>.png）
+# 3Dの絵の見本（決めた車の位置と向き）。(名, コースに沿った距離 m, 横のずれ m（左が正）, コースの向きからのずれ rad（左が正）)。
+# 車の位置と向きは、コースの表から引く（Track.pose_at）。仮の周回路（test_loop）での値：
+#   straight  1本目の直線の、スタート位置。向き0、z=0（向きの符号の誤りと、z の反転の付け忘れが、絵に出ない所）
+#   corner    最初のコーナーの途中。向きは約1.1 rad（π/4〜3π/4 の間）、z は約25 m
+#   wall      2つ目のコーナーの、外側の壁の近く。壁の側へ向いている。向きは約−2.58 rad（0、±π/2、π のどれからも、0.3 rad以上離れている）
+# 割り切り：見本は、仮の周回路の寸法で決めた値。コースが変わると、狙った所（直線、コーナー、壁の近く）から外れる（条件は tests/test_tour.py が見る）。
+# 本物のコースを作る段1の「コースデータと照会」の区切りで、コースごとの見本にする。
+SCENE_SHOTS = (
+    ("straight", 60.0, 0.0, 0.0),
+    ("corner", 262.0, 1.5, 0.0),
+    ("wall", 620.0, -11.5, -0.35),
+)
 
 
 @dataclass(frozen=True)
@@ -50,7 +72,7 @@ class TourConfig:
 
     result_path: str
     shot_dir: str
-    only: str = ""  # 回す画面の名。空なら全部
+    only: str = ""  # 回す画面の名。空なら全部（画面と、3Dの絵）。SCENE_ONLY なら、3Dの絵だけ
 
 
 def read_config(env) -> TourConfig | None:
@@ -66,8 +88,8 @@ def read_config(env) -> TourConfig | None:
     if not os.path.isabs(shot_dir):
         raise ValueError("CP_TOUR_DIR must be an absolute path (pyxel.init changes the working directory)")
     only = env.get("CP_TOUR_ONLY", "")
-    if only and only not in SCREENS:
-        raise ValueError(f"CP_TOUR_ONLY must be one of {sorted(SCREENS)}, got {only!r}")
+    if only and only != SCENE_ONLY and only not in SCREENS:
+        raise ValueError(f"CP_TOUR_ONLY must be one of {sorted([*SCREENS, SCENE_ONLY])}, got {only!r}")
     return TourConfig(result_path, shot_dir, only)
 
 
@@ -117,14 +139,6 @@ def back_for(col: int) -> int:
 
 
 # --- ここから下は、Pyxelの画像（pyxel.Image）に触れる ---
-def read_pixels(image) -> bytes:
-    """画像の全部の画素を、まとめて読む。1画素1バイト、左上から行ごと。"""
-    pixels = bytes(image.data_ptr())
-    if len(pixels) != image.width * image.height:
-        raise RuntimeError(f"data_ptr() gave {len(pixels)} bytes for a {image.width}x{image.height} image")
-    return pixels
-
-
 def check_reader(image) -> None:
     """画素の読み方が、1画素ずつ置いた点と合うことを確かめる（並びが違えば、照合の全部が偽になる）。"""
     image.cls(CHECK_BACK)
@@ -180,10 +194,40 @@ def shoot(screen: str, variant: str, whole, single, shot, shot_dir: str) -> dict
     }
 
 
-def run(pyxel, config: TourConfig) -> dict:
-    """画面なしでPyxelを始め、巡回して、結果ファイルを書く。返すのは、書いた結果。終了はしない（呼ぶ側が sys.exit する）。"""
+def scene_pose(track, sample) -> tuple:
+    """3Dの絵の見本（SCENE_SHOTS の1件）から、車の位置と向き (x, z, 向き) を引く。ロジックの座標。track は、コースの表。"""
+    _, s, lateral, turn = sample
+    x, z, heading = track.pose_at(s, lateral)
+    return x, z, heading + turn
+
+
+def shoot_scene(sample, scene, shot, shot_dir: str) -> dict:
+    """3Dの絵1枚を描いて、保存して、同じ車の位置と向きで、判定用の実描画を回す。返すのは、結果ファイルに入れる1件。
+
+    scene は、組んだ場面（cp_app/render.py の Scene。判定用の柱と印つき）。shot は、保存する画像（画面の大きさ）。
+    絵は、ふだんの実描画と同じ描く口（Scene.draw。描くものは、既定）で描く。2Dの描画命令は、重ねない。
+    """
+    name = sample[0]
+    x, z, heading = scene_pose(scene.track, sample)
+    scene.draw(shot, scene.chase(x, z, heading), x, z, heading)
+    file = f"{SCENE_FILE_HEAD}{name}.png"
+    shot.save(os.path.join(shot_dir, file), SHOT_SCALE)
+    # 判定。保存した絵の画素を渡す（判定用の3枚目と、同じ絵のはず）。判定は、shot とは別の絵へ描く。
+    judged = scene.judge(read_pixels(shot), (), x, z, heading)
+    return {
+        "name": name, "file": file, "x_mm": round(x * 1000.0), "z_mm": round(z * 1000.0), "heading_mrad": round(heading * 1000.0),
+        "scene": judged, "chunks_drawn": scene.stats.get("chunks_drawn"), "triangles_drawn": scene.stats.get("triangles_drawn"),
+    }
+
+
+def run(pyxel, config: TourConfig, scene) -> dict:
+    """画面なしでPyxelを始め、巡回して、結果ファイルを書く。返すのは、書いた結果。終了はしない（呼ぶ側が sys.exit する）。
+
+    scene は、3Dの場面（cp_app/render.py の Scene。作るのは main()）。Pyxelを始めた後に、ここで組む（パレットも、ここで当たる）。
+    """
     started_s = time.perf_counter()
     pyxel.init(SCREEN_W, SCREEN_H, title=TITLE, quit_key=pyxel.KEY_NONE, capture_sec=0, headless=True)
+    scene.build(probes=True, clock=time.perf_counter)  # 巡回の口は、検証の口。判定用の柱と印も作る
     whole = pyxel.Image(SCREEN_W + 2 * MARGIN, SCREEN_H + 2 * MARGIN)
     single = pyxel.Image(SCREEN_W + 2 * MARGIN, SCREEN_H + 2 * MARGIN)
     shot = pyxel.Image(SCREEN_W, SCREEN_H)
@@ -194,8 +238,14 @@ def run(pyxel, config: TourConfig) -> dict:
             continue
         for variant in fixtures.VARIANTS:
             shots.append(shoot(screen, variant, whole, single, shot, config.shot_dir))
+    scenes = []
+    if config.only in ("", SCENE_ONLY):
+        for sample in SCENE_SHOTS:
+            scenes.append(shoot_scene(sample, scene, shot, config.shot_dir))
     result = {
         "shots": shots,
+        "scenes": scenes,
+        "scene_stats": dict(scene.stats),
         "margin": MARGIN,
         "scale": SHOT_SCALE,
         "wall_s": round(time.perf_counter() - started_s, 3),

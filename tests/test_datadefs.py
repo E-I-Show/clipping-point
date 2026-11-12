@@ -221,7 +221,7 @@ def test_datadefs_values_that_would_divide_by_zero_cannot_be_zero():
     assist = TABLES["assists"].fields
     assert zero_is_outside(assist["steer"].fields["limit_min_speed_m_s"]) and zero_is_outside(assist["reverse"].fields["pedal_press_min"])
     assert all(zero_is_outside(assist["steer"].fields[kind].fields["full_time_s"]) for kind in ("analog", "digital"))
-    # 描画の値。メッシュの区切りと塊の長さ、路面を割る数、タイヤの幅、画角（焦点距離は、tan(画角÷2) で割る）。
+    # 描画の値。メッシュの断面の間隔と塊の長さ、路面を割る数、タイヤの幅、画角（焦点距離は、tan(画角÷2) で割る）。
     mesh = loop["mesh"].fields
     assert zero_is_outside(mesh["step_m"]) and zero_is_outside(mesh["chunk_m"]) and zero_is_outside(mesh["line_m"]) and mesh["road_strips"].low == 1
     assert 2.0 * mesh["line_m"].high < loop["width_m"].low  # 白線2本は、舗装の幅の下限に収まる（路面の幅が、0にならない）

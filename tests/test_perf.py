@@ -2,9 +2,14 @@
 
 全部をためる測り方（PerfMeter。煙テストの線の判定に使う）と、処理時間の輪（PerfRing。ふつうの起動で、画面に出す値に使う）。
 """
+import dataclasses
+
 import pytest
 
+from cp_app import perf
 from cp_app.perf import RENDER_RING, UPDATE_RING, PerfMeter, PerfRing, percentile
+from cp_core.flow import PERF_NOT_MEASURED, PerfView
+from cp_ui import fixtures, screens
 
 TICK_S = 1.0 / 60.0
 
@@ -207,3 +212,74 @@ def test_perf_ring_of_one_keeps_only_the_newest_value():
     ring.add(0.0, 0.003)
     ring.add(1.0, 1.007)
     assert ring.count == 1 and ring.mean_ms() == pytest.approx(7.0) and ring.max_ms() == pytest.approx(7.0) and ring.per_second() is None
+
+
+# --- 実描画のある周期が、1 tickの長さを超えた回数（全部をためる測り方） ---
+def test_perf_report_counts_the_cycles_with_a_render_that_ran_over_one_tick():
+    # 周期は、直前の更新の始まりから、実描画の終わりまで。ふつうの周期（更新0.5 ms、2 ms後に実描画3 ms）は、5 msで、数えない。
+    meter = PerfMeter()
+    feed(meter, 120)
+    report = meter.report()
+    assert report["cycles_over_tick"] == 0 and report["cycle_ms_max"] == pytest.approx(5.0, abs=0.001)
+    # 実描画が20 msかかった周期を、3回足す。
+    for index in range(120, 126):
+        start_s = index * TICK_S
+        meter.on_update(start_s, start_s + 0.0005)
+        if index % 2 == 1:
+            meter.on_render(start_s + 0.002, start_s + 0.022)
+    report = meter.report()
+    assert report["cycles_over_tick"] == 3 and report["cycle_ms_max"] == pytest.approx(22.0, abs=0.001)
+    assert perf.TICK_MS == pytest.approx(1000.0 / 60.0)
+
+
+def test_perf_cycles_over_one_tick_leave_the_warmup_out():
+    meter = PerfMeter(warmup_ticks=4)
+    for index in range(10):
+        start_s = index * TICK_S
+        meter.on_update(start_s, start_s + 0.0005)
+        if index % 2 == 1:
+            meter.on_render(start_s + 0.002, start_s + (0.030 if index < 4 else 0.004))  # 慣らしの間の2回だけ、重い
+    report = meter.report()
+    assert report["cycles_over_tick"] == 0 and report["with_warmup"]["cycles_over_tick"] == 2
+    empty = PerfMeter().report()
+    assert empty["cycles_over_tick"] == 0 and empty["cycle_ms_max"] is None
+
+
+# --- 処理時間の輪の値を、仮の表示の、処理時間の値にする ---
+def filled_rings(update_ms: float = 0.34, render_ms: float = 2.44) -> tuple:
+    """毎秒60回の更新（120回）と、毎秒30回の実描画（60回）を足した、2つの輪。"""
+    update_ring, render_ring = PerfRing(UPDATE_RING), PerfRing(RENDER_RING)
+    for index in range(UPDATE_RING):
+        update_ring.add(index * TICK_S, index * TICK_S + update_ms / 1000.0)
+    for index in range(RENDER_RING):
+        render_ring.add(index * 2 * TICK_S, index * 2 * TICK_S + render_ms / 1000.0)
+    return update_ring, render_ring
+
+
+def test_perf_view_holds_whole_tenths_of_what_the_rings_measured():
+    view = perf.view_of(*filled_rings(), 1.234, None)
+    assert view == PerfView(3, 3, 24, 24, 600, 300, 12, None)  # 0.34 ms → 0.3、2.44 ms → 2.4、毎秒60.0回と30.0回、1.2秒
+    assert all(value is None or type(value) is int for value in dataclasses.astuple(view))
+    # ブラウザ版は、ページを開いてからの時間も渡る。
+    assert perf.view_of(*filled_rings(), 0.26, 4.48).page_s_x10 == 45
+
+
+def test_perf_view_of_empty_rings_is_not_measured_and_does_not_raise():
+    # 最初の数tick。輪に、まだ値が無い。起動にかかった時間も、最初の更新までは、決まっていない。
+    assert perf.view_of(PerfRing(UPDATE_RING), PerfRing(RENDER_RING), None, None) == PERF_NOT_MEASURED
+    one = PerfRing(UPDATE_RING)
+    one.add(0.0, 0.001)
+    view = perf.view_of(one, PerfRing(RENDER_RING), 0.5, None)
+    assert (view.update_mean_ms_x10, view.updates_per_s_x10, view.render_mean_ms_x10, view.boot_s_x10) == (10, None, None, 5)
+
+
+def test_perf_view_caps_the_values_at_the_digits_of_the_placeholder():
+    # 表示の桁を超えた値は、桁いっぱいに頭打ちにして渡す（例外にしない）。桁は、画面の側の定数。
+    update_ring, render_ring = PerfRing(4), PerfRing(4)
+    for index in range(4):
+        update_ring.add(index * 1e-6, index * 1e-6 + 5.0)  # 更新1回が5秒。毎秒100万回の始まり
+        render_ring.add(index * 1e-6, index * 1e-6 + 0.5)
+    view = perf.view_of(update_ring, render_ring, 86400.0, float("inf"))
+    widest_ms, widest_rate, widest_s = (10 ** (digits + 1) - 1 for digits in (screens.MS_DIGITS, screens.RATE_DIGITS, screens.SECONDS_DIGITS))
+    assert view == PerfView(widest_ms, widest_ms, widest_ms, widest_ms, widest_rate, widest_rate, widest_s, widest_s)
+    assert view == fixtures.build("placeholder", "extreme").perf  # 見本データの極端な値と同じ

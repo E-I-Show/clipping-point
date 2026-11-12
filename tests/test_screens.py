@@ -6,14 +6,14 @@ import pytest
 
 import input_reference
 from conftest import ROOT
-from cp_core import storage
-from cp_core.flow import SCREEN_NAMES, CarView, PlaceholderView, car_view
+from cp_core import palette, storage
+from cp_core.flow import PERF_NOT_MEASURED, SCREEN_NAMES, CarView, PerfView, PlaceholderView, car_view
 from cp_core.input_frame import BUTTONS, NEUTRAL, InputFrame
 from cp_core.vehicle import REVERSE
-from cp_ui import fixtures
+from cp_ui import fixtures, screens
 from cp_ui.canvas import FONT_H, SCREEN_BOX, SCREEN_H, SCREEN_W, Canvas
 from cp_ui.check import find_violations
-from cp_ui.screens import COL_BACK, SCREENS, TITLE, build_placeholder, car_lines
+from cp_ui.screens import COL_BACK, SCREENS, TITLE, build_placeholder, car_lines, perf_lines
 
 APP_PY = ROOT / "clipping_point" / "cp_app" / "app.py"
 # いちばん長くなる入力フレーム。舵は負（符号の分、1字長い）、10個のボタンを全部押している。
@@ -24,11 +24,21 @@ EVERYTHING = InputFrame(
 # ふつうの車の値と、いちばん長くなる車の値（見本データの極端な値と同じ）。
 CAR = CarView(speed_kmh=87, gear=3, rpm=5200, x_dm=1234, z_dm=-56, surface="asphalt")
 FAR_CAR = fixtures.build("placeholder", "extreme").car
+# ふつうの処理時間の値と、いちばん長くなる処理時間の値（見本データの極端な値と同じ）。
+PERF = PerfView(3, 12, 24, 41, 600, 300, 12, None)
+WIDEST_PERF = fixtures.build("placeholder", "extreme").perf
+# 仮の表示の文字の並び（知らせが無いとき）。題 → tick → 実描画の回数 → 処理時間の2行 → 入力の値の2行 → 車の値の2行。
+TEXT_COUNT = 9
+PERF_AT, INPUT_AT, HELD_AT, CAR_AT = 3, 5, 6, 7
+# 3Dの絵を隠さない範囲（画面の中ほど）。上の帯は、これより上、下の帯は、これより下に置く。
+CLEAR_TOP, CLEAR_BOTTOM = 44, 190
 
 
-def placeholder_canvas(tick: int = 120, renders: int = 60, frame: InputFrame = NEUTRAL, notice: str = "", car: CarView = CAR) -> Canvas:
+def placeholder_canvas(
+    tick: int = 120, renders: int = 60, frame: InputFrame = NEUTRAL, notice: str = "", car: CarView = CAR, perf: PerfView = PERF,
+) -> Canvas:
     canvas = Canvas()
-    build_placeholder(canvas, PlaceholderView(tick, renders, frame, notice, car))
+    build_placeholder(canvas, PlaceholderView(tick, renders, frame, notice, car, perf))
     return canvas
 
 
@@ -49,15 +59,107 @@ def test_screens_placeholder_follows_the_given_numbers():
 
 
 def test_screens_placeholder_has_two_lines_for_the_input_frame():
-    assert len(texts()) == 7
-    values, held = texts()[3:5]
+    assert len(texts()) == TEXT_COUNT
+    values, held = texts()[INPUT_AT:INPUT_AT + 2]
     assert values == "STEER A    +0 D +0  THROTTLE A    0 D 0  BRAKE A    0 D 0"
     assert held == "HELD -"
 
 
+# --- 処理時間の2行 ---
+def test_screens_placeholder_has_two_lines_for_the_measured_times_after_the_counts():
+    # 並びの順：題 → tick と実描画の回数 → 処理時間の2行。
+    times, rates = texts()[PERF_AT:PERF_AT + 2]
+    assert times == "UPDATE MS AVG  0.3 MAX  1.2  RENDER MS AVG  2.4 MAX  4.1"
+    assert rates == "PER SEC UPDATE  60.0 RENDER  30.0  BOOT S   1.2  PAGE S     -"
+    assert (times, rates) == perf_lines(PERF)
+    assert texts()[:PERF_AT] == [TITLE, "TICK 120", "RENDER 60"]
+
+
+def test_screens_perf_lines_show_a_dash_for_what_is_not_measured():
+    # 測れていない間（最初の数tick）と、デスクトップ版の PAGE は、「-」を、同じ幅で出す。
+    assert perf_lines(PERF_NOT_MEASURED) == (
+        "UPDATE MS AVG    - MAX    -  RENDER MS AVG    - MAX    -",
+        "PER SEC UPDATE     - RENDER     -  BOOT S     -  PAGE S     -",
+    )
+    assert screens.NOT_MEASURED == "-"
+    with_page = PerfView(0, 0, 0, 0, 0, 0, 0, 45)
+    assert perf_lines(with_page)[1] == "PER SEC UPDATE   0.0 RENDER   0.0  BOOT S   0.0  PAGE S   4.5"
+
+
+@pytest.mark.parametrize("value, text", [(0, "0.0"), (5, "0.5"), (10, "1.0"), (123, "12.3"), (999, "99.9")])
+def test_screens_measured_times_are_written_from_whole_tenths(value, text):
+    # 0.1 刻みの整数を、整数だけで、小数第1位までの字にする（描く側で、小数を丸めない）。
+    assert perf_lines(PerfView(value, None, None, None, None, None, None, None))[0].startswith("UPDATE MS AVG " + text.rjust(4) + " MAX")
+
+
+def test_screens_perf_lines_keep_their_width_up_to_the_widest_values():
+    # 値が変わっても、行の長さは変わらない（数字がちらつかない）。極端な値は、桁をいっぱいに使う（99.9 ms、毎秒999.9回、999.9秒）。
+    lines = [perf_lines(perf) for perf in (PERF, WIDEST_PERF, PERF_NOT_MEASURED, PerfView(0, 0, 0, 0, 0, 0, 0, 0))]
+    assert len({len(first) for first, _ in lines}) == 1 and len({len(second) for _, second in lines}) == 1
+    assert perf_lines(WIDEST_PERF) == (
+        "UPDATE MS AVG 99.9 MAX 99.9  RENDER MS AVG 99.9 MAX 99.9",
+        "PER SEC UPDATE 999.9 RENDER 999.9  BOOT S 999.9  PAGE S 999.9",
+    )
+    assert (screens.MS_DIGITS, screens.RATE_DIGITS, screens.SECONDS_DIGITS) == (2, 3, 3)
+
+
+def test_screens_placeholder_measured_times_sit_in_their_own_box_and_stay_inside_with_the_widest_values():
+    canvas = placeholder_canvas(9999999, 9999999, EVERYTHING, car=FAR_CAR, perf=WIDEST_PERF)
+    box = next(box for box in canvas.boxes if box.name == "perf")
+    lines = [command for command in canvas.commands if command.kind == "text" and canvas.boxes[command.box] is box]
+    assert [command.text for command in lines] == list(perf_lines(WIDEST_PERF))
+    assert box.parent == SCREEN_BOX
+    assert find_violations(canvas) == []
+
+
+# --- 上の帯と、下の帯。画面の中ほどは、3Dの絵を隠さない ---
+@pytest.mark.parametrize("notice", ["", "SAVE DATA UNREADABLE. USING DEFAULTS"])
+def test_screens_placeholder_leaves_the_middle_of_the_screen_to_the_3d_picture(notice):
+    canvas = placeholder_canvas(9999999, 9999999, EVERYTHING, notice, FAR_CAR, WIDEST_PERF)
+    for command in canvas.commands:
+        _, y, _, h = command.bounds
+        assert y + h <= CLEAR_TOP or y >= CLEAR_BOTTOM, command
+    for box in canvas.boxes:
+        assert box.y + box.h <= CLEAR_TOP or box.y >= CLEAR_BOTTOM, box.name
+    # 上の帯：題、tick と実描画の回数、処理時間。下の帯：入力の値、車の値、知らせ。
+    above = [box.name for box in canvas.boxes if box.y + box.h <= CLEAR_TOP]
+    below = [box.name for box in canvas.boxes if box.y >= CLEAR_BOTTOM]
+    assert above == ["title", "status", "perf"]
+    assert below == ["input", "input_values", "car"] + (["notice"] if notice else [])
+
+
+def test_screens_placeholder_puts_a_dark_rectangle_behind_the_text_of_every_box():
+    # 仮の表示は、3Dの絵の上に重ねる。文字の後ろに、囲みごとに、暗い色の矩形を敷く（文字より先に描く。囲みの全体を覆う）。
+    canvas = placeholder_canvas(frame=EVERYTHING, notice="SAVE DATA UNREADABLE. USING DEFAULTS")
+    outer = [index for index, box in enumerate(canvas.boxes) if box.parent == SCREEN_BOX]
+    assert [canvas.boxes[index].name for index in outer] == ["title", "status", "perf", "input", "car", "notice"]
+    for index in outer:
+        box = canvas.boxes[index]
+        inside = [
+            command for command in canvas.commands
+            if command.box != SCREEN_BOX and (command.box == index or canvas.boxes[command.box].parent == index)
+        ]
+        first = inside[0]
+        assert first.kind == "rect" and first.bounds == box.bounds, box.name
+        assert first.col in (screens.COL_PANEL, screens.COL_BAR) and first.col != screens.COL_TEXT
+        assert any(command.kind == "text" for command in inside[1:]), box.name
+    # 塗りつぶした矩形は、囲みごとの下地だけ（画面の全体を、塗らない）。
+    rects = [command for command in canvas.commands if command.kind == "rect"]
+    assert len(rects) == len(outer) and all(command.h < CLEAR_TOP for command in rects)
+
+
+def test_screens_placeholder_colors_come_from_the_palette_roles():
+    # 色の番号は、役割の名で引く（夕方のパレットの、番号の役割と合わせる）。
+    assert (screens.COL_BACK, screens.COL_BAR, screens.COL_PANEL) == (palette.BLACK, palette.NAVY, palette.BLACK)
+    assert (screens.COL_TEXT, screens.COL_EDGE) == (palette.WHITE, palette.BLUE)
+    used = {command.col for command in placeholder(frame=EVERYTHING, notice="SAVE DATA UNREADABLE. USING DEFAULTS")}
+    assert used == {screens.COL_BAR, screens.COL_PANEL, screens.COL_TEXT, screens.COL_EDGE}
+    assert all(command.col == screens.COL_TEXT for command in placeholder() if command.kind == "text")
+
+
 # --- 車の値の2行 ---
 def test_screens_placeholder_has_two_lines_for_the_car():
-    first, second = texts()[5:7]
+    first, second = texts()[CAR_AT:CAR_AT + 2]
     assert first == "SPEED  87 KM/H  GEAR 3  RPM  5200"
     assert second == "POS X   +123.4 Z     -5.6  ON ASPHALT"
     assert (first, second) == car_lines(CAR)
@@ -86,9 +188,11 @@ def test_screens_car_lines_keep_their_width_up_to_the_longest_values():
 def test_screens_placeholder_car_lines_sit_in_their_own_box_below_the_input_frame():
     canvas = placeholder_canvas(frame=EVERYTHING, car=FAR_CAR)
     box = next(box for box in canvas.boxes if box.name == "car")
+    input_box = next(box for box in canvas.boxes if box.name == "input")
     lines = [command for command in canvas.commands if command.kind == "text" and canvas.boxes[command.box] is box]
     assert [command.text for command in lines] == list(car_lines(FAR_CAR))
-    assert box.parent == SCREEN_BOX and box.y >= 38 + 19 and all(command.y >= box.y for command in lines)
+    # 入力の値の囲みの下に置く（重ならない）。
+    assert box.parent == SCREEN_BOX and box.y >= input_box.y + input_box.h and all(command.y >= box.y for command in lines)
     assert find_violations(canvas) == []
 
 
@@ -101,7 +205,7 @@ def test_screens_placeholder_builds_without_violations_on_every_tick_of_the_scri
         frame = script.frame_at(tick)
         sim.step(frame)
         canvas = Canvas()
-        build_placeholder(canvas, PlaceholderView(sim.tick, tick // 2, frame, "", car_view(sim)))
+        build_placeholder(canvas, PlaceholderView(sim.tick, tick // 2, frame, "", car_view(sim), PERF))
         assert find_violations(canvas) == [], tick
         seen.add(canvas.commands[-1].text.split("ON ")[1])
     assert seen == ({"ASPHALT"} if path == input_reference.DRIVE_SCRIPT else {"ASPHALT", "GRASS"})
@@ -109,25 +213,25 @@ def test_screens_placeholder_builds_without_violations_on_every_tick_of_the_scri
 
 def test_screens_placeholder_shows_analog_values_in_thousandths_and_digital_values():
     frame = InputFrame(steer_analog=0.5, steer_digital=1, throttle_analog=0.3, throttle_digital=1, brake_analog=0.6)
-    assert texts(frame=frame)[3] == "STEER A  +500 D +1  THROTTLE A  300 D 1  BRAKE A  600 D 0"
+    assert texts(frame=frame)[INPUT_AT] == "STEER A  +500 D +1  THROTTLE A  300 D 1  BRAKE A  600 D 0"
     # 舵は左が正。右へ切ると負。
     right = InputFrame(steer_analog=-1.0, steer_digital=-1, brake_analog=1.0, brake_digital=1)
-    assert texts(frame=right)[3] == "STEER A -1000 D -1  THROTTLE A    0 D 0  BRAKE A 1000 D 1"
+    assert texts(frame=right)[INPUT_AT] == "STEER A -1000 D -1  THROTTLE A    0 D 0  BRAKE A 1000 D 1"
 
 
 def test_screens_placeholder_shows_the_held_buttons_in_upper_case_in_the_fixed_order():
-    assert texts(frame=InputFrame(held=frozenset({"confirm", "up"})))[4] == "HELD UP CONFIRM"
-    assert texts(frame=EVERYTHING)[4] == "HELD " + " ".join(name.upper() for name in BUTTONS)
+    assert texts(frame=InputFrame(held=frozenset({"confirm", "up"})))[HELD_AT] == "HELD UP CONFIRM"
+    assert texts(frame=EVERYTHING)[HELD_AT] == "HELD " + " ".join(name.upper() for name in BUTTONS)
 
 
 def test_screens_placeholder_shows_held_buttons_not_the_pressed_ones():
     # 押した瞬間は1 tickだけなので、目で追えない。出すのは、押しているボタン。
-    assert texts(frame=InputFrame(pressed=frozenset({"pause"})))[4] == "HELD -"
+    assert texts(frame=InputFrame(pressed=frozenset({"pause"})))[HELD_AT] == "HELD -"
 
 
 def test_screens_placeholder_input_lines_keep_their_width():
     # 値が変わっても、1行目の長さは変わらない（数字がちらつかない）。
-    lengths = {len(texts(frame=frame)[3]) for frame in (NEUTRAL, EVERYTHING, InputFrame(steer_analog=0.001, throttle_analog=0.5))}
+    lengths = {len(texts(frame=frame)[INPUT_AT]) for frame in (NEUTRAL, EVERYTHING, InputFrame(steer_analog=0.001, throttle_analog=0.5))}
     assert len(lengths) == 1
 
 
@@ -150,9 +254,33 @@ def test_screens_placeholder_stays_inside_the_screen(frame):
     assert find_violations(canvas) == []
 
 
+def overlapping_texts(commands) -> list:
+    """矩形（インクの箱）が重なっている、文字の命令の組（文字の組）の一覧。"""
+    lines = [command for command in commands if command.kind == "text"]
+    pairs = []
+    for index, first in enumerate(lines):
+        ax, ay, aw, ah = first.bounds
+        for second in lines[index + 1:]:
+            bx, by, bw, bh = second.bounds
+            if ax < bx + bw and bx < ax + aw and ay < by + bh and by < ay + ah:
+                pairs.append((first.text, second.text))
+    return pairs
+
+
+def lines_too_close(canvas: Canvas) -> list:
+    """同じ囲みの中で、行の間隔が、1字の高さより詰まっている所の一覧（囲みの名, 上の行の y, 下の行の y）。"""
+    close = []
+    for index, box in enumerate(canvas.boxes):
+        rows = sorted(command.y for command in canvas.commands if command.kind == "text" and command.box == index)
+        close += [(box.name, earlier, later) for earlier, later in zip(rows, rows[1:]) if later - earlier < FONT_H]
+    return close
+
+
 def test_screens_placeholder_lines_do_not_overlap():
-    rows = sorted(command.y for command in placeholder(frame=EVERYTHING) if command.kind == "text")
-    assert all(later - earlier >= FONT_H for earlier, later in zip(rows, rows[1:]))
+    # 上の帯では、tick と実描画の回数の囲みと、処理時間の囲みが、横に並ぶ。重なりは、文字の矩形で見る（行の y だけでは、見ない）。
+    canvas = placeholder_canvas(9999999, 9999999, EVERYTHING, car=FAR_CAR, perf=WIDEST_PERF)
+    assert overlapping_texts(canvas.commands) == []
+    assert lines_too_close(canvas) == []
 
 
 def test_screens_placeholder_draws_something_other_than_the_background():
@@ -166,13 +294,14 @@ def test_screens_placeholder_uses_every_kind_of_command():
 
 def test_screens_placeholder_is_built_from_boxes():
     canvas = placeholder_canvas(frame=EVERYTHING)
-    assert [box.name for box in canvas.boxes] == ["title", "status", "input", "input_values", "car"]
+    # 並びの順：題 → tick と実描画 → 処理時間。入力の値 → 車の値（→ 知らせ）。
+    assert [box.name for box in canvas.boxes] == ["title", "status", "perf", "input", "input_values", "car"]
     # 入力の2行の囲みは、縁だけの矩形の囲みの中（入れ子）。
-    assert [box.parent for box in canvas.boxes] == [SCREEN_BOX, SCREEN_BOX, SCREEN_BOX, 2, SCREEN_BOX]
+    assert [box.parent for box in canvas.boxes] == [SCREEN_BOX, SCREEN_BOX, SCREEN_BOX, SCREEN_BOX, 3, SCREEN_BOX]
     # どの文字も、どれかの囲みの中にある（囲みの外へ出たことを、数えられる）。
     assert all(command.box != SCREEN_BOX for command in canvas.commands if command.kind == "text")
     by_box = {box.name: [c.text for c in canvas.commands if c.kind == "text" and canvas.boxes[c.box] is box] for box in canvas.boxes}
-    assert [len(by_box[name]) for name in ("title", "status", "input", "input_values", "car")] == [1, 2, 0, 2, 2]
+    assert [len(by_box[name]) for name in ("title", "status", "perf", "input", "input_values", "car")] == [1, 2, 2, 0, 2, 2]
 
 
 # --- 知らせの1行 ---
@@ -180,7 +309,7 @@ def test_screens_placeholder_shows_the_notice_as_one_more_line_in_its_own_box():
     notice = "SAVE DATA UNREADABLE. USING DEFAULTS"
     canvas = placeholder_canvas(notice=notice)
     assert texts(notice=notice) == [*texts(), notice]  # ほかの行は、そのまま。知らせを、最後に足す
-    assert [box.name for box in canvas.boxes] == ["title", "status", "input", "input_values", "car", "notice"]
+    assert [box.name for box in canvas.boxes] == ["title", "status", "perf", "input", "input_values", "car", "notice"]
     box = canvas.boxes[-1]
     assert box.parent == SCREEN_BOX
     last = canvas.commands[-1]
@@ -192,17 +321,16 @@ def test_screens_placeholder_shows_the_notice_as_one_more_line_in_its_own_box():
 
 def test_screens_placeholder_without_a_notice_draws_no_notice_line_and_no_box():
     canvas = placeholder_canvas(notice="")
-    assert len([command for command in canvas.commands if command.kind == "text"]) == 7
+    assert len([command for command in canvas.commands if command.kind == "text"]) == TEXT_COUNT
     assert "notice" not in [box.name for box in canvas.boxes]
 
 
 @pytest.mark.parametrize("notice", storage.NOTICES)
 @pytest.mark.parametrize("frame", [NEUTRAL, EVERYTHING])
 def test_screens_placeholder_with_every_notice_stays_inside_the_screen_and_its_box(notice, frame):
-    canvas = placeholder_canvas(9999999, 9999999, frame, notice)
+    canvas = placeholder_canvas(9999999, 9999999, frame, notice, FAR_CAR, WIDEST_PERF)
     assert find_violations(canvas) == []
-    rows = sorted(command.y for command in canvas.commands if command.kind == "text")
-    assert all(later - earlier >= FONT_H for earlier, later in zip(rows, rows[1:]))  # 行が重ならない
+    assert overlapping_texts(canvas.commands) == [] and lines_too_close(canvas) == []  # 行が重ならない
 
 
 def test_screens_placeholder_notice_box_has_room_for_78_characters_and_no_more():
@@ -404,3 +532,52 @@ def test_screens_app_shows_the_car_of_the_world_it_steps():
         if isinstance(call, ast.Call) and isinstance(call.func, ast.Attribute) and call.func.attr == "step" and is_self_attribute(call.func.value, "sim")
     ]
     assert len(steps) == 1
+
+
+def ring_adds(function: ast.FunctionDef, ring: str) -> list:
+    """function の中の、self.<ring>.add(...) の呼び出しの一覧。"""
+    return [
+        call for call in ast.walk(function)
+        if isinstance(call, ast.Call) and isinstance(call.func, ast.Attribute) and call.func.attr == "add" and is_self_attribute(call.func.value, ring)
+    ]
+
+
+def test_screens_app_shows_the_times_it_measures_on_every_start():
+    # 守りのテスト。仮の表示の処理時間の2行は、実機で、人が読んで知らせるための表示（計画の段0の通過条件）。
+    # 処理時間の輪へ値を足し忘れても、表示用の値へ渡し忘れても、道具は全部通る（画面は「2Dの描画命令の画素がある」までしか見ない）。
+    # ここでは、ソースの上のつながりを見る。
+    # (1) __init__() が、処理時間の輪を2つ作る（更新と実描画）。検証の口があるかどうかに、よらない。
+    init = app_method("__init__")
+    made = [
+        node for node in ast.walk(init)
+        if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Tuple)
+        and [is_self_attribute(target, name) for target, name in zip(node.targets[0].elts, ("update_ring", "render_ring"))] == [True, True]
+    ]
+    assert len(made) == 1 and isinstance(made[0].value, ast.Tuple)
+    sizes = [call.args[0].id for call in made[0].value.elts if isinstance(call, ast.Call) and call.func.id == "PerfRing"]
+    assert sizes == ["UPDATE_RING", "RENDER_RING"]
+    conditional = [node for node in ast.walk(init) if isinstance(node, (ast.If, ast.IfExp)) and made[0] in ast.walk(node)]
+    assert conditional == []
+    # (2) update() が、更新のたびに、更新の輪へ、draw() が、実描画のたびに、実描画の輪へ、1度ずつ足す。
+    update, draw = app_method("update"), app_method("draw")
+    assert len(ring_adds(update, "update_ring")) == 1 and len(ring_adds(draw, "render_ring")) == 1
+    assert not ring_adds(update, "render_ring") and not ring_adds(draw, "update_ring")
+    for call in ring_adds(update, "update_ring") + ring_adds(draw, "render_ring"):
+        assert [arg.id for arg in call.args] == ["started_s", "ended_s"]
+    # (3) render() が、表示用の値の処理時間の値を、view_of(更新の輪, 実描画の輪, 起動にかかった時間, ページの時間) で作る。
+    render = app_method("render")
+    views = [
+        call
+        for call in ast.walk(render)
+        if isinstance(call, ast.Call) and isinstance(call.func, ast.Name) and call.func.id == "PlaceholderView"
+    ]
+    assert len(views) == 1
+    perf_args = [*views[0].args[5:6], *(keyword.value for keyword in views[0].keywords if keyword.arg == "perf")]
+    assert len(perf_args) == 1 and isinstance(perf_args[0], ast.Call)
+    made_view = perf_args[0]
+    assert isinstance(made_view.func, ast.Name) and made_view.func.id == "view_of" and not made_view.keywords
+    assert [is_self_attribute(arg, name) for arg, name in zip(made_view.args, ("update_ring", "render_ring", "boot_s", "page_s"), strict=True)] == [True] * 4
+    # (4) 起動にかかった時間は、update() が、最初の更新で1度だけ決める。main() の始まりの実時間から。
+    boots = self_attribute_values(update, "boot_s")
+    assert len(boots) == 1 and isinstance(boots[0], ast.BinOp) and isinstance(boots[0].op, ast.Sub)
+    assert is_self_attribute(boots[0].right, "boot_started_s")

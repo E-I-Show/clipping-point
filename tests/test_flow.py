@@ -7,11 +7,13 @@ import pytest
 
 import input_reference
 from cp_core import flow
-from cp_core.flow import SCREEN_NAMES, START_SCREEN, CarView, Flow, PlaceholderView, car_view
+from cp_core.flow import PERF_FIELDS, PERF_NOT_MEASURED, SCREEN_NAMES, START_SCREEN, CarView, Flow, PerfView, PlaceholderView, car_view
 from cp_core.input_frame import NEUTRAL, InputFrame
 from cp_core.vehicle import REVERSE
 
 CAR = CarView(speed_kmh=87, gear=3, rpm=5200, x_dm=1234, z_dm=-56, surface="asphalt")
+# 処理時間の値。更新1回が平均0.3 ms、最大1.2 ms。実描画1回が平均2.4 ms、最大4.1 ms。毎秒60回と30回。起動に1.2秒。PAGE は、測れていない。
+PERF = PerfView(3, 12, 24, 41, 600, 300, 12, None)
 
 
 def test_flow_logic_holds_one_screen_for_now():
@@ -34,16 +36,18 @@ def test_flow_two_flows_do_not_share_their_screen():
     assert b.screen == START_SCREEN
 
 
-def test_flow_placeholder_view_holds_tick_renders_the_input_frame_the_notice_and_the_car():
+def test_flow_placeholder_view_holds_tick_renders_the_input_frame_the_notice_the_car_and_the_measured_times():
     frame = InputFrame(steer_analog=0.5, held=frozenset({"up"}))
-    view = PlaceholderView(120, 60, frame, "SAVE DATA UNREADABLE. USING DEFAULTS", CAR)
+    view = PlaceholderView(120, 60, frame, "SAVE DATA UNREADABLE. USING DEFAULTS", CAR, PERF)
     assert (view.tick, view.renders, view.frame, view.notice, view.car) == (120, 60, frame, "SAVE DATA UNREADABLE. USING DEFAULTS", CAR)
-    assert [field.name for field in dataclasses.fields(PlaceholderView)] == ["tick", "renders", "frame", "notice", "car"]
-    assert PlaceholderView(0, 0, NEUTRAL, "", CAR).notice == ""  # 知らせが無ければ、空
+    assert view.perf == PERF
+    # 処理時間の値は、末尾（車の値の後ろ）。前の項目の並びは、変わらない。
+    assert [field.name for field in dataclasses.fields(PlaceholderView)] == ["tick", "renders", "frame", "notice", "car", "perf"]
+    assert PlaceholderView(0, 0, NEUTRAL, "", CAR, PERF).notice == ""  # 知らせが無ければ、空
 
 
 def test_flow_placeholder_view_cannot_be_changed():
-    view = PlaceholderView(0, 0, NEUTRAL, "", CAR)
+    view = PlaceholderView(0, 0, NEUTRAL, "", CAR, PERF)
     with pytest.raises(dataclasses.FrozenInstanceError):
         view.renders = 5
     with pytest.raises(dataclasses.FrozenInstanceError):
@@ -52,56 +56,104 @@ def test_flow_placeholder_view_cannot_be_changed():
         view.car = CAR
     with pytest.raises(dataclasses.FrozenInstanceError):
         view.car.gear = 4
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        view.perf = PERF
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        view.perf.boot_s_x10 = 5
 
 
 def test_flow_placeholder_view_rejects_a_misspelt_field():
     # 素の辞書だと、項目の打ち間違いは、描く時まで分からない。型なら、作る時に落ちる。
     with pytest.raises(TypeError):
-        PlaceholderView(tick=1, render=2, frame=NEUTRAL, notice="", car=CAR)
+        PlaceholderView(tick=1, render=2, frame=NEUTRAL, notice="", car=CAR, perf=PERF)
     with pytest.raises(TypeError):
-        PlaceholderView(tick=1, renders=2, notice="", car=CAR)
+        PlaceholderView(tick=1, renders=2, notice="", car=CAR, perf=PERF)
 
 
-def test_flow_placeholder_view_needs_the_notice_and_the_car():
-    # 知らせの1行と、車の値は、省けない。アプリが渡し忘れたら、作る時に落ちる（空の知らせや、止まった車で、黙って描かない）。
+def test_flow_placeholder_view_needs_the_notice_the_car_and_the_measured_times():
+    # 知らせの1行と、車の値と、処理時間の値は、省けない。アプリが渡し忘れたら、作る時に落ちる（空の知らせや、止まった車や、
+    # 測れていない値で、黙って描かない）。
     with pytest.raises(TypeError):
-        PlaceholderView(1, 2, NEUTRAL, car=CAR)
+        PlaceholderView(1, 2, NEUTRAL, car=CAR, perf=PERF)
     with pytest.raises(TypeError):
-        PlaceholderView(tick=1, renders=2, frame=NEUTRAL, car=CAR)
+        PlaceholderView(tick=1, renders=2, frame=NEUTRAL, car=CAR, perf=PERF)
     with pytest.raises(TypeError):
-        PlaceholderView(1, 2, NEUTRAL, "")
+        PlaceholderView(1, 2, NEUTRAL, "", perf=PERF)
     with pytest.raises(TypeError):
-        PlaceholderView(tick=1, renders=2, frame=NEUTRAL, notice="")
+        PlaceholderView(tick=1, renders=2, frame=NEUTRAL, notice="", perf=PERF)
+    with pytest.raises(TypeError):
+        PlaceholderView(1, 2, NEUTRAL, "", CAR)
+    with pytest.raises(TypeError):
+        PlaceholderView(tick=1, renders=2, frame=NEUTRAL, notice="", car=CAR)
 
 
 @pytest.mark.parametrize("notice", [None, 5, b"SAVE", ["SAVE"], True])
 def test_flow_placeholder_view_rejects_a_notice_that_is_not_text(notice):
     with pytest.raises(TypeError):
-        PlaceholderView(0, 0, NEUTRAL, notice, CAR)
+        PlaceholderView(0, 0, NEUTRAL, notice, CAR, PERF)
 
 
 @pytest.mark.parametrize("tick, renders", [(1.0, 2), (1, 2.5), (True, 2), (1, False), ("1", 2), (None, 2)])
 def test_flow_placeholder_view_rejects_counts_that_are_not_integers(tick, renders):
     with pytest.raises(TypeError):
-        PlaceholderView(tick, renders, NEUTRAL, "", CAR)
+        PlaceholderView(tick, renders, NEUTRAL, "", CAR, PERF)
 
 
 @pytest.mark.parametrize("tick, renders", [(-1, 0), (0, -1)])
 def test_flow_placeholder_view_rejects_negative_counts(tick, renders):
     with pytest.raises(ValueError):
-        PlaceholderView(tick, renders, NEUTRAL, "", CAR)
+        PlaceholderView(tick, renders, NEUTRAL, "", CAR, PERF)
 
 
 @pytest.mark.parametrize("frame", [None, (0, 0, 0), {"steer_analog": 0.0}, "NEUTRAL"])
 def test_flow_placeholder_view_rejects_anything_but_an_input_frame(frame):
     with pytest.raises(TypeError):
-        PlaceholderView(0, 0, frame, "", CAR)
+        PlaceholderView(0, 0, frame, "", CAR, PERF)
 
 
 @pytest.mark.parametrize("car", [None, (87, 3, 5200, 1234, -56, "asphalt"), dataclasses.asdict(CAR), "CAR"])
 def test_flow_placeholder_view_rejects_anything_but_a_car_view(car):
     with pytest.raises(TypeError):
-        PlaceholderView(0, 0, NEUTRAL, "", car)
+        PlaceholderView(0, 0, NEUTRAL, "", car, PERF)
+
+
+@pytest.mark.parametrize("perf", [None, (3, 12, 24, 41, 600, 300, 12, None), dataclasses.asdict(PERF), "PERF"])
+def test_flow_placeholder_view_rejects_anything_but_a_perf_view(perf):
+    with pytest.raises(TypeError):
+        PlaceholderView(0, 0, NEUTRAL, "", CAR, perf)
+
+
+# --- 処理時間の値（表示用の値の一部） ---
+def test_flow_perf_view_holds_whole_tenths_or_not_measured():
+    assert [field.name for field in dataclasses.fields(PerfView)] == list(PERF_FIELDS) == [
+        "update_mean_ms_x10", "update_max_ms_x10", "render_mean_ms_x10", "render_max_ms_x10",
+        "updates_per_s_x10", "renders_per_s_x10", "boot_s_x10", "page_s_x10",
+    ]
+    assert dataclasses.astuple(PERF) == (3, 12, 24, 41, 600, 300, 12, None)
+    assert all(value is None or type(value) is int for value in dataclasses.astuple(PERF))
+    # どれも測れていない値（最初の数tick）も、作れる。
+    assert dataclasses.astuple(PERF_NOT_MEASURED) == (None,) * 8
+    assert PerfView(0, 0, 0, 0, 0, 0, 0, 0).boot_s_x10 == 0
+
+
+@pytest.mark.parametrize("field", PERF_FIELDS)
+@pytest.mark.parametrize("value", [1.5, True, "12", [12]])
+def test_flow_perf_view_rejects_values_that_are_not_integers(field, value):
+    # 小数を、そのまま渡さない（丸めるのは、測った値を表示の桁に収める所 capped_tenths の1か所）。
+    with pytest.raises(TypeError):
+        dataclasses.replace(PERF, **{field: value})
+
+
+@pytest.mark.parametrize("field", PERF_FIELDS)
+def test_flow_perf_view_rejects_negative_values(field):
+    with pytest.raises(ValueError):
+        dataclasses.replace(PERF, **{field: -1})
+
+
+@pytest.mark.parametrize("field", PERF_FIELDS)
+def test_flow_perf_view_does_not_raise_on_a_value_beyond_the_digits(field):
+    # 上限では、例外にしない（ふつうの起動の、実描画の中で作る。例外になると、ブラウザ版は、エラー表示で止まる）。
+    assert getattr(dataclasses.replace(PERF, **{field: 10 ** 9}), field) == 10 ** 9
 
 
 # --- 車の値（表示用の値の一部） ---

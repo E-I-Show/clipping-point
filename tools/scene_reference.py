@@ -185,6 +185,37 @@ def scene_checks(result: dict, budgets: dict, want_palette, why: str = "", names
     return [(name, *checks[name]()) for name in names]
 
 
+def probe_words(result: dict) -> str:
+    """件ごとの行に出す、柱と印の値。「名:画素の数@重心の x（画素）」を、PROBES の順に、コンマで並べる。"""
+    scene = _scene(result)
+    probes = scene.get("probes") if isinstance(scene.get("probes"), dict) else {}
+    words = []
+    for name in PROBES:
+        seen = probes.get(name) if isinstance(probes.get(name), dict) else {}
+        x10 = seen.get("x10")
+        words.append(f"{name}:{seen.get('pixels')}@{x10 / 10 if type(x10) is int else x10}")
+    return ",".join(words)
+
+
+def perf_words(result: dict) -> str:
+    """最後の1行に出す、処理時間の要約（結果の perf。更新1回と実描画1回の、平均/95%点/最大。ms）と、
+    実描画のある周期が、1 tickの長さを超えた回数。判定には、使わない（線の判定は、ブラウザ版の煙テスト）。"""
+    perf = result.get("perf") if isinstance(result, dict) and isinstance(result.get("perf"), dict) else {}
+    update = "/".join(str(perf.get(f"update_ms_{part}")) for part in ("mean", "p95", "max"))
+    render = "/".join(str(perf.get(f"render_ms_{part}")) for part in ("mean", "p95", "max"))
+    return f"update_ms={update} render_ms={render} cycles_over_tick={perf.get('cycles_over_tick')}"
+
+
+def stats_words(result: dict) -> str:
+    """最後の1行に出す、場面の数（結果の scene_stats。直近に描いた三角形の数、場面を組む時間、メッシュを作る時間、起動にかかった時間。ms）。
+    判定には、使わない。"""
+    stats = result.get("scene_stats") if isinstance(result, dict) and isinstance(result.get("scene_stats"), dict) else {}
+    return (
+        f"triangles={stats.get('triangles_drawn')} build_ms={stats.get('build_ms')} mesh_ms={stats.get('mesh_ms')} "
+        f"boot_ms={stats.get('boot_ms')} page_ms={stats.get('page_ms')}"
+    )
+
+
 def scene_words(result: dict) -> str:
     """最後の1行に出す、結果の scene の値（空、コース、車の画素。矩形の内と外の違う画素。3枚目の画素の要約値）。"""
     scene = _scene(result)

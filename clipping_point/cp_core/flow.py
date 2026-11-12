@@ -7,6 +7,7 @@
 （小数を、描く側で丸めない）。
 世界の状態から、表示用の値を作る所（car_view）も、ここに置く（pyxel を読まない。世界のどの状態からでも、作れること）。
 測った値（処理時間、毎秒の回数、起動にかかった時間）を、表示の 0.1 刻みの整数にして、桁いっぱいで頭打ちにする所（capped_tenths）も、ここに置く。
+処理時間の値の型（PerfView）は、整数か None（測れていない）だけを持つ。測るのは cp_app（実時間を読むのは、そこだけ）。
 画面を足すときは、SCREEN_NAMES、表示用の値の型、cp_ui.screens の SCREENS、cp_ui.fixtures の見本データに足す
 （そろっていることは、tests/test_fixtures.py の突き合わせのテストが見る）。
 """
@@ -99,15 +100,49 @@ def car_view(sim) -> CarView:
 
 
 @dataclass(frozen=True)
+class PerfView:
+    """仮の表示の、処理時間の値（表示用の値の一部）。どれも、0.1 刻みの整数（123 は 12.3）か、None（測れていない）。
+
+    実時間で決まる値。表示にだけ使い、世界へ戻さない。作るのは cp_app/perf.py の view_of()（測った値を、capped_tenths で、
+    表示の桁いっぱいに頭打ちにして渡す）。ここでは、型と、0以上であることだけを検査する。上限では、例外にしない
+    （ふつうの起動の、実描画の中で作る。例外になると、ブラウザ版は、エラー表示で止まる）。
+    """
+
+    update_mean_ms_x10: int | None  # 更新1回の時間の、直近の平均（0.1 ms 刻み）
+    update_max_ms_x10: int | None  # 同じく、直近の最大
+    render_mean_ms_x10: int | None  # 実描画1回の時間の、直近の平均（0.1 ms 刻み）
+    render_max_ms_x10: int | None  # 同じく、直近の最大
+    updates_per_s_x10: int | None  # 毎秒の更新の回数（0.1回刻み）
+    renders_per_s_x10: int | None  # 毎秒の実描画の回数（0.1回刻み）
+    boot_s_x10: int | None  # アプリの起動にかかった時間（0.1秒刻み）。main() の始まりから、最初の更新まで
+    page_s_x10: int | None  # ブラウザ版だけ。ページを開いてから、main() が始まるまで（0.1秒刻み）。デスクトップ版は None
+
+    def __post_init__(self) -> None:
+        for field in PERF_FIELDS:
+            value = getattr(self, field)
+            if value is not None:
+                _count(field, value)
+
+
+# 処理時間の値の、項目の名（並びは、PerfView の項目の順）。
+PERF_FIELDS = (
+    "update_mean_ms_x10", "update_max_ms_x10", "render_mean_ms_x10", "render_max_ms_x10",
+    "updates_per_s_x10", "renders_per_s_x10", "boot_s_x10", "page_s_x10",
+)
+PERF_NOT_MEASURED = PerfView(*(None,) * len(PERF_FIELDS))  # どれも、測れていない
+
+
+@dataclass(frozen=True)
 class PlaceholderView:
     """仮の表示の、表示用の値。作るときに、型と範囲を検査する。
 
     renders（実描画の回数）は、実時間で決まる値。表示にだけ使い、世界へ戻さない。
-    いまは cp_app/app.py が、世界のtick、実描画の回数、直近の入力フレーム、知らせの1行、車の値から組み立てる
-    （実描画の回数を、ロジックは持たないため）。
+    いまは cp_app/app.py が、世界のtick、実描画の回数、直近の入力フレーム、知らせの1行、車の値、処理時間の値から組み立てる
+    （実描画の回数と、処理時間を、ロジックは持たないため）。
     notice は、保存についての知らせの1行（文は cp_core/storage.py の NOTICES）。無ければ空。省けない
     （アプリが渡し忘れたら、作る時に落ちる）。本物の通知は、画面の状態を作る段1で作る。
     car は、車の値（速度、ギア、回転数、位置、路面の種類）。省けない。実機で、車が動いていることを見るための表示（HUDは段1）。
+    perf は、処理時間の値（更新1回と実描画1回の時間、毎秒の回数、起動にかかった時間）。省けない。実機で、人が読んで知らせるための表示。
     """
 
     tick: int  # 世界のtick
@@ -115,6 +150,7 @@ class PlaceholderView:
     frame: InputFrame  # 直近の入力フレーム
     notice: str  # 知らせの1行。無ければ空
     car: CarView  # 車の値
+    perf: PerfView  # 処理時間の値。表示にだけ使う
 
     def __post_init__(self) -> None:
         _count("tick", self.tick)
@@ -125,6 +161,8 @@ class PlaceholderView:
             raise TypeError(f"notice={self.notice!r} must be str")
         if not isinstance(self.car, CarView):
             raise TypeError(f"car must be a CarView, got {type(self.car).__name__}")
+        if not isinstance(self.perf, PerfView):
+            raise TypeError(f"perf must be a PerfView, got {type(self.perf).__name__}")
 
 
 class Flow:

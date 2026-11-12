@@ -18,7 +18,7 @@
 形の検査と、世界を作るときに要る。2度作らない（1度に、デスクトップ版で約4ミリ秒、ブラウザ版で約15〜25ミリ秒。段0 区切り9の実測）。
 表は書き換えられないので、同じものを、いくつの世界が持ってもよい。
 メッシュ用の数値（Track.mesh_chunks）は、コースの表から作る、描画用の形（段0 区切り10）。Pyxelに触れない。Pyxelの3Dの物にするのは cp_app/render.py。
-  コースを、約 step_m ごとに区切り、約 chunk_m ごとの塊（MeshChunk）に分ける。塊は、中心と半径（平面）を持つ（見えない塊を、描かないため）。
+  コースを、約 step_m ごとの断面で分け、断面の間を、約 chunk_m ごとの塊（MeshChunk）にまとめる。塊は、中心と半径（平面）を持つ（見えない塊を、描かないため）。
   幅の向きの並びは、重ねない：左の壁、左の芝、左の白線（舗装の、外側 line_m）、路面（road_strips に割る）、右の白線、右の芝、右の壁。
   高さは、路面、白線、芝が0、壁は0〜wall_height_m（壁は、壁の位置に立つ板。コースの側を向く面だけ）。
   頂点は、ロジックの座標 (x, y, z)。面の向きは、(b−a)×(c−a) が外向き（路面と白線と芝は上、壁はコースの側。決まりは cp_core/mesh.py）。
@@ -55,8 +55,8 @@ MESH_ROAD, MESH_LINE, MESH_GRASS, MESH_WALL = "road", "line", "grass", "wall"
 MESH_PARTS = (MESH_ROAD, MESH_LINE, MESH_GRASS, MESH_WALL)  # 部品の名。塊の中の並びも、この順
 # 部品ごとの、色の役割の名（cp_core/palette.py の ROLES）。路面の種類ごとの色と模様は、段1の「コースの描画」。
 MESH_ROLES = {MESH_ROAD: "asphalt_mid", MESH_LINE: "white", MESH_GRASS: "grass_mid", MESH_WALL: "silver"}
-MESH_MIN_SEGMENTS = 3  # 1周の区切りの数の下限（これより少ないと、輪にならない）
-MESH_MIN_BAND_M = 0.01  # 芝の帯の幅が、これ以下の区切りには、芝を作らない（芝の幅が0のコース。つぶれた三角形を出さない）
+MESH_MIN_SEGMENTS = 3  # 1周の断面の数の下限（これより少ないと、輪にならない）
+MESH_MIN_BAND_M = 0.01  # 芝の帯の幅が、これ以下の所（隣り合う断面の間）には、芝を作らない（芝の幅が0のコース。つぶれた三角形を出さない）
 
 
 class TrackQuery:
@@ -245,7 +245,7 @@ class Track:
         self.start_s = float(entry["start"]["s_m"])  # スタート位置の、コースに沿った距離（m）
         self.start_lateral = float(entry["start"]["lateral_m"])  # スタート位置の、横のずれ（m）
         # メッシュ用の数値の寸法（コースの項目の mesh）。使うのは mesh_chunks()。
-        self.mesh_step = float(entry["mesh"]["step_m"])  # 区切りの間隔の目安（m）
+        self.mesh_step = float(entry["mesh"]["step_m"])  # 断面の間隔の目安（m）
         self.mesh_strips = int(entry["mesh"]["road_strips"])  # 路面を、幅の向きに割る数
         self.mesh_line = float(entry["mesh"]["line_m"])  # 舗装の端の白線の幅（m）
         self.mesh_wall_height = float(entry["mesh"]["wall_height_m"])  # 壁の高さ（m）
@@ -491,9 +491,9 @@ class Track:
         )
 
     def _chunk_parts(self, rows: list) -> tuple:
-        """塊1つの部品。rows は、区切りの線（_across の値）を、コースに沿った順に並べたもの（区切りの数＋1 本）。
+        """塊1つの部品。rows は、断面（コースを横切る線。_across の値）を、コースに沿った順に並べたもの（断面の間の数＋1 本）。
 
-        頂点は、区切りの線ごとに、右（横のずれが負）から左へ並べる。隣り合う四角形は、頂点を共有する。
+        頂点は、断面ごとに、右（横のずれが負）から左へ並べる。隣り合う四角形は、頂点を共有する。
         上を向く四角形は、(右の手前, 左の手前, 左の先)、(右の手前, 左の先, 右の先)。壁は、コースの側を向く。
         """
         strips, line, top = self.mesh_strips, self.mesh_line, self.mesh_wall_height
@@ -518,7 +518,7 @@ class Track:
                 grass_triangles += quad(a, a + 1, b + 1, b)
             if here[5] - here[4] > MESH_MIN_BAND_M or there[5] - there[4] > MESH_MIN_BAND_M:  # 左の芝
                 grass_triangles += quad(a + 2, a + 3, b + 3, b + 2)
-            # 壁。頂点は、区切りの線ごとに（右の下, 右の上, 左の下, 左の上）。右の壁は左（コースの側）を、左の壁は右を向く。
+            # 壁。頂点は、断面ごとに（右の下, 右の上, 左の下, 左の上）。右の壁は左（コースの側）を、左の壁は右を向く。
             wall_triangles += quad(a, b, b + 1, a + 1) + quad(a + 2, a + 3, b + 3, b + 2)
         parts = (
             (MESH_ROAD, road, road_triangles), (MESH_LINE, lines, line_triangles),
@@ -529,16 +529,16 @@ class Track:
     def mesh_chunks(self) -> tuple:
         """メッシュ用の数値。返すのは、塊（MeshChunk）の並び（コースに沿った順）。同じ表からは、同じ数値。呼ぶたびに作る（起動時に1度呼ぶ）。
 
-        1周を、等しい長さの区切り（約 mesh_step m）に分け、区切りを、塊（約 mesh_chunk m）に分ける。どの区切りも、塊のどれか1つに入る。
-        最後の区切りは、頭の区切りの線へつなぐ（1周の継ぎ目）。頂点は、ロジックの座標。面の向きは、(b−a)×(c−a) が外向き。
+        1周を、等しい間隔（約 mesh_step m）の断面で分け、断面の間を、塊（約 mesh_chunk m）にまとめる。どの断面の間も、塊のどれか1つに入る。
+        最後の断面は、頭の断面へつなぐ（1周の継ぎ目）。頂点は、ロジックの座標。面の向きは、(b−a)×(c−a) が外向き。
         """
-        count = max(MESH_MIN_SEGMENTS, int(round(self.length / self.mesh_step)))  # 区切りの数
+        count = max(MESH_MIN_SEGMENTS, int(round(self.length / self.mesh_step)))  # 断面の数（1周で閉じるので、断面の間の数も同じ）
         spacing = self.length / count
         rows = [self._across(index * spacing) for index in range(count)]
         chunk_count = max(1, min(count, int(round(self.length / self.mesh_chunk))))
         chunks = []
         for index in range(chunk_count):
-            first, last = index * count // chunk_count, (index + 1) * count // chunk_count  # この塊の区切りは first〜last−1
+            first, last = index * count // chunk_count, (index + 1) * count // chunk_count  # この塊の断面の間は first〜last−1
             parts = self._chunk_parts([rows[k % count] for k in range(first, last + 1)])
             xs = [vertex[0] for part in parts for vertex in part.vertices]
             zs = [vertex[2] for part in parts for vertex in part.vertices]

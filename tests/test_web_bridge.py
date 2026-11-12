@@ -175,6 +175,39 @@ def test_web_bridge_emits_one_result_line_then_the_done_mark():
     assert js.console.lines[1] == web_bridge.DONE_MARK
 
 
+# --- ページを開いてからの時間（仮の表示の PAGE） ---
+class FakePerformance:
+    """js.performance の代わり。now() は、ページを開いてからのミリ秒を返す。"""
+
+    def __init__(self, value) -> None:
+        self.value, self.reads = value, 0
+
+    def now(self):
+        self.reads += 1
+        if isinstance(self.value, Exception):
+            raise self.value
+        return self.value
+
+
+def test_web_bridge_page_time_is_the_browser_clock_in_seconds():
+    performance = FakePerformance(4479.6)
+    assert web_bridge.page_elapsed_s(FakeJs(performance=performance)) == pytest.approx(4.4796)
+    assert performance.reads == 1  # 時計は、1度だけ読む
+    assert web_bridge.page_elapsed_s(FakeJs(performance=FakePerformance(0))) == 0.0
+    assert web_bridge.page_elapsed_s(FakeJs(performance=FakePerformance(1500))) == 1.5  # JavaScriptを通った整数も、受ける
+
+
+def test_web_bridge_page_time_is_not_measured_on_the_desktop():
+    assert web_bridge.page_elapsed_s(None) is None
+
+
+@pytest.mark.parametrize("value", [RuntimeError("no clock"), "soon", None, float("nan"), -5.0, JS_NULL])
+def test_web_bridge_page_time_that_cannot_be_read_is_not_measured_and_does_not_stop_the_start(value):
+    # 時計が無い、数にならない、負。どれも「測れていない」。起動を、表示のための値で止めない。
+    assert web_bridge.page_elapsed_s(FakeJs(performance=FakePerformance(value))) is None
+    assert web_bridge.page_elapsed_s(FakeJs()) is None  # performance そのものが無い
+
+
 def test_web_bridge_names_are_plain_ascii_words():
     # 名前は、道具（tools/web_smoke.py）がスクリプトと正規表現に、そのまま埋め込む。
     for name in (web_bridge.PROBE_NAME, web_bridge.RESULT_MARK, web_bridge.DONE_MARK, web_bridge.TICK_NAME):

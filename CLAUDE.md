@@ -64,20 +64,20 @@ Pyxel 3.0の3D機能（Pyxel Cube）で作る、初代PS時代風ローポリゴ
 
 | すること | コマンド |
 | --- | --- |
-| 全体の検証（約90秒。check → test → fingerprint → screen-check → run → run --realtime → run --pack extreme → run（走る台本）→ run（壁の台本）→ tour → export → web-smoke。`--selftest` を付けると約25分） | `python3 tools/verify.py --all [--selftest]` |
+| 全体の検証（約125秒。check → test → fingerprint → screen-check → run → run --realtime → run --pack extreme → run（走る台本）→ run（壁の台本）→ tour → export → web-smoke。`--selftest` を付けると約30分） | `python3 tools/verify.py --all [--selftest]` |
 | 変更したファイルから触れた分野を引いて回す（基点の既定は、直近の区切りのコミット） | `python3 tools/verify.py --touched [--base REV]` |
 | 分野ごとの組の表を出す | `python3 tools/verify.py --list` |
 | 静的な検査（構文、層の分離、規則ファイルの見張り、正本の見張り、分野の見張り、定義データの読み込み検査） | `python3 tools/check.py [--only syntax\|arch\|rules\|canon\|areas\|data]` |
 | テスト | `python3 tools/test.py [-k "語 or 語"]` |
 | ふるまいの写し（指紋、保存する項目の一覧）と照らす。`--update` は取り直し（理由を添えた単独のコミットでだけ） | `python3 tools/fingerprint.py [--update]` |
 | 2Dの全画面を、見本データで組み立てて、はみ出しを数える | `python3 tools/screen_check.py [--only 画面の名]` |
-| 各画面の画像を保存し、描画命令と画素を照らす（画像は `out/tour/`。目で見る） | `python3 tools/tour.py [--only 画面の名]` |
+| 各画面と、3Dの絵の画像を保存し、描画命令と画素を照らし、3Dの絵を判定する（画像は `out/tour/`。目で見る。`scene` は、3Dの絵だけ） | `python3 tools/tour.py [--only 画面の名\|scene]` |
 | 画面なしで回す（速い経路。道具の台本を渡す。`--pack` は、試験用データを重ねる） | `python3 tools/run.py [--ticks N] [--script FILE\|--no-script] [--pack 名]` |
 | 画面なしで回す（本番と同じ経路。入力アダプタから読む） | `python3 tools/run.py --realtime [--ticks N]` |
 | 走る台本と、壁の台本を、画面なしで回す（全体の検証の run-drive と run-wall。指紋の写しと、走行の下限を照らす） | `python3 tools/run.py --script tools/input_script_drive.json --ticks 900`、`python3 tools/run.py --script tools/input_script_wall.json --ticks 780` |
 | 配布物のHTMLを作って検査する | `python3 tools/export.py` |
-| ブラウザ版の煙テスト（約65秒） | `python3 tools/web_smoke.py [--only shipped\|probe\|script\|gamepad\|storage_blocked]` |
-| 道具をわざと壊して確かめる（約23分。時間に頼らない件は、同時に4件ずつ回す） | `python3 tools/selftest_break.py [--only 名前の頭] [--jobs N]` |
+| ブラウザ版の煙テスト（約90秒。`drive` は、走行の場面。画面の絵は `out/web_smoke/drive.png`） | `python3 tools/web_smoke.py [--only shipped\|probe\|script\|gamepad\|storage_blocked\|drive]` |
+| 道具をわざと壊して確かめる（約28分。時間に頼らない件は、同時に4件ずつ回す） | `python3 tools/selftest_break.py [--only 名前の頭] [--jobs N]` |
 | 環境のセットアップ（新しいコンテナで1度。環境に登録してある） | `bash tools/setup_env.sh` |
 | ランタイムの写しの取得と照合 | `python3 tools/web/fetch_runtime.py [--check]` |
 | テストの件数の下限を下げる | `python3 tools/test.py --update-floor` |
@@ -183,4 +183,4 @@ Pyxel 3.0の3D機能（Pyxel Cube）で作る、初代PS時代風ローポリゴ
 | `.claude/rules/data.md` | 定義データの読み込み検査と重ね方（`cp_core/datadefs.py`）、ファイルを読む所（`cp_app/data_files.py`）、実物の定義データ（`clipping_point/data/`）、試験用データ（`testpacks/`）、そのテスト |
 | `.claude/rules/vehicle.md` | 車両モデル（`cp_core/vehicle.py`）、車の定義データ（`data/cars.json`）、そのテスト |
 | `.claude/rules/track.md` | コースの表、照会、壁の押し戻し、形の検査、メッシュ用の数値（`cp_core/track.py`）、コースの定義データ（`data/tracks/`）、制御点を作る補助（`tools/claude/make_test_loop.py`）、そのテスト |
-| `.claude/rules/render.md` | カメラ（`cp_core/camera.py`）、色の役割とパレット（`cp_core/palette.py`、`data/palettes.json`）、メッシュ用の数値の型と面の向き（`cp_core/mesh.py`）、車の仮の形（`cp_core/car_shape.py`）、3Dの絵の判定（`tools/scene_reference.py`）、パレットを作る補助（`tools/claude/make_palette.py`）、そのテスト |
+| `.claude/rules/render.md` | 3Dの場面、座標の変換、描く口、判定用の実描画（`cp_app/render.py`）、カメラ（`cp_core/camera.py`）、色の役割とパレット（`cp_core/palette.py`、`data/palettes.json`）、メッシュ用の数値の型と面の向き（`cp_core/mesh.py`）、車の仮の形（`cp_core/car_shape.py`）、3Dの絵の判定（`tools/scene_reference.py`）、パレットを作る補助（`tools/claude/make_palette.py`）、そのテスト |

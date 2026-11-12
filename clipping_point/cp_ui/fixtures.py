@@ -6,12 +6,12 @@ build(画面の名, 変種) が、その画面の表示用の値（cp_core.flow 
 画面を足したら、BUILDERS に足す（画面の登録 cp_ui.screens.SCREENS と同じ集まりであることを、突き合わせのテストが見る）。
 定義データから極端な値を導く形（いちばん長い車名など）は、定義データができる段0 区切り8より後で足す。
 """
-from cp_core.flow import DM_PER_M, CarView, PlaceholderView
+from cp_core.flow import DM_PER_M, CarView, PerfView, PlaceholderView
 from cp_core.input_frame import BUTTONS, InputFrame
 from cp_core.storage import NOTICES
 from cp_core.track import MAX_LENGTH_M, SURFACE_ASPHALT, SURFACES
 from cp_core.vehicle import REVERSE
-from cp_ui.screens import RPM_DIGITS, SPEED_DIGITS
+from cp_ui.screens import MS_DIGITS, RATE_DIGITS, RPM_DIGITS, SECONDS_DIGITS, SPEED_DIGITS
 
 VARIANTS = ("typical", "extreme")
 # 仮の値：極端な値に使う、tick と実描画の回数（7桁。毎秒60 tickで約46時間ぶん）。表示の桁の上限は、まだ決めていない。
@@ -38,6 +38,23 @@ def farthest_position_dm() -> int:
     return -round(MAX_LENGTH_M * DM_PER_M)
 
 
+def widest_measured(whole_digits: int) -> int:
+    """極端な値に使う、測った値（0.1 刻みの整数）。整数部が whole_digits 桁の、いちばん大きい値（2桁なら 999 ＝ 99.9）。"""
+    return 10 ** (whole_digits + 1) - 1
+
+
+def _perf(variant: str) -> PerfView:
+    if variant == "extreme":
+        # 処理時間の値は、どれも、仮の表示の桁をいっぱいに使う（99.9 ms、毎秒999.9回、999.9秒）。PAGE も出ている（ブラウザ版）。
+        ms, rate, seconds = widest_measured(MS_DIGITS), widest_measured(RATE_DIGITS), widest_measured(SECONDS_DIGITS)
+        return PerfView(ms, ms, ms, ms, rate, rate, seconds, seconds)
+    # ふつうの値は、デスクトップ版（PAGE は、測れていない）。更新1回が平均0.3 ms、実描画1回が平均2.4 ms、毎秒60回と30回、起動に1.2秒。
+    return PerfView(
+        update_mean_ms_x10=3, update_max_ms_x10=12, render_mean_ms_x10=24, render_max_ms_x10=41,
+        updates_per_s_x10=600, renders_per_s_x10=300, boot_s_x10=12, page_s_x10=None,
+    )
+
+
 def _placeholder(variant: str) -> PlaceholderView:
     if variant == "extreme":
         # 舵は負（符号の分、1字長い）。アクセルとブレーキは最大。ボタンを10個とも押している。知らせは、いちばん長い文。
@@ -48,11 +65,11 @@ def _placeholder(variant: str) -> PlaceholderView:
         # 車の値は、桁をいっぱいに使う。ギアは後退（R）。位置は、コースの座標の上限の、負の側。路面は、いちばん長い名。
         far = farthest_position_dm()
         car = CarView(speed_kmh=FASTEST_KMH, gear=REVERSE, rpm=HIGHEST_RPM, x_dm=far, z_dm=far, surface=longest_surface())
-        return PlaceholderView(tick=BIGGEST_COUNT, renders=BIGGEST_COUNT, frame=frame, notice=longest_notice(), car=car)
+        return PlaceholderView(tick=BIGGEST_COUNT, renders=BIGGEST_COUNT, frame=frame, notice=longest_notice(), car=car, perf=_perf(variant))
     # ふつうの値は、知らせが無い（保存先が使えて、保存が読めた起動）。車は、舗装の上を、3速で走っている。
     frame = InputFrame(steer_analog=0.5, steer_digital=1, throttle_analog=0.3, throttle_digital=1, held=frozenset({"up", "confirm"}))
     car = CarView(speed_kmh=87, gear=3, rpm=5200, x_dm=1234, z_dm=-56, surface=SURFACE_ASPHALT)
-    return PlaceholderView(tick=120, renders=60, frame=frame, notice="", car=car)
+    return PlaceholderView(tick=120, renders=60, frame=frame, notice="", car=car, perf=_perf(variant))
 
 
 # 画面の名ごとの、見本データの作り方。(変種) を受けて、表示用の値を返す。

@@ -28,7 +28,7 @@ paths:
 ## 値を読む口
 
 - パス、終了コード、子プロセスの回し方：`tools/_common.py`
-- 仮の上限（HTMLの大きさ、規則ファイルの大きさ、実描画の回数の幅、全体の検証を絞り始める目安）：`tools/budgets.json`。`web_` で始まる値（ブラウザ版の煙テストの線）の読み方は `.claude/rules/web.md`
+- 仮の上限（HTMLの大きさ、規則ファイルの大きさ、実描画の回数の幅、全体の検証を絞り始める目安）：`tools/budgets.json`。`web_` で始まる値（ブラウザ版の煙テストの線）の読み方は `.claude/rules/web.md`、`scene_` で始まる値（3Dの絵の判定）は `render.md`
 - 分野ごとの組の表（分野、当たるファイル、テストの絞り、足す手順）：`tools/verify.py` の `AREAS`。出すのは `python3 tools/verify.py --list`
 - 全体の検証で回す手順と順：`tools/verify.py` の `STEPS`。まだ無い手順は `NOT_YET`
 - 純Pythonの層で使ってよいimportの一覧：`tools/arch_check.py` の `STDLIB_ALLOWED` と `LAYER_ALLOWED`。使えない名（`open`、`hash`、`eval` など）：`BANNED_NAMES`
@@ -52,7 +52,7 @@ paths:
 - テスト `tests/test_run_tool.py`：道具 run が、保存のファイルを自分で読む関数（往復の見本と同じ、違う値、違う形式バージョン、壊れた封筒、無い。名前空間 `main` のファイル）。
 - テスト `tests/test_check_tool.py`（check の data の節の関数。件数は、調べた組の数）、`tests/test_data_reference.py`（道具が数える所、結果の `data` の確かめ）。
 - 手順 `run-pack`（`python3 tools/run.py --pack extreme`）：試験用データを重ねて回す。指紋は照らさない。無い名は2。
-- 手順 `run-drive`、`run-wall`（`run.py --script 台本 --ticks N`）：走る台本と壁の台本を、アプリに通す。tick数は、指紋の筋書きと同じにする。
+- 手順 `run-drive`、`run-wall`（`run.py --script 台本 --ticks N`）：走る台本と壁の台本を、アプリに通す。tick数は、指紋の筋書きと同じにする。3Dの絵の、向きの符号の誤りは、`run-drive` が拾う。
 - 守りのテスト `tests/test_verify.py`：ファイルから分野を引く所、表の手順とテストの語が実在すること、回す手順の決め方、落ちた手順の数え方、基点の選び方、変更したファイルをgitから読む所（一時のリポジトリで回す）。
 - 道具 verify（`python3 tools/verify.py --all [--selftest]`、`--touched [--base REV]`）：`--touched` の基点の既定は、直近の区切りのコミット（題が「段N 区切りM：」で始まり「（途中）」を含まない）。
 - テスト `tests/test_claude_tools.py`：作業の補助（`tools/claude/`）。控えの差し込み、レビューの集計の未評価、週の使用率の線、設定と型（`.claude/`）の見張り。使い方は `tools/claude/README.md`。

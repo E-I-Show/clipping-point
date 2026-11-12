@@ -330,6 +330,117 @@ def test_tour_tool_kinds_are_listed_once_in_the_order_they_appear():
     assert tour_tool.kinds_of([]) == ""
 
 
+# --- tour：3Dの絵の判定 ---
+SCENE_NAMES = ["straight", "corner", "wall"]
+SCENE_SIZES = {name: (640, 480) for name in SCENE_NAMES}
+TOOL_BUDGETS = _common.load_budgets()
+PALETTE = tour_tool.scene_reference.expected_palette()[0]
+# 実物のアプリの、巡回の値（スタート位置）。2Dの描画命令は、重ねていない（矩形の内も外も、違う画素は0）。
+SCENE = {
+    "sky": 24565, "track": 43207, "car": 5082, "ink_inside": 0, "ink_outside": 0,
+    "probes": {
+        "pillar_left": {"pixels": 229, "x10": 1138}, "pillar_right": {"pixels": 211, "x10": 2052},
+        "mark_right": {"pixels": 292, "x10": 2111}, "mark_nose": {"pixels": 132, "x10": 1595},
+    },
+    "palette": list(PALETTE), "digest": 3123312044,
+}
+
+
+def scene_entry(name: str = "straight", **changes) -> dict:
+    """問題の無い、結果ファイルの、3Dの絵の1件。changes は、判定用の実描画の値（scene）を置き換える。"""
+    return {"name": name, "file": f"scene_{name}.png", "x_mm": 60000, "z_mm": 0, "heading_mrad": 0, "scene": {**SCENE, **changes}}
+
+
+def scene_result(*entries) -> dict:
+    return {"shots": [], "scenes": list(entries) if entries else [scene_entry(name) for name in SCENE_NAMES]}
+
+
+def judge_scenes(data, planned=SCENE_NAMES, sizes=SCENE_SIZES, want_palette=PALETTE) -> tuple:
+    return tour_tool.judge_scenes(planned, data, sizes, TOOL_BUDGETS, want_palette)
+
+
+def test_tour_tool_scene_plan_comes_from_the_tour_port_of_the_app():
+    names, only, head = tour_tool.load_scene_plan()
+    assert list(names) == SCENE_NAMES == [sample[0] for sample in app_tour.SCENE_SHOTS]
+    assert (only, head) == (app_tour.SCENE_ONLY, app_tour.SCENE_FILE_HEAD) == ("scene", "scene_")
+    assert only not in SCREENS  # 画面の名と、重ならない
+
+
+def test_tour_tool_scene_shots_skip_only_the_check_that_needs_2d_commands():
+    # 3Dの絵には、2Dの描画命令を重ねない。矩形の内の画素（back_ink）だけを外す。scene_same は、回す
+    # （保存した絵が、判定用の3枚目と同じ＝ふだんの描く道が、判定と同じ3Dを描いている）。
+    assert tour_tool.SCENE_SHOT_CHECKS == ("backdrop", "scene3d", "mirror", "palette", "scene_same")
+    assert set(tour_tool.SCENE_SHOT_CHECKS) < set(tour_tool.scene_reference.SCENE_CHECKS)
+
+
+def test_tour_tool_clean_scenes_pass():
+    assert judge_scenes(scene_result()) == ([], [], 3)
+    assert judge_scenes(scene_result(), planned=[]) == ([], [], 0)
+
+
+@pytest.mark.parametrize(
+    "changes, kind",
+    [
+        ({"sky": 960}, "backdrop"),
+        ({"track": 0}, "scene3d"),
+        ({"car": 0}, "scene3d"),
+        ({"probes": {**SCENE["probes"], "mark_right": {"pixels": 292, "x10": 1300}}}, "mirror"),  # 車の向きの符号が逆（模型の右の印が、左に写る）
+        ({"probes": {**SCENE["probes"], "mark_nose": {"pixels": 0, "x10": 0}}}, "mirror"),
+        ({"palette": [0] * 32}, "palette"),
+        ({"ink_outside": 12}, "scene_same"),
+    ],
+)
+def test_tour_tool_a_broken_scene_is_a_problem_under_the_name_of_its_check(changes, kind):
+    incomplete, problems, done = judge_scenes(scene_result(scene_entry("straight"), scene_entry("corner", **changes), scene_entry("wall")))
+    assert incomplete == [] and kinds(problems) == [kind] and done == 3
+    assert problems[0][1].startswith("scene/corner: ")
+
+
+def test_tour_tool_scene_without_2d_commands_does_not_fail_on_the_ink_inside():
+    assert judge_scenes(scene_result(*(scene_entry(name, ink_inside=0) for name in SCENE_NAMES))) == ([], [], 3)
+
+
+def test_tour_tool_planned_scene_missing_from_the_result_is_incomplete():
+    incomplete, problems, done = judge_scenes(scene_result(scene_entry("straight"), scene_entry("wall")))
+    assert kinds(incomplete) == ["missing_shot"] and problems == [] and done == 2
+    assert "scene/corner" in incomplete[0][1]
+
+
+@pytest.mark.parametrize("data", [None, [], {}, {"shots": []}, {"scenes": None}, {"scenes": {"straight": {}}}])
+def test_tour_tool_result_without_a_list_of_scenes_is_incomplete(data):
+    incomplete, problems, done = judge_scenes(data)
+    assert kinds(incomplete) == ["result_shape"] and problems == [] and done == 0
+    # 3Dの絵を回さない予定（--only 画面の名）なら、一覧が無くても、欠けにしない。
+    assert judge_scenes(data, planned=[]) == ([], [], 0)
+
+
+@pytest.mark.parametrize("scene", [None, [], "scene", 5])
+def test_tour_tool_scene_entry_without_the_judged_values_is_incomplete(scene):
+    broken = {**scene_entry("corner"), "scene": scene}
+    incomplete, problems, done = judge_scenes(scene_result(scene_entry("straight"), broken, scene_entry("wall")))
+    assert kinds(incomplete) == ["result_shape"] and problems == [] and done == 2
+
+
+def test_tour_tool_scene_image_that_is_missing_or_of_another_size_is_incomplete():
+    incomplete, problems, done = judge_scenes(scene_result(), sizes={**SCENE_SIZES, "corner": None})
+    assert kinds(incomplete) == ["no_image"] and problems == [] and done == 2
+    incomplete, _, done = judge_scenes(scene_result(), sizes={**SCENE_SIZES, "wall": (704, 544)})
+    assert kinds(incomplete) == ["image_size"] and done == 2
+    # 画像が欠けていても、その絵の問題は、並べる。
+    incomplete, problems, done = judge_scenes(scene_result(scene_entry("straight", track=0), scene_entry("corner"), scene_entry("wall")), sizes={**SCENE_SIZES, "straight": None})
+    assert kinds(incomplete) == ["no_image"] and kinds(problems) == ["scene3d"] and done == 2
+
+
+def test_tour_tool_palette_that_the_tool_could_not_read_fails_every_scene():
+    incomplete, problems, done = judge_scenes(scene_result(), want_palette=None)
+    assert incomplete == [] and kinds(problems) == ["palette"] * 3 and done == 3
+
+
+def test_tour_tool_scenes_that_were_not_planned_are_ignored():
+    extra = scene_entry("somewhere_else", track=0)
+    assert judge_scenes(scene_result(*(scene_entry(name) for name in SCENE_NAMES), extra)) == ([], [], 3)
+
+
 # --- 子プロセスの環境 ---
 def test_tools_child_env_drops_the_app_switches_that_came_from_outside(monkeypatch):
     for name in ("CP_SMOKE", "CP_SMOKE_TICKS", "CP_SMOKE_SCRIPT", "CP_TOUR", "CP_TOUR_DIR", "CP_TOUR_ONLY"):
