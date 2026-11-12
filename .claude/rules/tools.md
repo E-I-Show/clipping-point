@@ -8,6 +8,8 @@ paths:
   - "tests/test_verify.py"
   - "tests/test_claude_tools.py"
   - "tests/test_run_tool.py"
+  - "tests/test_check_tool.py"
+  - "tests/test_data_reference.py"
 ---
 
 # 検証の道具（tools/）
@@ -30,7 +32,8 @@ paths:
 - 全体の検証で回す手順と順：`tools/verify.py` の `STEPS`。まだ無い手順は `NOT_YET`
 - 純Pythonの層で使ってよいimportの一覧：`tools/arch_check.py` の `STDLIB_ALLOWED` と `LAYER_ALLOWED`
 - テストの件数の下限：`tests/count_floor.txt`（増えたら自動で上がる。下げるのは `tools/test.py --update-floor`）
-- アプリの口の環境変数（`CP_SMOKE`、`CP_SMOKE_TICKS`、`CP_SMOKE_DRIVER`、`CP_SMOKE_SCRIPT`、`CP_SAVE_DIR`）：`clipping_point/cp_app/app.py` の頭の注
+- アプリの口の環境変数（`CP_SMOKE`、`CP_SMOKE_TICKS`、`CP_SMOKE_DRIVER`、`CP_SMOKE_SCRIPT`、`CP_SAVE_DIR`、`CP_DATA_PACK`）：`clipping_point/cp_app/app.py` の頭の注。外から入ったものは、子プロセスへ渡さない（`_common.py` の `APP_ENV_PREFIXES`）
+- 道具が、定義データを自分で数える所と、結果の `data` の確かめ：`tools/data_reference.py`（決まりは `.claude/rules/data.md`）
 
 ## Xを足したらYも
 
@@ -39,12 +42,15 @@ paths:
 - 出荷するコードかテストのファイルを足したら、`tools/verify.py` の `AREAS` に足す（足さないと check の areas が落ちる）。ファイルは1つずつ並べ、`**` でまとめない。
 - 純Pythonの層で新しい標準ライブラリを使うときは、許可した一覧に理由つきで足す。ファイル、環境、時刻、乱数に届くもの（os、pathlib、io）は、使う所を1つに絞り、os は使う属性も縛る。
 - 出荷物に新しい種類のファイルを入れるときは、`tools/export.py` の `SHIP_SUFFIXES` に足す。
+- 根の直下に、道具やアプリが読む置き場を足したら（`testpacks/` など）、`tools/selftest_break.py` の `COPY_ITEMS` に足す（足さないと、複製の中で、規則ファイルの当て先が空振りする）。
 
 ## テストと道具
 
 - 守りのテスト `tests/test_arch_guard.py`、`tests/test_rules_guard.py`、`tests/test_canon_guard.py`：見張りが崩れを拾うことと、いまのリポジトリが見張りを通ること。
 - テスト `tests/test_export_inspect.py`：配布物の検査の関数（入ってはいけないもの、HTML内のデータの一致）。
 - テスト `tests/test_run_tool.py`：道具 run が、保存のファイルを自分で読む関数（往復の見本と同じ、違う値、違う形式バージョン、壊れた封筒、無い。名前空間 `main` のファイル）。
+- テスト `tests/test_check_tool.py`（check の data の節の関数。件数は、調べた組の数）、`tests/test_data_reference.py`（道具が数える所、結果の `data` の確かめ）。
+- 手順 `run-pack`（`python3 tools/run.py --pack extreme`）：試験用データを重ねて回す。指紋は照らさない。無い名は2。
 - 守りのテスト `tests/test_verify.py`：ファイルから分野を引く所、表の手順とテストの語が実在すること、回す手順の決め方、落ちた手順の数え方、基点の選び方、変更したファイルをgitから読む所（一時のリポジトリで回す）。
 - 道具 verify（`python3 tools/verify.py --all [--selftest]`、`--touched [--base REV]`）：`--touched` の基点の既定は、直近の区切りのコミット（題が「段N 区切りM：」で始まり「（途中）」を含まない）。
 - テスト `tests/test_claude_tools.py`：作業の補助（`tools/claude/`）。控えの差し込み、レビューの集計の未評価、週の使用率の線、設定と型（`.claude/`）の見張り。使い方は `tools/claude/README.md`。

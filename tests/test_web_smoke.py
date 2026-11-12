@@ -40,6 +40,8 @@ WARN_LINE = {"t": 5, "type": "warning", "text": input_web.WARN_MARK + " direct t
 # 保存の往復が、ブラウザの localStorage に残す値（base64 の文字列）と、その鍵。
 SELFCHECK_KEY = "clippingpoint/selfcheck.settings"
 SELFCHECK_BLOB = storage.wrap(profile.encode(profile.SELFCHECK_SETTINGS), profile.SETTINGS_VERSION)
+# 道具が、定義データのファイルを自分で読んで数えた、表ごとの項目の数（実物）。probe の筋書きが、結果の data と照らす。
+DATA_TABLES = web_smoke.data_reference.expected_tables()[0]
 
 
 def stored(blob: bytes = SELFCHECK_BLOB) -> str:
@@ -96,6 +98,8 @@ def result(**changes) -> dict:
         "direct_reads": TICKS,
         # 保存先は localStorage。保存の往復が通っていて、知らせは無い。
         "storage": {"backend": "localstorage", "ok": True, "notice": "", "detail": ""},
+        # 定義データ。警告は無く、試験用データを重ねていない（ブラウザ版は重ねない）。設定を読んだ保存の口の名前空間は main。
+        "data": {"tables": dict(DATA_TABLES), "warnings": 0, "pack": None, "namespace": "main"},
     }
     return {**base, **changes}
 
@@ -108,13 +112,17 @@ def with_storage(**changes) -> dict:
     return result(storage={**result()["storage"], **changes})
 
 
+def with_data(**changes) -> dict:
+    return result(data={**result()["data"], **changes})
+
+
 def failed(checks) -> list:
     return [name for name, ok, _ in checks if not ok]
 
 
 def probe_failed(res, sim=None, a_page=None) -> list:
     desktop_sim = {"tick": TICKS} if sim is None else sim
-    return failed(web_smoke.judge_probe(a_page or probe_page(), SHA, res, desktop_sim, TICKS, WARMUP, BUDGETS))
+    return failed(web_smoke.judge_probe(a_page or probe_page(), SHA, res, desktop_sim, TICKS, WARMUP, BUDGETS, DATA_TABLES))
 
 
 def console_page(*lines, done=True) -> dict:
@@ -344,7 +352,7 @@ def test_web_smoke_probe_measures_updates_that_read_the_input():
 
 def test_web_smoke_probe_input_checks_come_right_after_the_ticks_check():
     # 回したtickが足りないときの、最後の1行の語（failed=probe.ticks,…）が変わらないように、ticks の後ろに置く。
-    names = [name for name, _, _ in web_smoke.judge_probe(probe_page(), SHA, result(), {"tick": TICKS}, TICKS, WARMUP, BUDGETS)]
+    names = [name for name, _, _ in web_smoke.judge_probe(probe_page(), SHA, result(), {"tick": TICKS}, TICKS, WARMUP, BUDGETS, DATA_TABLES)]
     at = names.index("ticks")
     assert names[at:at + 5] == ["ticks", "input_source", "adapter_reads", "direct_reads", "measured_ticks"]
     assert names.count("platform") == 1 and names.count("ticks") == 1  # 二重に見ない
@@ -362,7 +370,7 @@ STORAGE_CHECKS = ["storage_backend", "storage_ok", "storage_notice", "storage_va
 
 
 def test_web_smoke_probe_storage_checks_come_right_after_the_summary_check():
-    names = [name for name, _, _ in web_smoke.judge_probe(probe_page(), SHA, result(), {"tick": TICKS}, TICKS, WARMUP, BUDGETS)]
+    names = [name for name, _, _ in web_smoke.judge_probe(probe_page(), SHA, result(), {"tick": TICKS}, TICKS, WARMUP, BUDGETS, DATA_TABLES)]
     at = names.index("sim")
     assert names[at + 1:at + 6] == STORAGE_CHECKS
     assert all(names.count(name) == 1 for name in STORAGE_CHECKS)
@@ -431,6 +439,45 @@ def test_web_smoke_reads_the_stored_settings_from_base64_and_the_envelope():
     assert ok is False and "往復の見本と違う" in message
     for entries in (None, [], {}, {SELFCHECK_KEY: 5}):
         assert web_smoke.read_stored_settings(entries)[0] is False
+
+
+# --- 定義データ（probe の筋書き）：結果の data を、道具が自分で数えた件数と照らす ---
+DATA_CHECKS = ["data_tables", "data_warnings", "data_pack", "data_namespace"]
+
+
+def test_web_smoke_probe_data_checks_come_right_after_the_storage_checks():
+    names = [name for name, _, _ in web_smoke.judge_probe(probe_page(), SHA, result(), {"tick": TICKS}, TICKS, WARMUP, BUDGETS, DATA_TABLES)]
+    at = names.index("storage_main")
+    assert names[at + 1:at + 5] == DATA_CHECKS == list(web_smoke.data_reference.DATA_CHECKS)
+    assert all(names.count(name) == 1 for name in DATA_CHECKS)
+    assert DATA_TABLES == {"cars": 1, "tracks": 1}  # 実物の定義データを、道具が自分で数えた件数
+
+
+@pytest.mark.parametrize(
+    "res, names",
+    [
+        (with_data(tables={"cars": 2, "tracks": 1}), ["data_tables"]),
+        (with_data(tables={"cars": 0, "tracks": 0}), ["data_tables"]),  # 定義データを読まずに、空の定義で起動した
+        (with_data(tables=None), ["data_tables"]),
+        (with_data(warnings=1), ["data_warnings"]),
+        (with_data(warnings=None), ["data_warnings"]),
+        (with_data(pack="extreme"), ["data_pack"]),  # ブラウザ版は、試験用データを重ねない
+        (with_data(namespace="pack_extreme"), ["data_namespace"]),
+        (with_data(namespace=None), ["data_namespace"]),
+        (with_data(pack="extreme", namespace="pack_extreme", tables={"cars": 2, "tracks": 2}), ["data_tables", "data_pack", "data_namespace"]),
+        (result(data=None), DATA_CHECKS),
+        ({key: value for key, value in result().items() if key != "data"}, DATA_CHECKS),  # 古い形の結果
+    ],
+)
+def test_web_smoke_probe_each_data_deviation_fails_under_its_own_name(res, names):
+    assert probe_failed(res) == names
+
+
+def test_web_smoke_probe_data_that_the_tool_could_not_count_does_not_pass():
+    # 道具が、定義データのファイルを数えられなかった（読めない）。アプリの申告だけで通さない。
+    checks = web_smoke.judge_probe(probe_page(), SHA, result(), {"tick": TICKS}, TICKS, WARMUP, BUDGETS, None, "cars.json: ValueError")
+    assert failed(checks) == ["data_tables"]
+    assert "cars.json: ValueError" in next(message for name, _, message in checks if name == "data_tables")
 
 
 # --- 保存先に触れると例外になるようにして開く筋書き ---

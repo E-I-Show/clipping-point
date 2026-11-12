@@ -4,8 +4,11 @@
 
 dist/ を作業場所にして `pyxel package` と `pyxel app2html` を回し、できた中身と大きさを検査する。
 終了コード：0＝合格、1＝検査で問題あり、2＝ビルドの道具が回り切れない。
-検査：要るファイル（main.py）がある。入ってはいけないもの（テスト、文書、道具、__pycache__）が無い。
+検査：要るファイル（main.py）がある。入ってはいけないもの（テスト、文書、道具、試験用データ、__pycache__）が無い。
 知らない種類のファイルが無い。HTML内のデータが .pyxapp と一致する。HTMLが上限（tools/budgets.json）の内。
+定義データ：出荷物の中の data/ の下のファイルの一覧が、ソースの木の clipping_point/data/ と同じ（data_files）。
+表の定義（cp_core/datadefs.py の TABLES）が求めるファイルが、出荷物にある（無ければ missing）。1ファイル1表の表は <表>.json、
+1ファイル1項目の表は <表>/ の直下に .json が1つ以上。一覧が同じ、だけだと、ソースから消したときに、両方に無くて通ってしまう。
 """
 import base64
 import fnmatch
@@ -13,10 +16,12 @@ import re
 import sys
 import zipfile
 
+import data_reference
 from _common import APP, DIST, FAIL, INCOMPLETE, OK, finish, load_budgets, run, show_tail
 
 NAME = APP.name  # pyxel package は、対象ディレクトリの名前を .pyxapp の名前にする
 MUST_HAVE = (f"{NAME}/main.py",)  # 入口。直下に無いとパッケージをimportできない
+DATA_DIR = data_reference.DATA_DIR.name  # 出荷物の中の、定義データの置き場の名（data）
 # 入ってはいけないディレクトリ名（パスのどこかにあれば不合格）。
 FORBIDDEN_DIRS = frozenset({"tests", "testpacks", "docs", "tools", "spikes", "out", "dist", "__pycache__"})
 # 入ってはいけないファイル名の形（テスト、文書、キャッシュ）。
@@ -24,7 +29,7 @@ FORBIDDEN_FILES = ("test_*.py", "*_test.py", "conftest.py", "*.md", "*.pyc", "co
 # 出荷物に入ってよいファイルの種類。初期版は画像や3Dのモデルのファイルを持たない。足すときはここに足す。
 SHIP_SUFFIXES = (".py", ".json")
 STARTUP_MARKER = ".pyxapp_startup_script"  # pyxel package が自分で足す、入口の名前を書いたファイル
-KINDS = ("missing", "outside", "forbidden", "unknown_type", "payload", "size")  # 検査の種類。最後の1行の failed= に出る語
+KINDS = ("missing", "outside", "forbidden", "unknown_type", "data_files", "payload", "size")  # 検査の種類。最後の1行の failed= に出る語
 
 
 def inspect_names(names: list) -> list:
@@ -44,6 +49,38 @@ def inspect_names(names: list) -> list:
             problems.append(("forbidden", f"入ってはいけないものが入っている：{name}"))
         elif not base.endswith(SHIP_SUFFIXES):
             problems.append(("unknown_type", f"知らない種類のファイルが入っている：{name}"))
+    return problems
+
+
+def source_data_files(app_dir=APP) -> list:
+    """ソースの木の、定義データの置き場の下の全部のファイル。出荷物の根からの相対の名（data/cars.json の形）。"""
+    base = app_dir / DATA_DIR
+    return sorted(path.relative_to(app_dir).as_posix() for path in base.rglob("*") if path.is_file() and "__pycache__" not in path.parts)
+
+
+def inspect_data(names: list, source_files: list, tables: dict) -> list:
+    """アーカイブの中の定義データを調べ、問題の一覧を返す。
+
+    names は、アーカイブの中のパスの一覧。source_files は、ソースの木の定義データ（source_data_files() の形）。
+    tables は、表の定義（cp_core/datadefs.py の TABLES）。表の名とファイルの形だけを引く。
+    """
+    prefix, base = f"{NAME}/", f"{DATA_DIR}/"
+    shipped = sorted(name[len(prefix):] for name in names if name.startswith(prefix + base))
+    problems = []
+    for name in sorted(set(source_files) - set(shipped)):
+        problems.append(("data_files", f"ソースの定義データが、出荷物に入っていない：{name}"))
+    for name in sorted(set(shipped) - set(source_files)):
+        problems.append(("data_files", f"出荷物に、ソースの木に無い定義データが入っている：{name}"))
+    suffix = data_reference.datadefs.SUFFIX
+    for table_name, table in tables.items():
+        if table.layout == data_reference.datadefs.ONE_TABLE:
+            wanted = f"{base}{table_name}{suffix}"
+            if wanted not in shipped:
+                problems.append(("missing", f"表の定義が求める定義データが入っていない：{wanted}"))
+        else:
+            folder = f"{base}{table_name}/"
+            if not any(name.startswith(folder) and name.endswith(suffix) and "/" not in name[len(folder):] for name in shipped):
+                problems.append(("missing", f"表の定義が求める定義データが、1つも入っていない：{folder}*{suffix}"))
     return problems
 
 
@@ -74,6 +111,7 @@ def main() -> int:
     with zipfile.ZipFile(pyxapp) as zf:
         names = zf.namelist()
     problems = inspect_names(names)
+    problems += inspect_data(names, source_data_files(), data_reference.datadefs.TABLES)
     if not payload_matches(html.read_text(encoding="utf-8"), pyxapp.read_bytes()):
         problems.append(("payload", "HTML内のデータが .pyxapp と一致しない"))
     html_bytes, pyxapp_bytes = html.stat().st_size, pyxapp.stat().st_size

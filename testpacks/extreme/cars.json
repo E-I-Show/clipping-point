@@ -1,0 +1,19 @@
+{
+  "_notes": {
+    "pack": "試験用データ（extreme）。表示名の上限いっぱい（14字）の値を重ねて試す。出荷物に入らない（clipping_point/ の外に置く）。",
+    "kazane": "出荷するデータの車（kazane）の表示名を、14字に差し替える。",
+    "wide_test_car": "14字の表示名の車を、1台足す。"
+  },
+  "cars": [
+    {
+      "id": "kazane",
+      "name": "KAZANE RS TEST",
+      "data_version": 1
+    },
+    {
+      "id": "wide_test_car",
+      "name": "WWWWWWWWWWWWWW",
+      "data_version": 1
+    }
+  ]
+}

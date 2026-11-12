@@ -1,6 +1,6 @@
 """静的な検査。ゲームは1 tickも回さない。
 
-  python3 tools/check.py [--only syntax|arch|rules|canon|areas]
+  python3 tools/check.py [--only syntax|arch|rules|canon|areas|data]
 
   syntax   clipping_point/、tools/、tests/ の全 .py が compile できる
   arch     層の分離（tools/arch_check.py。純Pythonの層のソースをASTで解析し、許可した一覧と照らす）
@@ -8,11 +8,15 @@
   canon    正本の見張り（tools/canon_guard.py）
   areas    出荷するコード（clipping_point/）とテスト（tests/）の全ファイルが、分野ごとの組の表
            （tools/verify.py の AREAS）のどれかの分野に当たる
+  data     定義データの読み込み検査（clipping_point/cp_core/datadefs.py）。調べる組は、出荷するデータ（clipping_point/data/。
+           警告も、問題として数える）と、testpacks/ の下の各試験用データを重ねたもの（あるだけ調べる。0個でもよい）。
+           件数は、調べた組の数（読み込み検査まで届いた組。問題があった組も数える）
 終了コード：0＝全節が合格、1＝問題のある節がある、2＝調べた件数が0の節か、回り切れなかった節がある。
 最後の1行の「節=数」は、その節で調べた件数。
 """
 import argparse
 import sys
+from pathlib import Path
 
 import arch_check
 import canon_guard
@@ -52,7 +56,57 @@ def areas() -> tuple:
     return verify.unassigned_files(ROOT)
 
 
-SECTIONS = {"syntax": syntax, "arch": arch, "rules": rules, "canon": canon, "areas": areas}
+SHIPPED_SET = "shipped"  # 出荷するデータだけの組の名。試験用データを重ねた組は、試験用データの名
+
+
+def data_sets(data_dir, packs_root, tables=None) -> tuple:
+    """data の節の中身。返すのは (調べた組の数, 問題の一覧)。置き場、試験用データの根、表の定義は、引数で受ける。
+
+    組は、出荷するデータと、試験用データの根の下の各試験用データを重ねたもの。件数は、読み込み検査まで届いた組の数
+    （問題があった組も数える）。出荷するデータの警告は、問題として数える。試験用データを重ねた組では、出荷するデータの
+    組で挙げた行を、もう1度は挙げない。重ねられない試験用データ（名の字が違う、空の置き場）と、根の直下の、置き場でない
+    ファイルは、問題にして、組には数えない。
+    cp_core と cp_app は、ここでimportする（頭でimportすると、cp_core が無いときに、ほかの節まで回らなくなる）。
+    """
+    if str(APP) not in sys.path:
+        sys.path.append(str(APP))  # 後ろに足す（標準ライブラリの名前を隠さないように）
+    from cp_app import data_files
+    from cp_core import datadefs
+
+    tables = datadefs.TABLES if tables is None else tables
+    sources = data_files.read_sources(data_dir)
+    count, problems, shipped_lines = 1, [], []
+    try:
+        loaded = datadefs.load_game_data(sources, None, tables)
+    except datadefs.DataError as exc:
+        shipped_lines = list(exc.problems)
+        problems += [f"({SHIPPED_SET}) {line}" for line in shipped_lines]
+    else:
+        problems += [f"({SHIPPED_SET}) warning: {line}" for line in loaded.warnings]
+    root = Path(packs_root)
+    for path in sorted(root.iterdir()) if root.is_dir() else []:
+        where = f"{datadefs.PACKS_DIR}/{path.name}"
+        if not path.is_dir():
+            problems.append(f"{where}: 試験用データの置き場（ディレクトリ）でない。試験用データは {datadefs.PACKS_DIR}/<名>/ に置く")
+            continue
+        try:
+            pack = data_files.read_pack(path.name, root)
+        except ValueError as exc:
+            problems.append(f"{where}: 重ねられない：{exc}")
+            continue
+        count += 1
+        try:
+            datadefs.load_game_data(sources, pack, tables)
+        except datadefs.DataError as exc:
+            problems += [f"({path.name}) {line}" for line in exc.problems if line not in shipped_lines]
+    return count, problems
+
+
+def data() -> tuple:
+    return data_sets(APP / "data", ROOT / "testpacks")
+
+
+SECTIONS = {"syntax": syntax, "arch": arch, "rules": rules, "canon": canon, "areas": areas, "data": data}
 
 
 def main() -> int:

@@ -20,7 +20,7 @@ UI = "画面（2D）"
 WEB = "ブラウザ連携"
 LOOP = "メインループと世界の状態"
 TOOLS_AREA = "検証の道具と検査の決まり"
-FULL_STEPS = ["check", "test", "fingerprint", "screen-check", "run", "run-realtime", "tour", "export", "web-smoke"]
+FULL_STEPS = ["check", "test", "fingerprint", "screen-check", "run", "run-realtime", "run-pack", "tour", "export", "web-smoke"]
 UI_WORDS = "canvas or screens or ui_check or fixtures or tour"
 FLOW_WORDS = "flow or fixtures or screens or fingerprint"
 INPUT_WORDS = "input_frame or input_script or input_pyxel or input_trace or profile"
@@ -201,6 +201,38 @@ def test_verify_fingerprint_files_map_to_the_tools_area_and_the_test_to_the_worl
     assert unknown == [] and step_names(verify.plan_for(areas, unknown)[0])[-1] == verify.SELFTEST
 
 
+def test_verify_data_files_map_to_the_main_loop_area_and_the_load_checks_to_the_tools_area_too():
+    # 計画の表の「保存、データの検査、乱数、メインループ、世界の状態」：全部を回す。ファイルを読む所、実物の定義データ、試験用データ。
+    for path in (
+        "clipping_point/cp_app/data_files.py", "clipping_point/data/cars.json", "clipping_point/data/tracks/test_loop.json",
+        "testpacks/extreme/cars.json", "testpacks/extreme/tracks/wide_test_loop.json", "testpacks/another/cars.json",
+        "tests/test_data_files.py",
+    ):
+        assert names_of(path) == [LOOP], path
+    # 読み込み検査の決まり（検査と重ね方）は、計画の表で selftest-break つきの分野（検査の決まり）でもある。
+    for path in ("clipping_point/cp_core/datadefs.py", "tests/test_datadefs.py"):
+        assert names_of(path) == [LOOP, TOOLS_AREA], path
+        areas, unknown = verify.areas_for([path])
+        assert unknown == [] and step_names(verify.plan_for(areas, unknown)[0])[-1] == verify.SELFTEST
+    # 道具の側（数える所、節の関数のテスト）は、道具の分野。
+    for path in ("tools/data_reference.py", "tests/test_check_tool.py", "tests/test_data_reference.py"):
+        assert names_of(path) == [TOOLS_AREA], path
+    # 実物の定義データは、1つずつ並べてある。新しいファイルは、分野を決めるまで当たらない（check の areas の節が落ちる）。
+    assert names_of("clipping_point/data/tracks/zz_no_area.json") == []
+    assert names_of("clipping_point/data/zz_no_area.json") == []
+    # 実物の定義データの値を変えただけでは、selftest-break を回さない。
+    areas, unknown = verify.areas_for(["clipping_point/data/cars.json", "testpacks/extreme/cars.json"])
+    assert unknown == [] and verify.SELFTEST not in step_names(verify.plan_for(areas, unknown)[0])
+
+
+def test_verify_run_with_the_test_pack_is_a_step_of_the_full_verification_right_after_the_realtime_run():
+    # 試験用データを重ねて回す手順。重ねる口と、保存の名前空間の切り替えを、毎回通す。
+    names = list(verify.STEPS)
+    assert names[names.index("run-realtime") + 1] == "run-pack" and "run-pack" not in verify.NOT_YET
+    assert [str(part) for part in verify.STEPS["run-pack"][1:]] == [str(ROOT / "tools" / "run.py"), "--pack", "extreme"]
+    assert (ROOT / "testpacks" / "extreme").is_dir()  # 手順が渡す名の、試験用データがある
+
+
 def test_verify_fingerprint_is_a_step_of_the_full_verification_right_after_the_tests():
     assert list(verify.STEPS)[:3] == ["check", "test", "fingerprint"]
     assert [str(part) for part in verify.STEPS["fingerprint"][1:]] == [str(ROOT / "tools" / "fingerprint.py")]  # --update は付けない
@@ -314,7 +346,7 @@ def test_verify_focused_plan_does_not_repeat_a_word_two_areas_share():
 def test_verify_screen_check_and_tour_are_no_longer_waiting_to_be_built():
     assert "screen-check" in verify.STEPS and "tour" in verify.STEPS
     assert "screen-check" not in verify.NOT_YET and "tour" not in verify.NOT_YET
-    # 全体の検証での順：check → test → fingerprint → screen-check → run → run-realtime → tour → export → web-smoke。
+    # 全体の検証での順：check → test → fingerprint → screen-check → run → run-realtime → run-pack → tour → export → web-smoke。
     assert list(verify.STEPS) == FULL_STEPS
 
 

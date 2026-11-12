@@ -18,6 +18,8 @@
            保存：保存先の名が localstorage、保存の往復が通っている、知らせの1行が空。道具が、ブラウザの localStorage の
            往復の鍵（clippingpoint/selfcheck.settings）の値を自分で読み（ブラウザの実行役が、結果に入れる）、base64 と封筒を開けて、
            往復の見本と比べる。ふつうの保存（名前空間 main）の鍵が、できていないことも見る。
+           定義データ：結果の data の、表ごとの件数が、道具が定義データのファイルを自分で読んで数えた件数と同じ、警告が0件、
+           試験用データを重ねていない（null）、設定を読んだ保存の口の名前空間が main。数え方と確かめは tools/data_reference.py。
   script   window.CP_PROBE に、回すtick数、道具の台本（tools/input_script_smoke.json）、入力の跡の件数の上限を置いて開く。
            見るもの：ブラウザ版であること、回したtick、入力の出どころが台本で、入力アダプタも直読みも呼んでいない、
            世界の要約がデスクトップ版（同じ台本を渡して回した）と同じで、参照（tools/input_reference.py）とも同じ、
@@ -54,6 +56,7 @@ import shutil
 import sys
 from dataclasses import dataclass
 
+import data_reference
 import input_reference
 from _common import APP, DIST, FAIL, INCOMPLETE, OK, OUT, TOOLS, child_env, finish, load_budgets, run, show_tail
 
@@ -209,8 +212,11 @@ def read_probe_result(page: dict):
     return (data, "") if isinstance(data, dict) else (None, "result_unreadable")
 
 
-def judge_probe(page: dict, html_sha256: str, result: dict, desktop_sim, ticks: int, warmup_ticks: int, budgets: dict) -> list:
-    """回すtick数を渡して開く筋書きの確かめ。result は、アプリがコンソールへ出した結果。"""
+def judge_probe(page: dict, html_sha256: str, result: dict, desktop_sim, ticks: int, warmup_ticks: int, budgets: dict, data_tables, data_why: str = "") -> list:
+    """回すtick数を渡して開く筋書きの確かめ。result は、アプリがコンソールへ出した結果。
+
+    data_tables は、道具が定義データのファイルを自分で読んで数えた、表ごとの項目の数（数えられなかったら None。data_why は、その理由）。
+    """
     perf = result.get("perf") if isinstance(result.get("perf"), dict) else {}
     renders, tolerance = result.get("renders"), budgets["web_renders_tolerance"]
     measured_renders, measured_ticks = perf.get("renders"), ticks - warmup_ticks
@@ -234,6 +240,8 @@ def judge_probe(page: dict, html_sha256: str, result: dict, desktop_sim, ticks: 
         # 保存。アプリの申告（保存先の名、往復が通ったか、知らせ）と、道具が自分で読んだ localStorage の値。
         *storage_checks(result, storage_select.BACKEND_WEB, ""),
         *stored_value_checks(page),
+        # 定義データ。ブラウザ版は、試験用データを重ねない（名は null、保存の名前空間は main）。
+        *data_reference.data_checks(result, data_tables, None, f"（数えられなかった：{data_why}）" if data_why else ""),
         (
             "renders",
             type(renders) is int and abs(renders - ticks // 2) <= tolerance,
@@ -549,7 +557,9 @@ def scenario_probe(args, budgets: dict, html_sha256: str, context: dict) -> tupl
         + " with_warmup=" + "/".join(str(whole.get(key)) for key in TIMING_CHECKS)
         + f" python={result.get('python')} save={saved.get('backend')}"
     )
-    return judge_probe(page, html_sha256, result, desktop_sim, args.ticks, warmup_ticks, budgets), [fact], ""
+    # 定義データの、表ごとの項目の数。道具が、ソースの木のファイルを自分で読んで数える（出荷物の中身がソースと同じことは export が見る）。
+    data_tables, data_why = data_reference.expected_tables()
+    return judge_probe(page, html_sha256, result, desktop_sim, args.ticks, warmup_ticks, budgets, data_tables, data_why), [fact], ""
 
 
 def scenario_script(args, budgets: dict, html_sha256: str, context: dict) -> tuple:

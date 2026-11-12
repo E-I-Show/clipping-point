@@ -1,7 +1,7 @@
 """検証の道具を決まった順に、1本ずつ回して、表を1つ出す。分野ごとの組の表は、ここの AREAS だけに持つ。
 
   python3 tools/verify.py --all [--selftest]                 全体の検証（check → test → fingerprint → screen-check → run
-                                                             → run --realtime → tour → export → web-smoke）
+                                                             → run --realtime → run --pack extreme → tour → export → web-smoke）
   python3 tools/verify.py --touched [--base REV] [--selftest] 変更したファイルから触れた分野を引いて回す
   python3 tools/verify.py --list                             分野ごとの組の表を出す
 
@@ -44,6 +44,9 @@ STEPS = {
     "screen-check": [PY, TOOLS / "screen_check.py"],
     "run": [PY, TOOLS / "run.py"],
     "run-realtime": [PY, TOOLS / "run.py", "--realtime"],
+    # 試験用データ（testpacks/extreme/）を重ねて回す。重ねる口と、保存の名前空間の切り替えを、毎回通す。
+    # 巡回を重ねて回すのは、車名を出す画面ができる段1。
+    "run-pack": [PY, TOOLS / "run.py", "--pack", "extreme"],
     "tour": [PY, TOOLS / "tour.py"],
     "export": [PY, TOOLS / "export.py"],
     "web-smoke": [PY, TOOLS / "web_smoke.py"],
@@ -132,14 +135,20 @@ AREAS = (
         # 計画の表の「保存、データの検査、乱数、メインループ、世界の状態」の行のうち、いまファイルがある分。
         # 保存は、保存の口と保存する項目（cp_core）と、ファイルの保存先（cp_app/storage_file.py。デスクトップ版）。
         # localStorage の保存先と、保存先を選ぶ所は、上の「ブラウザ連携」に並べた。
+        # 計画の表の「データの検査」に当たるファイル（段0 区切り8）は、読み込み検査と重ね方（cp_core/datadefs.py）、ファイルを読む所（cp_app/data_files.py）、
+        # 実物の定義データ（clipping_point/data/ の下。1つずつ並べる）、試験用データ（testpacks/。出荷物の外なので、まとめて当てる）。
+        # 計画の表の「コース」「音」の行のテストの絞りにある「データ」は、その分野の最初のファイルを作る区切りで、行ごと足す。
         "メインループと世界の状態",
         (
             "clipping_point/main.py", "clipping_point/cp_app/__init__.py", "clipping_point/cp_app/app.py",
             "clipping_point/cp_app/perf.py", "clipping_point/cp_core/__init__.py", "clipping_point/cp_core/fixed_loop.py",
             "clipping_point/cp_core/sim.py", "clipping_point/cp_core/rng.py", "clipping_point/cp_core/storage.py",
             "clipping_point/cp_core/profile.py", "clipping_point/cp_app/storage_file.py",
+            "clipping_point/cp_core/datadefs.py", "clipping_point/cp_app/data_files.py",
+            "clipping_point/data/cars.json", "clipping_point/data/tracks/test_loop.json", "testpacks/**",
             "tests/test_fixed_loop.py", "tests/test_sim.py", "tests/test_perf.py", "tests/test_rng.py", "tests/test_storage.py",
             "tests/test_profile.py", "tests/test_storage_file.py", "tests/test_fingerprint.py",
+            "tests/test_datadefs.py", "tests/test_data_files.py",
         ),
         ALL,
         ALL,
@@ -149,13 +158,19 @@ AREAS = (
         # 道具そのもの（tools/**）は、まとめて当てる。はみ出しの検査と見本データは、「画面（2D）」にも並べてある。
         # 指紋のテスト（tests/test_fingerprint.py）は、道具 fingerprint の関数も見るので、「メインループと世界の状態」にも、ここにも並べる。
         # 道具 run の、保存のファイルを読む関数のテスト（tests/test_run_tool.py）は、道具の側なので、ここに並べる。
+        # 読み込み検査の決まり（cp_core/datadefs.py と、そのテスト。計画の表の「データの検査」）は、「メインループと世界の状態」にも、ここにも並べる。
+        # 道具 check の data の節の関数のテスト（tests/test_check_tool.py）と、道具が定義データを自分で数える所のテスト
+        # （tests/test_data_reference.py）は、道具の側なので、ここに並べる。
+        # 実物の定義データと試験用データ（中身の値）は、ここには並べない（値を合わせるたびに selftest-break を回さない）。
+        # selftest-break の壊す件は、実物の定義データの文字を壊す所に使う。id と表示名を変えたら、壊す件も確かめる（.claude/rules/data.md）。
         "検証の道具と検査の決まり",
         (
             "tools/**", "tests/conftest.py", "tests/count_floor.txt", "tests/snapshots/**", "tests/test_arch_guard.py",
             "tests/test_rules_guard.py", "tests/test_canon_guard.py", "tests/test_export_inspect.py", "tests/test_verify.py",
             "tests/test_web_smoke.py", "tests/test_claude_tools.py", "tests/test_screen_tools.py", "tests/test_fingerprint.py",
-            "tests/test_run_tool.py",
+            "tests/test_run_tool.py", "tests/test_check_tool.py", "tests/test_data_reference.py",
             "clipping_point/cp_ui/check.py", "clipping_point/cp_ui/fixtures.py", "tests/test_ui_check.py", "tests/test_fixtures.py",
+            "clipping_point/cp_core/datadefs.py", "tests/test_datadefs.py",
             "pytest.ini", "requirements-dev.txt",
         ),
         ALL,

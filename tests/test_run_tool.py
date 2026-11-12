@@ -4,6 +4,8 @@
 ここでは、道具が、保存の往復が残したファイルを読んで、往復の見本と比べる所（read_saved_settings）と、
 ふつうの保存（名前空間 main）のファイルを挙げる所（main_namespace_files）を見る。
 合っている場合だけでなく、合わない場合（違う値、違う形式バージョン、壊れた封筒、ファイルが無い）が、どれも落ちること。
+定義データ（結果の data の確かめ、試験用データを重ねて回す口 --pack）は、道具が使う関数（tools/data_reference.py）を、
+道具 run の使い方で見る。数え方と確かめの1つずつは tests/test_data_reference.py。
 """
 import dataclasses
 
@@ -129,6 +131,40 @@ def test_run_tool_main_namespace_file_written_through_the_store_is_seen(tmp_path
     assert run_tool.main_namespace_files(saves) == [MAIN_FILE]
     ok, message = run_tool.read_saved_settings(saves)
     assert ok is False and "読めない" in message  # 名前空間 selfcheck のファイルは、できていない
+
+
+# --- 定義データと、試験用データを重ねて回す口（--pack） ---
+def test_run_tool_passes_the_pack_by_the_variable_the_app_reads_and_counts_by_itself():
+    # 道具は、アプリが読む環境変数の名で、試験用データの名を渡す。外から入った値は、子プロセスへ渡さない。
+    import _common
+
+    assert run_tool.data_files.PACK_ENV == "CP_DATA_PACK"
+    assert run_tool.data_files.PACK_ENV.startswith(_common.APP_ENV_PREFIXES)
+    # 結果の data と照らす件数は、道具が、定義データのファイルを自分で読んで数える（数え方のテストは tests/test_data_reference.py）。
+    assert run_tool.data_reference.expected_tables() == ({"cars": 1, "tracks": 1}, "")
+    assert run_tool.data_reference.expected_tables("extreme") == ({"cars": 2, "tracks": 2}, "")
+
+
+def test_run_tool_result_data_of_a_plain_run_and_of_a_pack_run():
+    checks = run_tool.data_reference.data_checks
+    plain = {"data": {"tables": {"cars": 1, "tracks": 1}, "warnings": 0, "pack": None, "namespace": "main"}}
+    packed = {"data": {"tables": {"cars": 2, "tracks": 2}, "warnings": 0, "pack": "extreme", "namespace": "pack_extreme"}}
+    assert [name for name, ok, _ in checks(plain, {"cars": 1, "tracks": 1}, None) if not ok] == []
+    assert [name for name, ok, _ in checks(packed, {"cars": 2, "tracks": 2}, "extreme") if not ok] == []
+    # 試験用データを渡したのに、重ねていない結果（重ねる口を読まない）。
+    assert [name for name, ok, _ in checks(plain, {"cars": 2, "tracks": 2}, "extreme") if not ok] == ["data_tables", "data_pack", "data_namespace"]
+    # 重ねたのに、設定を読む保存の口の名前空間が main のまま。
+    packed["data"]["namespace"] = storage.DEFAULT_NAMESPACE
+    assert [name for name, ok, _ in checks(packed, {"cars": 2, "tracks": 2}, "extreme") if not ok] == ["data_namespace"]
+
+
+def test_run_tool_pack_that_is_missing_or_empty_is_found_before_the_app_runs(tmp_path):
+    # --pack の名に当たる置き場が無い、置き場にファイルが1つも無い、は回り切れない（2）。アプリを回す前に見る。
+    reason = run_tool.data_reference.pack_or_reason
+    assert reason("extreme") == ""
+    assert reason("no_such_pack_zz") and reason("Bad Name")
+    (tmp_path / "empty").mkdir()
+    assert reason("empty", tmp_path) and reason("nosuch", tmp_path)
 
 
 def test_run_tool_main_namespace_files_of_a_missing_or_empty_directory_are_none(tmp_path):

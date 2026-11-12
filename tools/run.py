@@ -1,14 +1,16 @@
 """デスクトップ版を、画面なしで決まったtickだけ別プロセスで回す。
 
-  python3 tools/run.py [--ticks N] [--realtime] [--script FILE | --no-script] [--timeout 秒]
+  python3 tools/run.py [--ticks N] [--realtime] [--script FILE | --no-script] [--pack 名] [--timeout 秒]
 
   既定        速い経路。アプリ自前のループ（pyxel.flip）で回す。入力は、道具の台本（tools/input_script_smoke.json）
   --realtime  本番と同じ経路。pyxel.run で実時間（毎秒60回）で回す。台本を渡さず、入力アダプタを実物のPyxelで毎tick呼ぶ
   --script FILE  この台本（JSON）を渡す。どちらの経路でも使える
   --no-script    台本を渡さない（入力アダプタから読む）。どちらの経路でも使える
+  --pack 名      試験用データ（testpacks/<名>/）を重ねて回す（環境変数 CP_DATA_PACK でアプリへ渡す）。指紋は照らさない
 
 終了コード：0＝合格、1＝回ったが合わない、2＝全tickを回り切れない（時間切れ、結果ファイルが無い）・
-台本が読めない・回すtick数が台本の合計より短い・指紋の写しが無い（読めない）。
+台本が読めない・回すtick数が台本の合計より短い・指紋の写しが無い（読めない）・--pack の名の試験用データが無い（置き場が無い、
+置き場にファイルが1つも無い、名の字が違う）。
 アプリの終了コードが0でも、それだけでは合格にしない。pyxel.quit() は常に0で終わるため。
 失敗にする条件：アプリの終了コード、結果ファイルが無い、回したtickが違う、世界のtickが違う、
 実描画の回数が範囲の外（tickの半分の前後）、裏画面が空、画面が裏画面と違う、回した経路が違う、
@@ -17,10 +19,15 @@
 世界の要約が参照（tools/input_reference.py。台本なしなら、何も押していない入力）と違う、
 世界の要約が、指紋の写し（tests/snapshots/fingerprint.json）の、同じ筋書き（台本の有無と中身、回したtick数が同じもの）の要約と違う、
 保存の往復が通っていない・保存先の名が file でない、道具が自分で読んだ保存のファイルが往復の見本と違う、
-名前空間 main のファイルができている。
+名前空間 main のファイルができている、
+結果の data が合わない（表ごとの件数が、道具が定義データのファイルを自分で読んで数えた件数と違う。警告が0件でない。
+重ねた試験用データの名が、渡した名と違う（渡していなければ null）。設定を読んだ保存の口の名前空間が、main
+（渡していれば pack_<名>）でない）。数え方と確かめは tools/data_reference.py。
 保存は、置き場（out/run/saves）を、環境変数 CP_SAVE_DIR でアプリへ渡す。アプリは、検証の口のときだけ、名前空間 selfcheck で
 保存の往復を回して、書いた鍵を残す。道具は、そのファイルを自分で読み、封筒を開けて、往復の見本と比べる（アプリの申告だけに頼らない）。
-指紋の筋書きに無い回し方（--ticks N、--script FILE など）では、指紋の確かめを外して、最後の1行に fingerprint=skipped と出す。
+「名前空間 main のファイルができていない」は、保存の往復が main に触れないことの確かめ。試験用データを重ねたときの、
+名前空間の切り替えは、結果の data の namespace で見る（段0の起動は、設定を書かないので、ファイルでは分からない）。
+指紋の筋書きに無い回し方（--ticks N、--script FILE、--pack 名 など）では、指紋の確かめを外して、最後の1行に fingerprint=skipped と出す。
 3Dが描かれていること、左右の向きは、後の区切りで足す（最後の1行の not_yet）。
 """
 import argparse
@@ -29,11 +36,12 @@ import shutil
 import sys
 from pathlib import Path
 
+import data_reference
 import fingerprint
 import input_reference
 from _common import APP, FAIL, INCOMPLETE, OK, OUT, ROOT, child_env, finish, load_budgets, run, show_tail
 
-from cp_app import storage_file, storage_select  # noqa: E402 - cp_app への道は、input_reference が足す。pyxel を読み込まないモジュールだけ
+from cp_app import data_files, storage_file, storage_select  # noqa: E402 - cp_app への道は、input_reference が足す。pyxel を読み込まないモジュールだけ
 from cp_core import profile, storage  # noqa: E402
 
 NOT_YET = ("scene3d", "mirror")  # 後の区切りで足す確かめ
@@ -73,6 +81,7 @@ def main() -> int:
     choice = ap.add_mutually_exclusive_group()
     choice.add_argument("--script", default=None, metavar="FILE", help="渡す台本（JSON）。既定は、速い経路だけ tools/input_script_smoke.json")
     choice.add_argument("--no-script", action="store_true", help="台本を渡さない（入力アダプタから読む）")
+    ap.add_argument("--pack", default=None, metavar="NAME", help="試験用データ（testpacks/NAME/）を重ねて回す。指紋は照らさない")
     ap.add_argument("--timeout", type=float, default=None, help="秒。既定は tick数から決める")
     args = ap.parse_args()
     driver = "run" if args.realtime else "flip"
@@ -84,6 +93,8 @@ def main() -> int:
         script_path = None if args.realtime else input_reference.SMOKE_SCRIPT
     want_source = "adapter" if script_path is None else "script"
     head = f"driver={driver} input={want_source} ticks_wanted={args.ticks}"
+    if args.pack is not None:
+        head += f" pack_wanted={args.pack}"
     tolerance = load_budgets()["run_renders_tolerance"]
     # 実描画が0回でも幅の中に入ってしまう短さでは、判定にならない。
     min_ticks = 2 * (tolerance + 1)
@@ -99,17 +110,26 @@ def main() -> int:
         # 台本の終わりまで回さないと、台本の後ろの入力が世界へ届いたことを見られない。
         if args.ticks < script.total_ticks:
             return finish("run", INCOMPLETE, f"{head} reason=ticks_shorter_than_script script_ticks={script.total_ticks}")
-    # 指紋の写し。無いか、読めなければ、回り切れない（黙って作らない。取り直す口は tools/fingerprint.py --update）。
-    snapshot = fingerprint.read_fingerprint_snapshot(ROOT)
-    if snapshot is None:
-        print(f"  run: 指紋の写し（{fingerprint.FINGERPRINT_SNAPSHOT}）が無いか、読めない")
-        return finish("run", INCOMPLETE, f"{head} reason=no_fingerprint_snapshot")
-    try:
-        # 同じ筋書き（台本の有無と中身、回すtick数が同じもの）。無ければ、指紋の確かめを外す。
-        scenario = fingerprint.scenario_for(script_value, args.ticks)
-    except ValueError as exc:
-        print(f"  run: 指紋の筋書きの台本が読めない：{exc}")
-        return finish("run", INCOMPLETE, f"{head} reason=script_unreadable")
+    scenario = snapshot = None
+    if args.pack is not None:
+        # 試験用データを重ねて回す。名に当たる置き場が無い、置き場にファイルが1つも無い、名の字が違う、は回り切れない
+        # （アプリは、起動時に ValueError にする。道具は、同じ所を先に見て、2にする）。指紋は照らさない。
+        why = data_reference.pack_or_reason(args.pack)
+        if why:
+            print(f"  run: 試験用データ（{args.pack}）が使えない：{why}")
+            return finish("run", INCOMPLETE, f"{head} reason=no_such_pack")
+    else:
+        # 指紋の写し。無いか、読めなければ、回り切れない（黙って作らない。取り直す口は tools/fingerprint.py --update）。
+        snapshot = fingerprint.read_fingerprint_snapshot(ROOT)
+        if snapshot is None:
+            print(f"  run: 指紋の写し（{fingerprint.FINGERPRINT_SNAPSHOT}）が無いか、読めない")
+            return finish("run", INCOMPLETE, f"{head} reason=no_fingerprint_snapshot")
+        try:
+            # 同じ筋書き（台本の有無と中身、回すtick数が同じもの）。無ければ、指紋の確かめを外す。
+            scenario = fingerprint.scenario_for(script_value, args.ticks)
+        except ValueError as exc:
+            print(f"  run: 指紋の筋書きの台本が読めない：{exc}")
+            return finish("run", INCOMPLETE, f"{head} reason=script_unreadable")
     # 実時間で回す分（tick数÷60秒）の3倍に、起動の分を足す。
     timeout = args.timeout if args.timeout is not None else 30 + args.ticks / 20
 
@@ -121,6 +141,8 @@ def main() -> int:
     env = child_env(CP_SMOKE=result_path, CP_SMOKE_TICKS=args.ticks, CP_SMOKE_DRIVER=driver, **{storage_select.SAVE_DIR_ENV: save_dir})
     if script_path is not None:
         env["CP_SMOKE_SCRIPT"] = str(script_path)
+    if args.pack is not None:
+        env[data_files.PACK_ENV] = args.pack  # 重ねる試験用データの名
     code, out, err = run([sys.executable, APP / "main.py"], timeout=timeout, env=env, cwd=work)
     if code is None:
         show_tail(out, err)
@@ -191,12 +213,18 @@ def main() -> int:
     checks["save_file"] = read_saved_settings(save_dir)
     main_files = main_namespace_files(save_dir)
     checks["save_main"] = (not main_files, f"ふつうの保存（名前空間 {storage.DEFAULT_NAMESPACE}）のファイルができている：{main_files}（保存の往復は、名前空間 {profile.SELFCHECK_NAMESPACE} で回す）")
+    # 定義データ。アプリの申告（表ごとの件数、警告、重ねた名、保存の名前空間）を、道具が自分で数えた件数と、渡した名と照らす。
+    want_tables, why = data_reference.expected_tables(args.pack)
+    for name, ok, message in data_reference.data_checks(data, want_tables, args.pack, f"（数えられなかった：{why}）" if why else ""):
+        checks[name] = (ok, message)
+    loaded = data.get("data") if isinstance(data.get("data"), dict) else {}
     failed = [name for name, (ok, _) in checks.items() if not ok]
     for name in failed:
         print(f"  run: {checks[name][1]}")
     summary = (
         f"driver={driver} input={data.get('input_source')} ticks={data.get('ticks')} renders={data.get('renders')} "
         f"back_ink={data.get('back_ink')} screen_diff={data.get('screen_diff')} wall_s={data.get('wall_s')} "
+        f"pack={'none' if loaded.get('pack') is None else loaded.get('pack')} namespace={loaded.get('namespace')} "
         f"save={saved.get('backend')} checks={len(checks)} problems={len(failed)}"
     )
     if failed:

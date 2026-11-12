@@ -34,6 +34,14 @@ trace_max が1以上のときだけ、入力の跡を取り（cp_app/input_trace
 知らせの1行（保存先を切り替えた、保存が読めない）は、仮の表示に出す。一度に出すのは、多くて1つ（保存先の切り替えが先）。
 保存の往復（cp_core/profile.py の selfcheck。名前空間 selfcheck）は、検証の口（CP_SMOKE、window.CP_PROBE）のときだけ回し、
 結果の storage に {backend, ok, notice, detail} を入れる。notice は、最後に組み立てた表示用の値から取る。
+
+定義データ。起動時に main() が、保存先を選んだ後に読んで、読み込み検査を通す（cp_app/data_files.py と cp_core/datadefs.py）。
+問題があれば、全部を並べた例外（DataError）で止まる。デスクトップ版もブラウザ版も、巡回の口でも読む。
+デスクトップ版は、どの起動でも次の環境変数を読む。ブラウザ版は読まない。
+  CP_DATA_PACK=<試験用データの名>   あれば、testpacks/<名>/ を重ねる。置き場が無い、空、名の字が違う、は起動時に ValueError
+重ねている間、設定を読む保存の口の名前空間は pack_<名>（main の代わり）。保存の往復の名前空間（selfcheck）は、そのまま。
+結果の data に {tables, warnings, pack, namespace} を入れる。namespace は、設定を読んだ保存の口（SaveStore.namespace）から取る。
+読み込んだ定義は、世界（Sim）へは、まだ渡さない（段0 区切り9）。
 """
 import json
 import os
@@ -52,7 +60,7 @@ from cp_core.storage import SaveStore
 from cp_ui.canvas import SCREEN_H, SCREEN_W, Canvas
 from cp_ui.screens import COL_BACK, SCREENS, TITLE
 
-from . import storage_select, tour, web_bridge
+from . import data_files, storage_select, tour, web_bridge
 from .canvas_pyxel import execute
 from .input_pyxel import PyxelInput
 from .input_trace import InputTrace
@@ -101,14 +109,18 @@ def read_run_config(env) -> RunConfig | None:
 
 
 class App:
-    def __init__(self, selected: storage_select.Selected, run_config: RunConfig | None = None, probe: web_bridge.Probe | None = None, js=None) -> None:
+    def __init__(self, selected: storage_select.Selected, data, run_config: RunConfig | None = None, probe: web_bridge.Probe | None = None, js=None) -> None:
         self.run_config = run_config
         self.probe = probe  # ブラウザ版で外から渡された、回すtick数などの指定。無ければ None
         self.js = js  # ブラウザの機能（js のモジュール）。デスクトップ版では None
         self.probe_reported = False
+        # 読み込んだ定義（cp_core.datadefs の GameData）。読み込み検査は、main() で済んでいる。世界へは、まだ渡さない（段0 区切り9）。
+        self.data = data
         # 保存。選んだ保存先（selected）から、設定を読み込む。壊れた値の退避と、既定値での書き直しは、読み込みの中で済む。
         self.storage_name = selected.name  # 保存先の名。結果に入れる
-        loaded = profile.load_settings(SaveStore(selected.backend))
+        # 設定を読む保存の口。名前空間は、読み込んだ定義から取る（試験用データを重ねている間は pack_<名>。ふだんの保存に触れない）。
+        self.store = SaveStore(selected.backend, data.save_namespace)
+        loaded = profile.load_settings(self.store)
         self.settings = loaded.settings  # 設定。使う所（音、変速、アシスト、視点）は、段1から作る
         # 知らせの1行。一度に出すのは、多くて1つ。保存先の切り替えを先にする。仮の表示に出す。
         self.notice = selected.notice or loaded.notice
@@ -181,6 +193,15 @@ class App:
         notice = self.view.notice if self.view is not None else ""
         return {"backend": self.storage_name, "ok": ok, "notice": notice, "detail": detail}
 
+    # --- 定義データ ---
+    def data_report(self) -> dict:
+        """結果に足す、表ごとの件数、警告の数、重ねた試験用データの名（無ければ None）、保存の名前空間。
+
+        namespace は、設定を読んだ保存の口から取る（読み込んだ定義の側の値を、直に入れない）。
+        保存の口へ名前空間を渡し忘れると、ここが main になり、道具（試験用データを重ねて回す手順）で落ちる。
+        """
+        return {"tables": self.data.counts(), "warnings": len(self.data.warnings), "pack": self.data.pack, "namespace": self.store.namespace}
+
     # --- 毎秒60回 ---
     def update(self) -> None:
         started_s = time.perf_counter()
@@ -243,6 +264,7 @@ class App:
             "driver": self.loop,  # 指定された経路ではなく、実際に入ったループ
             **self.input_report(),
             "storage": self.storage_report(),
+            "data": self.data_report(),
             "wall_s": round(time.perf_counter() - self.started_s, 3),
             "python": sys.version.split()[0],
             "pyxel": pyxel.VERSION,
@@ -268,6 +290,7 @@ class App:
             "perf": self.meter.report(),
             **self.input_report(),
             "storage": self.storage_report(),
+            "data": self.data_report(),
             "platform": sys.platform,
             "python": sys.version.split()[0],
             "pyxel": pyxel.VERSION,
@@ -295,10 +318,13 @@ def main() -> None:
     # 保存先を選ぶ。ブラウザ版は、ここで試し書きをする。デスクトップ版は、どの起動でも CP_SAVE_DIR を読む
     # （巡回の口でも読む。相対パスは、ここで ValueError）。
     selected = storage_select.select(js, os.environ)
+    # 定義データを読んで、読み込み検査を通す。問題があれば、全部を並べた例外（DataError）で、ここで止まる（巡回の口でも読む）。
+    # デスクトップ版は、どの起動でも CP_DATA_PACK を読む（試験用データを重ねる。置き場が無ければ、ここで ValueError）。
+    data = data_files.load(os.environ, js)
     # 巡回の口。デスクトップ版で、CP_TOUR があるときだけ。ブラウザ版では読まない。
     tour_config = tour.read_config(os.environ) if js is None else None
     if tour_config is not None:
         tour.run(pyxel, tour_config)
         # pyxel.quit() は常に終了コード0で終わり、失敗を消すので使わない。
         sys.exit(0)
-    App(selected, read_run_config(os.environ), web_bridge.read_probe(js), js).run()
+    App(selected, data, read_run_config(os.environ), web_bridge.read_probe(js), js).run()

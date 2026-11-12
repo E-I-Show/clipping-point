@@ -30,6 +30,7 @@ paths:
 - `storage_file`、`storage_web`、`storage_select` は、pyxel と js をimportしない。js と環境の辞書は、引数で受ける。
 - 知らせの文は、全部 `cp_core/storage.py` の定数に置く。一度に出すのは、多くて1つ（保存先の切り替えが先）。
 - 保存の往復（`profile.selfcheck`）は、検証の口のときだけ、名前空間 `selfcheck` で回す。`main` に触れない。段0のふつうの起動は、保存しない。
+- ふつうの保存の名前空間は `main`。試験用データを重ねている間は `pack_<名>`（`GameData.save_namespace`。決まりは `.claude/rules/data.md`）。アプリは、設定を読む保存の口（`App.store`）を1つだけ作り、そこへ渡す。往復の名前空間は、変えない。
 
 ## 値を読む口
 
@@ -39,6 +40,7 @@ paths:
 - 保存先の名（`localstorage`、`file`、`memory`）と環境変数の名：`cp_app/storage_select.py`
 - localStorage での鍵の頭（`clippingpoint/`）と、実測した見え方：`cp_app/storage_web.py` の頭の注
 - 結果に出す値（`storage` の `backend`、`ok`、`notice`、`detail`）：`cp_app/app.py` の `storage_report()`。`notice` は、表示用の値から取る
+- 結果に出す名前空間（`data` の `namespace`）：`cp_app/app.py` の `data_report()`。設定を読んだ保存の口（`SaveStore.namespace`）から取る
 
 ## Xを足したらYも
 

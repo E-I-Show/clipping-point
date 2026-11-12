@@ -1,0 +1,8 @@
+{
+  "_notes": {
+    "test_loop": "仮の値：段0の縦切り用の、仮の周回路。項目は、id、表示名、データの版の3つだけ。コースの形は、使う側を作る段0 区切り9で足す。本物のコース（akane_short）を作る段で消す。"
+  },
+  "id": "test_loop",
+  "name": "TEST LOOP",
+  "data_version": 1
+}

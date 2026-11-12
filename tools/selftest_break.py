@@ -20,6 +20,7 @@ import time
 import zlib
 from pathlib import Path
 
+import data_reference
 import fingerprint
 import input_reference
 import screen_check
@@ -30,7 +31,8 @@ from cp_core import profile, storage  # noqa: E402 - cp_core への道は、inpu
 PY = sys.executable
 SCRATCH = OUT / "selftest"
 # 複製するもの。道具、テスト、見張りが読むファイルの全部。足りなければ control の件が落ちる。
-COPY_ITEMS = ("clipping_point", "tools", "tests", ".claude/rules", ".claude/agents", ".claude/settings.json","docs/canon", "docs/handoff.md", "CLAUDE.md", "pytest.ini")
+# testpacks（試験用データ）が無いと、複製の中で、規則ファイルの当て先（testpacks/**）が空振りし、run --pack が2になる。
+COPY_ITEMS = ("clipping_point", "tools", "tests", "testpacks", ".claude/rules", ".claude/agents", ".claude/settings.json","docs/canon", "docs/handoff.md", "CLAUDE.md", "pytest.ini")
 CASE_TIMEOUT_S = 180  # 1件の時間切れ（秒）。いちばん長い件（verify --all。ブラウザ版の煙テストの5本を含む）で約70秒
 
 RUNTIME_CACHE = ".cache"  # ランタイムの写しの置き場。複製には、ここへのリンクだけを置く（中身は書き換えない）
@@ -74,13 +76,19 @@ STALE_JUNIT = (
     '<?xml version="1.0" encoding="utf-8"?><testsuites>'
     '<testsuite name="pytest" errors="0" failures="0" skipped="0" tests="999"></testsuite></testsuites>\n'
 )
-# いまの結果の形に合わせる（入力の出どころ、入力アダプタと直読みを呼んだ回数、種と乱数の流れの状態つきの世界の要約、保存の往復）。
-# 読まれたら合格になる形。保存の往復が残したファイル（STALE_SAVE）も、一緒に置く。
-STALE_RESULT = json.dumps({
+# いまの結果の形に合わせる（入力の出どころ、入力アダプタと直読みを呼んだ回数、種と乱数の流れの状態つきの世界の要約、保存の往復、
+# 定義データ）。読まれたら合格になる形。保存の往復が残したファイル（STALE_SAVE）も、一緒に置く。
+STALE_FIELDS = {
     "ticks": 120, "renders": 60, "sim": input_reference.sim_summary(input_reference.load_script(input_reference.SMOKE_SCRIPT)[1], 120),
     "back_ink": 4321, "screen_diff": 0, "driver": "flip", "input_source": "script", "adapter_reads": 0, "direct_reads": 0,
     "storage": {"backend": "file", "ok": True, "notice": "", "detail": ""},
-}) + "\n"
+}
+# 定義データの件数は、道具が自分で数えた値（いまの定義データで、読まれたら合格になる値）。
+STALE_DATA = {"tables": data_reference.expected_tables()[0], "warnings": 0, "pack": None, "namespace": "main"}
+STALE_RESULT = json.dumps({**STALE_FIELDS, "data": STALE_DATA}) + "\n"
+# 試験用データ（extreme）を重ねて回した形の、前回の結果。
+STALE_PACK_DATA = {"tables": data_reference.expected_tables("extreme")[0], "warnings": 0, "pack": "extreme", "namespace": "pack_extreme"}
+STALE_PACK_RESULT = json.dumps({**STALE_FIELDS, "data": STALE_PACK_DATA}) + "\n"
 # 前回の実行が残した、保存の往復の値（封筒つき）。置き場は、run が out/run/saves、ブラウザ版が localStorage。
 STALE_SAVE = storage.wrap(profile.encode(profile.SELFCHECK_SETTINGS), profile.SETTINGS_VERSION)
 STALE_SAVE_FILE = "out/run/saves/selfcheck.settings.sav"
@@ -91,6 +99,7 @@ STALE_WEB_RESULT = {
     "input_source": "adapter", "adapter_reads": 240, "direct_reads": 240, "warmup_ticks": 60,
     "perf": {"updates": 180, "renders": 90, "updates_per_s": 60.0, "renders_per_s": 30.0, "update_ms_p95": 0.1, "render_ms_p95": 0.2},
     "storage": {"backend": "localstorage", "ok": True, "notice": "", "detail": ""},
+    "data": STALE_DATA,
 }
 STALE_WEB_PAGE = json.dumps({
     "htmlSha256": "", "failures": [], "clickedAt": 3500, "untilAt": 7000, "state": {"initialized": True}, "canvas": {"ink": 35000},
@@ -174,6 +183,11 @@ def add_bytes(path, data):
 
 def rm(path):
     return ("delete", path)
+
+
+def rm_tree(path):
+    """ディレクトリを、中身ごと消す（ディレクトリであること）。"""
+    return ("delete_tree", path)
 
 
 def rm_glob(pattern):
@@ -344,6 +358,53 @@ PROBE_KEY_NOT_REMOVED = rep(WEB_STORAGE_PY, PROBE_READ_AND_REMOVE, "            
 RULE_FILLER_LINE = "- filler line\n"
 RULE_FILLER = RULE_FILLER_LINE * (load_budgets()["rule_file_max_bytes"] // len(RULE_FILLER_LINE) + 1)
 OTHER_ENVIRONMENT = [rm(FINGERPRINT_JSON), add(FINGERPRINT_JSON, OTHER_ENVIRONMENT_SNAPSHOT)]  # 指紋の写しの、環境の値だけを変える
+# 定義データの読み込み検査と、試験用データ。
+# check は、data の節だけに絞る。絞らないと、ファイルを足す件、消す件が、分野の見張り（areas）や規則ファイルの見張り（rules）でも
+# 落ちて、読み込み検査で落ちたのかを見分けられない。期待の語の data=2 は、調べた組の数（出荷するデータと、試験用データ extreme）。
+CHECK_DATA = tool("check", "--only", "data")
+RUN_PACK = tool("run", "--pack", "extreme")  # 試験用データを重ねて回す
+CARS_JSON = "clipping_point/data/cars.json"
+LOOP_JSON = "clipping_point/data/tracks/test_loop.json"
+PACK_DIR = "testpacks/extreme"
+PACK_CARS_JSON = f"{PACK_DIR}/cars.json"
+PACK_LOOP_JSON = f"{PACK_DIR}/tracks/wide_test_loop.json"
+DATADEFS_PY = "clipping_point/cp_core/datadefs.py"
+DATA_FILES_PY = "clipping_point/cp_app/data_files.py"
+CHECK_TOOL_PY = "tools/check.py"
+EXPORT_TOOL_PY = "tools/export.py"
+COMMON_PY = "tools/_common.py"
+CAR_NAME = '      "name": "KAZANE",\n'  # 実物の車の、表示名の行
+CAR_NAME_VALUE = '"name": "KAZANE"'
+CAR_VERSION = '"data_version": 1'  # 実物の車の、データの版
+CAR_TABLE_END = "    }\n  ]"  # 実物の車の表の、並びの終わり
+SECOND_CAR_WITH_THE_SAME_ID = '    },\n    {\n      "id": "kazane",\n      "name": "KAZANE TWO",\n      "data_version": 1\n    }\n  ]'
+DATA_UNKNOWN_KEY = rep(CARS_JSON, CAR_NAME, CAR_NAME + '      "nmae": "KAZANE",\n')  # 出荷するデータに、知らない鍵（鍵の名の打ち間違い）
+DATA_CARS_DELETED = rm(CARS_JSON)
+PACK_NAME_TOO_LONG = rep(PACK_CARS_JSON, '"name": "WWWWWWWWWWWWWW"', '"name": "WWWWWWWWWWWWWWW"')  # 試験用データの表示名を、15字にする
+
+
+def loop_file_under_another_name() -> list:
+    """実物のコースのファイルを、中身はそのままで、別の名に置き直す（ファイルの名と id が食い違う）。読めなければ、置けない壊し方。"""
+    try:
+        text = (ROOT / LOOP_JSON).read_text(encoding="utf-8")
+    except OSError:
+        return [rm(LOOP_JSON), rm(LOOP_JSON)]  # 2つ目で、壊す所が見つからずに止まる
+    return [rm(LOOP_JSON), add("clipping_point/data/tracks/other_loop.json", text)]
+
+
+LOAD_DATA = "    data = data_files.load(os.environ, js)\n"  # アプリが、起動時に定義データを読む所
+# 定義データを読まずに、空の定義で起動する。
+NO_DATA_AT_START = LOAD_DATA.replace("data_files.load(os.environ, js)", "data_files.datadefs.GameData({name: {} for name in data_files.datadefs.TABLES}, (), None)")
+READ_PACK_ENV = '        name = env.get(PACK_ENV, "")\n'  # デスクトップ版が、重ねる試験用データの名を読む所
+SETTINGS_STORE = "        self.store = SaveStore(selected.backend, data.save_namespace)\n"  # アプリが、設定を読む保存の口を作る所
+# 重ねたのに、設定を読む保存の口へ、名前空間を渡さない（main のままになる）。
+NAMESPACE_NOT_PASSED = rep(APP_PY, SETTINGS_STORE, "        self.store = SaveStore(selected.backend)\n")
+EXPORT_DATA_CHECK = "    problems += inspect_data(names, source_data_files(), data_reference.datadefs.TABLES)\n"  # 道具 export が、出荷物の中の定義データのファイルを調べる所
+UNKNOWN_KEY_FOUND = '        found.append(((*path, key), "unknown key"))\n'  # 読み込み検査が、知らない鍵を問題にする所
+RAISE_ALL = "        raise DataError(problems)\n"  # 読み込み検査が、全部の問題を並べて止まる所
+RETURN_DATA = "    return GameData(entries, warnings, pack_name)\n"  # 読み込み検査が、警告を付けて返す所
+SHIPPED_WARNINGS = '        problems += [f"({SHIPPED_SET}) warning: {line}" for line in loaded.warnings]\n'  # check の data の節が、警告を問題に数える所
+APP_ENV_LIST = 'APP_ENV_PREFIXES = ("CP_SMOKE", "CP_TOUR", "CP_SAVE", "CP_DATA")'  # 道具が、子プロセスへ渡さない環境変数の名の頭
 
 # (名前, 壊し方の並び, 回す道具, 期待する終了コード, 最後の1行にあるはずの語)
 CASES = [
@@ -365,7 +426,7 @@ CASES = [
     ("control_web_smoke_short_probe", [], WEB_PROBE, {0}, "web_smoke: OK scenarios=1 probe=ok"),
     ("control_web_heavy_frame_keeps_30_renders", [rep(APP_PY, RENDER_COUNT, RENDER_COUNT + HEAVY_FRAME)], WEB_PROBE, {0}, "web_smoke: OK scenarios=1 probe=ok"),
     ("control_verify_list", [], tool("verify", "--list"), {0}, "verify: OK mode=list"),
-    ("control_verify_all", [], VERIFY_ALL, {0}, "verify: OK mode=all steps=9 ok=9 failed=0"),
+    ("control_verify_all", [], VERIFY_ALL, {0}, "verify: OK mode=all steps=10 ok=10 failed=0"),
     ("control_screen_check", [], SCREEN, {0}, "screen_check: OK screens=2/2 violations=0 not_checked=0"),
     ("control_screen_check_only_one_screen", [], tool("screen_check", "--only", "placeholder"), {0}, "screen_check: OK screens=2/2 violations=0 not_checked=0"),
     # 命令の数は、ふつうの値で8つ、極端な値で9つ（知らせの1行）。
@@ -380,6 +441,12 @@ CASES = [
     ("control_web_smoke_storage_blocked", [], WEB_BLOCKED, {0}, "web_smoke: OK scenarios=1 storage_blocked=ok blocked_save=memory"),
     # 指紋の筋書きに無い回し方（回すtick数が違う）。指紋の確かめを外して、通る。
     ("control_run_other_ticks_skips_the_fingerprint", [], tool("run", "--ticks", "200"), {0}, "problems=0 fingerprint=skipped not_yet="),
+    # 定義データの読み込み検査だけを回す。調べた組は、出荷するデータと、試験用データ（extreme）を重ねたものの2つ。
+    ("control_check_data", [], CHECK_DATA, {0}, "check: OK data=2 problems=0"),
+    # 試験用データを重ねて回す。重ねた名と、保存の名前空間（pack_extreme）が結果に出る。指紋は照らさない（確かめは1つ少ない）。
+    ("control_run_pack", [], RUN_PACK, {0}, "pack=extreme namespace=pack_extreme save=file checks=19 problems=0 fingerprint=skipped not_yet="),
+    # 重ねずに回す。重ねた名は無く、保存の名前空間は main。
+    ("control_run_reports_no_pack", [], RUN, {0}, "pack=none namespace=main save=file checks=20 problems=0 not_yet="),
     # 文字の幅の計算を小さく間違えても、ためた命令だけを調べる検査は通る（検査の穴。巡回が拾うことは tour_text_metrics_too_small）。
     ("control_screen_check_passes_with_text_metrics_too_small", [FONT_TOO_NARROW], SCREEN, {0}, "screen_check: OK screens=2/2 violations=0 not_checked=0"),
     # --- check：構文 ---
@@ -526,16 +593,17 @@ CASES = [
     (
         "verify_one_step_fails",
         [rep("tests/test_sim.py", "    assert Sim().tick == 0\n", "    assert Sim().tick == 1\n")],
-        VERIFY_ALL, {1}, "steps=9 ok=8 failed=1 failed_steps=test",
+        VERIFY_ALL, {1}, "steps=10 ok=9 failed=1 failed_steps=test",
     ),
-    # 道具 run のファイルを消す。run と run --realtime は、起動できない（回らなかった手順）。道具 run の関数のテスト
+    # 道具 run のファイルを消す。run、run --realtime、run --pack は、起動できない（回らなかった手順）。道具 run の関数のテスト
     # （tests/test_run_tool.py）も、道具を読み込めずに落ちるので、test も落ちる。
-    ("verify_step_cannot_run", [rm("tools/run.py")], VERIFY_ALL, {1}, "steps=9 ok=6 failed=3 failed_steps=test,run,run-realtime"),
+    ("verify_step_cannot_run", [rm("tools/run.py")], VERIFY_ALL, {1}, "steps=10 ok=6 failed=4 failed_steps=test,run,run-realtime,run-pack"),
     # 全体の検証の中で、screen-check と tour が落ちる（文字を、画面の外に置く。突き合わせのテストも落ちる）。
-    ("verify_screen_check_and_tour_fail", [TEXT_OFF_SCREEN], VERIFY_ALL, {1}, "steps=9 ok=6 failed=3 failed_steps=test,screen-check,tour"),
+    ("verify_screen_check_and_tour_fail", [TEXT_OFF_SCREEN], VERIFY_ALL, {1}, "steps=10 ok=7 failed=3 failed_steps=test,screen-check,tour"),
     # 全体の検証の中で、指紋の照合（fingerprint）が落ちる（世界の式を変える。指紋のテストと、run の指紋の確かめも落ちる）。
     # web-smoke は、ブラウザ版とデスクトップ版を比べるので、通る（どちらも、同じ変えた式で回る）。指紋の写しと比べる手順だけが落ちる。
-    ("verify_fingerprint_step_fails", [WORLD_FORMULA], VERIFY_ALL, {1}, "steps=9 ok=5 failed=4 failed_steps=test,fingerprint,run,run-realtime"),
+    # 試験用データを重ねて回す手順（run-pack）は、指紋を照らさないので、通る。
+    ("verify_fingerprint_step_fails", [WORLD_FORMULA], VERIFY_ALL, {1}, "steps=10 ok=6 failed=4 failed_steps=test,fingerprint,run,run-realtime"),
     ("verify_nothing_asked", [], tool("verify"), {2}, "reason=nothing_asked"),
     # 複製は、gitの作業ツリーの根でない（親のリポジトリの下にある）。親の変更を読んで回さない。
     ("verify_touched_outside_a_git_work_tree", [], tool("verify", "--touched"), {2}, "reason=git_failed"),
@@ -791,9 +859,9 @@ CASES = [
     ("run_round_trip_is_not_run", [rep(APP_PY, SELFCHECK_CALL, "None")], RUN, {1}, "failed=save,save_file not_yet="),
     # 保存の往復の終わりに、既定値で書き直す。ファイルはあり、封筒も読める。落ちるのは、道具が本体を往復の見本と比べる所だけ
     # （ほかの save_file の件は、ファイルが無いか、封筒が読めないかで落ちる。「封筒が読めれば合格」の道具では、この件だけが通ってしまう）。
-    ("run_round_trip_ends_with_the_defaults", [ROUND_TRIP_ENDS_WITH_DEFAULTS], RUN, {1}, "save=file checks=16 problems=1 failed=save_file not_yet="),
+    ("run_round_trip_ends_with_the_defaults", [ROUND_TRIP_ENDS_WITH_DEFAULTS], RUN, {1}, "save=file checks=20 problems=1 failed=save_file not_yet="),
     # デスクトップ版が、保存のファイルの置き場を読まない（メモリの保存先になる）。
-    ("run_save_directory_is_ignored", [rep(SELECT_PY, SAVE_DIR_READ, '    directory = ""\n')], RUN, {1}, "save=memory checks=16 problems=2 failed=save,save_file not_yet="),
+    ("run_save_directory_is_ignored", [rep(SELECT_PY, SAVE_DIR_READ, '    directory = ""\n')], RUN, {1}, "save=memory checks=20 problems=2 failed=save,save_file not_yet="),
     # 道具が、置き場を相対パスで渡す。アプリは、起動時に例外にする（pyxel.init が作業ディレクトリを変えるため）。
     ("run_save_directory_is_relative", [rep(RUN_TOOL_PY, SAVE_DIR_ENV_ARG, '**{storage_select.SAVE_DIR_ENV: "saves"})')], RUN, {1}, "reason=app_exit_code"),
     # 巡回の口でも、置き場の環境変数を読む（相対パスなら、起動時に例外）。
@@ -823,6 +891,99 @@ CASES = [
     ("web_block_storage_script_is_missing", [rm("tools/web/block_storage.js")], WEB_BLOCKED, {2}, "reason=no_block_storage"),
     # 差し込むスクリプトが、保存先を止めない（何もしない）。保存先が localStorage のままなので、落ちる（筋書きが、空振りで通らない）。
     ("web_block_storage_script_blocks_nothing", [rm("tools/web/block_storage.js"), add("tools/web/block_storage.js", "// does nothing\n")], WEB_BLOCKED, {1}, "failed=storage_blocked.storage_backend,storage_blocked.storage_notice"),
+    # --- 定義データ：check --only data（出荷するデータを、1か所ずつ壊す。問題は1件。調べた組は2つのまま） ---
+    # 知らない鍵（鍵の名の打ち間違い）。試験用データ（extreme）は、同じ id の項目を差し替えるので、重ねた組では、この問題は出ない。
+    ("check_data_unknown_key", [DATA_UNKNOWN_KEY], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    ("check_data_missing_key", [rep(CARS_JSON, CAR_NAME, "")], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    ("check_data_value_out_of_range", [rep(CARS_JSON, CAR_VERSION, '"data_version": 0')], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    ("check_data_name_not_ascii", [rep(CARS_JSON, CAR_NAME_VALUE, '"name": "カザネ"')], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    ("check_data_name_of_15_characters", [rep(CARS_JSON, CAR_NAME_VALUE, '"name": "KAZANE RS TESTS"')], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    ("check_data_duplicate_id", [rep(CARS_JSON, CAR_TABLE_END, SECOND_CAR_WITH_THE_SAME_ID)], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    ("check_data_bool_where_an_integer_belongs", [rep(CARS_JSON, CAR_VERSION, '"data_version": true')], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    # JSONの文を読む所で見つかる問題。標準の読み方は、重複した鍵と NaN を、黙って通す。
+    ("check_data_file_is_not_json", [first_char(CARS_JSON)], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    ("check_data_duplicate_key", [rep(CARS_JSON, CAR_NAME, CAR_NAME + CAR_NAME)], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    ("check_data_nan", [rep(CARS_JSON, CAR_VERSION, '"data_version": NaN')], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    # ファイルの頭の形の誤り（表の鍵の名が違う）。知らない鍵と、表の鍵が無い、の2件。
+    ("check_data_file_head_has_another_table_key", [rep(CARS_JSON, '  "cars": [', '  "car": [')], CHECK_DATA, {1}, "check: FAILED data=2 problems=2 failed=data"),
+    # 1ファイル1項目のファイルが、項目そのものでない（並びで包んである）。
+    ("check_data_entry_file_is_a_list", [rep(LOOP_JSON, '{\n  "_notes"', '[{\n  "_notes"'), app(LOOP_JSON, "]\n")], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    ("check_data_cars_file_deleted", [DATA_CARS_DELETED], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    # コースのファイルの名と、中の id が違う。
+    ("check_data_file_name_differs_from_the_id", loop_file_under_another_name(), CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    # data/ に、表の定義に無いファイルを置く。黙って無視しない。
+    ("check_data_file_that_no_table_reads", [add("clipping_point/data/sounds.json", '{"sounds": []}\n')], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    # --- 定義データ：check --only data（試験用データを壊す。出荷するデータの組は通り、重ねた組だけが落ちる） ---
+    ("check_data_test_pack_broken", [PACK_NAME_TOO_LONG], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    # 試験用データの置き場に、2つの形に当たらない名のファイルを置く。「重ねたつもりで、重なっていない」まま通さない。
+    ("check_data_test_pack_has_a_file_that_no_table_reads", [add(f"{PACK_DIR}/notes.txt", "notes\n")], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    ("check_data_test_pack_has_a_table_file_in_the_other_shape", [add(f"{PACK_DIR}/tracks.json", '{"tracks": []}\n')], CHECK_DATA, {1}, "check: FAILED data=2 problems=1 failed=data"),
+    # 試験用データの置き場が、空（ファイルが1つも無い）。重ねられないので、組に数えない（調べた組は1つ）。問題は1件。
+    ("check_data_test_pack_directory_is_empty", [rm(PACK_CARS_JSON), rm(PACK_LOOP_JSON)], CHECK_DATA, {1}, "check: FAILED data=1 problems=1 failed=data"),
+    # 節を絞らない check でも、落ちる（data の節が、全体の check に入っている）。
+    ("check_all_sections_data_unknown_key", [DATA_UNKNOWN_KEY], CHECK, {1}, "data=2 problems=1 failed=data"),
+    # --- 定義データ：起動時の読み込み検査（run、tour、export） ---
+    # 出荷するデータに問題があると、アプリは、起動時に例外で止まる。巡回の口でも、定義データを読む。
+    ("run_data_unknown_key", [DATA_UNKNOWN_KEY], RUN, {1}, "reason=app_exit_code"),
+    ("run_realtime_data_unknown_key", [DATA_UNKNOWN_KEY], RUN_RT, {1}, "reason=app_exit_code"),
+    ("tour_data_unknown_key", [DATA_UNKNOWN_KEY], TOUR, {2}, "reason=app_exit_code"),
+    ("run_data_cars_file_deleted", [DATA_CARS_DELETED], RUN, {1}, "reason=app_exit_code"),
+    # ソースから消すと、出荷物にも入らない（一覧は、両方に無くて同じ）。表の定義が求めるファイルが無い、で落とす。
+    ("export_data_cars_file_deleted", [DATA_CARS_DELETED], EXPORT, {1}, "failed=missing"),
+    # ソースの木にある定義データが、出荷物に入らない。pyxel package は、名が「.」で始まるファイルとディレクトリを入れない（実測）。
+    # デスクトップ版は読めて、ブラウザ版には無い、という食い違いを、出荷物の一覧とソースの木の一覧を比べて拾う。
+    ("export_data_file_left_out_by_the_packager", [add("clipping_point/data/tracks/.hidden_loop.json", '{"id": ".hidden_loop"}\n')], EXPORT, {1}, "failed=data_files"),
+    # 試験用データが、出荷物に入る。
+    ("export_test_pack_mixed_in", [add("clipping_point/testpacks/extreme/cars.json", '{"cars": []}\n')], EXPORT, {1}, "failed=forbidden"),
+    # 起動時に、定義データを読まない（空の定義で起動する）。表ごとの件数が、道具が自分で数えた件数と違う。
+    ("run_data_is_not_loaded_at_start", [rep(APP_PY, LOAD_DATA, NO_DATA_AT_START)], RUN, {1}, "failed=data_tables not_yet="),
+    # --- 試験用データを重ねて回す：run --pack extreme ---
+    # 試験用データが壊れている。重ねない run は通り（上の check の件と対）、重ねた run は、起動時の例外で落ちる。
+    ("control_run_passes_with_a_broken_test_pack", [PACK_NAME_TOO_LONG], RUN, {0}, "run: OK driver=flip input=script"),
+    ("run_pack_test_pack_broken", [PACK_NAME_TOO_LONG], RUN_PACK, {1}, "reason=app_exit_code"),
+    # デスクトップ版が、重ねる口（CP_DATA_PACK）を読まない。重ねていない結果が返る。
+    ("run_pack_variable_is_not_read", [rep(DATA_FILES_PY, READ_PACK_ENV, '        name = ""\n')], RUN_PACK, {1}, "pack=none namespace=main save=file checks=19 problems=3 failed=data_tables,data_pack,data_namespace fingerprint=skipped"),
+    # 重ねたのに、アプリが、設定を読む保存の口へ、名前空間を渡さない。結果の名前空間が main になる。段0の起動は、設定を書かないので、
+    # 保存のファイルでは分からない（save_main は通る）。落ちるのは、結果の名前空間の確かめだけ。
+    ("run_pack_namespace_is_not_passed_to_the_settings_store", [NAMESPACE_NOT_PASSED], RUN_PACK, {1}, "pack=extreme namespace=main save=file checks=19 problems=1 failed=data_namespace fingerprint=skipped"),
+    # 上の件の対。同じ壊し方でも、重ねない run は通る（重ねて回す手順が要る理由）。守りのテスト（app.py のソースを読む）は落ちる。
+    ("control_run_passes_when_the_namespace_is_not_passed", [NAMESPACE_NOT_PASSED], RUN, {0}, "pack=none namespace=main save=file checks=20 problems=0 not_yet="),
+    ("test_app_does_not_pass_the_namespace_to_the_settings_store", [NAMESPACE_NOT_PASSED], tool("test", "-k", "data_files and namespace"), {1}, "reason=failed"),
+    # 試験用データの置き場が無い、置き場にファイルが1つも無い、無い名。回り切れない（2）。重ねずに回して、合格にしない。
+    ("run_pack_directory_deleted", [rm_tree(PACK_DIR)], RUN_PACK, {2}, "reason=no_such_pack"),
+    ("run_pack_directory_is_empty", [rm(PACK_CARS_JSON), rm(PACK_LOOP_JSON)], RUN_PACK, {2}, "reason=no_such_pack"),
+    ("run_pack_unknown_name", [], tool("run", "--pack", "nosuch"), {2}, "reason=no_such_pack"),
+    # アプリが、何も回さずに終了コード0で終わる。前回の、重ねて回した合格の形の結果が残っていても、読まない。
+    (
+        "run_pack_stale_result_is_not_reused",
+        [add("out/run/result.json", STALE_PACK_RESULT), add_bytes(STALE_SAVE_FILE, STALE_SAVE), rep(APP_PY, IN_UPDATE, QUIT_EARLY)],
+        RUN_PACK, {2}, "reason=no_result_file",
+    ),
+    # --- 定義データ：test（読み込み検査と、道具の判定の関数。狙ったテストに絞る） ---
+    # 読み込み検査が、知らない鍵を見ない。
+    ("test_data_check_ignores_unknown_keys", [rep(DATADEFS_PY, UNKNOWN_KEY_FOUND, "        pass\n")], tool("test", "-k", "datadefs and broken_shipped"), {1}, "reason=failed"),
+    # 読み込み検査が、最初の1件で止まる。
+    ("test_data_check_stops_at_the_first_problem", [rep(DATADEFS_PY, RAISE_ALL, "        raise DataError(problems[:1])\n")], tool("test", "-k", "datadefs and three_planted"), {1}, "reason=failed"),
+    # 読み込み検査が、警告（どこからも参照されていない定義）を数えない。
+    ("test_data_check_counts_no_warnings", [rep(DATADEFS_PY, RETURN_DATA, "    return GameData(entries, (), pack_name)\n")], tool("test", "-k", "datadefs and unreferenced"), {1}, "reason=failed"),
+    # 道具 check の data の節が、出荷するデータの警告を、問題に数えない。実物には参照が無い（警告は、どう壊しても0件）ので、
+    # 節の関数のテスト（作り物の表の定義）で拾う。
+    ("test_check_data_section_does_not_count_warnings", [rep(CHECK_TOOL_PY, SHIPPED_WARNINGS, "        pass\n")], tool("test", "-k", "check_tool and warning"), {1}, "reason=failed"),
+    # 道具が、外から入った CP_DATA_PACK を、子プロセスへ渡す。守りのテストで拾う。
+    ("test_tools_pass_an_outside_data_pack_to_the_app", [rep(COMMON_PY, APP_ENV_LIST, APP_ENV_LIST.replace(', "CP_DATA")', ")"))], tool("test", "-k", "outside_data_pack"), {1}, "reason=failed"),
+    # --- 定義データ：web-smoke（ブラウザ版） ---
+    # ブラウザ版が、定義データを読めない（出荷物に、車の表のファイルが無い）。起動時の例外を、エラー表示として拾う。
+    # 道具 export が、出荷物の中の定義データのファイルを調べる所を外して重ねる（外さないと、export が1になり、web-smoke は、
+    # ページを開かずに2を返す）。
+    ("web_data_file_is_not_in_the_shipped_html", [DATA_CARS_DELETED, rep(EXPORT_TOOL_PY, EXPORT_DATA_CHECK, "")], WEB_SHIPPED, {1}, "failed=shipped.error_overlay"),
+    # 上の件の対。道具 export の検査を外さなければ、ページを開く前に、回り切れない（2）で止まる。
+    ("web_data_file_deleted_stops_at_the_export", [DATA_CARS_DELETED], WEB_SHIPPED, {2}, "reason=export_failed"),
+    # ブラウザ版でだけ、定義データを読まずに、空の定義で起動する。デスクトップ版の道具（run）は通る。
+    (
+        "web_probe_data_is_not_loaded_only_in_browser",
+        [rep(APP_PY, LOAD_DATA, LOAD_DATA + "    if js is not None:\n    " + NO_DATA_AT_START)],
+        WEB_PROBE, {1}, "failed=probe.data_tables",
+    ),
 ]
 
 
@@ -849,6 +1010,10 @@ def plant(work: Path, faults) -> None:
             target.write_bytes(rest[0])
         elif kind == "delete":
             target.unlink()
+        elif kind == "delete_tree":
+            if not target.is_dir() or target.is_symlink():
+                raise RuntimeError(f"{path}: 消すはずのディレクトリが無い")
+            shutil.rmtree(target)
         elif kind == "delete_glob":
             hits = sorted(work.glob(path))
             if not hits:

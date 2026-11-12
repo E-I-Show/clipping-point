@@ -63,19 +63,19 @@ Pyxel 3.0の3D機能（Pyxel Cube）で作る、初代PS時代風ローポリゴ
 
 | すること | コマンド |
 | --- | --- |
-| 全体の検証（約65秒。check → test → fingerprint → screen-check → run → run --realtime → tour → export → web-smoke。`--selftest` を付けると約20分） | `python3 tools/verify.py --all [--selftest]` |
+| 全体の検証（約65秒。check → test → fingerprint → screen-check → run → run --realtime → run --pack extreme → tour → export → web-smoke。`--selftest` を付けると約22分） | `python3 tools/verify.py --all [--selftest]` |
 | 変更したファイルから触れた分野を引いて回す（基点の既定は、直近の区切りのコミット） | `python3 tools/verify.py --touched [--base REV]` |
 | 分野ごとの組の表を出す | `python3 tools/verify.py --list` |
-| 静的な検査（構文、層の分離、規則ファイルの見張り、正本の見張り、分野の見張り） | `python3 tools/check.py [--only syntax\|arch\|rules\|canon\|areas]` |
+| 静的な検査（構文、層の分離、規則ファイルの見張り、正本の見張り、分野の見張り、定義データの読み込み検査） | `python3 tools/check.py [--only syntax\|arch\|rules\|canon\|areas\|data]` |
 | テスト | `python3 tools/test.py [-k "語 or 語"]` |
 | ふるまいの写し（指紋、保存する項目の一覧）と照らす。`--update` は取り直し（理由を添えた単独のコミットでだけ） | `python3 tools/fingerprint.py [--update]` |
 | 2Dの全画面を、見本データで組み立てて、はみ出しを数える | `python3 tools/screen_check.py [--only 画面の名]` |
 | 各画面の画像を保存し、描画命令と画素を照らす（画像は `out/tour/`。目で見る） | `python3 tools/tour.py [--only 画面の名]` |
-| 画面なしで回す（速い経路。道具の台本を渡す） | `python3 tools/run.py [--ticks N] [--script FILE\|--no-script]` |
+| 画面なしで回す（速い経路。道具の台本を渡す。`--pack` は、試験用データを重ねる） | `python3 tools/run.py [--ticks N] [--script FILE\|--no-script] [--pack 名]` |
 | 画面なしで回す（本番と同じ経路。入力アダプタから読む） | `python3 tools/run.py --realtime [--ticks N]` |
 | 配布物のHTMLを作って検査する | `python3 tools/export.py` |
 | ブラウザ版の煙テスト（約55秒） | `python3 tools/web_smoke.py [--only shipped\|probe\|script\|gamepad\|storage_blocked]` |
-| 道具をわざと壊して確かめる（約19分） | `python3 tools/selftest_break.py [--only 名前の頭]` |
+| 道具をわざと壊して確かめる（約21分） | `python3 tools/selftest_break.py [--only 名前の頭]` |
 | 環境のセットアップ（新しいコンテナで1度。環境に登録してある） | `bash tools/setup_env.sh` |
 | ランタイムの写しの取得と照合 | `python3 tools/web/fetch_runtime.py [--check]` |
 | テストの件数の下限を下げる | `python3 tools/test.py --update-floor` |
@@ -178,3 +178,4 @@ Pyxel 3.0の3D機能（Pyxel Cube）で作る、初代PS時代風ローポリゴ
 | `.claude/rules/web.md` | ブラウザ版の煙テスト（`tools/web_smoke.py`、`tools/web/`）とブラウザ連携（`cp_app/web_bridge.py`）、そのテスト |
 | `.claude/rules/controls.md` | 入力フレームと台本（`cp_core/input_frame.py`、`input_script.py`）、入力アダプタ、直読み、入力の跡（`cp_app/input_pyxel.py`、`input_web.py`、`input_trace.py`）、偽のコントローラー、そのテスト |
 | `.claude/rules/save.md` | 保存の口と保存する項目（`cp_core/storage.py`、`profile.py`）、保存先と、保存先を選ぶ所（`cp_app/storage_file.py`、`storage_web.py`、`storage_select.py`）、保存先に触れると例外にするスクリプト（`tools/web/block_storage.js`）、そのテスト |
+| `.claude/rules/data.md` | 定義データの読み込み検査と重ね方（`cp_core/datadefs.py`）、ファイルを読む所（`cp_app/data_files.py`）、実物の定義データ（`clipping_point/data/`）、試験用データ（`testpacks/`）、そのテスト |
